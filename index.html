@@ -1,251 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Ready4Exam | CBSE (NCERT)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-  <!-- Identity -->
-  <meta name="description" content="Ready4Exam is a CBSE (NCERT) aligned AI-powered assessment platform for Classes 6–12." />
+<title>Ready4Exam — CBSE & State Board Academic Portal</title>
 
-  <!-- Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    :root {
-      --primary: #1e40af;
-      --primary-dark: #1d4ed8;
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --border: #e5e7eb;
-      --text: #020617;
-      --muted: #475569;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    /* ======================
-       MOBILE FIRST LAYOUT
-       ====================== */
-
-    header {
-      padding: 48px 20px 32px;
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color: #fff;
-      text-align: center;
-    }
-
-    header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    header p {
-      font-size: 1rem;
-      opacity: 0.95;
-    }
-
-    main {
-      padding: 24px 16px 48px;
-      max-width: 720px;
-      margin: 0 auto;
-    }
-
-    .intro {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
-    }
-
-    .intro h2 {
-      font-size: 1.4rem;
-      margin-bottom: 8px;
-    }
-
-    .intro p {
-      font-size: 0.95rem;
-      color: var(--muted);
-    }
-
-    .class-list {
-      margin-top: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .class-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .class-info h3 {
-      margin: 0;
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-
-    .class-info span {
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
-
-    .class-card a {
-      text-decoration: none;
-      background: var(--primary);
-      color: #fff;
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .class-card a:active {
-      background: var(--primary-dark);
-    }
-
-    footer {
-      text-align: center;
-      padding: 24px 16px;
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    /* ======================
-       TABLET & DESKTOP
-       ====================== */
-
-    @media (min-width: 768px) {
-      header h1 {
-        font-size: 2.4rem;
-      }
-
-      main {
-        max-width: 1100px;
-      }
-
-      .class-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      }
-
-      .class-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-      }
-
-      .class-card a {
-        align-self: stretch;
-        text-align: center;
-      }
-
-      .class-card:hover {
-        transform: translateY(-4px);
-        transition: transform 0.2s ease;
+<script>
+tailwind.config = {
+  theme:{
+    extend:{
+      fontFamily:{sans:['Inter'],serif:['Merriweather']},
+      colors:{
+        'cbse-blue':'#133b6a',
+        'gold':'#ffbe0b',
+        'heading':'#0f172a'
+      },
+      backgroundImage:{
+        'hero-grad':'linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%)'
       }
     }
-  </style>
+  }
+}
+</script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+body{
+  margin:0;
+  background:#f8fafc;
+  font-family:'Inter',sans-serif;
+}
+.class-card{
+  background:white;
+  padding:1.8rem 1.4rem;
+  border-radius:20px;
+  border:1px solid rgba(0,0,0,.05);
+  box-shadow:0 6px 18px rgba(0,0,0,.05);
+  transition:.3s cubic-bezier(0.4,0,0.2,1);
+}
+.class-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 20px 40px rgba(19,59,106,.15);
+  border-color:#133b6a;
+}
+.glass-nav{
+  position:sticky;
+  top:0;
+  z-index:50;
+  backdrop-filter:blur(16px);
+  background:rgba(19,59,106,.95);
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+.fade-in{
+  animation:fade .6s ease-out forwards;
+  opacity:0;
+}
+@keyframes fade{to{opacity:1}}
+</style>
 </head>
 
-<body>
+<body class="flex flex-col min-h-screen">
 
-  <header>
-    <h1>Ready4Exam</h1>
-    <p>CBSE (NCERT) Aligned · AI-Powered Assessment Platform</p>
-  </header>
-
-  <main>
-    <section class="intro">
-      <h2>Select Your Class</h2>
-      <p>
-        Access CBSE-aligned curriculum, competency-based assessments,
-        and mastery-driven practice for Classes 6 to 12.
+<!-- NAV -->
+<header class="glass-nav w-full py-5 px-6">
+  <div class="max-w-[1100px] mx-auto flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-black text-gold tracking-tight">
+        Ready4<span class="text-white">Exam</span>
+      </h1>
+      <p class="text-white text-xs opacity-80 font-medium tracking-wide uppercase mt-0.5">
+        Academic Excellence Portal
       </p>
+    </div>
+    <div class="hidden md:block text-white text-sm opacity-70 italic font-light">
+      Learn • Practice • Grow Strong
+    </div>
+  </div>
+</header>
 
-      <div class="class-list">
+<main class="flex-grow w-full max-w-[1100px] mx-auto px-5 py-12 fade-in">
 
-        <div class="class-card">
-          <div class="class-info">
-            <h3>Class 6</h3>
-            <span>CBSE · NCERT Foundation</span>
-          </div>
-          <a href="https://ready4exam.github.io/ready4exam-class-6/" target="_blank">Open</a>
-        </div>
+  <!-- HERO -->
+  <section class="hero bg-hero-grad text-white text-center rounded-[28px] px-6 py-14 mb-16 shadow-2xl">
+    <span class="bg-gold/20 text-gold px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest inline-block mb-4">
+      2025 – 2026 Academic Session
+    </span>
+    <h2 class="text-3xl md:text-5xl font-black tracking-tight mb-5">
+      Choose Your Class
+    </h2>
+    <p class="text-base md:text-xl max-w-2xl mx-auto opacity-90 font-medium leading-relaxed">
+      Board-aligned assessments, AI-powered practice, and structured mastery
+      for Classes 6 to 12.
+    </p>
+  </section>
 
-        <div class="class-card">
-          <div class="class-info">
-            <h3>Class 7</h3>
-            <span>CBSE · Concept Building</span>
-          </div>
-          <a href="https://ready4exam.github.io/ready4exam-class-7/" target="_blank">Open</a>
-        </div>
+  <!-- CLASS GRID -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
 
-        <div class="class-card">
-          <div class="class-info">
-            <h3>Class 8</h3>
-            <span>CBSE · Pre-Board</span>
-          </div>
-          <a href="https://ready4exam.github.io/ready4exam-class-8/" target="_blank">Open</a>
-        </div>
+    <!-- Class Cards -->
+    <a href="https://ready4exam.github.io/ready4exam-class-6/" class="class-card">
+      <h3 class="text-xl font-black text-heading mb-1">Class 6</h3>
+      <p class="text-slate-500 text-sm mb-6">Foundation & Concept Building</p>
+      <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
+        Open Class 6
+      </button>
+    </a>
 
-        <div class="class-card">
-          <div class="class-info">
-            <h3>Class 9</h3>
-            <span>CBSE · Board Foundation</span>
-          </div>
-          <a href="https://ready4exam.github.io/ready4exam-class-9/" target="_blank">Open</a>
-        </div>
+    <a href="https://ready4exam.github.io/ready4exam-class-7/" class="class-card">
+      <h3 class="text-xl font-black text-heading mb-1">Class 7</h3>
+      <p class="text-slate-500 text-sm mb-6">Core Understanding & Practice</p>
+      <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
+        Open Class 7
+      </button>
+    </a>
 
-        <div class="class-card">
-          <div class="class-info">
-            <h3>Class 10</h3>
-            <span>CBSE · Board Exam</span>
-          </div>
-          <a href="https://ready4exam.github.io/ready4exam-class-10/" target="_blank">Open</a>
-        </div>
+    <a href="https://ready4exam.github.io/ready4exam-class-8/" class="class-card">
+      <h3 class="text-xl font-black text-heading mb-1">Class 8</h3>
+      <p class="text-slate-500 text-sm mb-6">Pre-Board Preparation</p>
+      <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
+        Open Class 8
+      </button>
+    </a>
 
-        <div class="class-card">
-          <div class="class-info">
-            <h3>Class 11</h3>
-            <span>CBSE · Senior Secondary</span>
-          </div>
-          <a href="https://ready4exam.github.io/ready4exam-class-11/" target="_blank">Open</a>
-        </div>
+    <a href="https://ready4exam.github.io/ready4exam-class-9/" class="class-card">
+      <h3 class="text-xl font-black text-heading mb-1">Class 9</h3>
+      <p class="text-slate-500 text-sm mb-6">Board Foundation</p>
+      <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
+        Open Class 9
+      </button>
+    </a>
 
-        <div class="class-card">
-          <div class="class-info">
-            <h3>Class 12</h3>
-            <span>CBSE · Board & Competitive</span>
-          </div>
-          <a href="https://ready4exam.github.io/ready4exam-class-12/" target="_blank">Open</a>
-        </div>
+    <a href="https://ready4exam.github.io/ready4exam-class-10/" class="class-card">
+      <h3 class="text-xl font-black text-heading mb-1">Class 10</h3>
+      <p class="text-slate-500 text-sm mb-6">Board Examination Year</p>
+      <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
+        Open Class 10
+      </button>
+    </a>
 
-      </div>
-    </section>
-  </main>
+    <a href="https://ready4exam.github.io/ready4exam-class-11/" class="class-card">
+      <h3 class="text-xl font-black text-heading mb-1">Class 11</h3>
+      <p class="text-slate-500 text-sm mb-6">Stream Selection & Core Depth</p>
+      <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
+        Open Class 11
+      </button>
+    </a>
 
-  <footer>
-    © Ready4Exam · An initiative of Ready4Industry
-  </footer>
+    <a href="https://ready4exam.github.io/ready4exam-class-12/" class="class-card">
+      <h3 class="text-xl font-black text-heading mb-1">Class 12</h3>
+      <p class="text-slate-500 text-sm mb-6">Boards & Future Pathway</p>
+      <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
+        Open Class 12
+      </button>
+    </a>
+
+  </section>
+
+</main>
+
+<footer class="bg-cbse-blue text-white/70 text-center py-10 mt-20 border-t border-white/10">
+  <p class="font-bold text-white mb-2">Ready4Exam</p>
+  <small class="block">© 2025 Ready4Exam Academic Portal. All Rights Reserved.</small>
+</footer>
+
+<script>
+lucide.createIcons();
+</script>
 
 </body>
 </html>
