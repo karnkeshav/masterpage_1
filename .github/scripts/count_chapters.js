@@ -32,16 +32,11 @@ curriculumFiles.forEach(filePath => {
     const className = pathParts[1].toUpperCase();
     const targetBoard = results[board] ? board : 'other';
 
-    let classGrandTotal = 0;
-
     Object.keys(curriculum).forEach(subject => {
       const subjectsData = curriculum[subject];
-      
       Object.keys(subjectsData).forEach(bookOrStream => {
         const count = subjectsData[bookOrStream].length;
-        classGrandTotal += count;
 
-        // Logic to name the stream/book clearly
         let categoryName = bookOrStream;
         if (className.includes("11") || className.includes("12")) {
             if (bookOrStream.toLowerCase().includes("science")) categoryName = "Science Stream";
@@ -54,20 +49,10 @@ curriculumFiles.forEach(filePath => {
           "Subject": subject, 
           "Category": categoryName,
           "Count": count,
-          "Type": "row"
+          "IsHindi": subject.toLowerCase() === "hindi"
         });
       });
     });
-
-    // Add Subtotal for the Class
-    results[targetBoard].push({ 
-      "Class": className, 
-      "Subject": "TOTAL FOR " + className, 
-      "Category": "---", 
-      "Count": classGrandTotal,
-      "Type": "subtotal" 
-    });
-
   } catch (e) { console.error(`Error: ${e.message}`); }
 });
 
@@ -77,27 +62,49 @@ Object.keys(results).forEach(board => {
   const dir = path.join('data', board);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  let boardGrandTotal = 0;
-  let mdTable = `# ${board.toUpperCase()} Content Report - ${timestamp}\n\n`;
-  mdTable += `| Class | Subject | Category/Stream | Chapters |\n| :--- | :--- | :--- | :--- |\n`;
-  
-  let csv = `Class,Subject,Category,Chapters\n`;
-
-  // Sort by Class
-  results[board].sort((a, b) => a.Class.localeCompare(b.Class, undefined, {numeric: true}));
-
-  results[board].forEach(row => {
-    const bold = row.Type === "subtotal" ? "**" : "";
-    mdTable += `| ${bold}${row.Class}${bold} | ${bold}${row.Subject}${bold} | ${row.Category} | ${bold}${row.Count}${bold} |\n`;
-    csv += `${row.Class},${row.Subject},${row.Category},${row.Count}\n`;
+  // Helper to generate content
+  const generateFiles = (isFullReport, suffix) => {
+    const data = isFullReport ? results[board] : results[board].filter(r => !r.IsHindi);
+    const title = isFullReport ? "FULL CONTENT" : "CORE SUBJECTS (Excluding Hindi)";
     
-    if (row.Type === "subtotal") boardGrandTotal += row.Count;
-  });
+    // Sort by Class
+    data.sort((a, b) => a.Class.localeCompare(b.Class, undefined, {numeric: true}));
 
-  // Final Grand Total for the Board
-  mdTable += `| | | **GRAND TOTAL ALL CLASSES** | **${boardGrandTotal}** |\n`;
-  csv += `,,,TOTAL:${boardGrandTotal}\n`;
+    let mdTable = `# ${board.toUpperCase()} ${title} - ${timestamp}\n\n`;
+    mdTable += `| Class | Subject | Category/Stream | Chapters |\n| :--- | :--- | :--- | :--- |\n`;
+    
+    let csv = `Class,Subject,Category,Chapters\n`;
+    let grandTotal = 0;
+    let currentClass = "";
+    let classTotal = 0;
 
-  fs.writeFileSync(path.join(dir, `report_${timestamp}.md`), mdTable);
-  fs.writeFileSync(path.join(dir, `data_${timestamp}.csv`), csv);
+    data.forEach((row, index) => {
+      // Add subtotal when class changes
+      if (currentClass !== "" && currentClass !== row.Class) {
+        mdTable += `| **${currentClass}** | **TOTAL** | --- | **${classTotal}** |\n`;
+        grandTotal += classTotal;
+        classTotal = 0;
+      }
+      
+      currentClass = row.Class;
+      classTotal += row.Count;
+      mdTable += `| ${row.Class} | ${row.Subject} | ${row.Category} | ${row.Count} |\n`;
+      csv += `${row.Class},${row.Subject},${row.Category},${row.Count}\n`;
+
+      // Handle last item total
+      if (index === data.length - 1) {
+        mdTable += `| **${currentClass}** | **TOTAL** | --- | **${classTotal}** |\n`;
+        grandTotal += classTotal;
+      }
+    });
+
+    mdTable += `| | | **GRAND TOTAL** | **${grandTotal}** |\n`;
+    csv += `,,,TOTAL:${grandTotal}\n`;
+
+    fs.writeFileSync(path.join(dir, `report_${suffix}_${timestamp}.md`), mdTable);
+    fs.writeFileSync(path.join(dir, `data_${suffix}_${timestamp}.csv`), csv);
+  };
+
+  generateFiles(true, "full");     // Contains Hindi
+  generateFiles(false, "core");   // No Hindi
 });
