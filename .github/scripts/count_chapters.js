@@ -20,6 +20,9 @@ const curriculumFiles = getFiles('./');
 const timestamp = new Date().toISOString().split('T')[0];
 const results = { cbse: [], scert: [], icse: [], other: [] };
 
+// Subjects to be EXCLUDED from the "Core" report
+const languageSubjects = ["hindi", "english", "sanskrit"];
+
 curriculumFiles.forEach(filePath => {
   try {
     const content = fs.readFileSync(filePath, 'utf8');
@@ -49,7 +52,7 @@ curriculumFiles.forEach(filePath => {
           "Subject": subject, 
           "Category": categoryName,
           "Count": count,
-          "IsHindi": subject.toLowerCase() === "hindi"
+          "IsLanguage": languageSubjects.includes(subject.toLowerCase())
         });
       });
     });
@@ -62,13 +65,16 @@ Object.keys(results).forEach(board => {
   const dir = path.join('data', board);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  // Helper to generate content
   const generateFiles = (isFullReport, suffix) => {
-    const data = isFullReport ? results[board] : results[board].filter(r => !r.IsHindi);
-    const title = isFullReport ? "FULL CONTENT" : "CORE SUBJECTS (Excluding Hindi)";
+    const data = isFullReport ? results[board] : results[board].filter(r => !r.IsLanguage);
+    const title = isFullReport ? "FULL CONTENT (All Subjects)" : "CORE CONTENT (No Languages)";
     
-    // Sort by Class
-    data.sort((a, b) => a.Class.localeCompare(b.Class, undefined, {numeric: true}));
+    // Custom sort: Class 6, 7, 8, 9, 10, 11, 12
+    data.sort((a, b) => {
+      const numA = parseInt(a.Class.match(/\d+/));
+      const numB = parseInt(b.Class.match(/\d+/));
+      return numA - numB;
+    });
 
     let mdTable = `# ${board.toUpperCase()} ${title} - ${timestamp}\n\n`;
     mdTable += `| Class | Subject | Category/Stream | Chapters |\n| :--- | :--- | :--- | :--- |\n`;
@@ -79,9 +85,9 @@ Object.keys(results).forEach(board => {
     let classTotal = 0;
 
     data.forEach((row, index) => {
-      // Add subtotal when class changes
+      // Logic for Class Subtotals
       if (currentClass !== "" && currentClass !== row.Class) {
-        mdTable += `| **${currentClass}** | **TOTAL** | --- | **${classTotal}** |\n`;
+        mdTable += `| **${currentClass}** | **TOTAL FOR ${currentClass}** | **---** | **${classTotal}** |\n`;
         grandTotal += classTotal;
         classTotal = 0;
       }
@@ -91,20 +97,20 @@ Object.keys(results).forEach(board => {
       mdTable += `| ${row.Class} | ${row.Subject} | ${row.Category} | ${row.Count} |\n`;
       csv += `${row.Class},${row.Subject},${row.Category},${row.Count}\n`;
 
-      // Handle last item total
+      // Handle the final class subtotal
       if (index === data.length - 1) {
-        mdTable += `| **${currentClass}** | **TOTAL** | --- | **${classTotal}** |\n`;
+        mdTable += `| **${currentClass}** | **TOTAL FOR ${currentClass}** | **---** | **${classTotal}** |\n`;
         grandTotal += classTotal;
       }
     });
 
-    mdTable += `| | | **GRAND TOTAL** | **${grandTotal}** |\n`;
+    mdTable += `| | | **GRAND TOTAL ALL CLASSES** | **${grandTotal}** |\n`;
     csv += `,,,TOTAL:${grandTotal}\n`;
 
     fs.writeFileSync(path.join(dir, `report_${suffix}_${timestamp}.md`), mdTable);
     fs.writeFileSync(path.join(dir, `data_${suffix}_${timestamp}.csv`), csv);
   };
 
-  generateFiles(true, "full");     // Contains Hindi
-  generateFiles(false, "core");   // No Hindi
+  generateFiles(true, "full");   // Includes Hindi, English, Sanskrit
+  generateFiles(false, "core");  // Excludes Hindi, English, Sanskrit
 });
