@@ -1,70 +1,31 @@
-const fs = require('fs');
-const path = require('path');
+name: Generate and Segregate Chapter Stats
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/curriculum.js'
 
-const getFiles = (dir, fileList = []) => {
-  const files = fs.readdirSync(dir);
-  files.forEach(file => {
-    const name = path.join(dir, file);
-    if (fs.statSync(name).isDirectory()) {
-      if (!name.includes('node_modules') && !name.includes('.git')) getFiles(name, fileList);
-    } else if (file === 'curriculum.js') fileList.push(name);
-  });
-  return fileList;
-};
+jobs:
+  build-stats:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Masterpage
+        uses: actions/checkout@v4
 
-const curriculumFiles = getFiles('./');
-const timestamp = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-const results = { cbse: [], scert: [], icse: [], other: [] };
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-curriculumFiles.forEach(filePath => {
-  try {
-    const content = fs.readFileSync(filePath, 'utf8');
-    const match = content.match(/curriculum\s*=\s*(\{[\s\S]*\});/);
-    if (!match) return;
+      - name: Run Stats Script
+        run: node .github/scripts/count_chapters.js
 
-    const curriculum = eval(`(${match[1]})`);
-    const pathParts = filePath.split(path.sep);
-    const board = pathParts[0].toLowerCase();
-    const className = pathParts[1].toUpperCase().replace('-', ' ');
-    const targetBoard = results[board] ? board : 'other';
-
-    Object.keys(curriculum).forEach(subject => {
-      let totalChapters = 0;
-      Object.keys(curriculum[subject]).forEach(book => {
-        totalChapters += curriculum[subject][book].length;
-      });
-      // Store as a flat object for the table
-      results[targetBoard].push({ 
-        "Date": timestamp,
-        "Class": className, 
-        "Subject": subject, 
-        "Chapters": totalChapters 
-      });
-    });
-  } catch (e) { console.error(`Error: ${e.message}`); }
-});
-
-// Create Folders and Tables
-Object.keys(results).forEach(board => {
-  if (results[board].length === 0) return;
-
-  const dir = path.join('data', board);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-  // 1. Generate Markdown Table
-  let mdTable = `# ${board.toUpperCase()} Content Report - ${timestamp}\n\n`;
-  mdTable += `| Class | Subject | Chapter Count |\n`;
-  mdTable += `| :--- | :--- | :--- |\n`;
-  results[board].forEach(row => {
-    mdTable += `| ${row.Class} | ${row.Subject} | ${row.Chapters} |\n`;
-  });
-
-  // 2. Generate CSV for Excel
-  let csv = `Date,Class,Subject,Chapters\n`;
-  results[board].forEach(row => {
-    csv += `${row.Date},${row.Class},${row.Subject},${row.Chapters}\n`;
-  });
-
-  fs.writeFileSync(path.join(dir, `table_${timestamp}.md`), mdTable);
-  fs.writeFileSync(path.join(dir, `data_${timestamp}.csv`), csv);
-});
+      - name: Commit and Push Data
+        run: |
+          git config --global user.name "Stats Bot"
+          git config --global user.email "bot@ready4exam.com"
+          git add data/
+          git commit -m "Auto-update chapter counts for $GITHUB_SHA" || echo "No changes to commit"
+          git push
