@@ -6,7 +6,6 @@
 
 <title>Ready4Exam — Board-Aligned Academic Portal</title>
 
-<!-- GA4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -51,7 +50,6 @@ box-shadow:0 6px 18px rgba(0,0,0,.05);transition:.25s}
 
 <main class="max-w-6xl mx-auto p-6">
 
-<!-- HERO -->
 <section class="bg-gradient-to-br from-slate-900 via-blue-900 to-green-600 text-white rounded-3xl p-10 text-center mb-14">
   <h1 class="text-4xl font-black mb-4">
     Board-Aligned Assessment & Mastery Platform (Classes 6–12)
@@ -61,14 +59,12 @@ box-shadow:0 6px 18px rgba(0,0,0,.05);transition:.25s}
   </p>
 </section>
 
-<!-- LPG -->
 <section class="grid md:grid-cols-3 gap-6 mb-16 text-center">
   <div class="card"><b>Learn</b><p class="text-sm mt-1">Concept clarity</p></div>
   <div class="card"><b>Practice</b><p class="text-sm mt-1">Competency questions</p></div>
   <div class="card"><b>Grow Stronger</b><p class="text-sm mt-1">Exam readiness</p></div>
 </section>
 
-<!-- BOARD SELECT -->
 <section class="text-center mb-10">
   <p class="uppercase text-sm font-bold mb-3 text-gray-500">Select Board</p>
   <div class="flex gap-3 justify-center">
@@ -78,7 +74,6 @@ box-shadow:0 6px 18px rgba(0,0,0,.05);transition:.25s}
   </div>
 </section>
 
-<!-- CONTENT -->
 <section id="content" class="hidden">
   <div id="grid" class="grid md:grid-cols-3 gap-8"></div>
   <div id="coming" class="hidden text-center text-xl font-bold mt-10">
@@ -122,7 +117,7 @@ buttons.forEach(b=>{
     if(board==="CBSE"){
       [6,7,8,9,10,11,12].forEach(cls=>{
         grid.innerHTML+=`
-        <a href="https://ready4exam.github.io/ready4exam-class-${cls}/"
+        <a href="./class-${cls}/index.html"
            class="card"
            onclick="gtag('event','class_opened',{board:'CBSE',class:${cls}})">
           Class ${cls}
@@ -131,8 +126,9 @@ buttons.forEach(b=>{
     }
 
     if(board==="SCERT"){
+      // Mapped to the specific folder name created by your automation
       grid.innerHTML=`
-      <a href="https://ready4exam.github.io/ready4exam-class-9Telangana/"
+      <a href="./class-9/index.html"
          class="card"
          onclick="gtag('event','scert_demo_opened',{conversion:true})">
         Class 9 Telangana (Demo)
