@@ -6,6 +6,15 @@
 
 <title>Ready4Exam — Board-Aligned Academic Portal</title>
 
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX', { anonymize_ip: true });
+</script>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -68,7 +77,6 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;}
 
 <body class="flex flex-col min-h-screen">
 
-<!-- NAV -->
 <header class="glass-nav w-full py-5 px-6">
   <div class="max-w-[1100px] mx-auto flex justify-between">
     <div>
@@ -87,7 +95,6 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;}
 
 <main class="flex-grow max-w-[1100px] mx-auto px-5 py-12 fade-in">
 
-<!-- HERO -->
 <section class="bg-hero-grad text-white text-center rounded-[28px] px-6 py-14 mb-14 shadow-2xl">
   <span class="bg-gold/20 text-gold px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 inline-block">
     2025 – 2026 Academic Session
@@ -111,29 +118,27 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;}
   </div>
 </section>
 
-<!-- LPG MODEL -->
 <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 text-center">
   <div class="class-card">
     <h3 class="text-xl font-black text-heading mb-2">Learn</h3>
     <p class="text-slate-500 text-sm">
-      Understand concepts clearly through board-aligned explanations and structured chapters.
+      Understand concepts clearly through board-aligned content.
     </p>
   </div>
   <div class="class-card">
     <h3 class="text-xl font-black text-heading mb-2">Practice</h3>
     <p class="text-slate-500 text-sm">
-      Apply learning with competency-based questions, case studies, and exam-pattern practice.
+      Apply learning using competency-based questions and cases.
     </p>
   </div>
   <div class="class-card">
     <h3 class="text-xl font-black text-heading mb-2">Grow Stronger</h3>
     <p class="text-slate-500 text-sm">
-      Identify gaps early, improve accuracy, and build confidence months before exams.
+      Identify gaps early and build confidence before exams.
     </p>
   </div>
 </section>
 
-<!-- BOARD SELECTOR -->
 <section class="mb-12 text-center">
   <p class="text-sm font-bold uppercase tracking-widest text-slate-500 mb-4">Select Board</p>
   <div class="flex justify-center gap-3 bg-white p-2 rounded-2xl shadow border max-w-md mx-auto">
@@ -144,87 +149,5 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;}
   <p id="board-note" class="mt-4 text-sm font-medium text-slate-500"></p>
 </section>
 
-<!-- CONTENT -->
 <section id="content-area" class="hidden fade-in">
-  <div id="class-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-
-  <div id="coming-soon" class="hidden text-center mt-16">
-    <h3 class="text-3xl font-black text-cbse-blue mb-4">ICSE — Coming Soon</h3>
-    <p class="text-slate-500 font-medium">
-      ICSE curriculum support is under development.
-    </p>
-  </div>
-</section>
-
-</main>
-
-<!-- FOOTER -->
-<footer id="site-footer" class="bg-cbse-blue text-white/80 text-center border-t border-white/10">
-  <div class="max-w-[1100px] mx-auto px-4 py-4">
-    <p class="font-bold text-white text-sm">Ready4Exam</p>
-    <div class="text-xs mt-1">
-      Email:
-      <a href="mailto:ready4urexam@gmail.com" class="underline">ready4urexam@gmail.com</a>
-      &nbsp;|&nbsp; Phone: +91 85209 77573
-    </div>
-    <div class="text-[11px] mt-1">
-      Page Visits: <span id="hit-counter" class="font-bold"></span>
-    </div>
-  </div>
-</footer>
-
-<script>
-/* HIT COUNTER */
-const hits = Number(localStorage.getItem("r4e_hits")||0)+1;
-localStorage.setItem("r4e_hits",hits);
-document.getElementById("hit-counter").textContent=hits;
-
-/* BOARD LOGIC */
-const buttons=document.querySelectorAll(".board-btn");
-const grid=document.getElementById("class-grid");
-const content=document.getElementById("content-area");
-const coming=document.getElementById("coming-soon");
-const note=document.getElementById("board-note");
-
-buttons.forEach(btn=>{
-  btn.onclick=()=>{
-    buttons.forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    content.classList.remove("hidden");
-    grid.innerHTML="";
-    coming.classList.add("hidden");
-
-    if(btn.dataset.board==="CBSE"){
-      note.textContent="CBSE (NCERT) aligned curriculum with competency-based assessments";
-      [6,7,8,9,10,11,12].forEach(c=>{
-        grid.innerHTML+=`
-        <a href="https://ready4exam.github.io/ready4exam-class-${c}/" class="class-card">
-          <h3 class="text-xl font-black text-heading mb-2">Class ${c}</h3>
-          <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
-            Open Class ${c}
-          </button>
-        </a>`;
-      });
-    }
-
-    if(btn.dataset.board==="SCERT"){
-      note.textContent="SCERT Telangana curriculum aligned with state board learning outcomes";
-      grid.innerHTML=`
-        <a href="https://ready4exam.github.io/ready4exam-class-9Telangana/" class="class-card">
-          <h3 class="text-xl font-black text-heading mb-2">Class 9 (Telangana)</h3>
-          <button class="w-full py-3 rounded-xl bg-cbse-blue text-white font-bold text-sm">
-            Open Demo
-          </button>
-        </a>`;
-    }
-
-    if(btn.dataset.board==="ICSE"){
-      note.textContent="ICSE curriculum support coming soon";
-      coming.classList.remove("hidden");
-    }
-  }
-});
-</script>
-
-</body>
-</html>
+  <div id="class-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:g
