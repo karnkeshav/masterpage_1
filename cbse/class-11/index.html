@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4EFDM0CRYY');
+  </script>
+
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
@@ -26,7 +34,7 @@ tailwind.config = {
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <style>
-body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidden;}
+body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
 .subject-card{width:100%;background:white;padding:1.6rem 1.2rem;border-radius:20px;
   border:1px solid rgba(0,0,0,.04);box-shadow:0 4px 12px rgba(0,0,0,.03);
   transition:.3s cubic-bezier(0.4, 0, 0.2, 1);cursor:pointer;}
@@ -49,14 +57,8 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
   color:white; padding:60px 24px;border-radius:24px;margin-bottom:48px;
   box-shadow:0 20px 40px rgba(15,23,42,.25);
 }
-.contact-card{
-  transition: all 0.3s ease;
-  border: 1px solid #e2e8f0;
-}
-.contact-card:hover{
-  border-color: #133b6a;
-  background-color: #f0f9ff;
-}
+.contact-card{transition: all 0.3s ease; border: 1px solid #e2e8f0;}
+.contact-card:hover{border-color: #133b6a; background-color: #f0f9ff;}
 </style>
 </head>
 
@@ -68,9 +70,7 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
       <h1 class="text-2xl font-black text-gold tracking-tight">Ready4<span class="text-white">Exam</span></h1>
       <p class="text-white text-xs opacity-80 font-medium tracking-wide uppercase mt-0.5">Academic Excellence Portal</p>
     </div>
-    <div class="hidden md:block text-white text-sm opacity-70 italic font-light">
-      Learn • Practice • Grow Strong
-    </div>
+    <div class="hidden md:block text-white text-sm opacity-70 italic font-light">Learn • Practice • Grow Strong</div>
   </div>
 </header>
 
@@ -117,18 +117,14 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
       <a href="mailto:ready4urexam@gmail.com" class="contact-card flex items-center p-6 bg-white rounded-2xl shadow-sm">
-        <div class="bg-blue-100 p-4 rounded-xl text-cbse-blue">
-          <i data-lucide="mail" class="h-6 w-6"></i>
-        </div>
+        <div class="bg-blue-100 p-4 rounded-xl text-cbse-blue"><i data-lucide="mail" class="h-6 w-6"></i></div>
         <div class="ml-5">
           <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Send Email</span>
           <span class="text-lg font-bold text-cbse-blue">ready4urexam@gmail.com</span>
         </div>
       </a>
       <a href="https://wa.me/918520977573" target="_blank" class="contact-card flex items-center p-6 bg-white rounded-2xl shadow-sm">
-        <div class="bg-green-100 p-4 rounded-xl text-green-600">
-          <i data-lucide="message-circle" class="h-6 w-6"></i>
-        </div>
+        <div class="bg-green-100 p-4 rounded-xl text-green-600"><i data-lucide="message-circle" class="h-6 w-6"></i></div>
         <div class="ml-5">
           <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">WhatsApp Chat</span>
           <span class="text-lg font-bold text-cbse-blue">+91 85209 77573</span>
@@ -138,9 +134,8 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
   </section>
 
   <div class="quote-card text-center italic">
-    "You don’t need to be perfect — just better than yesterday. One chapter at a time, one concept at a time. Keep growing." 🌱🚀
+    "You don’t need to be perfect — just better than yesterday. One chapter at a time." 🌱🚀
   </div>
-
 </main>
 
 <footer class="bg-cbse-blue text-white/70 text-center py-10 mt-20 border-t border-white/10">
@@ -161,15 +156,12 @@ const grid=document.getElementById("subject-grid");
 const title=document.getElementById("selected-stream-title");
 const back=document.getElementById("back-btn");
 
-// 🔥 Class-Based Intro
 if(CLASS>=5 && CLASS<=8){
-  note.innerHTML="Curiosity today becomes learning tomorrow — explore subjects & build your base. <br> Aligned with CBSE reforms and NEP 2020, this quiz engine promotes competency-based, concept-driven assessment in line with the latest CBSE examination patterns.";
+  note.innerHTML="Curiosity today becomes learning tomorrow — build your base. Aligned with NEP 2020.";
 } else if(CLASS===9||CLASS===10){
-  note.innerHTML="Focus on deeper concepts — consistency will turn effort into confidence. <br> Aligned with CBSE reforms and NEP 2020, this quiz engine promotes competency-based, concept-driven assessment in line with the latest CBSE examination patterns.";
-} else if(CLASS===11){
-  note.innerHTML="Your foundation year begins — explore your stream & build strong concepts. <br> Aligned with CBSE reforms and NEP 2020, this quiz engine promotes competency-based, concept-driven assessment in line with the latest CBSE examination patterns.";
-} else if(CLASS===12){
-  note.innerHTML="Your boards & future pathway start here — learn smart, revise strong.<br> Aligned with CBSE reforms and NEP 2020, this quiz engine promotes competency-based, concept-driven assessment in line with the latest CBSE examination patterns.";
+  note.innerHTML="Focus on deeper concepts — consistency turns effort into confidence.";
+} else {
+  note.innerHTML="Advanced pathway begins — learn smart, revise strong.";
 }
 
 if(isSenior){
@@ -202,18 +194,42 @@ function populateSubjects(stream){
   grid.innerHTML="";
   Object.keys(curriculum).forEach(sub=>{
     if(stream && !Object.values(curriculum[sub]).some(c=>Array.isArray(c)&&c.some(x=>x.section?.includes(stream)))) return;
-
     grid.innerHTML+=`
     <a href="chapter-selection.html?subject=${encodeURIComponent(sub)}" class="subject-card group">
       <div class="card-header"><i data-lucide="book-open" class="text-cbse-blue h-8 w-8"></i>
       <h3 class="card-title">${sub}</h3></div>
-      <p class="card-description">Practice specific worksheets and mock tests for ${sub}.</p>
-      <div class="mt-6 text-center"><button class="card-button bg-cbse-blue group-hover:bg-blue-600 shadow-md">View Chapters</button></div>
+      <p class="card-description">Practice specific worksheets for ${sub}.</p>
+      <div class="mt-6 text-center"><button class="card-button bg-cbse-blue group-hover:bg-blue-600">View Chapters</button></div>
     </a>`;
   });
-
   lucide.createIcons();
 }
+</script>
+
+<script>
+(function() {
+  const classIdStr = "11";
+  // Track Class Hub Load
+  gtag('event', 'class_hub_load', { 'class': classIdStr });
+
+  // Monitor Subject Selection
+  document.getElementById('subject-grid').addEventListener('click', function(e) {
+    const card = e.target.closest('.subject-card');
+    if (card) {
+      const subName = card.querySelector('.card-title').textContent;
+      gtag('event', 'select_subject', { 'subject': subName, 'class': classIdStr });
+    }
+  });
+
+  // Monitor Stream Selection (Class 11/12)
+  document.getElementById('stream-section').addEventListener('click', function(e) {
+    const streamCard = e.target.closest('.subject-card');
+    if (streamCard) {
+      const streamName = streamCard.querySelector('.card-title').textContent;
+      gtag('event', 'select_stream', { 'stream': streamName, 'class': classIdStr });
+    }
+  });
+})();
 </script>
 
 </body>

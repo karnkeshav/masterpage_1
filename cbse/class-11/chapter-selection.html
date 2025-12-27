@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4EFDM0CRYY');
+  </script>
+
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Select Book & Chapter — Class 11</title>
@@ -32,19 +40,19 @@
     .difficulty-btn:hover{opacity: 1;}
     .difficulty-btn.selected{opacity: 1; box-shadow:0 6px 18px rgba(26,62,106,.2); transform: scale(1.05);}
   </style>
-<script>
-window.__firebase_config = {
-  apiKey:"AIzaSyAXdKiYRxBKAj280YcNuNwlKKDp85xpOWQ",
-  authDomain:"quiz-signon.firebaseapp.com",
-  projectId:"quiz-signon",
-  storageBucket:"quiz-signon.appspot.com",
-  messagingSenderId:"863414222321",
-  appId:"1:863414222321:web:819f5564825308bcd9d850",
-  supabaseUrl:"https://zqhzekzilalbszpfwxhn.supabase.co",
-  supabaseAnonKey:"sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys",
-};
-</script>
-  
+
+  <script>
+    window.__firebase_config = {
+      apiKey:"AIzaSyAXdKiYRxBKAj280YcNuNwlKKDp85xpOWQ",
+      authDomain:"quiz-signon.firebaseapp.com",
+      projectId:"quiz-signon",
+      storageBucket:"quiz-signon.appspot.com",
+      messagingSenderId:"863414222321",
+      appId:"1:863414222321:web:819f5564825308bcd9d850",
+      supabaseUrl:"https://zqhzekzilalbszpfwxhn.supabase.co",
+      supabaseAnonKey:"sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys",
+    };
+  </script>
 </head>
 
 <body class="bg-cbse-light min-h-screen flex flex-col">
@@ -88,7 +96,6 @@ window.__firebase_config = {
 <script type="module">
 import curriculum from "./js/curriculum.js";
 import { transliterate as tr } from "https://cdn.jsdelivr.net/npm/transliteration/+esm";
-// IMPORT ACCESS LOGIC
 import { requireAuth } from "./js/auth-paywall.js";
 import { checkClassAccess, showExpiredPopup } from "./js/firebase-expiry.js";
 
@@ -105,7 +112,6 @@ let selectedBook = null;
 let selectedChapter = null;
 let selectedDifficulty = null;
 
-// Subject Metadata
 const meta = {
   Physics: "Explore mechanics, waves & thermodynamics.",
   Chemistry: "Atoms, reactions, bonding & periodicity.",
@@ -115,9 +121,6 @@ const meta = {
 };
 subjectDesc.textContent = meta[subject] || "";
 
-/* --------------------------
-   BOOK LISTING (Optimized)
---------------------------- */
 function renderBooks(){
   const data = curriculum[subject];
   document.getElementById("page-title").textContent = `Select Book`;
@@ -142,9 +145,6 @@ function renderBooks(){
   startBtn.disabled = true;
 }
 
-/* --------------------------
-   CHAPTER LISTING (Optimized)
---------------------------- */
 function renderChapters(book){
   selectedBook = book;
   const chapters = curriculum[subject][book];
@@ -171,9 +171,6 @@ function renderChapters(book){
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* --------------------------
-   CHAPTER SELECTION
---------------------------- */
 function selectChapter(title, button){
   document.querySelectorAll(".topic-btn").forEach(b => b.classList.remove("selected"));
   button.classList.add("selected");
@@ -181,15 +178,11 @@ function selectChapter(title, button){
   selectedChapter = title;
   diffBox.classList.remove("hidden");
   
-  // Mobile focus: scroll to difficulty
   setTimeout(() => {
     diffBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, 100);
 }
 
-/* --------------------------
-   DIFFICULTY SELECTION
---------------------------- */
 document.querySelectorAll(".difficulty-btn").forEach(btn => {
   btn.onclick = e => {
     document.querySelectorAll(".difficulty-btn").forEach(x => x.classList.remove("selected"));
@@ -200,11 +193,7 @@ document.querySelectorAll(".difficulty-btn").forEach(btn => {
   };
 });
 
-/* --------------------------
-   CRITICAL: TABLE NAME GENERATOR
---------------------------- */
 function buildTableName(chapter){
-  // Transliteration is essential here for Hindi chapters
   let chapterSlug = tr(chapter || "")
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
@@ -225,9 +214,6 @@ function buildTableName(chapter){
   return `${subjectSlug}_${first}_${last}_${CLASS_ID}_quiz`;
 }
 
-/* --------------------------
-   START QUIZ (Modified for Header Fix)
---------------------------- */
 startBtn.onclick = async () => {
   if (!selectedChapter || !selectedDifficulty) {
     errorMsg.textContent = "Please select a chapter and difficulty.";
@@ -237,7 +223,6 @@ startBtn.onclick = async () => {
 
   try {
     const user = await requireAuth(); 
-    
     startBtn.disabled = true;
     const originalText = startBtn.textContent;
     startBtn.textContent = "Verifying Scholar Status...";
@@ -245,10 +230,7 @@ startBtn.onclick = async () => {
     const access = await checkClassAccess(CLASS_ID, subject);
 
     if (access.allowed) {
-      // 4. ACCESS GRANTED -> PROCEED TO QUIZ
       const table = buildTableName(selectedChapter);
-      
-      // FIX: ADDED 'chapter_name' TO PARAMS FOR HEADER DISPLAY
       const params = new URLSearchParams({
         class: CLASS_ID,
         subject,
@@ -256,7 +238,7 @@ startBtn.onclick = async () => {
         chapter: selectedChapter,
         difficulty: selectedDifficulty,
         table,
-        chapter_name: selectedChapter // <--- THIS LINE FIXES THE HEADER
+        chapter_name: selectedChapter 
       });
 
       location.href = `quiz-engine.html?${params.toString()}`;
@@ -273,8 +255,42 @@ startBtn.onclick = async () => {
   }
 };
 
-// Initial Load
 renderBooks();
+</script>
+<script>
+(function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const subjectStr = urlParams.get("subject") || "Unknown";
+  const classIdStr = "11";
+
+  // Track page load event
+  gtag('event', 'subject_selection_load', { 'subject': subjectStr, 'class': classIdStr });
+
+  // Monitor Chapter Container for Clicks
+  document.getElementById('content-container').addEventListener('click', function(e) {
+    const btn = e.target.closest('.topic-btn');
+    if (btn && !btn.textContent.includes('Change Book')) {
+      gtag('event', 'select_chapter', { 'chapter_title': btn.textContent.trim(), 'subject': subjectStr });
+    }
+  });
+
+  // Monitor Difficulty Buttons
+  document.querySelectorAll('.difficulty-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      gtag('event', 'select_difficulty', { 'level': this.dataset.diff, 'subject': subjectStr });
+    });
+  });
+
+  // Monitor Start Button Conversion
+  const quizBtn = document.getElementById('start-quiz');
+  if (quizBtn) {
+    quizBtn.addEventListener('click', function() {
+      if (!this.disabled) {
+        gtag('event', 'quiz_start_initiated', { 'subject': subjectStr, 'class': classIdStr });
+      }
+    });
+  }
+})();
 </script>
 
 </body>

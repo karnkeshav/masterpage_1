@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4EFDM0CRYY');
+  </script>
+
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Ready4Exam | Quiz Engine — Class 11</title>
 
@@ -28,20 +36,11 @@
   <style>
     html, body { height: 100%; width: 100%; margin: 0; padding: 0; scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background-color: #f5f7fa; color: #1f2937; }
-    
-    /* Smooth Transition for Options */
     .option-label { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border: 2px solid transparent; }
     .option-label:hover { border-color: #3b82f6; background-color: #eff6ff; }
     .option-label.selected { border-color: #2563eb; background-color: #dbeafe; }
-    
-    /* Result Specific Styles */
     .result-card { animation: slideUp 0.5s ease-out; }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Custom Scrollbar for Analysis Modal */
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     #analysis-modal div::-webkit-scrollbar { width: 6px; }
     #analysis-modal div::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   </style>
@@ -60,9 +59,7 @@
 
   <div class="flex items-center space-x-3">
       <span id="user-welcome" class="hidden md:inline text-xs text-white font-medium bg-white/10 px-3 py-1.5 rounded-lg border border-white/20"></span>
-      <span id="difficulty-display" class="px-3 py-1.5 text-xs font-bold bg-accent-gold text-cbse-blue rounded-lg shadow-sm">
-        Difficulty: Simple
-      </span>
+      <span id="difficulty-display" class="px-3 py-1.5 text-xs font-bold bg-accent-gold text-cbse-blue rounded-lg shadow-sm">Difficulty: Simple</span>
       <button id="logout-nav-btn" class="hidden p-2 bg-red-500/20 text-red-200 border border-red-500/30 rounded-lg hover:bg-red-500 hover:text-white transition">🚪</button>
   </div>
 </header>
@@ -83,7 +80,6 @@
 
 <main id="quiz-content" class="hidden flex flex-col items-center w-full max-w-4xl mx-auto px-4 py-6 md:py-10">
   <div id="question-list" class="w-full mb-8"></div>
-
   <div class="w-full sticky bottom-6 z-30 flex justify-between items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 p-4">
     <button id="prev-btn" class="px-5 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 active:scale-95 transition">← Prev</button>
     <span id="question-counter" class="text-sm font-black text-cbse-blue tracking-widest">01 / 25</span>
@@ -95,68 +91,36 @@
 </main>
 
 <section id="results-screen" class="hidden flex flex-col items-center py-8 px-4 sm:px-6 w-full max-w-4xl mx-auto result-card">
-  
   <div class="w-full bg-white rounded-3xl shadow-xl border border-gray-100 p-10 mb-6 text-center">
     <h2 class="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">Quiz Analysis Completed</h2>
-    <div id="score-circle" class="relative inline-block mb-6">
-        <p id="score-display" class="text-7xl font-black text-cbse-blue">0/0</p>
-    </div>
-    
-    <div id="curiosity-box" class="w-full bg-blue-50 border border-blue-100 text-blue-700 px-6 py-5 rounded-2xl text-sm md:text-base font-semibold leading-relaxed">
-      </div>
+    <div id="score-circle" class="relative inline-block mb-6"><p id="score-display" class="text-7xl font-black text-cbse-blue">0/0</p></div>
+    <div id="curiosity-box" class="w-full bg-blue-50 border border-blue-100 text-blue-700 px-6 py-5 rounded-2xl text-sm md:text-base font-semibold leading-relaxed"></div>
   </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mb-8">
-    <button id="btn-review-errors" class="flex items-center justify-center gap-3 px-6 py-5 bg-white border-2 border-gray-100 text-gray-700 font-bold rounded-2xl hover:border-cbse-blue transition-all active:scale-95 shadow-sm">
-      <span class="text-xl">📝</span> Review My Mistakes
-    </button>
-    <button id="btn-show-analysis" class="flex items-center justify-center gap-3 px-6 py-5 bg-cbse-blue text-white font-bold rounded-2xl hover:shadow-cbse-blue/30 hover:shadow-xl transition-all active:scale-95 shadow-lg">
-      <span class="text-xl">🧠</span> Cognitive Feedback
-    </button>
+    <button id="btn-review-errors" class="flex items-center justify-center gap-3 px-6 py-5 bg-white border-2 border-gray-100 text-gray-700 font-bold rounded-2xl hover:border-cbse-blue transition-all active:scale-95 shadow-sm">📝 Review My Mistakes</button>
+    <button id="btn-show-analysis" class="flex items-center justify-center gap-3 px-6 py-5 bg-cbse-blue text-white font-bold rounded-2xl hover:shadow-cbse-blue/30 hover:shadow-xl transition-all active:scale-95 shadow-lg">🧠 Cognitive Feedback</button>
   </div>
 
-  <div class="w-full flex items-center justify-between px-2 mb-4">
-    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tier Selection</h3>
-    <div class="h-px bg-gray-200 flex-grow ml-4"></div>
-  </div>
-  
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-8">
-    <button id="btn-simple" onclick="changeDifficulty('Simple')" class="px-5 py-5 bg-green-50 text-green-700 font-extrabold rounded-2xl border-2 border-green-100 hover:border-green-500 hover:bg-green-100 transition-all text-sm">
-      🚀 Simple (Easy)
-    </button>
-    <button id="btn-medium" onclick="changeDifficulty('Medium')" class="px-5 py-5 bg-yellow-50 text-yellow-700 font-extrabold rounded-2xl border-2 border-yellow-100 hover:border-yellow-600 hover:bg-yellow-100 transition-all text-sm">
-      🚀 Medium
-    </button>
-    <button id="btn-advanced" onclick="changeDifficulty('Advanced')" class="px-5 py-5 bg-red-50 text-red-700 font-extrabold rounded-2xl border-2 border-red-100 hover:border-red-600 hover:bg-red-100 transition-all text-sm">
-      🚀 Advanced
-    </button>
+    <button onclick="changeDifficulty('Simple')" class="px-5 py-5 bg-green-50 text-green-700 font-extrabold rounded-2xl border-2 border-green-100 hover:border-green-500 hover:bg-green-100 transition-all text-sm">🚀 Simple</button>
+    <button onclick="changeDifficulty('Medium')" class="px-5 py-5 bg-yellow-50 text-yellow-700 font-extrabold rounded-2xl border-2 border-yellow-100 hover:border-yellow-600 hover:bg-yellow-100 transition-all text-sm">🚀 Medium</button>
+    <button onclick="changeDifficulty('Advanced')" class="px-5 py-5 bg-red-50 text-red-700 font-extrabold rounded-2xl border-2 border-red-100 hover:border-red-600 hover:bg-red-100 transition-all text-sm">🚀 Advanced</button>
   </div>
 
-  <button id="btn-mastery" class="hidden w-full py-5 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] transition-transform mb-8">
-    ⭐ UNLOCK MASTER QUESTIONS
-  </button>
-
-  <button id="back-to-chapters-btn" class="group flex items-center gap-2 text-gray-500 hover:text-cbse-blue font-bold transition">
-    <span>🔙</span> <span class="group-hover:underline underline-offset-4">Back to Chapter Selection</span>
-  </button>
+  <button id="back-to-chapters-btn" class="group flex items-center gap-2 text-gray-500 hover:text-cbse-blue font-bold transition"><span>🔙</span> <span class="group-hover:underline underline-offset-4">Back to Chapter Selection</span></button>
 </section>
 
 <div id="analysis-modal" class="hidden fixed inset-0 bg-cbse-blue/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl w-full max-w-xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
-        <div class="p-6 border-b flex justify-between items-center">
-            <h3 class="text-xl font-black text-cbse-blue">Skill Analysis</h3>
-            <button onclick="document.getElementById('analysis-modal').classList.add('hidden')" class="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors">✕</button>
-        </div>
-        <div id="analysis-content" class="p-8 overflow-y-auto space-y-6">
-            </div>
-        <div class="p-4 bg-gray-50 border-t text-center">
-            <button onclick="document.getElementById('analysis-modal').classList.add('hidden')" class="px-8 py-3 bg-cbse-blue text-white font-bold rounded-xl">Got it, Captain!</button>
-        </div>
+        <div class="p-6 border-b flex justify-between items-center"><h3 class="text-xl font-black text-cbse-blue">Skill Analysis</h3><button onclick="document.getElementById('analysis-modal').classList.add('hidden')" class="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors">✕</button></div>
+        <div id="analysis-content" class="p-8 overflow-y-auto space-y-6"></div>
+        <div class="p-4 bg-gray-50 border-t text-center"><button onclick="document.getElementById('analysis-modal').classList.add('hidden')" class="px-8 py-3 bg-cbse-blue text-white font-bold rounded-xl">Got it, Captain!</button></div>
     </div>
 </div>
 
 <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-  <p>© 2025 Ready4Exam Academic Portal. Designed for Excellence.</p>
+  <p>© 2025 Ready4Exam Academic Portal.</p>
 </footer>
 
 <script>
@@ -175,7 +139,6 @@ initializeApp(firebaseConfig);
 
 <script type="module">
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
-
 document.addEventListener("DOMContentLoaded", () => {
   const auth = getAuth();
   onAuthStateChanged(auth, (user) => {
@@ -184,10 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("user-welcome").textContent = `Welcome, ${username}`;
       document.getElementById("user-welcome").classList.remove("hidden");
       document.getElementById("logout-nav-btn").classList.remove("hidden");
-      document.getElementById("logout-nav-btn").onclick = async () => {
-        await signOut(auth);
-        location.href = "index.html";
-      };
+      document.getElementById("logout-nav-btn").onclick = async () => { await signOut(auth); location.href = "index.html"; };
     }
   });
 });
@@ -211,6 +171,40 @@ window.__firebase_config = {
 <script type="module" src="./js/api.js"></script>
 <script type="module" src="./js/ui-renderer.js"></script>
 <script type="module" src="./js/quiz-engine.js"></script>
+
+<script>
+(function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const subject = urlParams.get("subject") || "Unknown";
+  const chapter = urlParams.get("chapter") || "Unknown";
+  const difficulty = urlParams.get("difficulty") || "Simple";
+  const classId = "11";
+
+  // Track Quiz Entry
+  gtag('event', 'quiz_engine_load', { 'subject': subject, 'chapter': chapter, 'difficulty': difficulty, 'class': classId });
+
+  // Monitor Submit Button
+  const subBtn = document.getElementById('submit-btn');
+  if (subBtn) {
+    subBtn.addEventListener('click', function() {
+      gtag('event', 'quiz_submit', { 'subject': subject, 'chapter': chapter, 'score_context': document.getElementById('score-display').textContent });
+    });
+  }
+
+  // Monitor Post-Quiz Engagement
+  document.getElementById('btn-review-errors').addEventListener('click', () => {
+    gtag('event', 'mistake_review_click', { 'subject': subject });
+  });
+
+  document.getElementById('btn-show-analysis').addEventListener('click', () => {
+    gtag('event', 'cognitive_feedback_click', { 'subject': subject });
+  });
+
+  document.getElementById('back-to-chapters-btn').addEventListener('click', () => {
+    gtag('event', 'return_to_chapter_selection', { 'from': 'quiz_engine' });
+  });
+})();
+</script>
 
 </body>
 </html>
