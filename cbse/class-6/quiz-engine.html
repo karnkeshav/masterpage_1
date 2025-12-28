@@ -6,18 +6,32 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-4EFDM0CRYY', { anonymize_ip: true });
+    gtag('config', 'G-4EFDM0CRYY');
   </script>
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Ready4Exam | Quiz Engine — Class 6</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily:{ sans:['Inter','sans-serif'] },
+          colors:{ 
+            'cbse-blue':'#1a3e6a',
+            'cbse-light':'#f5f7fa',
+            'accent-gold':'#ffb703',
+            'success-green': '#16a34a',
+            'warning-yellow': '#ca8a04',
+            'danger-red': '#dc2626'
+          }
+        }
+      }
+    }
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
-
-  <link href="../../style.css" rel="stylesheet">
 
   <style>
     html, body { height: 100%; width: 100%; margin: 0; padding: 0; scroll-behavior: smooth; }
@@ -30,22 +44,9 @@
     #analysis-modal div::-webkit-scrollbar { width: 6px; }
     #analysis-modal div::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   </style>
-
-  <script>
-    window.__firebase_config = {
-      apiKey:"AIzaSyAXdKiYRxBKAj280YcNuNwlKKDp85xpOWQ",
-      authDomain:"quiz-signon.firebaseapp.com",
-      projectId:"quiz-signon",
-      storageBucket:"quiz-signon.appspot.com",
-      messagingSenderId:"863414222321",
-      appId:"1:863414222321:web:819f5564825308bcd9d850",
-      supabaseUrl:"https://zqhzekzilalbszpfwxhn.supabase.co",
-      supabaseAnonKey:"sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys",
-    };
-  </script>
 </head>
 
-<body class="bg-cbse-light min-h-screen w-full flex flex-col font-sans">
+<body class="bg-cbse-light min-h-screen w-full flex flex-col">
 
 <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
   <div class="flex items-center space-x-4">
@@ -132,8 +133,8 @@ function changeDifficulty(level){
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
-// Reusing global config defined in <head>
-initializeApp(window.__firebase_config);
+const firebaseConfig = window.__firebase_config;
+initializeApp(firebaseConfig);
 </script>
 
 <script type="module">
@@ -152,6 +153,19 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+<script>
+window.__firebase_config = {
+  apiKey:"AIzaSyAXdKiYRxBKAj280YcNuNwlKKDp85xpOWQ",
+  authDomain:"quiz-signon.firebaseapp.com",
+  projectId:"quiz-signon",
+  storageBucket:"quiz-signon.appspot.com",
+  messagingSenderId:"863414222321",
+  appId:"1:863414222321:web:819f5564825308bcd9d850",
+  supabaseUrl:"https://zqhzekzilalbszpfwxhn.supabase.co",
+  supabaseAnonKey:"sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys",
+};
+</script>
+
 <script type="module" src="./js/config.js"></script>
 <script type="module" src="./js/auth-paywall.js"></script>
 <script type="module" src="./js/api.js"></script>
@@ -166,8 +180,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const difficulty = urlParams.get("difficulty") || "Simple";
   const classId = "6";
 
+  // Track Quiz Entry
   gtag('event', 'quiz_engine_load', { 'subject': subject, 'chapter': chapter, 'difficulty': difficulty, 'class': classId });
 
+  // Monitor Submit Button
   const subBtn = document.getElementById('submit-btn');
   if (subBtn) {
     subBtn.addEventListener('click', function() {
@@ -175,6 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Monitor Post-Quiz Engagement
   document.getElementById('btn-review-errors').addEventListener('click', () => {
     gtag('event', 'mistake_review_click', { 'subject': subject });
   });

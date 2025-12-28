@@ -1,57 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-4EFDM0CRYY', { anonymize_ip: true });
-    </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4EFDM0CRYY');
+  </script>
 
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-    <title>CBSE Class 6 — Ready4Exam</title>
+<title>CBSE Class 6 — Ready4Exam</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
-    
-    <link href="style.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
 
-    <script src="https://unpkg.com/lucide@latest"></script>
+<script>
+tailwind.config = {
+  theme:{
+    extend:{
+      fontFamily:{sans:['Inter'],serif:['Merriweather']},
+      colors:{'cbse-blue':'#133b6a','gold':'#ffbe0b','heading':'#0f172a'},
+      backgroundImage:{
+        'hero-grad':'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #22c55e 100%)'
+      }
+    }
+  }
+}
+</script>
 
-    <style>
-        body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
-        .subject-card{width:100%;background:white;padding:1.6rem 1.2rem;border-radius:20px;
-          border:1px solid rgba(0,0,0,.04);box-shadow:0 4px 12px rgba(0,0,0,.03);
-          transition:.3s cubic-bezier(0.4, 0, 0.2, 1);cursor:pointer;}
-        .subject-card:hover{transform:translateY(-5px);box-shadow:0 15px 30px rgba(19,59,106,.12);border-color:#133b6a;}
-        .card-header{display:flex;align-items:center;gap:.9rem;margin-bottom:.9rem;}
-        .card-title{font-size:1.25rem;font-weight:800;color:#0f172a;}
-        .card-description{font-size:.95rem;color:#64748b;line-height:1.5rem;}
-        .card-button{padding:.7rem 1.5rem;font-size:.9rem;font-weight:700;border-radius:12px;color:white;transition:.3s;width:100%;}
-        .science{background:#059669;} .commerce{background:#2563eb;} .arts{background:#7c3aed;}
-        .glass-nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);background:rgba(19,59,106,.95);border-bottom:1px solid rgba(255,255,255,0.1);}
-        .fade-in{animation:fade .6s ease-out forwards;opacity:0;}@keyframes fade{to{opacity:1}}
-        .quote-card{
-          background:linear-gradient(to right, #ffffff, #f1f5f9); border-left:6px solid #ffbe0b;
-          border-radius:16px; padding:24px; margin-top:40px;
-          font-size:1.1rem; color:#334155; font-weight:500;
-          box-shadow:0 10px 25px rgba(0,0,0,.05);
-        }
-        .hero{
-          background-image:linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%);
-          color:white; padding:60px 24px;border-radius:24px;margin-bottom:48px;
-          box-shadow:0 20px 40px rgba(15,23,42,.25);
-        }
-        .contact-card{transition: all 0.3s ease; border: 1px solid #e2e8f0;}
-        .contact-card:hover{border-color: #133b6a; background-color: #f0f9ff;}
-    </style>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+.subject-card{width:100%;background:white;padding:1.6rem 1.2rem;border-radius:20px;
+  border:1px solid rgba(0,0,0,.04);box-shadow:0 4px 12px rgba(0,0,0,.03);
+  transition:.3s cubic-bezier(0.4, 0, 0.2, 1);cursor:pointer;}
+.subject-card:hover{transform:translateY(-5px);box-shadow:0 15px 30px rgba(19,59,106,.12);border-color:#133b6a;}
+.card-header{display:flex;align-items:center;gap:.9rem;margin-bottom:.9rem;}
+.card-title{font-size:1.25rem;font-weight:800;color:#0f172a;}
+.card-description{font-size:.95rem;color:#64748b;line-height:1.5rem;}
+.card-button{padding:.7rem 1.5rem;font-size:.9rem;font-weight:700;border-radius:12px;color:white;transition:.3s;width:100%;}
+.science{background:#059669;} .commerce{background:#2563eb;} .arts{background:#7c3aed;}
+.glass-nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);background:rgba(19,59,106,.95);border-bottom:1px solid rgba(255,255,255,0.1);}
+.fade-in{animation:fade .6s ease-out forwards;opacity:0;}@keyframes fade{to{opacity:1}}
+.quote-card{
+  background:linear-gradient(to right, #ffffff, #f1f5f9); border-left:6px solid #ffbe0b;
+  border-radius:16px; padding:24px; margin-top:40px;
+  font-size:1.1rem; color:#334155; font-weight:500;
+  box-shadow:0 10px 25px rgba(0,0,0,.05);
+}
+.hero{
+  background-image:linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%);
+  color:white; padding:60px 24px;border-radius:24px;margin-bottom:48px;
+  box-shadow:0 20px 40px rgba(15,23,42,.25);
+}
+.contact-card{transition: all 0.3s ease; border: 1px solid #e2e8f0;}
+.contact-card:hover{border-color: #133b6a; background-color: #f0f9ff;}
+</style>
 </head>
 
-<body class="flex flex-col min-h-screen font-sans">
+<body class="flex flex-col min-h-screen">
 
 <header class="glass-nav w-full py-5 px-6">
   <div class="max-w-[1100px] mx-auto flex flex-col md:flex-row md:items-center justify-between">
