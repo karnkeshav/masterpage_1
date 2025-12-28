@@ -1,65 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
-    </script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
 
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+<title>Ready4Exam — Board-Aligned Academic Portal</title>
 
-    <title>Ready4Exam — Board-Aligned Academic Portal</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
+</script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
-    
-    <link href="style.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
 
-    <style>
-      body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
-      .glass-nav{
-        position:sticky;top:0;z-index:50;
-        backdrop-filter:blur(16px);
-        background:rgba(19,59,106,.95);
-        border-bottom:1px solid rgba(255,255,255,.1);
+<script>
+tailwind.config = {
+  theme:{
+    extend:{
+      fontFamily:{sans:['Inter'],serif:['Merriweather']},
+      colors:{
+        'cbse-blue':'#133b6a',
+        'gold':'#ffbe0b',
+        'heading':'#0f172a'
+      },
+      backgroundImage:{
+        'hero-grad':'linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%)'
       }
-      .class-card{
-        background:white;padding:1.8rem 1.4rem;border-radius:20px;
-        border:1px solid rgba(0,0,0,.05);
-        box-shadow:0 6px 18px rgba(0,0,0,.05);
-        transition:.3s cubic-bezier(.4,0,.2,1);
-        display: flex; flex-direction: column; justify-content: space-between;
-      }
-      .class-card:active{transform:scale(0.96);background:#f1f5f9}
-      .class-card:hover{
-        transform:translateY(-6px);
-        box-shadow:0 20px 40px rgba(19,59,106,.15);
-      }
-      .board-btn{
-        flex:1;padding:.7rem 1.2rem;border-radius:14px;
-        font-weight:800;font-size:.85rem;letter-spacing:.05em;
-        background:#f1f5f9;color:#475569;transition:.25s;
-      }
-      .board-btn.active{
-        background:#133b6a;color:white;
-        box-shadow:0 10px 25px rgba(19,59,106,.35);
-      }
-      .fade-in{animation:fade .5s ease-out forwards;opacity:0;}
-      @keyframes fade{to{opacity:1}}
+    }
+  }
+}
+</script>
 
-      @media (min-width:1024px){
-        #site-footer{position:fixed;bottom:0;left:0;width:100%;z-index:40;}
-        body{padding-bottom:90px;}
-      }
-    </style>
+<style>
+body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
+.glass-nav{
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(16px);
+  background:rgba(19,59,106,.95);
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.class-card{
+  background:white;padding:1.8rem 1.4rem;border-radius:20px;
+  border:1px solid rgba(0,0,0,.05);
+  box-shadow:0 6px 18px rgba(0,0,0,.05);
+  transition:.3s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.class-card:active{transform:scale(0.96);background:#f1f5f9}
+.class-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 20px 40px rgba(19,59,106,.15);
+}
+.board-btn{
+  flex:1;padding:.7rem 1.2rem;border-radius:14px;
+  font-weight:800;font-size:.85rem;letter-spacing:.05em;
+  background:#f1f5f9;color:#475569;transition:.25s;
+}
+.board-btn.active{
+  background:#133b6a;color:white;
+  box-shadow:0 10px 25px rgba(19,59,106,.35);
+}
+.fade-in{animation:fade .5s ease-out forwards;opacity:0;}
+@keyframes fade{to{opacity:1}}
+
+@media (min-width:1024px){
+  #site-footer{position:fixed;bottom:0;left:0;width:100%;z-index:40;}
+  body{padding-bottom:90px;}
+}
+</style>
 </head>
 
-<body class="flex flex-col min-h-screen font-sans">
+<body class="flex flex-col min-h-screen">
 
 <header class="glass-nav w-full py-5 px-6">
   <div class="max-w-[1100px] mx-auto flex justify-between items-center">
@@ -67,7 +82,7 @@
       <h1 class="text-2xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
       <p class="text-white text-[10px] opacity-80 uppercase tracking-widest">Academic Excellence Portal</p>
     </div>
-    <div class="hidden md:block text-white text-sm opacity-70 italic font-sans">Learn • Practice • Grow Stronger</div>
+    <div class="hidden md:block text-white text-sm opacity-70 italic">Learn • Practice • Grow Stronger</div>
   </div>
 </header>
 
@@ -123,6 +138,7 @@ const content=document.getElementById("content-area");
 const coming=document.getElementById("coming-soon");
 const note=document.getElementById("board-note");
 
+// Function to reset portal state (handles Back Button reset)
 function resetPortal() {
     buttons.forEach(b=>b.classList.remove("active"));
     content.classList.add("hidden");
@@ -131,6 +147,7 @@ function resetPortal() {
     note.textContent="";
 }
 
+// Reset on every page entrance (Back/Forward Cache fix)
 window.addEventListener('pageshow', resetPortal);
 
 buttons.forEach(btn=>{
