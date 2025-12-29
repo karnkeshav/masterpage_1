@@ -65,14 +65,14 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 .class-card:hover { transform:translateY(-4px); border-color:#133b6a; box-shadow:0 10px 20px rgba(19,59,106,.1); }
 
 /* --- SPLIT LAYOUT LOGIC --- */
-
-/* Default (Mobile) Logic: Stacked */
 .left-panel {
   width: 100%;
   /* Force Gradient on Mobile */
   background-image: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%) !important; 
   padding: 2.5rem 1.5rem; 
   border-radius: 0 0 30px 30px;
+  position: relative; /* Needed for absolute positioning of the image */
+  overflow: hidden; /* To clip the image if it overflows */
 }
 .right-panel { width: 100%; padding: 2rem 1.5rem; padding-bottom: 80px; }
 
@@ -85,7 +85,6 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   .left-panel {
     width: 60%; height: 100%;
     padding: 4rem; display: flex; flex-direction: column; justify-content: space-between;
-    position: relative; overflow: hidden;
     border-radius: 0; /* Reset radius for desktop */
   }
   
@@ -107,6 +106,20 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   
   /* Glass Nav Hidden on Desktop (Design moves to Sidebar) */
   .mobile-header { display: none; }
+
+  /* Image positioning for laptop */
+  .hero-image {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: auto;
+    width: 45%; /* Adjust width as needed */
+    max-height: 100%;
+    object-fit: contain;
+    object-position: top right;
+    z-index: 0; /* Place behind the text */
+    opacity: 0.9; /* Optional: make it slightly transparent so text is more readable */
+  }
 }
 
 /* --- MOBILE LAYOUT SPECIFIC --- */
@@ -115,6 +128,20 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   .split-layout { flex-direction: column; }
   .mobile-header { display: block; position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); background: rgba(19,59,106,0.95); padding: 1rem; }
   #site-footer { background: #133b6a; color: white; margin-top: auto; }
+
+  /* Image positioning for mobile */
+  .hero-image {
+    position: absolute;
+    top: 10%;
+    right: -10%;
+    height: auto;
+    width: 60%;
+    max-height: 50%;
+    object-fit: contain;
+    object-position: top right;
+    z-index: 0;
+    opacity: 0.8;
+  }
 }
 
 /* --- MODAL & WHATSAPP --- */
@@ -158,22 +185,25 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 <div class="split-layout">
   
   <aside class="left-panel shadow-2xl z-10">
-    <div class="fade-in">
-      <div class="hidden lg:block mb-10">
+    <img src="image_8.png" alt="Smiling Students" class="hero-image fade-in">
+    
+    <div class="fade-in h-full flex flex-col z-10 relative"> <div class="hidden lg:block mb-8 shrink-0">
         <h1 class="text-4xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
         <p class="text-white text-sm opacity-60 uppercase tracking-widest mt-1">Academic Excellence Portal</p>
       </div>
 
-      <span class="bg-gold/20 text-gold px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-6 inline-block border border-gold/30">
-        2025 – 2026 Session
-      </span>
-      
-      <h2 class="text-3xl lg:text-6xl font-black text-white mb-6 leading-tight">Board-Aligned <br>Assessment.</h2>
-      <p class="text-white/80 text-sm lg:text-xl font-medium leading-relaxed mb-10 max-w-lg">
-        Practice smarter, identify learning gaps early, and build confidence months before exams.
-      </p>
+      <div class="shrink-0">
+        <span class="bg-gold/20 text-gold px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 inline-block border border-gold/30">
+          2025 – 2026 Session
+        </span>
+        
+        <h2 class="text-3xl lg:text-5xl font-black text-white mb-4 leading-tight lg:max-w-lg">Board-Aligned <br>Assessment.</h2>
+        <p class="text-white/80 text-sm lg:text-lg font-medium leading-relaxed mb-6 max-w-lg">
+          Practice smarter, identify learning gaps early, and build confidence months before exams.
+        </p>
+      </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-auto max-w-2xl">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-auto shrink-0 max-w-2xl">
         <div class="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10 text-center">
           <div class="text-gold font-bold text-base">Learn</div>
           <div class="text-white/60 text-xs">Concept clarity</div>
@@ -189,8 +219,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
       </div>
     </div>
 
-    <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-green-500/20 rounded-full blur-3xl pointer-events-none"></div>
-  </aside>
+    </aside>
 
   <main class="right-panel">
     <div class="w-full max-w-md fade-in" style="animation-delay: 0.1s;">
@@ -287,12 +316,10 @@ const coming=document.getElementById("coming-soon");
 const note=document.getElementById("board-note");
 const modal = document.getElementById("requestModal");
 
-// Modal
 function openRequestModal() { modal.style.display = "flex"; }
 function closeRequestModal() { modal.style.display = "none"; }
 modal.addEventListener('click', (e) => { if (e.target === modal) closeRequestModal(); });
 
-// Email Logic
 function handleRequestSubmit(e) {
   e.preventDefault();
   const board = document.getElementById("reqBoard").value;
@@ -303,7 +330,6 @@ function handleRequestSubmit(e) {
   closeRequestModal();
 }
 
-// Portal State
 function resetPortal() {
     buttons.forEach(b=>b.classList.remove("active"));
     content.classList.add("hidden");
