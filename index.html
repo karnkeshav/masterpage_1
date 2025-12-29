@@ -15,6 +15,7 @@
 </script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 
 <script>
@@ -67,9 +68,35 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-high
 .fade-in{animation:fade .5s ease-out forwards;opacity:0;}
 @keyframes fade{to{opacity:1}}
 
+/* --- NEW STYLES FOR MODAL & WHATSAPP --- */
+.modal-backdrop {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(15, 23, 42, 0.8); z-index: 100; align-items: center; justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+}
+.modal-content {
+  background: white; border-radius: 24px; width: 100%; max-width: 450px;
+  padding: 2rem; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.whatsapp-float {
+  position: fixed; bottom: 80px; right: 20px;
+  background-color: #25d366; color: white;
+  width: 55px; height: 55px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+  z-index: 90; transition: transform 0.3s;
+  text-decoration: none;
+}
+.whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
+
 @media (min-width:1024px){
   #site-footer{position:fixed;bottom:0;left:0;width:100%;z-index:40;}
   body{padding-bottom:90px;}
+  .whatsapp-float { bottom: 100px; right: 30px; } /* Adjust for footer */
 }
 </style>
 </head>
@@ -113,12 +140,19 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-high
 
 <section id="content-area" class="hidden">
   <p id="board-note" class="text-center text-sm font-semibold text-cbse-blue mb-8 animate-pulse"></p>
-  
-  <div id="class-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8"></div>
+   
+  <div id="class-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-12"></div>
 
-  <div id="coming-soon" class="hidden text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+  <div id="coming-soon" class="hidden text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 mb-8">
     <h3 class="text-2xl font-black text-slate-400">ICSE — Coming Soon</h3>
     <p class="text-slate-400 text-sm">Curriculum support is currently under development.</p>
+  </div>
+
+  <div class="text-center border-t border-slate-200 pt-8 mt-8">
+    <p class="text-sm text-slate-500 mb-3">Don't see your class or curriculum?</p>
+    <button onclick="openRequestModal()" class="text-cbse-blue font-bold text-sm bg-blue-50 px-6 py-3 rounded-full hover:bg-blue-100 transition shadow-sm border border-blue-100">
+      <span class="mr-2">✨</span>Request Priority Access
+    </button>
   </div>
 </section>
 
@@ -131,12 +165,88 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-high
     </div>
 </footer>
 
+<a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20need%20help%20regarding%20the%20platform." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
+  <i class="fab fa-whatsapp"></i>
+</a>
+
+<div id="requestModal" class="modal-backdrop">
+  <div class="modal-content">
+    <button onclick="closeRequestModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <div class="text-center mb-6">
+      <div class="bg-gold/20 text-gold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">🚀</div>
+      <h3 class="text-xl font-black text-heading">Request Your Curriculum</h3>
+      <p class="text-xs text-slate-500 mt-2">We build based on student demand.</p>
+    </div>
+
+    <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6 text-left">
+      <h4 class="text-cbse-blue font-bold text-xs uppercase tracking-wide mb-1">⚡ Fast Track Promise</h4>
+      <p class="text-slate-600 text-[11px] leading-relaxed">
+        <strong>Help us prioritize!</strong> If we receive <span class="text-red-500 font-bold">5 requests</span> for the same Class & Board, we deploy the first module in <span class="text-heading font-bold">24 hours</span>.
+        <br><br>
+        Otherwise, you will be added to our Phase 2 development waitlist.
+      </p>
+    </div>
+
+    <form onsubmit="handleRequestSubmit(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">Which Board?</label>
+        <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB, IGCSE" required 
+               class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">Which Class?</label>
+        <input type="text" id="reqClass" placeholder="e.g. Class 8, Class 11" required 
+               class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
+      </div>
+      <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/20 hover:bg-blue-900 transition text-sm">
+        Submit Request via Email
+      </button>
+    </form>
+  </div>
+</div>
+
 <script>
 const buttons=document.querySelectorAll(".board-btn");
 const grid=document.getElementById("class-grid");
 const content=document.getElementById("content-area");
 const coming=document.getElementById("coming-soon");
 const note=document.getElementById("board-note");
+const modal = document.getElementById("requestModal");
+
+// --- MODAL LOGIC ---
+function openRequestModal() {
+  modal.style.display = "flex";
+}
+function closeRequestModal() {
+  modal.style.display = "none";
+}
+// Close modal if clicking outside
+modal.addEventListener('click', function(e) {
+  if (e.target === modal) closeRequestModal();
+});
+
+// --- EMAIL SUBMISSION LOGIC ---
+function handleRequestSubmit(e) {
+  e.preventDefault();
+  const board = document.getElementById("reqBoard").value;
+  const cls = document.getElementById("reqClass").value;
+  
+  // Construct the email body
+  const subject = `Curriculum Request: ${board} - ${cls}`;
+  const body = `Hi Ready4Exam Team,%0D%0A%0D%0AI would like to request content for:%0D%0A- Board: ${board}%0D%0A- Class: ${cls}%0D%0A%0D%0AI understand that if 5 students request this combination, you can launch it within 1 day. Please count me in!%0D%0A%0D%0AThanks.`;
+  
+  // Trigger mailto
+  window.location.href = `mailto:ready4urexam@gmail.com?subject=${encodeURIComponent(subject)}&body=${body}`;
+  
+  // Visual feedback
+  closeRequestModal();
+  alert("Redirecting to your email app... Please hit Send to complete your request!");
+}
 
 // Function to reset portal state (handles Back Button reset)
 function resetPortal() {
