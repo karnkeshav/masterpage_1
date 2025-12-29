@@ -158,22 +158,28 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 <div class="split-layout">
   
   <aside class="left-panel shadow-2xl z-10">
-    <div class="fade-in">
-      <div class="hidden lg:block mb-10">
+    <div class="fade-in h-full flex flex-col">
+      <div class="hidden lg:block mb-8 shrink-0">
         <h1 class="text-4xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
         <p class="text-white text-sm opacity-60 uppercase tracking-widest mt-1">Academic Excellence Portal</p>
       </div>
 
-      <span class="bg-gold/20 text-gold px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-6 inline-block border border-gold/30">
-        2025 – 2026 Session
-      </span>
-      
-      <h2 class="text-3xl lg:text-6xl font-black text-white mb-6 leading-tight">Board-Aligned <br>Assessment.</h2>
-      <p class="text-white/80 text-sm lg:text-xl font-medium leading-relaxed mb-10 max-w-lg">
-        Practice smarter, identify learning gaps early, and build confidence months before exams.
-      </p>
+      <div class="shrink-0">
+        <span class="bg-gold/20 text-gold px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 inline-block border border-gold/30">
+          2025 – 2026 Session
+        </span>
+        
+        <h2 class="text-3xl lg:text-5xl font-black text-white mb-4 leading-tight">Board-Aligned <br>Assessment.</h2>
+        <p class="text-white/80 text-sm lg:text-lg font-medium leading-relaxed mb-6 max-w-lg">
+          Practice smarter, identify learning gaps early, and build confidence months before exams.
+        </p>
+      </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-auto max-w-2xl">
+      <img src="image_0.png" alt="Ready4Exam Flyer" 
+           class="w-full h-32 object-contain bg-white/10 rounded-xl mb-6
+                  lg:w-full lg:h-auto lg:bg-transparent lg:rounded-2xl lg:shadow-2xl lg:mb-auto lg:flex-grow-0">
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-auto shrink-0 max-w-2xl">
         <div class="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10 text-center">
           <div class="text-gold font-bold text-base">Learn</div>
           <div class="text-white/60 text-xs">Concept clarity</div>
@@ -287,12 +293,10 @@ const coming=document.getElementById("coming-soon");
 const note=document.getElementById("board-note");
 const modal = document.getElementById("requestModal");
 
-// Modal
 function openRequestModal() { modal.style.display = "flex"; }
 function closeRequestModal() { modal.style.display = "none"; }
 modal.addEventListener('click', (e) => { if (e.target === modal) closeRequestModal(); });
 
-// Email Logic
 function handleRequestSubmit(e) {
   e.preventDefault();
   const board = document.getElementById("reqBoard").value;
@@ -303,7 +307,6 @@ function handleRequestSubmit(e) {
   closeRequestModal();
 }
 
-// Portal State
 function resetPortal() {
     buttons.forEach(b=>b.classList.remove("active"));
     content.classList.add("hidden");
