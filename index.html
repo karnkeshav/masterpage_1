@@ -64,19 +64,31 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 }
 .class-card:hover { transform:translateY(-4px); border-color:#133b6a; box-shadow:0 10px 20px rgba(19,59,106,.1); }
 
+/* --- TESTIMONIAL SCROLL ANIMATION --- */
+.scroll-wrapper {
+  overflow: hidden;
+  position: relative;
+  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+}
+.scroll-content {
+  animation: scrollVertical 25s linear infinite;
+}
+@keyframes scrollVertical {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
 /* --- SPLIT LAYOUT LOGIC --- */
 .left-panel {
   width: 100%;
-  /* Force Gradient on Mobile */
   background-image: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%) !important; 
   padding: 2.5rem 1.5rem; 
   border-radius: 0 0 30px 30px;
-  position: relative; /* Needed for absolute positioning of the image */
-  overflow: hidden; /* To clip the image if it overflows */
+  position: relative; overflow: hidden;
 }
 .right-panel { width: 100%; padding: 2rem 1.5rem; padding-bottom: 80px; }
 
-/* Laptop (LG) Logic: Split Screen No Scroll */
+/* Laptop (LG) Logic */
 @media (min-width: 1024px) {
   body { height: 100vh; overflow: hidden; display: flex; }
   .split-layout { width: 100%; height: 100%; display: flex; }
@@ -85,7 +97,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   .left-panel {
     width: 60%; height: 100%;
     padding: 4rem; display: flex; flex-direction: column; justify-content: space-between;
-    border-radius: 0; /* Reset radius for desktop */
+    border-radius: 0;
   }
   
   /* Right Panel (Curriculum) - 40% */
@@ -93,55 +105,41 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
     width: 40%; height: 100%;
     background: #f8fafc;
     position: relative;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    display: flex; flex-direction: column; 
+    justify-content: space-between; /* Pushes content to top and bottom */
     padding: 2rem;
   }
   
-  /* Footer stays inside right panel on desktop */
   #site-footer {
     position: absolute; bottom: 0; left: 0; width: 100%;
     background: transparent; color: #64748b; border-top: 1px solid #e2e8f0;
   }
   #site-footer p { color: #133b6a; }
   
-  /* Glass Nav Hidden on Desktop (Design moves to Sidebar) */
   .mobile-header { display: none; }
 
-  /* Image positioning for laptop */
   .hero-image {
-    position: absolute;
-    top: 0;
-    right: 0;
-    height: auto;
-    width: 45%; /* Adjust width as needed */
-    max-height: 100%;
-    object-fit: contain;
-    object-position: top right;
-    z-index: 0; /* Place behind the text */
-    opacity: 0.9; /* Optional: make it slightly transparent so text is more readable */
+    position: absolute; top: 0; right: 0; height: auto; width: 45%;
+    max-height: 100%; object-fit: contain; object-position: top right;
+    z-index: 0; opacity: 0.9;
   }
 }
 
-/* --- MOBILE LAYOUT SPECIFIC --- */
+/* Mobile Image Logic */
 @media (max-width: 1023px) {
   body { height: auto; overflow-y: auto; flex-direction: column; }
   .split-layout { flex-direction: column; }
   .mobile-header { display: block; position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); background: rgba(19,59,106,0.95); padding: 1rem; }
   #site-footer { background: #133b6a; color: white; margin-top: auto; }
 
-  /* Image positioning for mobile */
   .hero-image {
-    position: absolute;
-    top: 10%;
-    right: -10%;
-    height: auto;
-    width: 60%;
-    max-height: 50%;
-    object-fit: contain;
-    object-position: top right;
-    z-index: 0;
-    opacity: 0.8;
+    position: absolute; top: 10%; right: -10%; height: auto; width: 60%;
+    max-height: 50%; object-fit: contain; object-position: top right;
+    z-index: 0; opacity: 0.8;
   }
+  
+  /* On mobile, we don't need fixed height spacing */
+  .right-panel { display: block; }
 }
 
 /* --- MODAL & WHATSAPP --- */
@@ -186,8 +184,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   
   <aside class="left-panel shadow-2xl z-10">
     <img src="image_0.png" alt="Smiling Students" class="hero-image fade-in">
-    
-    <div class="fade-in h-full flex flex-col z-10 relative"> <div class="hidden lg:block mb-8 shrink-0">
+    <div class="fade-in h-full flex flex-col z-10 relative">
+      <div class="hidden lg:block mb-8 shrink-0">
         <h1 class="text-4xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
         <p class="text-white text-sm opacity-60 uppercase tracking-widest mt-1">Academic Excellence Portal</p>
       </div>
@@ -196,7 +194,6 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
         <span class="bg-gold/20 text-gold px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 inline-block border border-gold/30">
           2025 – 2026 Session
         </span>
-        
         <h2 class="text-3xl lg:text-5xl font-black text-white mb-4 leading-tight lg:max-w-lg">Board-Aligned <br>Assessment.</h2>
         <p class="text-white/80 text-sm lg:text-lg font-medium leading-relaxed mb-6 max-w-lg">
           Practice smarter, identify learning gaps early, and build confidence months before exams.
@@ -221,9 +218,60 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   </aside>
 
   <main class="right-panel">
-    <div class="w-full max-w-md fade-in" style="animation-delay: 0.1s;">
+    
+    <div class="w-full max-w-md mx-auto mb-6 lg:mb-0 flex-grow relative overflow-hidden pointer-events-none h-48 lg:h-auto">
+      <div class="text-center mb-2">
+        <span class="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Community Love</span>
+      </div>
       
-      <div class="text-center mb-6">
+      <div class="scroll-wrapper h-full">
+        <div class="scroll-content space-y-4 pb-4">
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Advanced questions are really tough, but they prepared me perfectly."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 10</div>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Very good one. The interface is so simple to use."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Telangana</div>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Finally found a place with real Case-Study questions."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Teacher, CBSE</div>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Helped me find my weak areas in Science instantly."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 9</div>
+          </div>
+           <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Excellent platform for board prep."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Hyderabad</div>
+          </div>
+
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Advanced questions are really tough, but they prepared me perfectly."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 10</div>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Very good one. The interface is so simple to use."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Telangana</div>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Finally found a place with real Case-Study questions."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Teacher, CBSE</div>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Helped me find my weak areas in Science instantly."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 9</div>
+          </div>
+           <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <p class="text-slate-600 text-xs italic">"Excellent platform for board prep."</p>
+            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Hyderabad</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full max-w-md mx-auto mt-auto lg:pb-8"> <div class="text-center mb-6">
         <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Select Your Curriculum</p>
         <div class="flex justify-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border mx-auto">
           <button class="board-btn" data-board="CBSE">CBSE</button>
@@ -232,7 +280,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
         </div>
       </div>
 
-      <div class="text-center mb-8">
+      <div class="text-center mb-6">
         <div class="inline-flex items-center gap-3 bg-blue-50/50 border border-blue-100 rounded-full pl-4 pr-1 py-1 hover:bg-blue-50 transition cursor-pointer" onclick="openRequestModal()">
           <span class="text-xs text-slate-500 font-medium">Don't see your class?</span>
           <button class="text-white text-[10px] font-bold bg-cbse-blue px-3 py-1.5 rounded-full shadow-sm">
@@ -242,16 +290,16 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
       </div>
 
       <div id="content-area" class="hidden w-full">
-        <div class="flex items-center justify-center mb-6">
+        <div class="flex items-center justify-center mb-4">
           <div class="h-px bg-slate-200 w-12"></div>
           <p id="board-note" class="mx-3 text-xs font-bold text-cbse-blue uppercase tracking-wide"></p>
           <div class="h-px bg-slate-200 w-12"></div>
         </div>
         
-        <div id="class-grid" class="grid grid-cols-2 gap-4 max-h-[40vh] overflow-y-auto p-2 scrollbar-hide"></div>
+        <div id="class-grid" class="grid grid-cols-2 gap-3 max-h-[30vh] overflow-y-auto p-2 scrollbar-hide"></div>
 
-        <div id="coming-soon" class="hidden text-center py-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-          <h3 class="text-xl font-black text-slate-400">ICSE — Coming Soon</h3>
+        <div id="coming-soon" class="hidden text-center py-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+          <h3 class="text-lg font-black text-slate-400">ICSE — Coming Soon</h3>
           <p class="text-slate-400 text-xs mt-1">Curriculum under development.</p>
         </div>
       </div>
@@ -276,19 +324,16 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
     <button onclick="closeRequestModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
       <i class="fas fa-times"></i>
     </button>
-
     <div class="text-center mb-5">
       <div class="bg-gold/20 text-gold w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">🚀</div>
       <h3 class="text-lg font-black text-heading">Request Curriculum</h3>
     </div>
-
     <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg mb-5 text-left">
       <h4 class="text-cbse-blue font-bold text-[10px] uppercase tracking-wide mb-1">⚡ Fast Track Promise</h4>
       <p class="text-slate-600 text-[11px] leading-relaxed">
         If we receive <span class="text-red-500 font-bold">5 requests</span> for the same Class & Board, we deploy within <span class="text-heading font-bold">24 hours</span>. Otherwise, you join the Phase 2 waitlist.
       </p>
     </div>
-
     <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
       <div>
         <label class="block text-[10px] font-bold text-slate-500 mb-1">Which Board?</label>
