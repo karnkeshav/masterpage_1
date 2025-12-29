@@ -68,7 +68,7 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-high
 .fade-in{animation:fade .5s ease-out forwards;opacity:0;}
 @keyframes fade{to{opacity:1}}
 
-/* --- NEW STYLES FOR MODAL & WHATSAPP --- */
+/* --- MODAL & WHATSAPP STYLES --- */
 .modal-backdrop {
   display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(15, 23, 42, 0.8); z-index: 100; align-items: center; justify-content: center;
@@ -96,7 +96,7 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-high
 @media (min-width:1024px){
   #site-footer{position:fixed;bottom:0;left:0;width:100%;z-index:40;}
   body{padding-bottom:90px;}
-  .whatsapp-float { bottom: 100px; right: 30px; } /* Adjust for footer */
+  .whatsapp-float { bottom: 100px; right: 30px; }
 }
 </style>
 </head>
@@ -129,12 +129,21 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-high
   <div class="class-card"><b>Grow Stronger</b><p class="text-slate-500 text-xs mt-1">Exam readiness</p></div>
 </section>
 
-<section class="mb-12 text-center">
+<section class="mb-8 text-center">
   <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Step 1: Select Your Board</p>
   <div class="flex justify-center gap-2 bg-white p-2 rounded-2xl shadow-sm border max-w-sm mx-auto">
     <button class="board-btn" data-board="CBSE">CBSE</button>
     <button class="board-btn" data-board="SCERT">SCERT</button>
     <button class="board-btn" data-board="ICSE">ICSE</button>
+  </div>
+</section>
+
+<section class="text-center mb-10">
+  <div class="inline-flex items-center gap-2 bg-blue-50/50 border border-blue-100 rounded-full pl-4 pr-1 py-1">
+    <span class="text-xs text-slate-500 font-medium">Don't see your class or curriculum?</span>
+    <button onclick="openRequestModal()" class="text-white text-xs font-bold bg-cbse-blue px-3 py-1.5 rounded-full hover:bg-blue-800 transition shadow-sm">
+      Request Access &rarr;
+    </button>
   </div>
 </section>
 
@@ -146,13 +155,6 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-tap-high
   <div id="coming-soon" class="hidden text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 mb-8">
     <h3 class="text-2xl font-black text-slate-400">ICSE — Coming Soon</h3>
     <p class="text-slate-400 text-sm">Curriculum support is currently under development.</p>
-  </div>
-
-  <div class="text-center border-t border-slate-200 pt-8 mt-8">
-    <p class="text-sm text-slate-500 mb-3">Don't see your class or curriculum?</p>
-    <button onclick="openRequestModal()" class="text-cbse-blue font-bold text-sm bg-blue-50 px-6 py-3 rounded-full hover:bg-blue-100 transition shadow-sm border border-blue-100">
-      <span class="mr-2">✨</span>Request Priority Access
-    </button>
   </div>
 </section>
 
