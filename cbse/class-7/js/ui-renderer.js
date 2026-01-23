@@ -285,3 +285,42 @@ export function showPaywallLoading(isLoading = true) {
         btn.disabled = false;
     }
 }
+
+/* -----------------------------------
+   RESPONSIVE DATA GRID (Mobile Cards vs Desktop Table)
+----------------------------------- */
+export function renderResponsiveGrid(container, data, columns, renderCardFn) {
+    if (!container) return;
+
+    // Simple breakpoint check (Tailwind 'md' is 768px)
+    const isMobile = window.innerWidth < 768;
+
+    if (isMobile && renderCardFn) {
+        // Mobile View: Cards (Accordion-ready if needed)
+        container.innerHTML = `
+            <div class="space-y-4">
+                ${data.map(item => renderCardFn(item)).join("")}
+            </div>`;
+    } else {
+        // Desktop View: High Density Table
+        const headers = columns.map(c => `<th class="p-4 font-bold text-slate-500 uppercase text-[10px] tracking-wider">${c.header}</th>`).join("");
+        const rows = data.map(item => {
+            const cells = columns.map(c => {
+                const content = c.cell ? c.cell(item) : (item[c.key] || "");
+                return `<td class="p-4 align-middle border-b border-slate-50 group-hover:bg-slate-50 transition">${content}</td>`;
+            }).join("");
+            return `<tr class="group">${cells}</tr>`;
+        }).join("");
+
+        container.innerHTML = `
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 border-b border-slate-100">
+                        <tr>${headers}</tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-50">${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+}
