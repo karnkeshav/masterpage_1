@@ -17,7 +17,13 @@ import {
   doc,
   setDoc,
   getDoc,
-  serverTimestamp
+  updateDoc,
+  serverTimestamp,
+  writeBatch,
+  collection,
+  query,
+  where,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const LOG = "[AUTH]";
@@ -41,16 +47,38 @@ export async function ensureUserInFirestore(user) {
       const emailLower = (user.email || "").toLowerCase();
       const isAdmin = ADMIN_EMAILS.includes(emailLower);
 
+      // Check Whitelist/Pre-approval
+      let role = isAdmin ? "admin" : "student";
+      let section = "";
+      let additionalClasses = {};
+
+      try {
+        const whitelistRef = doc(db, "whitelist", emailLower);
+        const whitelistSnap = await getDoc(whitelistRef);
+        if (whitelistSnap.exists()) {
+            const wd = whitelistSnap.data();
+            if (wd.role) role = wd.role;
+            if (wd.section) section = wd.section;
+            if (wd.allowedClasses) {
+                wd.allowedClasses.forEach(c => additionalClasses[c] = true);
+            }
+        }
+      } catch (err) {
+        console.warn("Whitelist check failed", err);
+      }
+
       await setDoc(ref, {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
         paidClasses: {
           "6": false, "7": false, "8": false,
-          "9": false, "10": false, "11": false, "12": false
+          "9": false, "10": false, "11": false, "12": false,
+          ...additionalClasses
         },
         streams: "",
-        role: isAdmin ? "admin" : "student",
+        role: role,
+        section: section,
         signupDate: serverTimestamp()
       });
     }
@@ -107,6 +135,96 @@ export async function requireAuth() {
     }
     throw e;
   }
+}
+
+/* ============================================================================
+   RBAC & ADMIN HELPERS
+   ============================================================================ */
+export async function getUserRole() {
+  const { auth, db } = getInitializedClients();
+  const user = auth.currentUser;
+  if (!user) return null;
+
+  try {
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (snap.exists()) {
+        const data = snap.data();
+        // Master override
+        if (ADMIN_EMAILS.includes(user.email.toLowerCase())) return "admin";
+        return data.role || "student";
+    }
+  } catch (e) {
+    console.error("Error fetching user role:", e);
+  }
+  return "student";
+}
+
+export async function checkRole(requiredRole) {
+    const role = await getUserRole();
+    if (role === "admin") return true; // Admin has access to everything
+    return role === requiredRole;
+}
+
+/**
+ * Bulk Onboarding via CSV
+ * Format: Email, Role, Section, AllowedClass
+ */
+export async function bulkOnboarding(csvData) {
+    const { db } = getInitializedClients();
+    const lines = csvData.trim().split('\n');
+    const batch = writeBatch(db);
+    let count = 0;
+
+    for (let line of lines) {
+        const [email, role, section, cls] = line.split(',').map(s => s.trim());
+        if (!email) continue;
+
+        const emailLower = email.toLowerCase();
+        const docRef = doc(db, "whitelist", emailLower);
+
+        batch.set(docRef, {
+            email: emailLower,
+            role: role || "student",
+            section: section || "",
+            allowedClasses: cls ? [cls] : [],
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        count++;
+        // Batches are limited to 500
+        if (count >= 400) {
+            await batch.commit();
+            count = 0;
+        }
+    }
+
+    if (count > 0) await batch.commit();
+    return true;
+}
+
+/**
+ * Revoke Access
+ */
+export async function revokeAccess(email) {
+    const { db } = getInitializedClients();
+    const emailLower = email.toLowerCase();
+
+    // 1. Remove from whitelist
+    await setDoc(doc(db, "whitelist", emailLower), {
+        role: "suspended",
+        updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    // 2. Try to find active user and lock them
+    const q = query(collection(db, "users"), where("email", "==", emailLower));
+    const snaps = await getDocs(q);
+
+    snaps.forEach(async (snap) => {
+        await updateDoc(snap.ref, {
+            role: "suspended",
+            paidClasses: {}
+        });
+    });
 }
 
 /* ============================================================================

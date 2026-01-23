@@ -1,5 +1,5 @@
 import { initializeServices, getInitializedClients } from "./config.js"; 
-import { fetchQuestions, saveResult } from "./api.js";
+import { fetchQuestions, saveResult, getChapterMastery } from "./api.js";
 import * as UI from "./ui-renderer.js";
 import { initializeAuthListener, requireAuth } from "./auth-paywall.js";
 import { showExpiredPopup } from "./firebase-expiry.js";
@@ -70,7 +70,10 @@ let quizState = {
     questions: [],
     currentQuestionIndex: 0,
     userAnswers: {},
-    isSubmitted: false
+    isSubmitted: false,
+    quizMode: "standard",
+    latency: [],
+    lastActionTime: 0
 };
 
 let questionsPromise = null;
@@ -82,8 +85,18 @@ function parseUrlParameters() {
     const params = new URLSearchParams(location.search);
     
     quizState.difficulty = params.get("difficulty") || "Simple";
-    quizState.classId = params.get("class") || "11";
+    quizState.classId = params.get("class") || "12";
     quizState.subject = params.get("subject") || "Physics";
+
+    // Check for Term Prep Mode
+    const mode = params.get("mode");
+    if (mode === "term_prep") {
+        quizState.quizMode = "term_prep";
+        quizState.topicSlug = params.get("chapters"); // Comma separated list
+        UI.updateHeader(`Term Prep: ${quizState.subject}`, quizState.difficulty);
+        return;
+    }
+
     quizState.topicSlug = params.get("table") || params.get("topic") || "";
 
     // A. TRY TO GET EXACT CHAPTER NAME FROM URL
@@ -123,11 +136,30 @@ async function loadQuiz() {
     try {
         UI.showStatus("Preparing worksheet...", "text-blue-600 font-bold");
 
+        // --- FORTRESS PHILOSOPHY: GATEKEEPER ---
+        // Block 'Advanced' if 'Medium' mastery < 85%
+        if (quizState.difficulty === "Advanced" && quizState.quizMode === "standard") {
+            const { auth } = getInitializedClients();
+            const mastery = await getChapterMastery(auth.currentUser.uid, quizState.topicSlug);
+            if (mastery < 85) {
+                alert(`🔒 LOCKED: You scored ${mastery}% on Medium.\nYou need 85% mastery to unlock Advanced questions.`);
+                // Redirect back
+                const subject = quizState.subject || "Physics";
+                window.location.href = `chapter-selection.html?subject=${encodeURIComponent(subject)}`;
+                return;
+            }
+        }
+
         const processedQuestions = await questionsPromise;
         quizState.questions = processedQuestions;
 
         if (quizState.questions.length > 0) {
             UI.hideStatus();
+
+            // Init Performance Vector
+            quizState.latency = new Array(quizState.questions.length).fill(0);
+            quizState.lastActionTime = Date.now();
+
             renderQuestion();
             UI.showView("quiz-content");
         }
@@ -154,17 +186,26 @@ function renderQuestion() {
     );
 }
 
+function updateLatency() {
+    const now = Date.now();
+    const diff = (now - quizState.lastActionTime) / 1000; // in seconds
+    quizState.latency[quizState.currentQuestionIndex] += diff;
+    quizState.lastActionTime = now;
+}
+
 /* -----------------------------------
     5. ANSWER HANDLERS
 ----------------------------------- */
 function handleAnswerSelection(id, opt) {
     if (!quizState.isSubmitted) {
+        updateLatency();
         quizState.userAnswers[id] = opt;
         renderQuestion();
     }
 }
 
 function handleNavigation(delta) {
+    updateLatency();
     quizState.currentQuestionIndex += delta;
     renderQuestion();
 }
@@ -173,6 +214,7 @@ function handleNavigation(delta) {
     6. SUBMIT & RESULTS
 ----------------------------------- */
 async function handleSubmit() {
+    updateLatency();
     quizState.isSubmitted = true;
 
     const stats = {
@@ -198,11 +240,24 @@ async function handleSubmit() {
     });
 
     UI.renderResults(stats, quizState.difficulty);
+
+    // --- CLOSED-LOOP REMEDIATION ---
+    const percentage = (stats.correct / stats.total) * 100;
+    if (percentage < 85) {
+        // Trigger Mistake Notebook
+        setTimeout(() => {
+            alert("⚠️ Mastery Alert: Score below 85%.\nOpening Mistake Notebook for remediation.");
+            UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
+        }, 1000);
+    }
+
     saveResult({ 
         ...quizState, 
         score: stats.correct, 
         total: stats.total,
-        topic: quizState.topicSlug 
+        topic: quizState.topicSlug,
+        latency_vector: quizState.latency,
+        quiz_mode: quizState.quizMode
     });
 }
 
@@ -222,7 +277,13 @@ function attachDomEvents() {
         }
         if (btn.id === "back-to-chapters-btn") {
             const subject = quizState.subject || "Physics";
-            window.location.href = `chapter-selection.html?subject=${encodeURIComponent(subject)}`;
+            // Check mode to return to correct page
+            const params = new URLSearchParams(location.search);
+            if (params.get("mode") === "term_prep") {
+                window.location.href = `chapter-selection.html?mode=term_prep&subject=${encodeURIComponent(subject)}`;
+            } else {
+                window.location.href = `chapter-selection.html?subject=${encodeURIComponent(subject)}`;
+            }
         }
     });
 }

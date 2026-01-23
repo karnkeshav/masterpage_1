@@ -156,6 +156,14 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+.portal-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 100%; padding: 1.5rem; border-radius: 16px; border: 2px solid #e2e8f0;
+  transition: all 0.2s; cursor: pointer; text-align: center;
+}
+.portal-btn:hover { border-color: #133b6a; background: #f0f9ff; transform: translateY(-2px); }
+.portal-btn i { font-size: 2rem; margin-bottom: 0.5rem; color: #133b6a; }
+
 .whatsapp-float {
   position: fixed; bottom: 80px; right: 20px;
   background-color: #25d366; color: white;
@@ -375,19 +383,67 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   </div>
 </div>
 
-<script>
-const buttons=document.querySelectorAll(".board-btn");
-const grid=document.getElementById("class-grid");
-const content=document.getElementById("content-area");
-const coming=document.getElementById("coming-soon");
-const note=document.getElementById("board-note");
-const modal = document.getElementById("requestModal");
+<div id="portalChoiceModal" class="modal-backdrop">
+  <div class="modal-content">
+    <div class="text-center mb-6">
+      <h3 class="text-xl font-black text-heading">Select Your Portal</h3>
+      <p class="text-slate-500 text-xs mt-1">Choose how you wish to access the platform.</p>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="portal-btn" onclick="choosePortal('school')">
+        <i class="fas fa-school"></i>
+        <span class="font-bold text-sm text-heading">School / Institution</span>
+        <span class="text-[10px] text-slate-400 mt-1">For Teachers & Admins</span>
+      </div>
+      <div class="portal-btn" onclick="choosePortal('student')">
+        <i class="fas fa-user-graduate"></i>
+        <span class="font-bold text-sm text-heading">Individual Student</span>
+        <span class="text-[10px] text-slate-400 mt-1">Self-Paced Learning</span>
+      </div>
+    </div>
+  </div>
+</div>
 
-function openRequestModal() { modal.style.display = "flex"; }
-function closeRequestModal() { modal.style.display = "none"; }
-modal.addEventListener('click', (e) => { if (e.target === modal) closeRequestModal(); });
+<script type="module">
+import { requireAuth, checkRole } from "./cbse/class-9/js/auth-paywall.js";
 
-function handleRequestSubmit(e) {
+// --- AUTH & PORTAL LOGIC ---
+const portalModal = document.getElementById("portalChoiceModal");
+
+window.choosePortal = async function(type) {
+  if (type === 'school') {
+    // Redirect Admin/Principal/Teacher to Class 9 Consoles (Master Dashboard)
+    const role = await checkRole('admin') ? 'admin' : (await checkRole('teacher') ? 'teacher' : (await checkRole('principal') ? 'principal' : 'student'));
+
+    if (role === 'student') {
+      alert("Access Denied: You do not have an institutional role.");
+      return;
+    }
+
+    window.location.href = `./cbse/class-9/consoles/${role}.html`;
+  } else {
+    // Student: Hide modal, allow access
+    portalModal.style.display = "none";
+  }
+};
+
+window.onload = async function() {
+  try {
+    const user = await requireAuth();
+    if (user) {
+      // Show portal choice
+      portalModal.style.display = "flex";
+    }
+  } catch (err) {
+    console.error("Auth failed:", err);
+  }
+
+  // Existing OnLoad Logic
+  resetPortal();
+};
+
+// Expose handleRequestSubmit globally
+window.handleRequestSubmit = function(e) {
   e.preventDefault();
   const board = document.getElementById("reqBoard").value;
   const cls = document.getElementById("reqClass").value;
@@ -395,7 +451,18 @@ function handleRequestSubmit(e) {
   const body = `Hi Ready4Exam Team,%0D%0A%0D%0AI request content for:%0D%0A- Board: ${board}%0D%0A- Class: ${cls}%0D%0A%0D%0ACount me as one of the 5 students for the Fast Track deployment!`;
   window.location.href = `mailto:ready4urexam@gmail.com?subject=${encodeURIComponent(subject)}&body=${body}`;
   closeRequestModal();
-}
+};
+
+const buttons=document.querySelectorAll(".board-btn");
+const grid=document.getElementById("class-grid");
+const content=document.getElementById("content-area");
+const coming=document.getElementById("coming-soon");
+const note=document.getElementById("board-note");
+const modal = document.getElementById("requestModal");
+
+window.openRequestModal = function() { modal.style.display = "flex"; }
+window.closeRequestModal = function() { modal.style.display = "none"; }
+modal.addEventListener('click', (e) => { if (e.target === modal) closeRequestModal(); });
 
 function resetPortal() {
     buttons.forEach(b=>b.classList.remove("active"));
@@ -404,7 +471,6 @@ function resetPortal() {
     coming.classList.add("hidden");
     note.textContent="";
 }
-window.addEventListener('pageshow', resetPortal);
 
 buttons.forEach(btn=>{
   btn.onclick=()=>{

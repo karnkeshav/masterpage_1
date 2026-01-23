@@ -79,6 +79,15 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
   <section class="hero text-center">
     <span class="bg-gold/20 text-gold px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 inline-block">2025 - 2026 Academic Session</span>
     <h2 class="text-3xl md:text-5xl font-black tracking-tight mb-4">CBSE Class 8 Hub</h2>
+
+    <!-- MODE TOGGLE -->
+    <div class="flex justify-center mb-6 mt-6">
+        <div class="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 rounded-full inline-flex relative shadow-inner">
+            <button id="mode-mastery" onclick="setMode('standard')" class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-white text-cbse-blue shadow-lg">Chapter Mastery</button>
+            <button id="mode-term" onclick="setMode('term_prep')" class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all text-white hover:bg-white/10">Term Prep</button>
+        </div>
+    </div>
+
     <p id="class-note" class="text-base md:text-xl max-w-2xl mx-auto opacity-90 font-medium leading-relaxed"></p>
   </section>
 
@@ -156,6 +165,33 @@ const grid=document.getElementById("subject-grid");
 const title=document.getElementById("selected-stream-title");
 const back=document.getElementById("back-btn");
 
+// --- TOGGLE LOGIC ---
+let currentMode = "standard";
+window.setMode = function(mode) {
+    currentMode = mode;
+    const btnM = document.getElementById("mode-mastery");
+    const btnT = document.getElementById("mode-term");
+
+    if (mode === "standard") {
+        btnM.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-white text-cbse-blue shadow-lg";
+        btnT.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all text-white hover:bg-white/10";
+    } else {
+        btnM.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all text-white hover:bg-white/10";
+        btnT.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-white text-cbse-blue shadow-lg";
+    }
+
+    // Refresh current view
+    if (!streamSection.classList.contains("hidden")) {
+        // We are in stream selection, nothing to refresh yet unless we filter streams?
+        // No, streams are static.
+    } else {
+        // Refresh subjects
+        const currentStreamTitle = title.textContent;
+        const stream = currentStreamTitle.includes("Stream") ? currentStreamTitle.split(" ")[0] : null;
+        populateSubjects(stream);
+    }
+};
+
 if(CLASS>=5 && CLASS<=8){
   note.innerHTML="Curiosity today becomes learning tomorrow — build your base. Aligned with NEP 2020.";
 } else if(CLASS===9||CLASS===10){
@@ -192,14 +228,23 @@ function loadSubjects(){
 
 function populateSubjects(stream){
   grid.innerHTML="";
+  console.log("Populating subjects...", Object.keys(curriculum));
   Object.keys(curriculum).forEach(sub=>{
     if(stream && !Object.values(curriculum[sub]).some(c=>Array.isArray(c)&&c.some(x=>x.section?.includes(stream)))) return;
+
+    console.log("Rendering sub:", sub);
+    // DYNAMIC LINK GENERATION
+    let href = `chapter-selection.html?subject=${encodeURIComponent(sub)}`;
+    if (currentMode === "term_prep") {
+        href += `&mode=term_prep`;
+    }
+
     grid.innerHTML+=`
-    <a href="chapter-selection.html?subject=${encodeURIComponent(sub)}" class="subject-card group">
+    <a href="${href}" class="subject-card group">
       <div class="card-header"><i data-lucide="book-open" class="text-cbse-blue h-8 w-8"></i>
       <h3 class="card-title">${sub}</h3></div>
-      <p class="card-description">Practice specific worksheets for ${sub}.</p>
-      <div class="mt-6 text-center"><button class="card-button bg-cbse-blue group-hover:bg-blue-600">View Chapters</button></div>
+      <p class="card-description">${currentMode === "term_prep" ? "Select chapters for Term Exams." : "Practice specific worksheets for " + sub + "."}</p>
+      <div class="mt-6 text-center"><button class="card-button bg-cbse-blue group-hover:bg-blue-600">${currentMode === "term_prep" ? "Start Prep" : "View Chapters"}</button></div>
     </a>`;
   });
   lucide.createIcons();

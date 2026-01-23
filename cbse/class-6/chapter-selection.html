@@ -11,7 +11,7 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Select Book & Chapter — Class 6</title>
+  <title>Select Book & Chapter — Class 9</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -31,7 +31,14 @@
       border:1px solid #d1d5db;cursor:pointer;text-align:left;box-shadow:0 2px 6px rgba(2,6,23,.05);transition:.2s;
     }
     .topic-btn:hover{background:#f5f7fa; transform: translateY(-1px);}
-    .topic-btn.selected{border-color:#1a3e6a;background:#eff6ff;ring:2px solid #1a3e6a}
+    .topic-btn.selected{border-color:#1a3e6a;background:#eff6ff;ring:2px solid #1a3e6a; position: relative;}
+
+    /* Checkmark for selected */
+    .topic-btn.selected::after {
+        content: '✓';
+        position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+        font-weight: 900; color: #1a3e6a;
+    }
 
     .difficulty-btn{
       padding:.6rem 1.25rem;border-radius:.75rem;font-weight:600;cursor:pointer;transition:.2s;
@@ -65,7 +72,10 @@
 </header>
 
 <main class="flex-grow max-w-3xl mx-auto px-4 py-8 w-full">
-  <h2 id="page-title" class="text-3xl font-extrabold text-cbse-blue mb-2 text-center">Select Book</h2>
+  <div class="flex items-center justify-center gap-2 mb-2">
+      <h2 id="page-title" class="text-3xl font-extrabold text-cbse-blue text-center">Select Book</h2>
+      <span id="mode-badge" class="hidden bg-accent-gold text-cbse-blue text-[10px] font-black uppercase px-2 py-1 rounded-full">Term Prep Mode</span>
+  </div>
   <p id="subject-desc" class="text-center text-gray-600 mb-8 font-medium"></p>
 
   <div id="content-container" class="space-y-2 mb-8"></div>
@@ -100,16 +110,25 @@ import { requireAuth } from "./js/auth-paywall.js";
 import { checkClassAccess, showExpiredPopup } from "./js/firebase-expiry.js";
 
 const CLASS_ID = "6";
-const subject  = new URLSearchParams(location.search).get("subject") || "";
+const params = new URLSearchParams(location.search);
+const subject  = params.get("subject") || "";
+const isTermPrep = params.get("mode") === "term_prep";
 
 const content      = document.getElementById("content-container");
 const diffBox      = document.getElementById("difficulty-container");
 const startBtn     = document.getElementById("start-quiz");
 const errorMsg     = document.getElementById("error-msg");
 const subjectDesc  = document.getElementById("subject-desc");
+const modeBadge    = document.getElementById("mode-badge");
+
+if (isTermPrep) {
+    modeBadge.classList.remove("hidden");
+    startBtn.textContent = "Proceed to Prep";
+}
 
 let selectedBook = null;
-let selectedChapter = null;
+let selectedChapter = null; // Single select
+let selectedChapters = new Set(); // Multi select
 let selectedDifficulty = null;
 
 const meta = {
@@ -151,20 +170,27 @@ function renderChapters(book){
   document.getElementById("page-title").textContent = book;
 
   const fragment = document.createDocumentFragment();
+
+  // Back Button
+  const back = document.createElement("button");
+  back.className = "w-full text-cbse-blue font-bold py-2 mb-2 hover:underline text-left pl-2";
+  back.textContent = "← Back to Books";
+  back.onclick = renderBooks;
+  fragment.appendChild(back);
+
   chapters.forEach(ch => {
     const title = ch.chapter_title || ch.title || ch;
     const btn = document.createElement("button");
     btn.className = "topic-btn";
+
+    if (isTermPrep && selectedChapters.has(title)) {
+        btn.classList.add("selected");
+    }
+
     btn.textContent = title;
     btn.onclick = (e) => selectChapter(title, e.currentTarget);
     fragment.appendChild(btn);
   });
-
-  const back = document.createElement("button");
-  back.className = "w-full text-cbse-blue font-bold py-2 mt-2 hover:underline";
-  back.textContent = "← Change Book";
-  back.onclick = renderBooks;
-  fragment.appendChild(back);
 
   content.innerHTML = "";
   content.appendChild(fragment);
@@ -172,15 +198,33 @@ function renderChapters(book){
 }
 
 function selectChapter(title, button){
-  document.querySelectorAll(".topic-btn").forEach(b => b.classList.remove("selected"));
-  button.classList.add("selected");
+  if (isTermPrep) {
+      if (selectedChapters.has(title)) {
+          selectedChapters.delete(title);
+          button.classList.remove("selected");
+      } else {
+          selectedChapters.add(title);
+          button.classList.add("selected");
+      }
 
-  selectedChapter = title;
-  diffBox.classList.remove("hidden");
-  
-  setTimeout(() => {
-    diffBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 100);
+      if (selectedChapters.size > 0) {
+          diffBox.classList.remove("hidden");
+          errorMsg.classList.add("hidden");
+      } else {
+          diffBox.classList.add("hidden");
+          startBtn.disabled = true;
+      }
+  } else {
+      document.querySelectorAll(".topic-btn").forEach(b => b.classList.remove("selected"));
+      button.classList.add("selected");
+
+      selectedChapter = title;
+      diffBox.classList.remove("hidden");
+
+      setTimeout(() => {
+        diffBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+  }
 }
 
 document.querySelectorAll(".difficulty-btn").forEach(btn => {
@@ -188,6 +232,11 @@ document.querySelectorAll(".difficulty-btn").forEach(btn => {
     document.querySelectorAll(".difficulty-btn").forEach(x => x.classList.remove("selected"));
     e.target.classList.add("selected");
     selectedDifficulty = e.target.dataset.diff;
+
+    // Check if chapters are selected
+    if (isTermPrep && selectedChapters.size === 0) return;
+    if (!isTermPrep && !selectedChapter) return;
+
     startBtn.disabled = false;
     errorMsg.classList.add("hidden");
   };
@@ -215,8 +264,10 @@ function buildTableName(chapter){
 }
 
 startBtn.onclick = async () => {
-  if (!selectedChapter || !selectedDifficulty) {
-    errorMsg.textContent = "Please select a chapter and difficulty.";
+  const hasSelection = isTermPrep ? selectedChapters.size > 0 : !!selectedChapter;
+
+  if (!hasSelection || !selectedDifficulty) {
+    errorMsg.textContent = "Please select chapter(s) and difficulty.";
     errorMsg.classList.remove("hidden");
     return;
   }
@@ -230,18 +281,40 @@ startBtn.onclick = async () => {
     const access = await checkClassAccess(CLASS_ID, subject);
 
     if (access.allowed) {
-      const table = buildTableName(selectedChapter);
-      const params = new URLSearchParams({
-        class: CLASS_ID,
-        subject,
-        book: selectedBook,
-        chapter: selectedChapter,
-        difficulty: selectedDifficulty,
-        table,
-        chapter_name: selectedChapter 
-      });
 
-      location.href = `quiz-engine.html?${params.toString()}`;
+      if (isTermPrep) {
+          // TERM PREP FLOW
+          const tables = Array.from(selectedChapters).map(ch => buildTableName(ch)).join(",");
+          // Keep raw names for display
+          const names = Array.from(selectedChapters).join(",");
+
+          const params = new URLSearchParams({
+            class: CLASS_ID,
+            subject,
+            chapters: tables,
+            chapter_names: names,
+            difficulty: selectedDifficulty,
+            mode: "term_prep"
+          });
+
+          location.href = `cognitive-priming.html?${params.toString()}`;
+
+      } else {
+          // STANDARD FLOW
+          const table = buildTableName(selectedChapter);
+          const params = new URLSearchParams({
+            class: CLASS_ID,
+            subject,
+            book: selectedBook,
+            chapter: selectedChapter,
+            difficulty: selectedDifficulty,
+            table,
+            chapter_name: selectedChapter
+          });
+
+          location.href = `quiz-engine.html?${params.toString()}`;
+      }
+
     } else {
       showExpiredPopup(access.reason);
       startBtn.disabled = false;
@@ -251,7 +324,7 @@ startBtn.onclick = async () => {
   } catch (err) {
     console.error("Auth or Access failed:", err);
     startBtn.disabled = false;
-    startBtn.textContent = "Start Quiz";
+    startBtn.textContent = isTermPrep ? "Proceed to Prep" : "Start Quiz";
   }
 };
 
