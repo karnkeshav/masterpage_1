@@ -88,93 +88,36 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 }
 .right-panel { width: 100%; padding: 2rem 1.5rem; padding-bottom: 80px; }
 
-/* Laptop (LG) Logic */
 @media (min-width: 1024px) {
   body { height: 100vh; overflow: hidden; display: flex; }
   .split-layout { width: 100%; height: 100%; display: flex; }
-  
-  /* Left Panel (Hero) - 60% */
-  .left-panel {
-    width: 60%; height: 100%;
-    padding: 3rem 4rem; /* Adjusted padding for better fit */
-    display: flex; flex-direction: column; 
-    /* justify-content: space-between; Removed to allow better stacking */
-    border-radius: 0;
-  }
-  
-  /* Right Panel (Curriculum) - 40% */
-  .right-panel {
-    width: 40%; height: 100%;
-    background: #f8fafc;
-    position: relative;
-    display: flex; flex-direction: column; 
-    justify-content: space-between; 
-    padding: 2rem;
-  }
-  
-  #site-footer {
-    position: absolute; bottom: 0; left: 0; width: 100%;
-    background: transparent; color: #64748b; border-top: 1px solid #e2e8f0;
-  }
+  .left-panel { width: 60%; height: 100%; padding: 3rem 4rem; border-radius: 0; }
+  .right-panel { width: 40%; height: 100%; background: #f8fafc; position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem; }
+  #site-footer { position: absolute; bottom: 0; left: 0; width: 100%; background: transparent; color: #64748b; border-top: 1px solid #e2e8f0; }
   #site-footer p { color: #133b6a; }
-  
   .mobile-header { display: none; }
-
-  .hero-image {
-    position: absolute; top: 0; right: 0; height: auto; width: 45%;
-    max-height: 100%; object-fit: contain; object-position: top right;
-    z-index: 0; opacity: 0.9;
-  }
+  .hero-image { position: absolute; top: 0; right: 0; height: auto; width: 45%; max-height: 100%; object-fit: contain; object-position: top right; z-index: 0; opacity: 0.9; }
 }
 
-/* Mobile Image Logic */
 @media (max-width: 1023px) {
   body { height: auto; overflow-y: auto; flex-direction: column; }
   .split-layout { flex-direction: column; }
   .mobile-header { display: block; position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); background: rgba(19,59,106,0.95); padding: 1rem; }
   #site-footer { background: #133b6a; color: white; margin-top: auto; }
-
-  .hero-image {
-    position: absolute; top: 10%; right: -10%; height: auto; width: 60%;
-    max-height: 50%; object-fit: contain; object-position: top right;
-    z-index: 0; opacity: 0.8;
-  }
-  
-  .right-panel { display: block; }
+  .hero-image { position: absolute; top: 10%; right: -10%; height: auto; width: 60%; max-height: 50%; object-fit: contain; object-position: top right; z-index: 0; opacity: 0.8; }
 }
 
 /* --- MODAL & WHATSAPP --- */
-.modal-backdrop {
-  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(15, 23, 42, 0.8); z-index: 100; align-items: center; justify-content: center;
-  padding: 20px; backdrop-filter: blur(5px);
-}
-.modal-content {
-  background: white; border-radius: 24px; width: 100%; max-width: 450px;
-  padding: 2rem; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: slideUp 0.3s ease-out;
-}
+.modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 100; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
+.modal-content { background: white; border-radius: 24px; width: 100%; max-width: 450px; padding: 2rem; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s ease-out; }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-.portal-btn {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 100%; padding: 1.5rem; border-radius: 16px; border: 2px solid #e2e8f0;
-  transition: all 0.2s; cursor: pointer; text-align: center;
-}
+.portal-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 1.5rem; border-radius: 16px; border: 2px solid #e2e8f0; transition: all 0.2s; cursor: pointer; text-align: center; }
 .portal-btn:hover { border-color: #133b6a; background: #f0f9ff; transform: translateY(-2px); }
 .portal-btn i { font-size: 2rem; margin-bottom: 0.5rem; color: #133b6a; }
 
-.whatsapp-float {
-  position: fixed; bottom: 80px; right: 20px;
-  background-color: #25d366; color: white;
-  width: 55px; height: 55px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
-  z-index: 90; transition: transform 0.3s;
-  text-decoration: none;
-}
+.whatsapp-float { position: fixed; bottom: 80px; right: 20px; background-color: #25d366; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); z-index: 90; transition: transform 0.3s; text-decoration: none; }
 .whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
-@media(min-width:1024px){ .whatsapp-float{ bottom: 30px; right: 30px; } }
 </style>
 </head>
 
@@ -182,135 +125,51 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 
 <header class="mobile-header">
   <div class="flex justify-between items-center">
-    <div>
-      <h1 class="text-xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
-    </div>
-    <div class="flex items-center gap-3">
-        <button id="mobile-login-btn" class="text-white text-xs font-bold border border-white/20 px-3 py-1.5 rounded-full">Login</button>
-    </div>
+    <div><h1 class="text-xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1></div>
+    <div><button id="mobile-login-btn" class="text-white text-xs font-bold border border-white/20 px-3 py-1.5 rounded-full">Login</button></div>
   </div>
 </header>
 
 <div class="split-layout">
-  
   <aside class="left-panel shadow-2xl z-10">
-    <!-- Header with Login Button -->
     <div class="absolute top-8 right-8 z-50 hidden lg:block">
-        <button id="desktop-login-btn" class="bg-white/10 backdrop-blur-md text-white font-bold text-xs px-5 py-2.5 rounded-full border border-white/20 hover:bg-white/20 transition">
-            Login / Register
-        </button>
+      <button id="desktop-login-btn" class="bg-white/10 backdrop-blur-md text-white font-bold text-xs px-5 py-2.5 rounded-full border border-white/20 hover:bg-white/20 transition">Login / Register</button>
     </div>
-
     <img src="image_0.png" alt="Smiling Students" class="hero-image fade-in">
     <div class="fade-in h-full flex flex-col z-10 relative">
-      
       <div class="hidden lg:block mb-6 shrink-0">
         <h1 class="text-4xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
         <p class="text-white text-sm opacity-60 uppercase tracking-widest mt-1">Academic Excellence Portal</p>
       </div>
-
       <div class="shrink-0 mb-4">
-        <span class="bg-gold/20 text-gold px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 inline-block border border-gold/30">
-          2025 – 2026 Session
-        </span>
+        <span class="bg-gold/20 text-gold px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 inline-block border border-gold/30">2025 – 2026 Session</span>
         <h2 class="text-3xl lg:text-5xl font-black text-white mb-3 leading-tight lg:max-w-lg">Board-Aligned <br>Assessment.</h2>
-        <p class="text-white/80 text-sm lg:text-base font-medium leading-relaxed mb-4 max-w-lg">
-          Practice smarter, identify learning gaps early, and build confidence months before exams.
-        </p>
-
+        <p class="text-white/80 text-sm lg:text-base font-medium leading-relaxed mb-4 max-w-lg">Practice smarter, identify learning gaps early, and build confidence months before exams.</p>
         <ul class="space-y-3 max-w-lg mb-6">
-          <li class="flex items-start gap-2">
-            <i class="fas fa-check-circle text-gold mt-1 text-xs shrink-0"></i>
-            <p class="text-white/90 text-xs leading-snug">
-              <strong class="text-white">Guaranteed Mastery via LPG Framework:</strong> Uses a structured Learn-Practice-Grow pedagogy to ensure 85%-95% proficiency, prioritizing concept clarity.
-            </p>
-          </li>
-          <li class="flex items-start gap-2">
-            <i class="fas fa-chart-line text-gold mt-1 text-xs shrink-0"></i>
-            <p class="text-white/90 text-xs leading-snug">
-              <strong class="text-white">Proactive Exam Readiness:</strong> AI dashboards spot learning gaps early, allowing teachers & principals to improve results before every class exam.
-            </p>
-          </li>
-          <li class="flex items-start gap-2">
-            <i class="fas fa-book-open text-gold mt-1 text-xs shrink-0"></i>
-            <p class="text-white/90 text-xs leading-snug">
-              <strong class="text-white">100% Board-Aligned Curriculum:</strong> Strictly aligned with NCERT/State standards, targeting the toughest parts of actual board exams.
-            </p>
-          </li>
+          <li class="flex items-start gap-2"><i class="fas fa-check-circle text-gold mt-1 text-xs shrink-0"></i><p class="text-white/90 text-xs leading-snug"><strong class="text-white">Guaranteed Mastery:</strong> 85%-95% proficiency focus.</p></li>
+          <li class="flex items-start gap-2"><i class="fas fa-chart-line text-gold mt-1 text-xs shrink-0"></i><p class="text-white/90 text-xs leading-snug"><strong class="text-white">Proactive AI Dashboards:</strong> Spot learning gaps early.</p></li>
+          <li class="flex items-start gap-2"><i class="fas fa-book-open text-gold mt-1 text-xs shrink-0"></i><p class="text-white/90 text-xs leading-snug"><strong class="text-white">100% Board-Aligned:</strong> NCERT/State standards.</p></li>
         </ul>
-
-        <div class="border-t border-white/10 pt-3 max-w-lg">
-            <p class="text-gold text-[10px] font-bold uppercase tracking-widest mb-1"><i class="fas fa-star mr-1"></i> Custom Solutions</p>
-            <p class="text-white/80 text-xs leading-relaxed">
-                We support <span class="text-white font-bold">Any Curriculum, Any State Board, & Competitive Exams</span> on request for Schools, Education Trust, Coaching center and Students.
-            </p>
-        </div>
       </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-auto shrink-0 max-w-xl">
-        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center">
-          <div class="text-gold font-bold text-sm">Learn</div>
-          <div class="text-white/60 text-[10px]">Concept clarity</div>
-        </div>
-        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center">
-          <div class="text-gold font-bold text-sm">Practice</div>
-          <div class="text-white/60 text-[10px]">Competency Qs</div>
-        </div>
-        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center">
-          <div class="text-gold font-bold text-sm">Grow</div>
-          <div class="text-white/60 text-[10px]">Exam readiness</div>
-        </div>
+      <div class="grid grid-cols-3 gap-3 mt-auto shrink-0 max-w-xl">
+        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center"><div class="text-gold font-bold text-sm">Learn</div></div>
+        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center"><div class="text-gold font-bold text-sm">Practice</div></div>
+        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center"><div class="text-gold font-bold text-sm">Grow</div></div>
       </div>
     </div>
   </aside>
 
   <main class="right-panel">
-    
     <div class="w-full max-w-md mx-auto mb-6 lg:mb-0 flex-grow relative overflow-hidden pointer-events-none h-48 lg:h-auto">
-      <div class="text-center mb-2">
-        <span class="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Community Love</span>
-      </div>
-      
       <div class="scroll-wrapper h-full">
         <div class="scroll-content space-y-4 pb-4">
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Advanced questions are really tough, but they prepared me perfectly."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 10</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Very good one. The interface is so simple to use."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Telangana</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Finally found a place with real Case-Study questions."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Teacher, CBSE</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Helped me find my weak areas in Science instantly."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 9</div>
-          </div>
-           <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Excellent platform for board prep."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Hyderabad</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Advanced questions are really tough, but they prepared me perfectly."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 10</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Very good one. The interface is so simple to use."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Telangana</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Finally found a place with real Case-Study questions."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Teacher, CBSE</div>
-          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm"><p class="text-slate-600 text-xs italic">"Helped me find my weak areas instantly."</p></div>
+          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm"><p class="text-slate-600 text-xs italic">"Advanced questions are perfectly challenging."</p></div>
         </div>
       </div>
     </div>
 
     <div class="w-full max-w-md mx-auto mt-auto lg:pb-8">
-      
       <div class="text-center mb-6">
         <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Select Your Curriculum</p>
         <div class="flex justify-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border mx-auto">
@@ -320,95 +179,22 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
         </div>
       </div>
 
-      <div class="text-center mb-6">
-        <div class="inline-flex items-center gap-3 bg-blue-50/50 border border-blue-100 rounded-full pl-4 pr-1 py-1 hover:bg-blue-50 transition cursor-pointer" onclick="openRequestModal()">
-          <span class="text-xs text-slate-500 font-medium">Don't see your class?</span>
-          <button class="text-white text-[10px] font-bold bg-cbse-blue px-3 py-1.5 rounded-full shadow-sm">
-            Request Access &rarr;
-          </button>
-        </div>
-      </div>
-
       <div id="content-area" class="hidden w-full">
-        <div class="flex items-center justify-center mb-4">
-          <div class="h-px bg-slate-200 w-12"></div>
-          <p id="board-note" class="mx-3 text-xs font-bold text-cbse-blue uppercase tracking-wide"></p>
-          <div class="h-px bg-slate-200 w-12"></div>
-        </div>
-        
         <div id="class-grid" class="grid grid-cols-2 gap-3 max-h-[30vh] overflow-y-auto p-2 scrollbar-hide"></div>
-
-        <div id="coming-soon" class="hidden text-center py-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-          <h3 class="text-lg font-black text-slate-400">ICSE — Coming Soon</h3>
-          <p class="text-slate-400 text-xs mt-1">Curriculum under development.</p>
-        </div>
+        <div id="coming-soon" class="hidden text-center py-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200"><h3 class="text-lg font-black text-slate-400">Coming Soon</h3></div>
       </div>
-
     </div>
 
-    <footer id="site-footer" class="py-4 text-center">
-      <p class="font-bold text-sm lg:text-slate-600">Ready4Exam Hub</p>
-      <div class="text-[10px] mt-1 opacity-70">
-        ready4urexam@gmail.com | +91 85209 77573
-      </div>
-    </footer>
+    <footer id="site-footer" class="py-4 text-center"><p class="font-bold text-sm lg:text-slate-600">Ready4Exam Hub</p></footer>
   </main>
-</div>
-
-<a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20need%20help%20regarding%20the%20platform." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
-  <i class="fab fa-whatsapp"></i>
-</a>
-
-<div id="requestModal" class="modal-backdrop">
-  <div class="modal-content">
-    <button onclick="closeRequestModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-      <i class="fas fa-times"></i>
-    </button>
-    <div class="text-center mb-5">
-      <div class="bg-gold/20 text-gold w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">🚀</div>
-      <h3 class="text-lg font-black text-heading">Request Curriculum</h3>
-    </div>
-    <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg mb-5 text-left">
-      <h4 class="text-cbse-blue font-bold text-[10px] uppercase tracking-wide mb-1">⚡ Fast Track Promise</h4>
-      <p class="text-slate-600 text-[11px] leading-relaxed">
-        If we receive <span class="text-red-500 font-bold">5 requests</span> for the same Class & Board, we deploy within <span class="text-heading font-bold">24 hours</span>. Otherwise, you join the Phase 2 waitlist.
-      </p>
-    </div>
-    <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
-      <div>
-        <label class="block text-[10px] font-bold text-slate-500 mb-1">Which Board?</label>
-        <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required 
-               class="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
-      </div>
-      <div>
-        <label class="block text-[10px] font-bold text-slate-500 mb-1">Which Class?</label>
-        <input type="text" id="reqClass" placeholder="e.g. Class 8" required 
-               class="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
-      </div>
-      <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-900/20 hover:bg-blue-900 transition text-xs uppercase tracking-wide">
-        Send Request via Email
-      </button>
-    </form>
-  </div>
 </div>
 
 <div id="portalChoiceModal" class="modal-backdrop">
   <div class="modal-content">
-    <div class="text-center mb-6">
-      <h3 class="text-xl font-black text-heading">Select Your Portal</h3>
-      <p class="text-slate-500 text-xs mt-1">Choose how you wish to access the platform.</p>
-    </div>
+    <div class="text-center mb-6"><h3 class="text-xl font-black text-heading">Select Your Portal</h3></div>
     <div class="grid grid-cols-2 gap-4">
-      <div class="portal-btn" onclick="choosePortal('school')">
-        <i class="fas fa-school"></i>
-        <span class="font-bold text-sm text-heading">School / Demo</span>
-        <span class="text-[10px] text-slate-400 mt-1">Institutional & Admins</span>
-      </div>
-      <div class="portal-btn" onclick="choosePortal('student')">
-        <i class="fas fa-user-graduate"></i>
-        <span class="font-bold text-sm text-heading">Individual Student</span>
-        <span class="text-[10px] text-slate-400 mt-1">Self-Paced Learning</span>
-      </div>
+      <div class="portal-btn" onclick="choosePortal('school')"><i class="fas fa-school"></i><span class="font-bold text-sm">School / Demo</span></div>
+      <div class="portal-btn" onclick="choosePortal('student')"><i class="fas fa-user-graduate"></i><span class="font-bold text-sm">Individual Student</span></div>
     </div>
   </div>
 </div>
@@ -476,100 +262,99 @@ window.goToConsole = function(role) {
 };
 
 window.triggerLogin = async function() {
-    try {
-        const user = await requireAuth(); // Popup if not logged in
-        if (user) {
-            portalModal.style.display = "flex";
+<script>
+  window.__firebase_config = {
+    apiKey: "AIzaSyAXdKiYRxBKAj280YcNuNwlKKDp85xpOWQ",
+    authDomain: "quiz-signon.firebaseapp.com",
+    projectId: "quiz-signon",
+    storageBucket: "quiz-signon.firebasestorage.app",
+    messagingSenderId: "863414222321",
+    appId: "1:863414222321:web:819f5564825308bcd9d850",
+    measurementId: "G-4EFDM0CRYY",
+    // NOTE: Ensure your supabase keys are here if config.js requires them
+    supabaseUrl: "https://zqhzekzilalbszpfwxhn.supabase.co",
+    supabaseAnonKey: "sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys"
+  };
+</script>
+
+<script type="module">
+  import { requireAuth, checkRole, checkDemoAccess } from "./cbse/class-9/js/auth-paywall.js";
+
+  const portalModal = document.getElementById("portalChoiceModal");
+
+  window.choosePortal = async function(type) {
+    if (type === 'school') {
+      try {
+        const user = await requireAuth(true);
+        if (checkDemoAccess && checkDemoAccess(user)) {
+          window.location.href = `./cbse/class-9/consoles/admin.html`;
+          return;
         }
-    } catch (e) {
-        console.log("Login cancelled");
+        const isAdmin = await checkRole('admin');
+        const isTeacher = await checkRole('teacher');
+        const isPrincipal = await checkRole('principal');
+        let role = isAdmin ? 'admin' : (isTeacher ? 'teacher' : (isPrincipal ? 'principal' : 'student'));
+
+        if (role === 'student') {
+          alert("Access Denied: No Institutional Role found.");
+          return;
+        }
+        window.location.href = `./cbse/class-9/consoles/${role}.html`;
+      } catch (e) { console.error("Portal Error", e); }
+    } else {
+      portalModal.style.display = "none";
     }
-};
+  };
 
-document.getElementById("desktop-login-btn").onclick = triggerLogin;
-document.getElementById("mobile-login-btn").onclick = triggerLogin;
+  window.triggerLogin = async function() {
+    try {
+      const user = await requireAuth();
+      if (user) portalModal.style.display = "flex";
+    } catch (e) { console.log("Login Cancelled"); }
+  };
 
-window.onload = async function() {
-  try {
-    // Silent check
-    const user = await requireAuth(true);
-    if (user) {
-       // Optional: Update UI to show "Logged In" state
-       document.getElementById("desktop-login-btn").textContent = "My Portal";
-       document.getElementById("mobile-login-btn").textContent = "Portal";
-       // We do NOT auto-show modal on reload, only on login click,
-       // UNLESS we want to force choice. The prompt says "Implement a post-login choice modal".
-       // If silent check passes, user is already "in". We might assume they made a choice.
-       // But if they click "My Portal", we show the modal.
-    }
-  } catch (err) {
-    console.error("Silent Auth check failed:", err);
-  }
+  document.getElementById("desktop-login-btn").onclick = triggerLogin;
+  document.getElementById("mobile-login-btn").onclick = triggerLogin;
 
-  // Existing OnLoad Logic
-  resetPortal();
-};
-
-// Expose handleRequestSubmit globally
-window.handleRequestSubmit = function(e) {
-  e.preventDefault();
-  const board = document.getElementById("reqBoard").value;
-  const cls = document.getElementById("reqClass").value;
-  const subject = `Curriculum Request: ${board} - ${cls}`;
-  const body = `Hi Ready4Exam Team,%0D%0A%0D%0AI request content for:%0D%0A- Board: ${board}%0D%0A- Class: ${cls}%0D%0A%0D%0ACount me as one of the 5 students for the Fast Track deployment!`;
-  window.location.href = `mailto:ready4urexam@gmail.com?subject=${encodeURIComponent(subject)}&body=${body}`;
-  closeRequestModal();
-};
-
-const buttons=document.querySelectorAll(".board-btn");
-const grid=document.getElementById("class-grid");
-const content=document.getElementById("content-area");
-const coming=document.getElementById("coming-soon");
-const note=document.getElementById("board-note");
-const modal = document.getElementById("requestModal");
-
-window.openRequestModal = function() { modal.style.display = "flex"; }
-window.closeRequestModal = function() { modal.style.display = "none"; }
-modal.addEventListener('click', (e) => { if (e.target === modal) closeRequestModal(); });
-
-function resetPortal() {
-    buttons.forEach(b=>b.classList.remove("active"));
-    content.classList.add("hidden");
-    grid.innerHTML="";
-    coming.classList.add("hidden");
-    note.textContent="";
-}
-
-buttons.forEach(btn=>{
-  btn.onclick=()=>{
+  window.onload = async function() {
+    try {
+      const user = await requireAuth(true);
+      if (user) {
+        document.getElementById("desktop-login-btn").textContent = "My Portal";
+        document.getElementById("mobile-login-btn").textContent = "Portal";
+      }
+    } catch (err) { console.warn("Not logged in"); }
     resetPortal();
-    btn.classList.add("active");
-    content.classList.remove("hidden");
-    const board = btn.dataset.board;
-    gtag('event', 'board_selected', { board });
+  };
 
-    if(board==="CBSE"){
-      note.textContent="NCERT Aligned (6-12)";
-      [6,7,8,9,10,11,12].forEach(c=>{
-        grid.innerHTML+=`
-        <a href="./cbse/class-${c}/index.html" class="class-card text-center group" onclick="gtag('event','class_opened',{board:'CBSE',class:${c}})">
-          <h3 class="text-base font-black text-heading mb-1">Class ${c}</h3>
-          <div class="text-[10px] text-cbse-blue font-bold opacity-0 group-hover:opacity-100 transition">ENTER &rarr;</div>
-        </a>`;
-      });
-    }
-    if(board==="SCERT"){
-      note.textContent="Telangana State Board";
-      grid.innerHTML=`
-        <a href="./scert/telangana-9/index.html" class="class-card text-center col-span-2 group" onclick="gtag('event','scert_opened',{state:'Telangana'})">
-          <h3 class="text-base font-black text-heading mb-1">Class 9 Telangana</h3>
-          <p class="text-[10px] text-slate-400">Official Demo</p>
-          <div class="text-[10px] text-cbse-blue font-bold mt-2 opacity-0 group-hover:opacity-100 transition">START DEMO &rarr;</div>
-        </a>`;
-    }
-    if(board==="ICSE"){ coming.classList.remove("hidden"); }
+  // Board UI Logic
+  const buttons = document.querySelectorAll(".board-btn");
+  const grid = document.getElementById("class-grid");
+  const content = document.getElementById("content-area");
+  const coming = document.getElementById("coming-soon");
+
+  function resetPortal() {
+    buttons.forEach(b => b.classList.remove("active"));
+    content.classList.add("hidden");
+    grid.innerHTML = "";
+    coming.classList.add("hidden");
   }
-});
+
+  buttons.forEach(btn => {
+    btn.onclick = () => {
+      resetPortal();
+      btn.classList.add("active");
+      content.classList.remove("hidden");
+      const board = btn.dataset.board;
+      if (board === "CBSE") {
+        [6, 7, 8, 9, 10, 11, 12].forEach(c => {
+          grid.innerHTML += `<a href="./cbse/class-${c}/index.html" class="class-card group"><h3 class="text-base font-black">Class ${c}</h3></a>`;
+        });
+      } else if (board === "SCERT") {
+        grid.innerHTML = `<a href="./scert/telangana-9/index.html" class="class-card col-span-2 group"><h3 class="text-base font-black">Class 9 Telangana</h3></a>`;
+      } else { coming.classList.remove("hidden"); }
+    }
+  });
 </script>
 
 </body>
