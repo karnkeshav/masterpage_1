@@ -13,7 +13,7 @@ export function initPersonaLens() {
         <button onclick="window.location.href='${prefix}/index.html'" class="lens-btn bg-emerald-600">Student (${classNum})</button>
         <button onclick="window.location.href='${prefix}/consoles/teacher.html'" class="lens-btn bg-blue-600">Teacher</button>
         <button onclick="window.location.href='${prefix}/consoles/principal.html'" class="lens-btn bg-purple-600">Principal</button>
-        <button onclick="window.location.href='${prefix}/consoles/admin.html'" class="lens-btn bg-slate-600">Admin</button>
+        <button onclick="window.location.href='/cbse/class-9/consoles/admin.html'" class="lens-btn bg-slate-600">Admin (IAM)</button>
     `;
 
     const style = document.createElement("style");

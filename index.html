@@ -413,42 +413,66 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   </div>
 </div>
 
+<div id="schoolRoleModal" class="modal-backdrop">
+  <div class="modal-content max-w-2xl">
+    <div class="text-center mb-6">
+        <h3 class="text-xl font-black text-heading">Select Institutional Role</h3>
+        <p class="text-slate-500 text-xs mt-1">Access the Centralized School Dashboard.</p>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Admin -->
+        <div class="portal-btn" onclick="goToConsole('admin')">
+            <i class="fas fa-user-shield"></i>
+            <span class="font-bold text-xs text-heading mt-2">Admin</span>
+        </div>
+        <!-- Principal -->
+        <div class="portal-btn" onclick="goToConsole('principal')">
+            <i class="fas fa-building"></i>
+            <span class="font-bold text-xs text-heading mt-2">Principal</span>
+        </div>
+        <!-- Teacher -->
+        <div class="portal-btn" onclick="goToConsole('teacher')">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span class="font-bold text-xs text-heading mt-2">Teacher</span>
+        </div>
+        <!-- Student -->
+        <div class="portal-btn" onclick="goToConsole('student')">
+            <i class="fas fa-user-graduate"></i>
+            <span class="font-bold text-xs text-heading mt-2">Student</span>
+        </div>
+    </div>
+    <button onclick="closeSchoolModal()" class="mt-6 text-xs text-slate-400 font-bold hover:text-slate-600 block mx-auto">Back</button>
+  </div>
+</div>
+
 <script type="module">
 import { requireAuth, checkRole, checkDemoAccess } from "./cbse/class-9/js/auth-paywall.js";
+import { initializeAuthListener } from "./cbse/class-9/js/auth-paywall.js";
+initializeAuthListener(); // Ensure global listener for Lens
 
 // --- AUTH & PORTAL LOGIC ---
 const portalModal = document.getElementById("portalChoiceModal");
+const schoolModal = document.getElementById("schoolRoleModal");
 
 window.choosePortal = async function(type) {
   if (type === 'school') {
-    try {
-        const user = await requireAuth(true); // check if user is loaded
-
-        // 1. Check Demo
-        if (checkDemoAccess(user)) {
-             // For demo, we route to admin console but we need to signal it's demo
-             // Usually query params, or the console page logic handles it.
-             // We'll assume the console pages will look at the user email or a global flag.
-             window.location.href = `./cbse/class-9/consoles/admin.html`;
-             return;
-        }
-
-        // 2. Real Role Check
-        const role = await checkRole('admin') ? 'admin' : (await checkRole('teacher') ? 'teacher' : (await checkRole('principal') ? 'principal' : 'student'));
-
-        if (role === 'student') {
-          alert("Access Denied: You do not have an institutional role.");
-          return;
-        }
-
-        window.location.href = `./cbse/class-9/consoles/${role}.html`;
-    } catch (e) {
-        console.error("Portal access error", e);
-    }
+      // Open Secondary Modal
+      portalModal.style.display = "none";
+      schoolModal.style.display = "flex";
   } else {
     // Student: Hide modal, allow access
     portalModal.style.display = "none";
   }
+};
+
+window.closeSchoolModal = function() {
+    schoolModal.style.display = "none";
+    portalModal.style.display = "flex";
+};
+
+window.goToConsole = function(role) {
+    // Standardized Entry to Class 9 Consoles
+    window.location.href = `./cbse/class-9/consoles/${role}.html`;
 };
 
 window.triggerLogin = async function() {

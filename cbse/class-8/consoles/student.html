@@ -14,6 +14,7 @@
     <script type="module">
         import { checkRole, initializeAuthListener, requireAuth } from "../js/auth-paywall.js";
         import { getInitializedClients } from "../js/config.js";
+        import { showSkeleton } from "../js/ui-renderer.js";
         import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import curriculum from "../js/curriculum.js";
 
@@ -21,6 +22,10 @@
             document.getElementById("loading").classList.add("hidden");
             document.getElementById("app").classList.remove("hidden");
             document.getElementById("user-name").textContent = user.displayName || "Student";
+
+            // Show Skeleton while loading
+            showSkeleton(document.getElementById("dependency-graph"));
+
             loadProgress(user);
         }
 
