@@ -185,13 +185,22 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
     <div>
       <h1 class="text-xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
     </div>
-    <div class="text-white text-xs opacity-80">Academic Portal</div>
+    <div class="flex items-center gap-3">
+        <button id="mobile-login-btn" class="text-white text-xs font-bold border border-white/20 px-3 py-1.5 rounded-full">Login</button>
+    </div>
   </div>
 </header>
 
 <div class="split-layout">
   
   <aside class="left-panel shadow-2xl z-10">
+    <!-- Header with Login Button -->
+    <div class="absolute top-8 right-8 z-50 hidden lg:block">
+        <button id="desktop-login-btn" class="bg-white/10 backdrop-blur-md text-white font-bold text-xs px-5 py-2.5 rounded-full border border-white/20 hover:bg-white/20 transition">
+            Login / Register
+        </button>
+    </div>
+
     <img src="image_0.png" alt="Smiling Students" class="hero-image fade-in">
     <div class="fade-in h-full flex flex-col z-10 relative">
       
@@ -392,8 +401,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
     <div class="grid grid-cols-2 gap-4">
       <div class="portal-btn" onclick="choosePortal('school')">
         <i class="fas fa-school"></i>
-        <span class="font-bold text-sm text-heading">School / Institution</span>
-        <span class="text-[10px] text-slate-400 mt-1">For Teachers & Admins</span>
+        <span class="font-bold text-sm text-heading">School / Demo</span>
+        <span class="text-[10px] text-slate-400 mt-1">Institutional & Admins</span>
       </div>
       <div class="portal-btn" onclick="choosePortal('student')">
         <i class="fas fa-user-graduate"></i>
@@ -405,37 +414,72 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 </div>
 
 <script type="module">
-import { requireAuth, checkRole } from "./cbse/class-9/js/auth-paywall.js";
+import { requireAuth, checkRole, checkDemoAccess } from "./cbse/class-9/js/auth-paywall.js";
 
 // --- AUTH & PORTAL LOGIC ---
 const portalModal = document.getElementById("portalChoiceModal");
 
 window.choosePortal = async function(type) {
   if (type === 'school') {
-    // Redirect Admin/Principal/Teacher to Class 9 Consoles (Master Dashboard)
-    const role = await checkRole('admin') ? 'admin' : (await checkRole('teacher') ? 'teacher' : (await checkRole('principal') ? 'principal' : 'student'));
+    try {
+        const user = await requireAuth(true); // check if user is loaded
 
-    if (role === 'student') {
-      alert("Access Denied: You do not have an institutional role.");
-      return;
+        // 1. Check Demo
+        if (checkDemoAccess(user)) {
+             // For demo, we route to admin console but we need to signal it's demo
+             // Usually query params, or the console page logic handles it.
+             // We'll assume the console pages will look at the user email or a global flag.
+             window.location.href = `./cbse/class-9/consoles/admin.html`;
+             return;
+        }
+
+        // 2. Real Role Check
+        const role = await checkRole('admin') ? 'admin' : (await checkRole('teacher') ? 'teacher' : (await checkRole('principal') ? 'principal' : 'student'));
+
+        if (role === 'student') {
+          alert("Access Denied: You do not have an institutional role.");
+          return;
+        }
+
+        window.location.href = `./cbse/class-9/consoles/${role}.html`;
+    } catch (e) {
+        console.error("Portal access error", e);
     }
-
-    window.location.href = `./cbse/class-9/consoles/${role}.html`;
   } else {
     // Student: Hide modal, allow access
     portalModal.style.display = "none";
   }
 };
 
+window.triggerLogin = async function() {
+    try {
+        const user = await requireAuth(); // Popup if not logged in
+        if (user) {
+            portalModal.style.display = "flex";
+        }
+    } catch (e) {
+        console.log("Login cancelled");
+    }
+};
+
+document.getElementById("desktop-login-btn").onclick = triggerLogin;
+document.getElementById("mobile-login-btn").onclick = triggerLogin;
+
 window.onload = async function() {
   try {
-    const user = await requireAuth();
+    // Silent check
+    const user = await requireAuth(true);
     if (user) {
-      // Show portal choice
-      portalModal.style.display = "flex";
+       // Optional: Update UI to show "Logged In" state
+       document.getElementById("desktop-login-btn").textContent = "My Portal";
+       document.getElementById("mobile-login-btn").textContent = "Portal";
+       // We do NOT auto-show modal on reload, only on login click,
+       // UNLESS we want to force choice. The prompt says "Implement a post-login choice modal".
+       // If silent check passes, user is already "in". We might assume they made a choice.
+       // But if they click "My Portal", we show the modal.
     }
   } catch (err) {
-    console.error("Auth failed:", err);
+    console.error("Silent Auth check failed:", err);
   }
 
   // Existing OnLoad Logic

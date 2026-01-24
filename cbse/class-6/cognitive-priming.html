@@ -49,7 +49,9 @@
         </div>
     </div>
 
-<script>
+<script type="module">
+    import { requireAuth } from "./js/auth-paywall.js";
+
     const params = new URLSearchParams(location.search);
     const chapters = (params.get("chapter_names") || "").split(",").filter(Boolean);
     const subject = params.get("subject") || "General";
@@ -118,9 +120,14 @@
 
     container.innerHTML = html;
 
-    document.getElementById("start-btn").onclick = () => {
-        const qParams = new URLSearchParams(location.search);
-        location.href = `quiz-engine.html?${qParams.toString()}`;
+    document.getElementById("start-btn").onclick = async () => {
+        try {
+            await requireAuth();
+            const qParams = new URLSearchParams(location.search);
+            location.href = `quiz-engine.html?${qParams.toString()}`;
+        } catch (e) {
+            console.error("Auth failed:", e);
+        }
     };
 </script>
 </body>

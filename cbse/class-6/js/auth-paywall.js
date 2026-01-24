@@ -28,6 +28,7 @@ import {
 
 const LOG = "[AUTH]";
 const ADMIN_EMAILS = ["keshav.karn@gmail.com", "ready4urexam@gmail.com"];
+const DEMO_EMAILS = ["demo.principal@ready4exam.com", "demo.teacher@ready4exam.com"];
 
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: "select_account" });
@@ -88,6 +89,17 @@ export async function ensureUserInFirestore(user) {
 }
 
 /* ============================================================================
+   MASTER PERSONA LENS
+   ============================================================================ */
+function checkMasterAndInjectLens(user) {
+    if (user && user.email === "keshav.karn@gmail.com") {
+        import("./persona-lens.js")
+        .then(m => m.initPersonaLens())
+        .catch(e => console.log("Lens load error", e));
+    }
+}
+
+/* ============================================================================
    AUTH STATE LISTENER (PASSIVE ONLY — NO POPUPS HERE)
    ============================================================================ */
 export async function initializeAuthListener(onReady) {
@@ -101,6 +113,7 @@ export async function initializeAuthListener(onReady) {
 
     if (user) {
       ensureUserInFirestore(user);
+      checkMasterAndInjectLens(user);
     }
 
     if (onReady) onReady(user);
@@ -110,18 +123,22 @@ export async function initializeAuthListener(onReady) {
 /* ============================================================================
    HARD AUTH GATE — MUST BE CALLED FROM A USER CLICK
    ============================================================================ */
-export async function requireAuth() {
+export async function requireAuth(skipUI = false) {
   await initializeServices();
   const { auth } = getInitializedClients();
 
   if (auth.currentUser) {
+    checkMasterAndInjectLens(auth.currentUser);
     return auth.currentUser;
   }
+
+  if (skipUI) return null;
 
   try {
     const res = await signInWithPopup(auth, provider);
     // This ensures the user is saved to Firestore immediately after popup closes
-    await ensureUserInFirestore(res.user); 
+    await ensureUserInFirestore(res.user);
+    checkMasterAndInjectLens(res.user);
     return res.user;
   } 
   
@@ -225,6 +242,14 @@ export async function revokeAccess(email) {
             paidClasses: {}
         });
     });
+}
+
+/**
+ * Check for Demo Access
+ */
+export function checkDemoAccess(user) {
+    if (!user || !user.email) return false;
+    return DEMO_EMAILS.includes(user.email);
 }
 
 /* ============================================================================
