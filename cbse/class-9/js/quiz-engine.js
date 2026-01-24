@@ -142,6 +142,9 @@ async function loadQuiz() {
             const { auth } = getInitializedClients();
             const mastery = await getChapterMastery(auth.currentUser.uid, quizState.topicSlug);
             if (mastery < 85) {
+                // VISUAL INTELLIGENCE: Peel Back Animation
+                UI.triggerPeelBack("quiz-content");
+
                 alert(`🔒 LOCKED: You scored ${mastery}% on Medium.\nYou need 85% mastery to unlock Advanced questions.`);
                 // Redirect back
                 const subject = quizState.subject || "Physics";
@@ -247,6 +250,8 @@ async function handleSubmit() {
         // Trigger Mistake Notebook
         setTimeout(() => {
             alert("⚠️ Mastery Alert: Score below 85%.\nOpening Mistake Notebook for remediation.");
+            // VISUAL INTELLIGENCE: Focus Mode
+            UI.toggleFocusMode(true);
             UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
         }, 1000);
     }

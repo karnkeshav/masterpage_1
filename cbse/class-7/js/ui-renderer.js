@@ -12,10 +12,67 @@ const AR_LABELS = {
 };
 
 /* -----------------------------------
+   VISUAL INTELLIGENCE STYLES
+----------------------------------- */
+export function injectStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+
+        /* Focus Mode */
+        body.focus-mode {
+            background: #f8fafc;
+        }
+        body.focus-mode header,
+        body.focus-mode footer,
+        body.focus-mode .glass-nav {
+            display: none !important;
+        }
+        body.focus-mode #quiz-content {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        /* Skeleton Loader */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Peel Back Animation */
+        @keyframes peel-back {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.95) rotate(-2deg); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .peel-back-anim {
+            animation: peel-back 0.6s ease-in-out;
+            border: 2px solid #ef4444;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+/* -----------------------------------
    INITIALIZE DOM ELEMENTS
 ----------------------------------- */
 export function initializeElements() {
     if (isInit) return;
+    injectStyles();
+
     els = {
         list: document.getElementById("question-list"),
         header: document.getElementById("chapter-name-display"),
@@ -322,5 +379,50 @@ export function renderResponsiveGrid(container, data, columns, renderCardFn) {
                 </table>
             </div>
         `;
+    }
+}
+
+/* -----------------------------------
+   VISUAL INTELLIGENCE HELPERS
+----------------------------------- */
+export function showSkeleton(container) {
+    if (!container) return;
+    container.innerHTML = `
+        <div class="space-y-4 p-4">
+            <div class="skeleton h-8 w-3/4"></div>
+            <div class="skeleton h-32 w-full"></div>
+            <div class="grid gap-3">
+                <div class="skeleton h-12 w-full"></div>
+                <div class="skeleton h-12 w-full"></div>
+                <div class="skeleton h-12 w-full"></div>
+                <div class="skeleton h-12 w-full"></div>
+            </div>
+        </div>
+    `;
+}
+
+export function toggleFocusMode(enable) {
+    if (enable) {
+        document.body.classList.add("focus-mode");
+    } else {
+        document.body.classList.remove("focus-mode");
+    }
+}
+
+export function triggerPeelBack(elementId) {
+    // This assumes the element ID passed is the one to animate.
+    // If it's the whole page or container, adjust accordingly.
+    // For now, we'll peel back the main container 'quiz-content' if passed
+    const el = document.getElementById(elementId);
+    if (el) {
+        el.classList.add("peel-back-anim");
+        setTimeout(() => el.classList.remove("peel-back-anim"), 600);
+    } else {
+        // Fallback to body or quiz container
+        const quiz = document.getElementById("quiz-content");
+        if(quiz) {
+            quiz.classList.add("peel-back-anim");
+            setTimeout(() => quiz.classList.remove("peel-back-anim"), 600);
+        }
     }
 }
