@@ -154,6 +154,9 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
 
 <script type="module">
 import { curriculum } from "./js/curriculum.js";
+import { initializeAuthListener } from "./js/auth-paywall.js";
+initializeAuthListener();
+
 
 const CLASS = parseInt("11",10);
 const isSenior = CLASS===11 || CLASS===12;
