@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Console — Ready4Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>body{font-family:'Inter',sans-serif;}</style>
+
+    <script src="../../js/config.js" type="module"></script>
+
+    <script type="module">
+        import { checkRole, initializeAuthListener, requireAuth } from "../../js/auth-paywall.js";
+        import { getInitializedClients } from "../../js/config.js";
+        import { collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        async function checkAccess() {
+            const isAllowed = await checkRole("admin");
+            if (!isAllowed) {
+                document.body.innerHTML = `
+                    <div class="flex flex-col items-center justify-center min-h-screen">
+                        <h1 class='text-3xl font-black text-red-600 mb-2'>ACCESS DENIED</h1>
+                        <p class='text-slate-500'>System Administrators Only.</p>
+                        <button onclick="location.reload()" class="mt-4 text-blue-600 underline">Retry</button>
+                    </div>`;
+                return;
+            }
+            document.getElementById("loading").classList.add("hidden");
+            document.getElementById("app").classList.remove("hidden");
+            loadUsers();
+        }
+
+        async function loadUsers() {
+            // In a real app, use pagination
+            const { db } = getInitializedClients();
+
+            // For demo, we might fetch from 'whitelist' or 'users'
+            // Let's mock for now or try to fetch users if rules allow (usually admin needs special rules)
+            // Assuming we have a 'whitelist' collection that Admin manages
+
+            const users = [
+                { email: "teacher1@school.com", role: "teacher", class: "9-A" },
+                { email: "principal@school.com", role: "principal", class: "All" },
+                { email: "student1@school.com", role: "student", class: "9-A" },
+            ];
+
+            renderUsers(users);
+        }
+
+        function renderUsers(users) {
+            const list = document.getElementById("user-list");
+            list.innerHTML = users.map(u => `
+                <tr class="border-b border-slate-50">
+                    <td class="p-4 font-bold text-slate-700">${u.email}</td>
+                    <td class="p-4">
+                        <select class="bg-slate-50 border-none rounded px-2 py-1 text-sm font-bold text-slate-600">
+                            <option ${u.role==='student'?'selected':''}>student</option>
+                            <option ${u.role==='teacher'?'selected':''}>teacher</option>
+                            <option ${u.role==='principal'?'selected':''}>principal</option>
+                        </select>
+                    </td>
+                    <td class="p-4 text-sm text-slate-500">${u.class}</td>
+                    <td class="p-4 text-right">
+                         <button class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Revoke</button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        window.doLogin = async () => {
+            await requireAuth();
+            location.reload();
+        };
+
+        initializeAuthListener(user => {
+            if(user) {
+                checkAccess();
+            } else {
+                document.getElementById("loading").innerHTML = `
+                    <button onclick="doLogin()" class="bg-cbse-blue text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-800">
+                        Sign In as Admin
+                    </button>`;
+            }
+        });
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <div id="loading" class="flex items-center justify-center min-h-screen">
+        <div class="animate-pulse font-bold text-slate-400">Verifying Admin Privileges...</div>
+    </div>
+
+    <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8 fade-in">
+        <header class="flex justify-between items-end mb-12">
+            <div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Master<span class="text-blue-600">IAM</span></h1>
+                <p class="text-slate-500 font-medium">Identity & Access Management.</p>
+            </div>
+            <button class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition">
+                + Bulk Onboard (CSV)
+            </button>
+        </header>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+             <div class="p-6 border-b border-slate-50 flex gap-4">
+                <input type="text" placeholder="Search by email..." class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm flex-grow outline-none">
+                <select class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none">
+                    <option>All Roles</option>
+                    <option>Students</option>
+                    <option>Teachers</option>
+                </select>
+            </div>
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                    <tr>
+                        <th class="p-4">User Email</th>
+                        <th class="p-4">Role</th>
+                        <th class="p-4">Mapping</th>
+                        <th class="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="user-list">
+                    <!-- Injected -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

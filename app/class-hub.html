@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4EFDM0CRYY');
+  </script>
+
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<title>Class Hub — Ready4Exam</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+tailwind.config = {
+  theme:{
+    extend:{
+      fontFamily:{sans:['Inter'],serif:['Merriweather']},
+      colors:{'cbse-blue':'#133b6a','gold':'#ffbe0b','heading':'#0f172a'},
+      backgroundImage:{
+        'hero-grad':'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #22c55e 100%)'
+      }
+    }
+  }
+}
+</script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="../js/config.js" type="module"></script>
+
+<style>
+body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+.subject-card{width:100%;background:white;padding:1.6rem 1.2rem;border-radius:20px;
+  border:1px solid rgba(0,0,0,.04);box-shadow:0 4px 12px rgba(0,0,0,.03);
+  transition:.3s cubic-bezier(0.4, 0, 0.2, 1);cursor:pointer;}
+.subject-card:hover{transform:translateY(-5px);box-shadow:0 15px 30px rgba(19,59,106,.12);border-color:#133b6a;}
+.card-header{display:flex;align-items:center;gap:.9rem;margin-bottom:.9rem;}
+.card-title{font-size:1.25rem;font-weight:800;color:#0f172a;}
+.card-description{font-size:.95rem;color:#64748b;line-height:1.5rem;}
+.card-button{padding:.7rem 1.5rem;font-size:.9rem;font-weight:700;border-radius:12px;color:white;transition:.3s;width:100%;}
+.science{background:#059669;} .commerce{background:#2563eb;} .arts{background:#7c3aed;}
+.glass-nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);background:rgba(19,59,106,.95);border-bottom:1px solid rgba(255,255,255,0.1);}
+.fade-in{animation:fade .6s ease-out forwards;opacity:0;}@keyframes fade{to{opacity:1}}
+.hero{
+  background-image:linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%);
+  color:white; padding:60px 24px;border-radius:24px;margin-bottom:48px;
+  box-shadow:0 20px 40px rgba(15,23,42,.25);
+}
+.contact-card{transition: all 0.3s ease; border: 1px solid #e2e8f0;}
+.contact-card:hover{border-color: #133b6a; background-color: #f0f9ff;}
+</style>
+</head>
+
+<body class="flex flex-col min-h-screen">
+
+<header class="glass-nav w-full py-5 px-6">
+  <div class="max-w-[1100px] mx-auto flex flex-col md:flex-row md:items-center justify-between">
+    <div class="flex items-center gap-4">
+        <a href="../index.html" class="text-white opacity-70 hover:opacity-100 transition"><i data-lucide="arrow-left" class="w-6 h-6"></i></a>
+        <div>
+          <h1 class="text-2xl font-black text-gold tracking-tight">Ready4<span class="text-white">Exam</span></h1>
+          <p class="text-white text-xs opacity-80 font-medium tracking-wide uppercase mt-0.5">Academic Excellence Portal</p>
+        </div>
+    </div>
+    <div class="hidden md:block text-white text-sm opacity-70 italic font-light">Learn • Practice • Grow Strong</div>
+  </div>
+</header>
+
+<main class="flex-grow w-full max-w-[1100px] mx-auto px-5 py-12 fade-in">
+
+  <section class="hero text-center">
+    <span class="bg-gold/20 text-gold px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 inline-block">2025 - 2026 Academic Session</span>
+    <h2 id="hub-title" class="text-3xl md:text-5xl font-black tracking-tight mb-4">Class Hub</h2>
+
+    <!-- MODE TOGGLE -->
+    <div class="flex justify-center mb-6 mt-6">
+        <div class="bg-white/10 backdrop-blur-md border border-white/20 p-1.5 rounded-full inline-flex relative shadow-inner">
+            <button id="mode-mastery" onclick="setMode('standard')" class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-white text-cbse-blue shadow-lg">Chapter Mastery</button>
+            <button id="mode-term" onclick="setMode('term_prep')" class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all text-white hover:bg-white/10">Term Prep</button>
+        </div>
+    </div>
+
+    <p id="class-note" class="text-base md:text-xl max-w-2xl mx-auto opacity-90 font-medium leading-relaxed">Loading Curriculum...</p>
+  </section>
+
+  <div id="subject-section" class="mt-6 fade-in">
+    <div id="subject-grid" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3"></div>
+  </div>
+
+</main>
+
+<footer class="bg-cbse-blue text-white/70 text-center py-10 mt-20 border-t border-white/10">
+  <p class="font-bold text-white mb-2">Ready4Exam</p>
+  <small class="block">© 2025 Ready4Exam Academic Portal. All Rights Reserved.</small>
+</footer>
+
+<script type="module">
+import { loadCurriculum, getGradeFromURL } from "../js/curriculum/loader.js";
+import { initializeAuthListener } from "../js/auth-paywall.js";
+
+initializeAuthListener();
+
+const GRADE = getGradeFromURL();
+document.getElementById("hub-title").textContent = `Class ${GRADE} Hub`;
+
+const note=document.getElementById("class-note");
+const grid=document.getElementById("subject-grid");
+
+// --- TOGGLE LOGIC ---
+let currentMode = "standard";
+window.setMode = function(mode) {
+    currentMode = mode;
+    const btnM = document.getElementById("mode-mastery");
+    const btnT = document.getElementById("mode-term");
+
+    if (mode === "standard") {
+        btnM.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-white text-cbse-blue shadow-lg";
+        btnT.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all text-white hover:bg-white/10";
+    } else {
+        btnM.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all text-white hover:bg-white/10";
+        btnT.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-white text-cbse-blue shadow-lg";
+    }
+
+    // Refresh subjects
+    loadSubjects();
+};
+
+let curriculumData = null;
+
+async function init() {
+    try {
+        curriculumData = await loadCurriculum(GRADE);
+        if(GRADE>=5 && GRADE<=8){
+          note.innerHTML="Curiosity today becomes learning tomorrow — build your base. Aligned with NEP 2020.";
+        } else if(GRADE==9||GRADE==10){
+          note.innerHTML="Focus on deeper concepts — consistency turns effort into confidence.";
+        } else {
+          note.innerHTML="Advanced pathway begins — learn smart, revise strong.";
+        }
+
+        loadSubjects();
+    } catch (e) {
+        note.textContent = "Error loading curriculum data.";
+        console.error(e);
+    }
+}
+
+function loadSubjects(){
+  grid.innerHTML="";
+  if (!curriculumData) return;
+
+  Object.keys(curriculumData).forEach(sub=>{
+    let href = `curriculum.html?grade=${GRADE}&subject=${encodeURIComponent(sub)}`;
+    if (currentMode === "term_prep") {
+        href += `&mode=term_prep`;
+    }
+
+    grid.innerHTML+=`
+    <a href="${href}" class="subject-card group">
+      <div class="card-header"><i data-lucide="book-open" class="text-cbse-blue h-8 w-8"></i>
+      <h3 class="card-title">${sub}</h3></div>
+      <p class="card-description">${currentMode === "term_prep" ? "Select chapters for Term Exams." : "Practice specific worksheets for " + sub + "."}</p>
+      <div class="mt-6 text-center"><button class="card-button bg-cbse-blue group-hover:bg-blue-600">${currentMode === "term_prep" ? "Start Prep" : "View Chapters"}</button></div>
+    </a>`;
+  });
+  lucide.createIcons();
+}
+
+init();
+</script>
+
+</body>
+</html>

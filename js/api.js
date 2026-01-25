@@ -1,0 +1,207 @@
+// js/api.js
+import { getInitializedClients, getAuthUser, logAnalyticsEvent } from "./config.js";
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+function getTableName(topic) {
+  if (topic.includes("_") && topic.includes("quiz")) return topic;
+  return (topic || "").toLowerCase().replace(/\s+/g, "_").trim();
+}
+
+function normalizeQuestionData(q) {
+  let text = q.question_text || "";
+  let reason = q.scenario_reason_text || "";
+  const type = (q.question_type || "").toLowerCase();
+
+  if (type.includes("ar") || type.includes("assertion")) {
+    const combined = `${text} ${reason}`.replace(/\s+/g, " ").trim();
+    const parts = combined.split(/Reason\s*\(R\)\s*:/i);
+    if (parts.length > 1) {
+      text = parts[0].replace(/Assertion\s*\(A\)\s*:/i, "").trim();
+      reason = parts[1].trim();
+    } else {
+      text = text.replace(/Assertion\s*\(A\)\s*:/i, "").trim();
+      reason = reason.replace(/Reason\s*\(R\)\s*:/i, "").trim();
+    }
+  }
+
+  return {
+    id: q.id,
+    question_type: type,
+    text: text,
+    scenario_reason: reason,
+    correct_answer: (q.correct_answer_key || "").trim().toUpperCase(),
+    options: {
+      A: q.option_a || "",
+      B: q.option_b || "",
+      C: q.option_c || "",
+      D: q.option_d || ""
+    },
+    difficulty: q.difficulty
+  };
+}
+
+export async function fetchQuestions(topic, difficulty) {
+  const { supabase } = getInitializedClients();
+  const cleanDiff = (difficulty || "Simple").trim();
+
+  let topics = [];
+  if (Array.isArray(topic)) topics = topic;
+  else if (typeof topic === 'string' && topic.includes(',')) topics = topic.split(',').map(t => t.trim());
+  else topics = [topic];
+
+  const isMixedMode = topics.length > 1;
+  let allQuestions = [];
+
+  const promises = topics.map(async (t) => {
+    const table = getTableName(t);
+    try {
+        const { data, error } = await supabase
+        .from(table)
+        .select('id,question_text,question_type,scenario_reason_text,option_a,option_b,option_c,option_d,correct_answer_key,difficulty')
+        .eq('difficulty', cleanDiff);
+
+        if (error) {
+            console.warn(`Supabase fetch error for ${table}:`, error.message);
+            return [];
+        }
+        return data || [];
+    } catch (e) {
+        console.warn(`Failed to fetch from ${table}`, e);
+        return [];
+    }
+  });
+
+  const results = await Promise.all(promises);
+  results.forEach(res => allQuestions.push(...res));
+
+  if (!allQuestions.length) throw new Error(`No questions found matching "${difficulty}".`);
+
+  let normalized = allQuestions.map(normalizeQuestionData);
+
+  if (isMixedMode) {
+    normalized.sort(() => Math.random() - 0.5);
+    return normalized.slice(0, 20);
+  }
+  return normalized;
+}
+
+export async function saveResult(result) {
+  const user = getAuthUser();
+  if (!user) return;
+
+  try {
+    const { db } = getInitializedClients();
+
+    // TENANT CONTEXT INJECTION
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+    const userData = userSnap.exists() ? userSnap.data() : {};
+
+    const data = {
+      user_id: user.uid,
+      email: user.email,
+      chapter: result.topicSlug || result.topic || "Unknown",
+      difficulty: result.difficulty,
+      score: result.score,
+      total: result.total,
+      percentage: Math.round((result.score / result.total) * 100),
+      timestamp: serverTimestamp(),
+
+      quiz_mode: result.quiz_mode || "standard",
+      latency_vector: result.latency_vector || [],
+      term_id: result.term_id || null,
+      class_id: result.classId || "9",
+
+      // ISOLATION FIELDS
+      tenantType: userData.tenantType || "individual",
+      tenantId: userData.tenantId || null,
+      school_id: userData.school_id || null
+    };
+
+    await addDoc(collection(db, "quiz_scores"), data);
+
+    logAnalyticsEvent("quiz_completed", {
+        topic: data.chapter,
+        score: data.score,
+        mode: data.quiz_mode,
+        user_id: user.uid,
+        tenant: data.tenantType
+    });
+  } catch (err) {
+    console.warn("Save result failed", err);
+  }
+}
+
+export async function saveMistakes(questions, userAnswers, topic, classId) {
+    const user = getAuthUser();
+    if (!user) return;
+
+    try {
+        const { db } = getInitializedClients();
+
+        // Filter for wrong answers
+        const mistakes = questions.filter(q => userAnswers[q.id] !== q.correct_answer);
+
+        if (mistakes.length === 0) return;
+
+        const data = {
+            user_id: user.uid,
+            topic: topic,
+            class_id: classId,
+            timestamp: serverTimestamp(),
+            mistakes: mistakes.map(q => ({
+                id: q.id,
+                question: q.text,
+                options: q.options,
+                correct: q.correct_answer,
+                selected: userAnswers[q.id] || "Skipped",
+                explanation: q.scenario_reason || ""
+            }))
+        };
+
+        await addDoc(collection(db, "mistake_notebook"), data);
+        console.log("Mistakes saved to notebook.");
+
+    } catch (e) {
+        console.error("Failed to save mistakes:", e);
+    }
+}
+
+export async function getChapterMastery(userId, topic) {
+    if (!userId || !topic) return 0;
+
+    try {
+        const { db } = getInitializedClients();
+        const userSnap = await getDoc(doc(db, "users", userId));
+        const userData = userSnap.exists() ? userSnap.data() : {};
+
+        let constraints = [
+            where("user_id", "==", userId),
+            where("chapter", "==", topic),
+            where("difficulty", "==", "Medium")
+        ];
+
+        // STRICT SCOPING
+        if (userData.tenantType === 'school' && userData.school_id) {
+            constraints.push(where("school_id", "==", userData.school_id));
+        } else if (userData.tenantType === 'individual') {
+            // Optional: limit to individual scores if desired, but user might have legacy data
+            // constraints.push(where("tenantType", "==", "individual"));
+        }
+
+        const q = query(collection(db, "quiz_scores"), ...constraints);
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return 0;
+
+        let maxScore = 0;
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            const p = d.percentage || 0;
+            if (p > maxScore) maxScore = p;
+        });
+
+        return maxScore;
+    } catch (e) {
+        console.error("Mastery check failed:", e);
+        return 0;
+    }
+}
