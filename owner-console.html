@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Owner Console — Master Orchestration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="/js/firebase-master-config.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>body{font-family:'Inter',sans-serif;}</style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+    <div id="loading" class="flex items-center justify-center min-h-screen">
+        <div class="animate-pulse font-bold text-slate-400">Verifying Sovereign Access...</div>
+    </div>
+
+    <div id="app" class="hidden max-w-7xl mx-auto p-8">
+       <!-- Header -->
+       <header class="flex justify-between items-center mb-12 border-b border-slate-800 pb-6">
+           <div>
+               <h1 class="text-3xl font-black text-white tracking-tight">Master Orchestration Layer</h1>
+               <p class="text-slate-400 text-sm">Centralized Business Ledger & Provisioning</p>
+           </div>
+           <div class="flex items-center gap-4">
+               <div class="text-right">
+                   <div class="text-xs font-bold text-emerald-400 uppercase tracking-widest">Root Owner</div>
+                   <div class="text-sm font-bold">keshav.karn@gmail.com</div>
+               </div>
+           </div>
+       </header>
+
+       <div class="grid lg:grid-cols-3 gap-8">
+           <!-- School Creation Form -->
+           <div class="lg:col-span-1 bg-slate-800 p-6 rounded-2xl border border-slate-700">
+               <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                   <span class="bg-indigo-500 w-8 h-8 rounded flex items-center justify-center text-xs">＋</span>
+                   Provision New School
+               </h2>
+               <form id="create-school-form" class="space-y-4">
+                   <div>
+                       <label class="block text-xs font-bold text-slate-400 mb-1">School Name</label>
+                       <input type="text" id="s-name" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" required>
+                   </div>
+                   <div>
+                       <label class="block text-xs font-bold text-slate-400 mb-1">Logo URL</label>
+                       <input type="url" id="s-logo" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" placeholder="https://..." required>
+                   </div>
+                   <div class="grid grid-cols-2 gap-4">
+                       <div>
+                           <label class="block text-xs font-bold text-slate-400 mb-1">Board</label>
+                           <select id="s-board" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none">
+                               <option>CBSE</option>
+                               <option>ICSE</option>
+                               <option>SCERT</option>
+                           </select>
+                       </div>
+                       <div>
+                           <label class="block text-xs font-bold text-slate-400 mb-1">Licenses</label>
+                           <input type="number" id="s-licenses" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" value="100">
+                       </div>
+                   </div>
+                   <div>
+                       <label class="block text-xs font-bold text-slate-400 mb-1">Principal Email</label>
+                       <input type="email" id="s-email" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" required>
+                   </div>
+                   <div>
+                       <label class="block text-xs font-bold text-slate-400 mb-1">Principal Phone (WhatsApp)</label>
+                       <input type="tel" id="s-phone" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" placeholder="919876543210" required>
+                   </div>
+
+                   <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-900/50 mt-4">
+                       Deploy School Instance
+                   </button>
+               </form>
+           </div>
+
+           <!-- School Ledger -->
+           <div class="lg:col-span-2">
+               <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                   <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                       <h2 class="text-xl font-bold">Active Instances Ledger</h2>
+                       <button onclick="loadSchools()" class="text-xs font-bold text-slate-400 hover:text-white">Refresh</button>
+                   </div>
+                   <div id="school-list" class="divide-y divide-slate-700">
+                       <!-- Dynamic List -->
+                       <div class="p-8 text-center text-slate-500 text-sm">Loading ledger...</div>
+                   </div>
+               </div>
+           </div>
+       </div>
+    </div>
+
+    <script type="module">
+        import { initializeAuthListener, requireAuth } from "./cbse/class-9/js/auth-paywall.js";
+        import { getInitializedClients } from "./cbse/class-9/js/config.js";
+        import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // MASTER GUARD
+        initializeAuthListener(user => {
+            if (user && user.email === "keshav.karn@gmail.com") {
+                document.getElementById("loading").classList.add("hidden");
+                document.getElementById("app").classList.remove("hidden");
+                loadSchools();
+            } else {
+                document.getElementById("loading").innerHTML = `
+                    <div class="text-center">
+                        <p class="text-red-500 font-bold mb-4">UNAUTHORIZED ACCESS ATTEMPT LOGGED</p>
+                        <button onclick="requireAuth()" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm">Owner Login</button>
+                    </div>`;
+            }
+        });
+
+        // 1. Create School
+        document.getElementById("create-school-form").onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector("button");
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Provisioning...";
+
+            try {
+                const { db } = getInitializedClients();
+                const schoolData = {
+                    name: document.getElementById("s-name").value,
+                    logo_url: document.getElementById("s-logo").value,
+                    board: document.getElementById("s-board").value,
+                    max_licenses: parseInt(document.getElementById("s-licenses").value),
+                    principal_email: document.getElementById("s-email").value,
+                    principal_phone: document.getElementById("s-phone").value,
+                    created_at: serverTimestamp(),
+                    status: "active"
+                };
+
+                await addDoc(collection(db, "schools"), schoolData);
+                alert("School Provisioned Successfully!");
+                e.target.reset();
+                loadSchools();
+            } catch (err) {
+                alert("Error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        };
+
+        // 2. Load Ledger
+        window.loadSchools = async () => {
+            const list = document.getElementById("school-list");
+            try {
+                const { db } = getInitializedClients();
+                const q = query(collection(db, "schools"), orderBy("created_at", "desc"));
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    list.innerHTML = `<div class="p-8 text-center text-slate-500">No schools provisioned yet.</div>`;
+                    return;
+                }
+
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const whatsappLink = `https://wa.me/${d.principal_phone}?text=Hello%20Principal,%20regarding%20your%20Ready4Exam%20instance%20${encodeURIComponent(d.name)}...`;
+                    const mailLink = `mailto:${d.principal_email}?subject=Ready4Exam%20Admin%20Update`;
+
+                    list.innerHTML += `
+                        <div class="p-6 flex flex-col md:flex-row items-center gap-6 hover:bg-slate-800/50 transition">
+                            <img src="${d.logo_url}" class="w-12 h-12 rounded-full bg-white object-contain p-1">
+                            <div class="flex-1 text-center md:text-left">
+                                <h3 class="font-bold text-lg text-white">${d.name}</h3>
+                                <div class="text-xs text-slate-400 mt-1 flex gap-3 justify-center md:justify-start">
+                                    <span class="bg-slate-700 px-2 py-0.5 rounded text-slate-300">${d.board}</span>
+                                    <span>${d.max_licenses} Licenses</span>
+                                    <span class="text-emerald-400">Active</span>
+                                    <span class="font-mono text-slate-500">ID: ${doc.id}</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <a href="${whatsappLink}" target="_blank" class="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                                    <i class="fab fa-whatsapp text-lg"></i> Message
+                                </a>
+                                <a href="${mailLink}" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                                    <i class="far fa-envelope text-lg"></i> Email
+                                </a>
+                                <a href="school-landing.html?schoolId=${doc.id}" target="_blank" class="flex items-center gap-2 border border-slate-600 hover:border-white text-slate-300 hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition">
+                                    Launch &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = `<div class="p-8 text-center text-red-400">Failed to load ledger.</div>`;
+            }
+        };
+    </script>
+</body>
+</html>
