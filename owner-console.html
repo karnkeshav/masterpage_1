@@ -151,7 +151,9 @@
 
         // MASTER GUARD
         initializeAuthListener(user => {
-            if (user && user.email === "keshav.karn@gmail.com") {
+            // Updated check to match Sovereign Credential Format
+            // Sovereign ID is bound as "keshav@ready4exam.com" in auth-paywall.js
+            if (user && (user.email === "keshav.karn@gmail.com" || user.email === "keshav@ready4exam.com")) {
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("app").classList.remove("hidden");
                 loadSchools();

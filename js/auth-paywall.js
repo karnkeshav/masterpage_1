@@ -90,30 +90,30 @@ export async function routeUser(user) {
 
     // Deterministic Routing Table
     if (data.tenantType === "owner") {
-        window.location.href = "/owner-console.html";
+        window.location.href = "owner-console.html";
         return;
     }
 
     if (data.tenantType === "school") {
         // If logged in as the specific School Account (which maps to admin), route to Hub
         if (data.displayName === "dps.ready4exam") {
-             window.location.href = `/school-landing.html?schoolId=${data.school_id}`;
+             window.location.href = `school-landing.html?schoolId=${data.school_id}`;
              return;
         }
         // Specific Roles (simulated via hub or direct login)
-        window.location.href = `/app/consoles/${data.role}.html?schoolId=${data.school_id}`;
+        window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
         return;
     }
 
     // Individual
     if (data.tenantType === "individual") {
         // B2C Student
-        window.location.href = "/app/consoles/student.html";
+        window.location.href = "app/consoles/student.html";
         return;
     }
 
     // Fallback
-    window.location.href = "/app/class-hub.html?grade=9";
+    window.location.href = "app/class-hub.html?grade=9";
 }
 
 export async function initializeAuthListener(onReady) {
@@ -148,7 +148,7 @@ export async function requireAuth(skipUI = false, redirect = false) {
   if (skipUI) return null;
 
   // No more popups. Redirect to login.
-  window.location.href = "/index.html";
+  window.location.href = "index.html";
   throw new Error("Redirecting to Login");
 }
 
