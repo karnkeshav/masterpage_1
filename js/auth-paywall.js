@@ -83,6 +83,7 @@ export async function routeUser(user) {
 
     if (!snap.exists()) {
         console.warn("User authenticated but no profile found.");
+        await signOut();
         return;
     }
 
@@ -113,7 +114,7 @@ export async function routeUser(user) {
     }
 
     // Fallback
-    window.location.href = "app/class-hub.html?grade=9";
+    await signOut();
 }
 
 export async function initializeAuthListener(onReady) {
@@ -125,9 +126,17 @@ export async function initializeAuthListener(onReady) {
     if (user) {
       const profile = await ensureUserInFirestore(user);
 
-      // Inject Lens for Owner
-      if (profile?.role === "owner") {
-          import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
+      if (!profile) {
+          // If user exists in Auth but not Firestore, do not auto-route.
+          // Wait for manual login or let UI handle it.
+          // Or sign out if strict?
+          // Instructions: "if a user is detected but ensureUserInFirestore returns null, do not route them."
+          // So we just don't do anything special here, effectively waiting.
+      } else {
+        // Inject Lens for Owner
+        if (profile?.role === "owner") {
+            import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
+        }
       }
     }
     if (onReady) onReady(user);
