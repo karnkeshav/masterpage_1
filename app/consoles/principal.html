@@ -9,10 +9,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>body{font-family:'Inter',sans-serif;}</style>
 
-    <script src="../../js/config.js" type="module"></script>
+    <script src="../../js/firebase-master-config.js"></script>
+<script src="../../js/config.js" type="module"></script>
 
     <script type="module">
         import { checkRole, initializeAuthListener, requireAuth } from "../../js/auth-paywall.js";
+        import { fetchSchoolAnalytics } from "../../js/api.js";
 
         async function checkAccess() {
             const isAllowed = await checkRole("principal") || await checkRole("admin");
@@ -30,8 +32,18 @@
             renderDashboard();
         }
 
-        function renderDashboard() {
-            // Mock Data for Heatmap
+        async function renderDashboard() {
+            const params = new URLSearchParams(location.search);
+            const schoolId = params.get("schoolId");
+
+            // Fetch Real Analytics
+            const stats = await fetchSchoolAnalytics(schoolId);
+            if (stats) {
+                document.getElementById("total-active").textContent = stats.activeStudents;
+                document.getElementById("total-active-trend").textContent = `Based on ${stats.totalAttempts} quizzes`;
+            }
+
+            // Mock Data for Heatmap (placeholder for detailed class breakdown)
             const classes = [
                 { name: "9-A", risk: "High", avg: 65, active: 28, total: 32 },
                 { name: "9-B", risk: "Low", avg: 82, active: 30, total: 30 },
@@ -158,8 +170,8 @@
             <div class="space-y-4">
                 <div class="bg-blue-600 text-white p-6 rounded-3xl shadow-xl shadow-blue-600/20">
                     <div class="text-blue-200 font-bold text-xs uppercase tracking-widest mb-1">Total Active Students</div>
-                    <div class="text-4xl font-black mb-2">1,248</div>
-                    <div class="text-sm font-medium opacity-80">↑ 12% from last week</div>
+                    <div id="total-active" class="text-4xl font-black mb-2">--</div>
+                    <div id="total-active-trend" class="text-sm font-medium opacity-80">Syncing ledger...</div>
                 </div>
                  <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                     <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Critical Alerts</div>

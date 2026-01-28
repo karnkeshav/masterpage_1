@@ -17,6 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="js/firebase-master-config.js"></script>
 
 <script>
 tailwind.config = {
@@ -185,81 +186,40 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
     <div>
       <h1 class="text-xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
     </div>
-    <div class="flex items-center gap-3">
-        <button id="mobile-login-btn" class="text-white text-xs font-bold border border-white/20 px-3 py-1.5 rounded-full">Login</button>
-    </div>
   </div>
 </header>
 
 <div class="split-layout">
 
   <aside class="left-panel shadow-2xl z-10">
-    <!-- Header with Login Button -->
-    <div class="absolute top-8 right-8 z-50 hidden lg:block">
-        <button id="desktop-login-btn" class="bg-white/10 backdrop-blur-md text-white font-bold text-xs px-5 py-2.5 rounded-full border border-white/20 hover:bg-white/20 transition">
-            Login / Register
-        </button>
-    </div>
+    <div class="fade-in h-full flex flex-col justify-center items-center z-10 relative">
 
-    <img src="image_0.png" alt="Smiling Students" class="hero-image fade-in">
-    <div class="fade-in h-full flex flex-col z-10 relative">
-
-      <div class="hidden lg:block mb-6 shrink-0">
-        <h1 class="text-4xl font-black text-gold">Ready4<span class="text-white">Exam</span></h1>
-        <p class="text-white text-sm opacity-60 uppercase tracking-widest mt-1">Academic Excellence Portal</p>
+      <div class="mb-8 text-center">
+        <h1 class="text-5xl font-black text-gold mb-2">Ready4<span class="text-white">Exam</span></h1>
+        <p class="text-white text-sm opacity-80 uppercase tracking-widest">Sovereign Academic Operating System</p>
       </div>
 
-      <div class="shrink-0 mb-4">
-        <span class="bg-gold/20 text-gold px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 inline-block border border-gold/30">
-          2025 – 2026 Session
-        </span>
-        <h2 class="text-3xl lg:text-5xl font-black text-white mb-3 leading-tight lg:max-w-lg">Board-Aligned <br>Assessment.</h2>
-        <p class="text-white/80 text-sm lg:text-base font-medium leading-relaxed mb-4 max-w-lg">
-          Practice smarter, identify learning gaps early, and build confidence months before exams.
-        </p>
+      <div class="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl w-full max-w-sm shadow-2xl">
+          <h2 class="text-white font-bold text-xl mb-6 text-center">Identity Gateway</h2>
 
-        <ul class="space-y-3 max-w-lg mb-6">
-          <li class="flex items-start gap-2">
-            <i class="fas fa-check-circle text-gold mt-1 text-xs shrink-0"></i>
-            <p class="text-white/90 text-xs leading-snug">
-              <strong class="text-white">Guaranteed Mastery via LPG Framework:</strong> Uses a structured Learn-Practice-Grow pedagogy to ensure 85%-95% proficiency, prioritizing concept clarity.
-            </p>
-          </li>
-          <li class="flex items-start gap-2">
-            <i class="fas fa-chart-line text-gold mt-1 text-xs shrink-0"></i>
-            <p class="text-white/90 text-xs leading-snug">
-              <strong class="text-white">Proactive Exam Readiness:</strong> AI dashboards spot learning gaps early, allowing teachers & principals to improve results before every class exam.
-            </p>
-          </li>
-          <li class="flex items-start gap-2">
-            <i class="fas fa-book-open text-gold mt-1 text-xs shrink-0"></i>
-            <p class="text-white/90 text-xs leading-snug">
-              <strong class="text-white">100% Board-Aligned Curriculum:</strong> Strictly aligned with NCERT/State standards, targeting the toughest parts of actual board exams.
-            </p>
-          </li>
-        </ul>
+          <form id="sovereign-login-form" class="space-y-4">
+              <div>
+                  <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Identity ID</label>
+                  <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required>
+              </div>
+              <div>
+                  <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Secure Passkey</label>
+                  <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold transition" placeholder="••••••••" required>
+              </div>
+              <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
+              <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-4 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20">
+                  Authenticate & Bind
+              </button>
+          </form>
 
-        <div class="border-t border-white/10 pt-3 max-w-lg">
-            <p class="text-gold text-[10px] font-bold uppercase tracking-widest mb-1"><i class="fas fa-star mr-1"></i> Custom Solutions</p>
-            <p class="text-white/80 text-xs leading-relaxed">
-                We support <span class="text-white font-bold">Any Curriculum, Any State Board, & Competitive Exams</span> on request for Schools, Education Trust, Coaching center and Students.
-            </p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-auto shrink-0 max-w-xl">
-        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center">
-          <div class="text-gold font-bold text-sm">Learn</div>
-          <div class="text-white/60 text-[10px]">Concept clarity</div>
-        </div>
-        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center">
-          <div class="text-gold font-bold text-sm">Practice</div>
-          <div class="text-white/60 text-[10px]">Competency Qs</div>
-        </div>
-        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/10 text-center">
-          <div class="text-gold font-bold text-sm">Grow</div>
-          <div class="text-white/60 text-[10px]">Exam readiness</div>
-        </div>
+          <div class="mt-6 text-center border-t border-white/10 pt-4">
+              <p class="text-[10px] text-white/50">Restricted Access • Institutional Use Only</p>
+          </div>
       </div>
     </div>
   </aside>
@@ -393,35 +353,49 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 </div>
 
 <script type="module">
-import { requireAuth, routeUser, initializeAuthListener } from "/js/auth-paywall.js";
-initializeAuthListener();
+import { authenticateWithCredentials, routeUser, initializeAuthListener } from "/js/auth-paywall.js";
 
-window.triggerLogin = async function() {
-    try {
-        await requireAuth(false, true); // Redirects automatically based on Firestore profile
-    } catch (e) {
-        console.log("Login cancelled");
-    }
-};
-
-document.getElementById("desktop-login-btn").onclick = triggerLogin;
-document.getElementById("mobile-login-btn").onclick = triggerLogin;
-
-window.onload = async function() {
-  try {
-    const user = await requireAuth(true); // Silent
+// 1. Initialize Auth Listener to check for existing session
+initializeAuthListener(async (user) => {
     if (user) {
-       document.getElementById("desktop-login-btn").textContent = "My Dashboard";
-       document.getElementById("mobile-login-btn").textContent = "Dashboard";
-       // On click, it will route based on profile
+        console.log("User already logged in, routing...");
+        await routeUser(user);
     }
-  } catch (err) {
-    console.error("Silent Auth check failed:", err);
-  }
+});
 
-  // Existing OnLoad Logic
-  resetPortal();
-};
+// 2. Handle Sovereign Login
+const loginForm = document.getElementById("sovereign-login-form");
+const errorBox = document.getElementById("login-error");
+
+loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const u = document.getElementById("username").value.trim();
+    const p = document.getElementById("password").value.trim();
+    const btn = loginForm.querySelector("button");
+
+    btn.disabled = true;
+    btn.textContent = "Verifying Identity...";
+    errorBox.classList.add("hidden");
+
+    try {
+        await authenticateWithCredentials(u, p);
+        // Auth listener will catch the state change and route,
+        // but we can also route explicitly to be sure/faster.
+        // Wait a moment for Firestore write to propagate if needed,
+        // but authenticateWithCredentials awaits the write.
+        // The listener might trigger too.
+        // Let's rely on routeUser calls.
+        // Actually, initializeAuthListener runs on page load.
+        // onAuthStateChanged triggers on sign-in.
+        // So the listener *will* fire.
+    } catch (err) {
+        console.error(err);
+        errorBox.textContent = "Identity Verification Failed: Invalid ID or Passkey.";
+        errorBox.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Authenticate & Bind";
+    }
+});
 
 // Expose handleRequestSubmit globally
 window.handleRequestSubmit = function(e) {

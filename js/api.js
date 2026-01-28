@@ -205,3 +205,82 @@ export async function getChapterMastery(userId, topic) {
         return 0;
     }
 }
+
+// --- GOVERNANCE & LEDGER ---
+
+export async function recordFinancialEvent(schoolId, type, amount, details) {
+    const { db } = getInitializedClients();
+    if (!schoolId) return;
+
+    try {
+        const ref = collection(db, "schools", schoolId, "financial_events");
+        await addDoc(ref, {
+            type,
+            amount,
+            details,
+            timestamp: serverTimestamp(),
+            recorded_by: getAuthUser()?.uid || "system"
+        });
+        console.log("Financial Event Recorded");
+    } catch (e) {
+        console.error("Ledger Write Failed", e);
+    }
+}
+
+export async function fetchB2CUsers() {
+    const { db } = getInitializedClients();
+    try {
+        const q = query(collection(db, "users"), where("tenantType", "==", "individual"));
+        const snap = await getDocs(q);
+        // Map to simpler object for table
+        return snap.docs.map(d => {
+            const data = d.data();
+            return {
+                uid: data.uid,
+                email: data.email,
+                plan: "Direct (B2C)",
+                status: "Active",
+                revenue: "₹499" // Mock for prototype, real logic would query payments
+            };
+        });
+    } catch (e) {
+        console.error("B2C Fetch Failed", e);
+        return [];
+    }
+}
+
+export async function fetchSchoolAnalytics(schoolId) {
+    const { db } = getInitializedClients();
+    if (!schoolId) return null;
+
+    try {
+        // Strict Isolation: Query only scores with matching school_id
+        const q = query(
+            collection(db, "quiz_scores"),
+            where("school_id", "==", schoolId),
+            where("tenantType", "==", "school") // Double check
+        );
+
+        const snap = await getDocs(q);
+
+        // Client-side aggregation (for prototype)
+        // In production, use Aggregation Queries or Cloud Functions
+        let totalAttempts = 0;
+        let totalScore = 0;
+
+        snap.forEach(doc => {
+            const d = doc.data();
+            totalAttempts++;
+            totalScore += (d.percentage || 0);
+        });
+
+        return {
+            totalAttempts,
+            avgMastery: totalAttempts > 0 ? Math.round(totalScore / totalAttempts) : 0,
+            activeStudents: new Set(snap.docs.map(d => d.data().user_id)).size
+        };
+    } catch (e) {
+        console.error("Analytics Query Failed", e);
+        return null;
+    }
+}

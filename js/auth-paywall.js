@@ -1,11 +1,59 @@
 import { initializeServices, getInitializedClients } from "./config.js";
-import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const LOG = "[AUTH]";
-const OWNER_EMAIL = "keshav.karn@gmail.com";
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: "select_account" });
+
+// Hardcoded Credential Map for "Sovereign Identity"
+const CREDENTIALS = {
+    "keshav": { pass: "keshav", role: "owner", tenantType: "owner", tenantId: "global" },
+    "dps.ready4exam": { pass: "keshav", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "student": { pass: "student", role: "student", tenantType: "individual", tenantId: "individual_b2c" },
+    // Persona Entry Points (Simulated)
+    "admin": { pass: "admin", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "principal": { pass: "principal", role: "principal", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "teacher": { pass: "teacher", role: "teacher", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "student1": { pass: "student1", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "parent": { pass: "parent", role: "parent", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
+};
+
+export async function authenticateWithCredentials(username, password) {
+    await initializeServices();
+    const { auth, db } = getInitializedClients();
+
+    const userProfile = CREDENTIALS[username];
+    if (!userProfile) throw new Error("Invalid username");
+    if (userProfile.pass !== password) throw new Error("Invalid password");
+
+    try {
+        // 1. Establish Secure Session
+        const res = await signInAnonymously(auth);
+        const uid = res.user.uid;
+
+        // 2. Bind Sovereign Identity
+        const userData = {
+            uid: uid,
+            email: `${username}@ready4exam.com`, // Simulated email
+            displayName: username,
+            tenantType: userProfile.tenantType,
+            tenantId: userProfile.tenantId,
+            role: userProfile.role,
+            school_id: userProfile.school_id || null,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+            isSovereign: true
+        };
+
+        // 3. Immutable Write
+        await setDoc(doc(db, "users", uid), userData);
+
+        return userData;
+
+    } catch (e) {
+        console.error(LOG, "Auth Binding Failed", e);
+        throw e;
+    }
+}
 
 export async function ensureUserInFirestore(user) {
   if (!user?.uid) return null;
@@ -15,45 +63,9 @@ export async function ensureUserInFirestore(user) {
   try {
     const snap = await getDoc(ref);
     if (!snap.exists()) {
-      const emailLower = (user.email || "").toLowerCase();
-      let tenantType = "individual";
-      let tenantId = null;
-      let role = "student";
-      let school_id = null;
-
-      // 1. Check Owner
-      if (emailLower === OWNER_EMAIL) {
-          tenantType = "owner";
-          role = "owner";
-      } else {
-          // 2. Check Whitelist
-          try {
-            const wRef = doc(db, "whitelist", emailLower);
-            const wSnap = await getDoc(wRef);
-            if (wSnap.exists()) {
-                const wd = wSnap.data();
-                tenantType = "school";
-                role = wd.role || "student";
-                school_id = wd.schoolId || null; // Match 'schoolId' field in whitelist
-                tenantId = school_id;
-            }
-          } catch (e) { console.warn("Whitelist check failed", e); }
-      }
-
-      const userData = {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        tenantType,
-        tenantId,
-        school_id,
-        role,
-        createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp()
-      };
-
-      await setDoc(ref, userData);
-      return userData;
+        // Fallback for non-credential users (if any logic remains)
+        // For Sovereign mode, we expect binding to happen at login.
+        return null;
     } else {
         await updateDoc(ref, { lastLogin: serverTimestamp() });
         return snap.data();
@@ -67,28 +79,41 @@ export async function ensureUserInFirestore(user) {
 export async function routeUser(user) {
     if (!user) return;
     const { db } = getInitializedClients();
-    // Re-fetch to ensure we have latest role/tenant
     const snap = await getDoc(doc(db, "users", user.uid));
+
+    if (!snap.exists()) {
+        console.warn("User authenticated but no profile found.");
+        return;
+    }
+
     const data = snap.data();
 
+    // Deterministic Routing Table
     if (data.tenantType === "owner") {
         window.location.href = "/owner-console.html";
         return;
     }
 
     if (data.tenantType === "school") {
+        // If logged in as the specific School Account (which maps to admin), route to Hub
+        if (data.displayName === "dps.ready4exam") {
+             window.location.href = `/school-landing.html?schoolId=${data.school_id}`;
+             return;
+        }
+        // Specific Roles (simulated via hub or direct login)
         window.location.href = `/app/consoles/${data.role}.html?schoolId=${data.school_id}`;
         return;
     }
 
-    // Individual - Route to Student Console if role is student
-    if (data.role === "student") {
+    // Individual
+    if (data.tenantType === "individual") {
+        // B2C Student
         window.location.href = "/app/consoles/student.html";
         return;
     }
 
-    // Individual - Reload to update UI or stay
-    window.location.reload();
+    // Fallback
+    window.location.href = "/app/class-hub.html?grade=9";
 }
 
 export async function initializeAuthListener(onReady) {
@@ -101,7 +126,7 @@ export async function initializeAuthListener(onReady) {
       const profile = await ensureUserInFirestore(user);
 
       // Inject Lens for Owner
-      if (profile?.role === "owner" || (user.email && user.email.toLowerCase() === OWNER_EMAIL)) {
+      if (profile?.role === "owner") {
           import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
       }
     }
@@ -109,6 +134,8 @@ export async function initializeAuthListener(onReady) {
   });
 }
 
+// Deprecated: requireAuth with Popup.
+// For Sovereign mode, we just check status.
 export async function requireAuth(skipUI = false, redirect = false) {
   await initializeServices();
   const { auth } = getInitializedClients();
@@ -120,16 +147,9 @@ export async function requireAuth(skipUI = false, redirect = false) {
 
   if (skipUI) return null;
 
-  try {
-    const res = await signInWithPopup(auth, provider);
-    await ensureUserInFirestore(res.user);
-    if(redirect) routeUser(res.user);
-    return res.user;
-  } catch (e) {
-    console.error(LOG, "Login failed:", e.code, e.message);
-    if (e.code === "auth/popup-blocked") alert("Please allow pop-ups.");
-    throw e;
-  }
+  // No more popups. Redirect to login.
+  window.location.href = "/index.html";
+  throw new Error("Redirecting to Login");
 }
 
 export async function checkRole(requiredRole) {
@@ -139,7 +159,7 @@ export async function checkRole(requiredRole) {
     const snap = await getDoc(doc(db, "users", user.uid));
     if (!snap.exists()) return false;
     const data = snap.data();
-    if (data.tenantType === "owner" || data.role === "owner" || data.role === "admin") return true;
+    if (data.tenantType === "owner" || data.role === "owner") return true;
     return data.role === requiredRole;
 }
 

@@ -5,7 +5,8 @@
     <title>Owner Console — Master Orchestration</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <script src="/js/firebase-master-config.js"></script>
+    <script src="js/firebase-master-config.js"></script>
+    <script src="js/config.js" type="module"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>body{font-family:'Inter',sans-serif;}</style>
 </head>
@@ -45,6 +46,18 @@
                        <label class="block text-xs font-bold text-slate-400 mb-1">Logo URL</label>
                        <input type="url" id="s-logo" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" placeholder="https://..." required>
                    </div>
+
+                   <div class="grid grid-cols-2 gap-4">
+                        <div>
+                           <label class="block text-xs font-bold text-slate-400 mb-1">Total Strength</label>
+                           <input type="number" id="s-strength" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" placeholder="e.g. 500" required>
+                        </div>
+                        <div>
+                           <label class="block text-xs font-bold text-slate-400 mb-1">Licenses</label>
+                           <input type="number" id="s-licenses" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" value="100">
+                        </div>
+                   </div>
+
                    <div class="grid grid-cols-2 gap-4">
                        <div>
                            <label class="block text-xs font-bold text-slate-400 mb-1">Board</label>
@@ -55,10 +68,25 @@
                            </select>
                        </div>
                        <div>
-                           <label class="block text-xs font-bold text-slate-400 mb-1">Licenses</label>
-                           <input type="number" id="s-licenses" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" value="100">
+                           <label class="block text-xs font-bold text-slate-400 mb-1">Area Type</label>
+                           <select id="s-area" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none">
+                               <option>Urban</option>
+                               <option>Rural</option>
+                           </select>
                        </div>
                    </div>
+
+                   <div class="grid grid-cols-2 gap-4">
+                        <div>
+                           <label class="block text-xs font-bold text-slate-400 mb-1">State</label>
+                           <input type="text" id="s-state" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" placeholder="State" required>
+                        </div>
+                        <div>
+                           <label class="block text-xs font-bold text-slate-400 mb-1">District</label>
+                           <input type="text" id="s-district" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" placeholder="District" required>
+                        </div>
+                   </div>
+
                    <div>
                        <label class="block text-xs font-bold text-slate-400 mb-1">Principal Email</label>
                        <input type="email" id="s-email" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" required>
@@ -74,25 +102,51 @@
                </form>
            </div>
 
-           <!-- School Ledger -->
-           <div class="lg:col-span-2">
+           <!-- Ledgers -->
+           <div class="lg:col-span-2 space-y-8">
+
+               <!-- School Ledger -->
                <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
                    <div class="p-6 border-b border-slate-700 flex justify-between items-center">
                        <h2 class="text-xl font-bold">Active Instances Ledger</h2>
                        <button onclick="loadSchools()" class="text-xs font-bold text-slate-400 hover:text-white">Refresh</button>
                    </div>
-                   <div id="school-list" class="divide-y divide-slate-700">
-                       <!-- Dynamic List -->
+                   <div id="school-list" class="divide-y divide-slate-700 max-h-[400px] overflow-y-auto">
                        <div class="p-8 text-center text-slate-500 text-sm">Loading ledger...</div>
                    </div>
                </div>
+
+               <!-- B2C Ledger -->
+               <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                   <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                       <h2 class="text-xl font-bold">B2C Individual Ledger</h2>
+                       <span class="text-xs font-bold text-emerald-400 bg-emerald-900/30 px-2 py-1 rounded">Revenue Stream</span>
+                   </div>
+                   <div class="overflow-x-auto">
+                       <table class="w-full text-left text-sm text-slate-400">
+                           <thead class="bg-slate-900/50 text-xs uppercase font-bold text-slate-500">
+                               <tr>
+                                   <th class="p-4">User ID</th>
+                                   <th class="p-4">Plan</th>
+                                   <th class="p-4">Status</th>
+                                   <th class="p-4 text-right">Revenue</th>
+                               </tr>
+                           </thead>
+                           <tbody id="b2c-list" class="divide-y divide-slate-700">
+                               <!-- Injected -->
+                           </tbody>
+                       </table>
+                   </div>
+               </div>
+
            </div>
        </div>
     </div>
 
     <script type="module">
-        import { initializeAuthListener, requireAuth } from "./cbse/class-9/js/auth-paywall.js";
-        import { getInitializedClients } from "./cbse/class-9/js/config.js";
+        import { initializeAuthListener, requireAuth } from "./js/auth-paywall.js";
+        import { getInitializedClients } from "./js/config.js";
+        import { recordFinancialEvent, fetchB2CUsers } from "./js/api.js";
         import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // MASTER GUARD
@@ -101,6 +155,7 @@
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("app").classList.remove("hidden");
                 loadSchools();
+                loadB2C();
             } else {
                 document.getElementById("loading").innerHTML = `
                     <div class="text-center">
@@ -125,13 +180,26 @@
                     logo_url: document.getElementById("s-logo").value,
                     board: document.getElementById("s-board").value,
                     max_licenses: parseInt(document.getElementById("s-licenses").value),
+                    total_strength: parseInt(document.getElementById("s-strength").value),
+                    state: document.getElementById("s-state").value,
+                    district: document.getElementById("s-district").value,
+                    area_type: document.getElementById("s-area").value,
                     principal_email: document.getElementById("s-email").value,
                     principal_phone: document.getElementById("s-phone").value,
                     created_at: serverTimestamp(),
                     status: "active"
                 };
 
-                await addDoc(collection(db, "schools"), schoolData);
+                const docRef = await addDoc(collection(db, "schools"), schoolData);
+
+                // Record Financial Event
+                await recordFinancialEvent(
+                    docRef.id,
+                    "LICENSE_ACTIVATION",
+                    schoolData.max_licenses * 500, // Mock amount
+                    `Initial provisioning of ${schoolData.max_licenses} licenses.`
+                );
+
                 alert("School Provisioned Successfully!");
                 e.target.reset();
                 loadSchools();
@@ -167,19 +235,20 @@
                             <img src="${d.logo_url}" class="w-12 h-12 rounded-full bg-white object-contain p-1">
                             <div class="flex-1 text-center md:text-left">
                                 <h3 class="font-bold text-lg text-white">${d.name}</h3>
-                                <div class="text-xs text-slate-400 mt-1 flex gap-3 justify-center md:justify-start">
+                                <div class="text-xs text-slate-400 mt-1 flex gap-3 justify-center md:justify-start flex-wrap">
                                     <span class="bg-slate-700 px-2 py-0.5 rounded text-slate-300">${d.board}</span>
-                                    <span>${d.max_licenses} Licenses</span>
+                                    <span>${d.max_licenses} Lic</span>
                                     <span class="text-emerald-400">Active</span>
-                                    <span class="font-mono text-slate-500">ID: ${doc.id}</span>
+                                    <span class="font-mono text-slate-500">${d.state || 'N/A'}, ${d.district || 'N/A'}</span>
+                                    <span class="text-slate-600">ID: ${doc.id}</span>
                                 </div>
                             </div>
                             <div class="flex gap-3">
                                 <a href="${whatsappLink}" target="_blank" class="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
-                                    <i class="fab fa-whatsapp text-lg"></i> Message
+                                    <i class="fab fa-whatsapp text-lg"></i>
                                 </a>
                                 <a href="${mailLink}" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition">
-                                    <i class="far fa-envelope text-lg"></i> Email
+                                    <i class="far fa-envelope text-lg"></i>
                                 </a>
                                 <a href="school-landing.html?schoolId=${doc.id}" target="_blank" class="flex items-center gap-2 border border-slate-600 hover:border-white text-slate-300 hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition">
                                     Launch &rarr;
@@ -193,6 +262,24 @@
                 console.error(err);
                 list.innerHTML = `<div class="p-8 text-center text-red-400">Failed to load ledger.</div>`;
             }
+        };
+
+        // 3. Load B2C
+        window.loadB2C = async () => {
+            const list = document.getElementById("b2c-list");
+            const users = await fetchB2CUsers();
+            if (users.length === 0) {
+                list.innerHTML = `<tr><td colspan="4" class="p-4 text-center">No Individual Users Found.</td></tr>`;
+                return;
+            }
+            list.innerHTML = users.map(u => `
+                <tr class="hover:bg-slate-800/30">
+                    <td class="p-4 font-mono text-xs">${u.uid.substring(0,8)}...</td>
+                    <td class="p-4 text-white">${u.plan}</td>
+                    <td class="p-4"><span class="text-emerald-400 text-xs uppercase font-bold">${u.status}</span></td>
+                    <td class="p-4 text-right font-mono text-indigo-400">${u.revenue}</td>
+                </tr>
+            `).join("");
         };
     </script>
 </body>
