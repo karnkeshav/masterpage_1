@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mistake Notebook — Ready4Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../js/firebase-master-config.js"></script>
+<script src="../js/config.js" type="module"></script>
+</head>
+<body class="bg-red-50 text-slate-800 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <header class="mb-8">
+             <a href="javascript:history.back()" class="text-red-600 font-bold mb-4 inline-block">&larr; Back to Console</a>
+             <h1 class="text-3xl font-black text-red-900">Mistake Notebook</h1>
+             <p class="text-red-700">Resolve these concepts to unlock mastery.</p>
+        </header>
+
+        <div id="loading" class="text-center py-12">
+            <div class="animate-spin h-8 w-8 border-b-2 border-red-600 rounded-full mx-auto"></div>
+        </div>
+
+        <div id="mistakes-container" class="space-y-6 hidden"></div>
+        <div id="empty-state" class="hidden text-center py-12 text-slate-500">
+            <p class="text-xl font-bold">Clean Sheet! 🎉</p>
+            <p>No unresolved mistakes found.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { requireAuth } from "../js/auth-paywall.js";
+        import { getInitializedClients } from "../js/config.js";
+        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        async function init() {
+            try {
+                const user = await requireAuth();
+                const { db } = getInitializedClients();
+
+                const q = query(
+                    collection(db, "mistake_notebook"),
+                    where("user_id", "==", user.uid),
+                    orderBy("timestamp", "desc")
+                );
+
+                const snap = await getDocs(q);
+                const container = document.getElementById("mistakes-container");
+                const empty = document.getElementById("empty-state");
+                const loading = document.getElementById("loading");
+
+                loading.classList.add("hidden");
+
+                if (snap.empty) {
+                    empty.classList.remove("hidden");
+                    return;
+                }
+
+                container.classList.remove("hidden");
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() : "Recent";
+
+                    data.mistakes.forEach(m => {
+                        const div = document.createElement("div");
+                        div.className = "bg-white p-6 rounded-xl shadow-sm border border-red-100";
+                        div.innerHTML = `
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded uppercase tracking-wide">${data.topic}</span>
+                                <span class="text-slate-400 text-xs">${date}</span>
+                            </div>
+                            <h3 class="font-bold text-lg mb-4 text-slate-900">${m.question}</h3>
+                            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                                <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                    <span class="block text-xs font-bold text-red-500 uppercase mb-1">You Selected</span>
+                                    <div class="font-medium text-red-900">${m.selected}: ${m.options[m.selected] || m.selected}</div>
+                                </div>
+                                <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <span class="block text-xs font-bold text-green-600 uppercase mb-1">Correct Answer</span>
+                                    <div class="font-medium text-green-900">${m.correct}: ${m.options[m.correct]}</div>
+                                </div>
+                            </div>
+                            ${m.explanation ? `
+                            <div class="bg-slate-50 p-4 rounded-lg text-sm text-slate-700">
+                                <strong class="block text-slate-900 mb-1">Explanation:</strong>
+                                ${m.explanation}
+                            </div>` : ''}
+                        `;
+                        container.appendChild(div);
+                    });
+                });
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById("loading").innerHTML = `<p class="text-red-500">Error loading mistakes.</p>`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
