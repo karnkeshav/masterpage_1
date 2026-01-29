@@ -10,19 +10,25 @@
     <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../../js/firebase-master-config.js"></script>
-<script src="../../js/config.js" type="module"></script>
+    <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { initializeAuthListener, requireAuth } from "../../js/auth-paywall.js";
+        import { guardConsole } from "../../js/guard.js";
 
-        // Parents might log in as "Student" (sharing account) or have a separate role.
-        // For now, we assume if they can see this, they are authorized.
+        // GLOBAL GUARD
+        guardConsole("parent");
 
-        function init(user) {
-            document.getElementById("loading").classList.add("hidden");
-            document.getElementById("app").classList.remove("hidden");
+        window.loadConsoleData = async (profile) => {
+            console.log("Loading Parent Console for:", profile.uid);
+
+            // Constraint: Strictly isolate to child's user_id
+            // In a real implementation, we would fetch profile.linked_children
+            // For now, we simulate finding the child
+            const childName = "Aarav"; // Mock
+
+            document.getElementById("child-name").textContent = childName;
             renderGrowthChart();
-        }
+        };
 
         function renderGrowthChart() {
             const ctx = document.getElementById('growthChart').getContext('2d');
@@ -50,35 +56,19 @@
                 }
             });
         }
-
-        window.doLogin = async () => {
-            await requireAuth();
-            location.reload();
-        };
-
-        initializeAuthListener(user => {
-            if(user) {
-                init(user);
-            } else {
-                document.getElementById("loading").innerHTML = `
-                    <button onclick="doLogin()" class="bg-cbse-blue text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-800">
-                        Sign In to View Report
-                    </button>`;
-            }
-        });
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
     <div id="loading" class="flex items-center justify-center min-h-screen">
-        <div class="animate-pulse font-bold text-slate-400">Loading Child's Report...</div>
+        <div class="animate-pulse font-bold text-slate-400">Verifying Parental Access...</div>
     </div>
 
     <div id="app" class="hidden max-w-5xl mx-auto p-4 md:p-8 fade-in">
         <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12">
             <div>
                 <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Guardian<span class="text-blue-600">Link</span></h1>
-                <p class="text-slate-500 font-medium">Monitoring Progress for <span class="text-slate-900 font-bold">Aarav</span>.</p>
+                <p class="text-slate-500 font-medium">Monitoring Progress for <span id="child-name" class="text-slate-900 font-bold">Child</span>.</p>
             </div>
         </header>
 

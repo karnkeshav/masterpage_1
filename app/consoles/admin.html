@@ -9,45 +9,37 @@
     <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../../js/firebase-master-config.js"></script>
-<script src="../../js/config.js" type="module"></script>
+    <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { checkRole, initializeAuthListener, requireAuth } from "../../js/auth-paywall.js";
+        import { guardConsole } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
         import { collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        async function checkAccess() {
-            const isAllowed = await checkRole("admin");
-            if (!isAllowed) {
-                document.body.innerHTML = `
-                    <div class="flex flex-col items-center justify-center min-h-screen">
-                        <h1 class='text-3xl font-black text-red-600 mb-2'>ACCESS DENIED</h1>
-                        <p class='text-slate-500'>System Administrators Only.</p>
-                        <button onclick="location.reload()" class="mt-4 text-blue-600 underline">Retry</button>
-                    </div>`;
+        // GLOBAL GUARD
+        guardConsole("admin");
+
+        // Data Loader (Called by Guard)
+        window.loadConsoleData = async (profile) => {
+            const schoolId = profile.school_id;
+            if (!schoolId) {
+                alert("Critical Error: No School ID found for Admin.");
                 return;
             }
-            document.getElementById("loading").classList.add("hidden");
-            document.getElementById("app").classList.remove("hidden");
-            loadUsers();
-        }
+            console.log(`Loading Admin Console for School: ${schoolId}`);
 
-        async function loadUsers() {
-            // In a real app, use pagination
-            const { db } = getInitializedClients();
+            // Here we would strictly fetch users belonging to this school
+            // const q = query(collection(db, "users"), where("school_id", "==", schoolId));
 
-            // For demo, we might fetch from 'whitelist' or 'users'
-            // Let's mock for now or try to fetch users if rules allow (usually admin needs special rules)
-            // Assuming we have a 'whitelist' collection that Admin manages
-
+            // MOCK DATA (Simulating Scoped Fetch)
             const users = [
-                { email: "teacher1@school.com", role: "teacher", class: "9-A" },
-                { email: "principal@school.com", role: "principal", class: "All" },
-                { email: "student1@school.com", role: "student", class: "9-A" },
+                { email: "teacher1@school.com", role: "teacher", class: "9-A", school_id: schoolId },
+                { email: "principal@school.com", role: "principal", class: "All", school_id: schoolId },
+                { email: "student1@school.com", role: "student", class: "9-A", school_id: schoolId },
             ];
 
             renderUsers(users);
-        }
+        };
 
         function renderUsers(users) {
             const list = document.getElementById("user-list");
@@ -68,22 +60,6 @@
                 </tr>
             `).join("");
         }
-
-        window.doLogin = async () => {
-            await requireAuth();
-            location.reload();
-        };
-
-        initializeAuthListener(user => {
-            if(user) {
-                checkAccess();
-            } else {
-                document.getElementById("loading").innerHTML = `
-                    <button onclick="doLogin()" class="bg-cbse-blue text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-800">
-                        Sign In as Admin
-                    </button>`;
-            }
-        });
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">

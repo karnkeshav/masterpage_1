@@ -102,9 +102,16 @@
 
 <script type="module">
 import { transliterate as tr } from "https://cdn.jsdelivr.net/npm/transliteration/+esm";
-import { requireAuth } from "../js/auth-paywall.js";
+import { requireAuth, initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
 import { checkClassAccess, showExpiredPopup } from "../js/firebase-expiry.js";
 import { loadCurriculum, getGradeFromURL } from "../js/curriculum/loader.js";
+
+// Guard
+initializeAuthListener(async (user) => {
+    if (!user) { window.location.href = "../index.html"; return; }
+    const profile = await ensureUserInFirestore(user);
+    if (!profile) { window.location.href = "../index.html"; return; }
+});
 
 // Initialize Constants
 const CLASS_ID = getGradeFromURL();
