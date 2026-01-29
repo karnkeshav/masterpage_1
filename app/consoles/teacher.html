@@ -9,43 +9,36 @@
     <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../../js/firebase-master-config.js"></script>
-<script src="../../js/config.js" type="module"></script>
+    <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { checkRole, initializeAuthListener, requireAuth } from "../../js/auth-paywall.js";
+        import { guardConsole } from "../../js/guard.js";
 
-        async function checkAccess() {
-            const isAllowed = await checkRole("teacher") || await checkRole("admin") || await checkRole("principal");
-            if (!isAllowed) {
-                document.body.innerHTML = `
-                    <div class="flex flex-col items-center justify-center min-h-screen">
-                        <h1 class='text-3xl font-black text-red-600 mb-2'>ACCESS DENIED</h1>
-                        <p class='text-slate-500'>Restricted to Faculty access only.</p>
-                        <button onclick="location.reload()" class="mt-4 text-blue-600 underline">Retry</button>
-                    </div>`;
-                return;
-            }
-            document.getElementById("loading").classList.add("hidden");
-            document.getElementById("app").classList.remove("hidden");
-            renderDashboard();
-        }
+        // GLOBAL GUARD
+        guardConsole("teacher");
 
-        function renderDashboard() {
+        // Data Loader
+        window.loadConsoleData = async (profile) => {
+            console.log("Loading Teacher Console for:", profile.school_id);
             const params = new URLSearchParams(location.search);
+            // Default to first assigned class or generic if none (Prototype)
             const section = params.get("section") || "Class 9-A";
 
             document.getElementById("section-title").textContent = section;
 
-            // Mock Students
+            // In production: Fetch students where school_id == profile.school_id AND class == section
+            // const q = query(collection(db, "users"), where("school_id", "==", profile.school_id), where("class", "==", section));
+
+            // Mock Students (Simulating School-Scoped Data)
             const students = [
-                { name: "Aarav Patel", status: "Mastered", score: 92, lastActive: "10m ago", avatar: "adventurer" },
-                { name: "Vivaan Singh", status: "Remedial Loop", score: 45, lastActive: "Now", avatar: "avataaars" },
-                { name: "Aditya Kumar", status: "Learning", score: 68, lastActive: "2h ago", avatar: "croodles" },
-                { name: "Vihaan Gupta", status: "Remedial Loop", score: 42, lastActive: "1d ago", avatar: "micah" },
-                { name: "Arjun Mehta", status: "Mastered", score: 88, lastActive: "5m ago", avatar: "miniavs" },
-                { name: "Rohan Sharma", status: "Learning", score: 72, lastActive: "3h ago", avatar: "open-peeps" },
-                { name: "Ishaan Verma", status: "Mastered", score: 95, lastActive: "1h ago", avatar: "personas" },
-                { name: "Reyansh Iyer", status: "Remedial Loop", score: 48, lastActive: "Now", avatar: "pixel-art" },
+                { name: "Aarav Patel", status: "Mastered", score: 92, lastActive: "10m ago", avatar: "adventurer", school_id: profile.school_id },
+                { name: "Vivaan Singh", status: "Remedial Loop", score: 45, lastActive: "Now", avatar: "avataaars", school_id: profile.school_id },
+                { name: "Aditya Kumar", status: "Learning", score: 68, lastActive: "2h ago", avatar: "croodles", school_id: profile.school_id },
+                { name: "Vihaan Gupta", status: "Remedial Loop", score: 42, lastActive: "1d ago", avatar: "micah", school_id: profile.school_id },
+                { name: "Arjun Mehta", status: "Mastered", score: 88, lastActive: "5m ago", avatar: "miniavs", school_id: profile.school_id },
+                { name: "Rohan Sharma", status: "Learning", score: 72, lastActive: "3h ago", avatar: "open-peeps", school_id: profile.school_id },
+                { name: "Ishaan Verma", status: "Mastered", score: 95, lastActive: "1h ago", avatar: "personas", school_id: profile.school_id },
+                { name: "Reyansh Iyer", status: "Remedial Loop", score: 48, lastActive: "Now", avatar: "pixel-art", school_id: profile.school_id },
             ];
 
             // Render Ticker (Anomalies)
@@ -87,29 +80,13 @@
                     </td>
                 </tr>
             `).join("");
-        }
+        };
 
         function getStatusColor(s) {
             if (s === "Mastered") return "bg-green-50 text-green-700 border-green-100";
             if (s === "Remedial Loop") return "bg-red-50 text-red-700 border-red-100";
             return "bg-blue-50 text-blue-700 border-blue-100";
         }
-
-        window.doLogin = async () => {
-            await requireAuth();
-            location.reload();
-        };
-
-        initializeAuthListener(user => {
-            if(user) {
-                checkAccess();
-            } else {
-                document.getElementById("loading").innerHTML = `
-                    <button onclick="doLogin()" class="bg-cbse-blue text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-800">
-                        Sign In as Teacher
-                    </button>`;
-            }
-        });
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">

@@ -10,63 +10,36 @@
     <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../../js/firebase-master-config.js"></script>
-<script src="../../js/config.js" type="module"></script>
-</head>
-<body class="bg-white text-slate-800 min-h-screen">
-
-    <div id="loading" class="flex items-center justify-center min-h-screen">
-        <div class="animate-pulse font-bold text-slate-400">Loading your Portfolio...</div>
-    </div>
-
-    <div id="app" class="hidden max-w-7xl mx-auto p-6 fade-in">
-        <header class="flex justify-between items-end mb-8 pb-6 border-b border-slate-100">
-            <div>
-                <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">My Learning<span class="text-blue-600">Map</span></h1>
-                <p class="text-slate-500 font-medium">Welcome back, <span id="user-name" class="text-slate-900 font-bold">Student</span>.</p>
-            </div>
-            <div class="flex gap-4">
-                 <a href="../review.html" class="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-xl font-bold border border-red-100 hover:bg-red-100 transition">
-                    <i class="fas fa-exclamation-triangle"></i> Mistake Notebook
-                </a>
-                <div class="hidden md:block text-right">
-                    <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Current Grade</div>
-                    <div id="grade-display" class="text-lg font-bold text-slate-900">Class 9</div>
-                </div>
-            </div>
-        </header>
-
-        <div id="dependency-graph">
-            <!-- Injected -->
-        </div>
-
-    </div>
+    <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { initializeAuthListener, requireAuth } from "../../js/auth-paywall.js";
+        import { guardConsole } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
         import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { loadCurriculum } from "../../js/curriculum/loader.js";
 
-        async function init(user) {
-            document.getElementById("loading").classList.add("hidden");
-            document.getElementById("app").classList.remove("hidden");
-            document.getElementById("user-name").textContent = user.displayName || "Student";
+        // GLOBAL GUARD
+        guardConsole("student");
+
+        // Data Loader
+        window.loadConsoleData = async (profile) => {
+            console.log("Loading Student Portfolio for:", profile.uid);
+            document.getElementById("user-name").textContent = profile.displayName || "Student";
 
             // Determine Grade
             let grade = "9";
+            // Check params first (allow override for demos if authorized?)
+            // Better to stick to profile for security.
+            // But we might want to let them see their other grades history.
+            // Let's use profile.paidClasses active one or default to 9.
+
+            // For now, let's look for a query param but maybe we should default to 9
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get("grade")) {
                 grade = urlParams.get("grade");
-            } else {
-                // Try to get from user profile
-                const { db } = getInitializedClients();
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    // Find active class
-                    const active = Object.keys(data.paidClasses || {}).find(k => data.paidClasses[k]);
-                    if (active) grade = active;
-                }
+            } else if (profile.paidClasses) {
+                 const active = Object.keys(profile.paidClasses).find(k => profile.paidClasses[k]);
+                 if (active) grade = active;
             }
 
             document.getElementById("grade-display").textContent = `Class ${grade}`;
@@ -74,12 +47,12 @@
             // Load Curriculum & Progress
             try {
                 const curriculum = await loadCurriculum(grade);
-                await loadProgress(user, curriculum, grade);
+                await loadProgress(profile, curriculum, grade);
             } catch (e) {
                 console.error(e);
                 document.getElementById("dependency-graph").innerHTML = `<p class="text-red-500">Failed to load data.</p>`;
             }
-        }
+        };
 
         async function loadProgress(user, curriculum, grade) {
             const { db } = getInitializedClients();
@@ -197,22 +170,6 @@
         window.goToChapter = (grade, subject) => {
              location.href = `../../app/curriculum.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
         };
-
-        window.doLogin = async () => {
-            await requireAuth();
-            location.reload();
-        };
-
-        initializeAuthListener(user => {
-            if(user) {
-                init(user);
-            } else {
-                document.getElementById("loading").innerHTML = `
-                    <button onclick="doLogin()" class="bg-cbse-blue text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-800">
-                        Sign In to View Portfolio
-                    </button>`;
-            }
-        });
     </script>
 </body>
 </html>

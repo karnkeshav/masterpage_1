@@ -10,40 +10,35 @@
     <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../../js/firebase-master-config.js"></script>
-<script src="../../js/config.js" type="module"></script>
+    <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { checkRole, initializeAuthListener, requireAuth } from "../../js/auth-paywall.js";
+        import { guardConsole } from "../../js/guard.js";
         import { fetchSchoolAnalytics } from "../../js/api.js";
 
-        async function checkAccess() {
-            const isAllowed = await checkRole("principal") || await checkRole("admin");
-            if (!isAllowed) {
-                document.body.innerHTML = `
-                    <div class="flex flex-col items-center justify-center min-h-screen">
-                        <h1 class='text-3xl font-black text-red-600 mb-2'>ACCESS DENIED</h1>
-                        <p class='text-slate-500'>Restricted to Institutional Leadership.</p>
-                        <button onclick="location.reload()" class="mt-4 text-blue-600 underline">Retry</button>
-                    </div>`;
-                return;
-            }
-            document.getElementById("loading").classList.add("hidden");
-            document.getElementById("app").classList.remove("hidden");
-            renderDashboard();
-        }
+        // GLOBAL GUARD
+        guardConsole("principal");
 
-        async function renderDashboard() {
-            const params = new URLSearchParams(location.search);
-            const schoolId = params.get("schoolId");
+        // Data Loader
+        window.loadConsoleData = async (profile) => {
+            console.log("Loading Principal Dashboard for:", profile.school_id);
+            const schoolId = profile.school_id;
 
-            // Fetch Real Analytics
+            // Strict Isolation: Fetch stats only for this schoolId
             const stats = await fetchSchoolAnalytics(schoolId);
+
             if (stats) {
                 document.getElementById("total-active").textContent = stats.activeStudents;
                 document.getElementById("total-active-trend").textContent = `Based on ${stats.totalAttempts} quizzes`;
+            } else {
+                 document.getElementById("total-active").textContent = "0";
+                 document.getElementById("total-active-trend").textContent = "No data available";
             }
 
-            // Mock Data for Heatmap (placeholder for detailed class breakdown)
+            // Mock Data for Heatmap (In production, fetch aggregated class stats from 'classes' collection or aggregation query)
+            // ensuring we only fetch classes where school_id == profile.school_id
+
+            // Simulating Strict Aggregation (No Student Names)
             const classes = [
                 { name: "9-A", risk: "High", avg: 65, active: 28, total: 32 },
                 { name: "9-B", risk: "Low", avg: 82, active: 30, total: 30 },
@@ -80,7 +75,7 @@
             `).join("");
 
             renderChart();
-        }
+        };
 
         function getRiskColor(risk, isBorder = false) {
             if (isBorder) {
@@ -115,28 +110,12 @@
                 }
              });
         }
-
-        window.doLogin = async () => {
-            await requireAuth();
-            location.reload();
-        };
-
-        initializeAuthListener(user => {
-            if(user) {
-                checkAccess();
-            } else {
-                document.getElementById("loading").innerHTML = `
-                    <button onclick="doLogin()" class="bg-cbse-blue text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-800">
-                        Sign In as Principal
-                    </button>`;
-            }
-        });
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
     <div id="loading" class="flex items-center justify-center min-h-screen">
-        <div class="animate-pulse font-bold text-slate-400">Loading Dashboard...</div>
+        <div class="animate-pulse font-bold text-slate-400">Verifying Principal Access...</div>
     </div>
 
     <div id="app" class="hidden max-w-7xl mx-auto p-4 md:p-8 fade-in">
