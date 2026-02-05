@@ -5,8 +5,9 @@ const { runStressTest } = require('./stress_test.js');
 
 async function main() {
   // Clear the report file before running tests
-  if (fs.existsSync('testing_tool/report.md')) {
-    fs.unlinkSync('testing_tool/report.md');
+  const reportPath = 'report.md';
+  if (fs.existsSync(reportPath)) {
+    fs.unlinkSync(reportPath);
   }
 
   await runPerformanceTests();
