@@ -325,8 +325,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 import { authenticateWithCredentials, routeUser, initializeAuthListener } from "./js/auth-paywall.js";
 
 // 1. Initialize Auth Listener to check for existing session
-initializeAuthListener(async (user) => {
-    if (user) {
+initializeAuthListener(async (user, profile) => {
+    if (user && profile) {
         console.log("User already logged in, routing...");
         await routeUser(user);
     }

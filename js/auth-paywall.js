@@ -123,8 +123,9 @@ export async function initializeAuthListener(onReady) {
   await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
   onAuthStateChanged(auth, async (user) => {
+    let profile = null;
     if (user) {
-      const profile = await ensureUserInFirestore(user);
+      profile = await ensureUserInFirestore(user);
 
       if (!profile) {
           // If user exists in Auth but not Firestore, do not auto-route.
@@ -139,7 +140,7 @@ export async function initializeAuthListener(onReady) {
         }
       }
     }
-    if (onReady) onReady(user);
+    if (onReady) onReady(user, profile);
   });
 }
 
