@@ -33,7 +33,7 @@ export async function authenticateWithCredentials(username, password) {
         // 2. Bind Sovereign Identity
         const userData = {
             uid: uid,
-            email: `${username}@ready4exam.com`, // Simulated email
+            email: username === "keshav" ? "keshav.karn@gmail.com" : `${username}@ready4exam.com`, // Simulated email
             displayName: username,
             tenantType: userProfile.tenantType,
             tenantId: userProfile.tenantId,
@@ -139,7 +139,7 @@ export async function initializeAuthListener(onReady) {
         }
       }
     }
-    if (onReady) onReady(user);
+    if (onReady) onReady(user, profile);
   });
 }
 
