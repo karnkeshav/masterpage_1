@@ -6,6 +6,7 @@
     <title>Admin Console — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../../js/firebase-master-config.js"></script>
@@ -15,6 +16,22 @@
         import { guardConsole } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
         import { collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { signOut } from "../../js/auth-paywall.js";
+
+        // LOGOUT LOGIC
+        const logoutBtn = document.getElementById('logout-btn');
+        if(logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                if (confirm("Sign out of your Ready4Exam session?")) {
+                    try {
+                        await signOut();
+                        window.location.href = "../../index.html";
+                    } catch (err) {
+                        console.error("Logout failed", err);
+                    }
+                }
+            });
+        }
 
         // GLOBAL GUARD
         guardConsole("admin");
@@ -63,6 +80,12 @@
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
+    <nav class="fixed top-0 right-0 p-4 z-50">
+        <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
+            <i class="fas fa-sign-out-alt text-red-400"></i>
+            <span>Sign Out</span>
+        </button>
+    </nav>
 
     <div id="loading" class="flex items-center justify-center min-h-screen">
         <div class="animate-pulse font-bold text-slate-400">Verifying Admin Privileges...</div>
