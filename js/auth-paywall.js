@@ -1,5 +1,4 @@
 import { initializeServices, getInitializedClients } from "./config.js";
-// Added browserSessionPersistence to imports
 import { signInAnonymously, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -10,6 +9,7 @@ const CREDENTIALS = {
     "keshav": { pass: "keshav", role: "owner", tenantType: "owner", tenantId: "global" },
     "dps.ready4exam": { pass: "keshav", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "student": { pass: "student", role: "student", tenantType: "individual", tenantId: "individual_b2c" },
+    // Persona Entry Points (Simulated)
     "admin": { pass: "admin", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "principal": { pass: "principal", role: "principal", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "teacher": { pass: "teacher", role: "teacher", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
@@ -29,12 +29,14 @@ export async function authenticateWithCredentials(username, password) {
         // Force session-only persistence so the user is logged out when the tab closes
         await setPersistence(auth, browserSessionPersistence);
 
+        // 1. Establish Secure Session
         const res = await signInAnonymously(auth);
         const uid = res.user.uid;
 
+        // 2. Bind Sovereign Identity
         const userData = {
             uid: uid,
-            email: username === "keshav" ? "keshav.karn@gmail.com" : `${username}@ready4exam.com`,
+            email: username === "keshav" ? "keshav.karn@gmail.com" : `${username}@ready4exam.com`, // Simulated email
             displayName: username,
             tenantType: userProfile.tenantType,
             tenantId: userProfile.tenantId,
@@ -45,7 +47,9 @@ export async function authenticateWithCredentials(username, password) {
             isSovereign: true
         };
 
+        // 3. Immutable Write
         await setDoc(doc(db, "users", uid), userData);
+
         return userData;
 
     } catch (e) {
@@ -86,6 +90,7 @@ export async function routeUser(user) {
 
     const data = snap.data();
 
+    // Deterministic Routing Table
     if (data.tenantType === "owner") {
         window.location.href = "owner-console.html";
         return;
@@ -110,7 +115,7 @@ export async function routeUser(user) {
 
 /**
  * Updated to prevent automatic routing on page load.
- * Changed from browserLocalPersistence to browserSessionPersistence.
+ * Changed from browserLocalPersistence to browserSessionPersistence to force re-login.
  */
 export async function initializeAuthListener(onReady) {
   await initializeServices();
@@ -123,11 +128,14 @@ export async function initializeAuthListener(onReady) {
     let profile = null;
     if (user) {
       profile = await ensureUserInFirestore(user);
-      
-      // Removed automatic routeUser call to ensure user stays on login page
-      // even if a background session exists.
-      if (profile?.role === "owner") {
-          import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
+
+      if (profile) {
+        // Inject Lens for Owner
+        if (profile?.role === "owner") {
+            import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
+        }
+        // IMPORTANT: routeUser(user) is NOT called here automatically.
+        // This ensures index.html stays on the login screen even if a session exists.
       }
     }
     if (onReady) onReady(user, profile);
@@ -144,6 +152,7 @@ export async function requireAuth(skipUI = false, redirect = false) {
   }
 
   if (skipUI) return null;
+
   window.location.href = "index.html";
   throw new Error("Redirecting to Login");
 }
