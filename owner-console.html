@@ -144,16 +144,31 @@
     </div>
 
     <script type="module">
-        import { initializeAuthListener, requireAuth } from "./js/auth-paywall.js";
+        import { initializeAuthListener, requireAuth, signOut } from "./js/auth-paywall.js";
         import { getInitializedClients } from "./js/config.js";
         import { recordFinancialEvent, fetchB2CUsers } from "./js/api.js";
         import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // MASTER GUARD
-        initializeAuthListener(user => {
-            // Updated check to match Sovereign Credential Format
-            // Sovereign ID is bound as "keshav@ready4exam.com" in auth-paywall.js
-            if (user && (user.email === "keshav.karn@gmail.com" || user.email === "keshav@ready4exam.com")) {
+        const authTimeout = setTimeout(() => {
+             const loadingEl = document.getElementById("loading");
+             if (loadingEl && !loadingEl.classList.contains("hidden")) {
+                 loadingEl.innerHTML = `
+                    <div class="text-center">
+                        <p class="text-red-500 font-bold mb-4">AUTHENTICATION TIMEOUT</p>
+                        <button id="timeout-login-btn" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm">Owner Login</button>
+                    </div>`;
+                 document.getElementById("timeout-login-btn").onclick = () => {
+                     signOut().then(() => window.location.href = "index.html");
+                 };
+             }
+        }, 5000);
+
+        initializeAuthListener((user, profile) => {
+            clearTimeout(authTimeout);
+
+            // Prioritize Profile Role Check for Sovereign Access
+            if (user && profile && profile.role === "owner") {
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("app").classList.remove("hidden");
                 loadSchools();
@@ -162,8 +177,12 @@
                 document.getElementById("loading").innerHTML = `
                     <div class="text-center">
                         <p class="text-red-500 font-bold mb-4">UNAUTHORIZED ACCESS ATTEMPT LOGGED</p>
-                        <button onclick="requireAuth()" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm">Owner Login</button>
+                        <button id="unauth-login-btn" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm">Owner Login</button>
                     </div>`;
+
+                document.getElementById("unauth-login-btn").onclick = () => {
+                     signOut().then(() => window.location.href = "index.html");
+                };
             }
         });
 
