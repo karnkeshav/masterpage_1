@@ -3,80 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Portal Login</title>
+    <title>School Portal — Stakeholder Entry</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <script src="js/firebase-master-config.js"></script>
     <script src="js/config.js" type="module"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body{font-family:'Inter',sans-serif;}</style>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .modal-overlay { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+    </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex items-center justify-center">
+<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-center relative">
+
+    <nav class="absolute top-0 w-full p-6 flex justify-between items-center">
+        <a href="index.html" class="text-xs font-bold text-slate-400 hover:text-slate-600 transition">
+            <i class="fas fa-arrow-left mr-2"></i>Global Portal
+        </a>
+        <button onclick="handleSignOut()" class="text-xs font-bold text-red-500 hover:text-red-700 transition flex items-center bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100">
+            <i class="fas fa-sign-out-alt mr-2"></i>Sign Out
+        </button>
+    </nav>
 
     <div id="loading" class="text-center">
         <div class="animate-pulse font-bold text-slate-400 mb-2">Locating School Instance...</div>
         <div class="text-xs text-slate-300">Connecting to Master Ledger</div>
     </div>
 
-    <div id="app" class="hidden w-full max-w-5xl p-6 fade-in">
-        <!-- Dynamic Header -->
-        <header id="school-header" class="text-center mb-16">
-            <div class="w-24 h-24 bg-white rounded-full mx-auto mb-6 shadow-lg flex items-center justify-center p-2">
+    <div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden p-4">
+        <div class="absolute inset-0 modal-overlay" onclick="closeLogin()"></div>
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl relative z-10 overflow-hidden">
+            <div id="modal-accent" class="h-2 w-full bg-slate-200"></div>
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-black text-slate-900 capitalize" id="modal-title">Stakeholder Login</h2>
+                    <button onclick="closeLogin()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Username</label>
+                        <input type="text" id="login-user" class="w-full px-4 py-3 rounded-xl bg-slate-100 border-none focus:ring-2 focus:ring-slate-900 transition" placeholder="Enter username">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Access Key</label>
+                        <input type="password" id="login-pass" class="w-full px-4 py-3 rounded-xl bg-slate-100 border-none focus:ring-2 focus:ring-slate-900 transition" placeholder="••••••••">
+                    </div>
+                    <button id="login-btn" onclick="executeStakeholderLogin()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition shadow-lg shadow-slate-200">
+                        Enter Console
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="hidden w-full max-w-6xl p-6">
+        <header id="school-header" class="text-center mb-12">
+            <div class="w-24 h-24 bg-white rounded-full mx-auto mb-6 shadow-lg flex items-center justify-center p-2 border border-slate-50">
                 <img id="school-logo" src="" class="max-w-full max-h-full object-contain">
             </div>
             <h1 id="school-name" class="text-3xl md:text-5xl font-black text-slate-900 tracking-tight mb-2"></h1>
             <span id="school-board" class="bg-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"></span>
         </header>
 
-        <!-- Persona Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-
-            <div onclick="goTo('student')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
-                <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-5xl mx-auto">
+            <div onclick="openLogin('student')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
+                <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center text-xl group-hover:bg-blue-600 group-hover:text-white transition">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <h3 class="font-bold text-lg text-slate-900">Student</h3>
-                <p class="text-xs text-slate-500 mt-2">Access Mastery Map</p>
+                <h3 class="font-bold text-slate-900">Student</h3>
+                <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Mastery Map</p>
             </div>
 
-            <div onclick="goTo('teacher')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
-                <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-2xl group-hover:bg-emerald-600 group-hover:text-white transition">
+            <div onclick="openLogin('parent')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
+                <div class="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl mx-auto mb-4 flex items-center justify-center text-xl group-hover:bg-orange-600 group-hover:text-white transition">
+                    <i class="fas fa-hands-holding-child"></i>
+                </div>
+                <h3 class="font-bold text-slate-900">Parent</h3>
+                <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Growth Insights</p>
+            </div>
+
+            <div onclick="openLogin('teacher')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl mx-auto mb-4 flex items-center justify-center text-xl group-hover:bg-emerald-600 group-hover:text-white transition">
                     <i class="fas fa-chalkboard-teacher"></i>
                 </div>
-                <h3 class="font-bold text-lg text-slate-900">Teacher</h3>
-                <p class="text-xs text-slate-500 mt-2">Classroom Board</p>
+                <h3 class="font-bold text-slate-900">Teacher</h3>
+                <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Classroom Board</p>
             </div>
 
-            <div onclick="goTo('principal')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
-                <div class="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-2xl group-hover:bg-purple-600 group-hover:text-white transition">
+            <div onclick="openLogin('principal')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
+                <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center text-xl group-hover:bg-purple-600 group-hover:text-white transition">
                     <i class="fas fa-building"></i>
                 </div>
-                <h3 class="font-bold text-lg text-slate-900">Principal</h3>
-                <p class="text-xs text-slate-500 mt-2">Executive Heatmap</p>
+                <h3 class="font-bold text-slate-900">Principal</h3>
+                <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Executive Heatmap</p>
             </div>
 
-            <div onclick="goTo('admin')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
-                <div class="w-16 h-16 bg-slate-50 text-slate-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-2xl group-hover:bg-slate-800 group-hover:text-white transition">
+            <div onclick="openLogin('admin')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group text-center">
+                <div class="w-14 h-14 bg-slate-50 text-slate-600 rounded-2xl mx-auto mb-4 flex items-center justify-center text-xl group-hover:bg-slate-800 group-hover:text-white transition">
                     <i class="fas fa-user-shield"></i>
                 </div>
-                <h3 class="font-bold text-lg text-slate-900">Admin</h3>
-                <p class="text-xs text-slate-500 mt-2">IAM & Ledger</p>
+                <h3 class="font-bold text-slate-900">Admin</h3>
+                <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">IAM & Ledger</p>
             </div>
-
-        </div>
-
-        <div class="text-center mt-12">
-            <a href="index.html" class="text-xs font-bold text-slate-400 hover:text-slate-600">← Back to Global Portal</a>
         </div>
     </div>
 
     <script type="module">
         import { getInitializedClients, initializeServices } from "./js/config.js";
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { authenticateWithCredentials, routeUser } from "./js/auth-paywall.js";
+        import { authenticateWithCredentials, signOut } from "./js/auth-paywall.js";
 
         const params = new URLSearchParams(location.search);
         const schoolId = params.get("schoolId");
+        let activeRole = "";
+        let brandColor = "#0f172a";
 
         if (!schoolId) {
             alert("No School ID provided.");
@@ -87,21 +128,20 @@
             await initializeServices();
             const { db } = getInitializedClients();
             try {
-                // Mock School Data if not found (for Prototype)
-                // In production, this would fail if doc missing.
+                // Initial Default
                 let data = {
                     name: "DPS Bangalore",
                     logo_url: "https://upload.wikimedia.org/wikipedia/en/thumb/9/9b/Delhi_Public_School_Society_Logo.svg/1200px-Delhi_Public_School_Society_Logo.svg.png",
-                    board: "CBSE"
+                    board: "CBSE",
+                    brand_color: "#1e293b"
                 };
 
                 const snap = await getDoc(doc(db, "schools", schoolId));
                 if (snap.exists()) {
                     data = snap.data();
-                } else {
-                    console.warn("Using Mock School Data for Prototype");
                 }
 
+                brandColor = data.brand_color || brandColor;
                 applyTheme(data);
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("app").classList.remove("hidden");
@@ -116,60 +156,44 @@
             document.getElementById("school-logo").src = data.logo_url;
             document.getElementById("school-board").textContent = data.board + " Board";
             document.title = `${data.name} — Portal`;
-
-            // Dynamic Brand Color Injection
-            if (data.brand_color) {
-                document.documentElement.style.setProperty('--school-primary', data.brand_color);
-                // Apply to specific elements if using CSS vars, or direct manipulation
-                const header = document.getElementById("school-header");
-                // Example: Tint the header or icons
-                // For this prototype, we'll assume the slate/white theme is neutral enough,
-                // but we can tint the Board Badge.
-                const badge = document.getElementById("school-board");
-                badge.style.backgroundColor = data.brand_color;
-                badge.style.color = "#ffffff";
-            }
+            
+            const badge = document.getElementById("school-board");
+            badge.style.backgroundColor = brandColor;
+            badge.style.color = "#ffffff";
+            document.getElementById("modal-accent").style.backgroundColor = brandColor;
+            document.getElementById("login-btn").style.backgroundColor = brandColor;
         }
 
-        window.goTo = async (role) => {
-            // GAP TEST: Simulate login as that role for this school
-            // Using the hardcoded credential map from auth-paywall.js
-            // This bypasses the password check for "Demo" convenience on the landing page
-            // BUT strict adherence means we should probably require login.
-            // However, the prompt says "Provide 5 pre-filled cards... Entry Points".
-            // I will implement a "Simulate Login" that calls authenticateWithCredentials
-            // assuming the password matches the role name (as set in auth-paywall.js).
+        window.openLogin = (role) => {
+            activeRole = role;
+            document.getElementById("modal-title").textContent = `${role} Login`;
+            // Preset username for demo convenience
+            document.getElementById("login-user").value = (role === 'student' ? 'student1' : (role === 'parent' ? 'parent1' : role));
+            document.getElementById("login-pass").value = "";
+            document.getElementById("login-modal").classList.remove("hidden");
+            document.getElementById("login-pass").focus();
+        };
+
+        window.closeLogin = () => {
+            document.getElementById("login-modal").classList.add("hidden");
+        };
+
+        window.executeStakeholderLogin = async () => {
+            const user = document.getElementById("login-user").value;
+            const pass = document.getElementById("login-pass").value;
 
             try {
-                // Map role to specific demo credentials from auth-paywall.js
-                // admin -> admin/admin
-                // principal -> principal/principal
-                // etc.
-                const username = role === "student" ? "student1" : role; // student1 is the school student in auth-paywall
-                const password = role === "student" ? "student1" : role;
-
-                // Authenticate and Route
-                await authenticateWithCredentials(username, password);
-                // We don't need to manually route here because authenticateWithCredentials binds the identity,
-                // and we should then call routeUser or let the listener handle it.
-                // But since we are already on a "School Landing", we might want to reload?
-                // No, let's call routeUser explicitly.
-                // But wait, authenticateWithCredentials doesn't return the user object suitable for routeUser immediately?
-                // It returns userData. routeUser takes a user object or uid?
-                // routeUser takes `user` (auth user) OR we can pass `{uid: ...}`.
-                // Actually routeUser takes `user` which has `uid`.
-                // `authenticateWithCredentials` returns `userData` (firestore doc).
-                // Let's reload to trigger the listener in index or just navigate.
-
-                // Better: Just navigate directly because we know the destination.
-                // window.location.href = `/app/consoles/${role}.html?schoolId=${schoolId}`;
-                // BUT we need the Auth State to be correct for the Console to accept it.
-                // authenticateWithCredentials sets the Auth State (signInAnonymously).
-                // So we can just navigate.
-
-                location.href = `./app/consoles/${role}.html?schoolId=${schoolId}`;
+                await authenticateWithCredentials(user, pass);
+                location.href = `./app/consoles/${activeRole}.html?schoolId=${schoolId}`;
             } catch (e) {
-                alert("Access Denied: " + e.message);
+                alert("Login Failed: " + e.message);
+            }
+        };
+
+        window.handleSignOut = async () => {
+            if (confirm("Sign out from this school instance?")) {
+                await signOut();
+                location.href = "index.html";
             }
         };
 
