@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Console — Ready4Exam</title>
+    <title>Class Hub — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,10 +14,10 @@
 
     <script type="module">
         import { guardConsole } from "../../js/guard.js";
-        import { getInitializedClients } from "../../js/config.js";
-        import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { loadCurriculum } from "../../js/curriculum/loader.js";
         import { signOut } from "../../js/auth-paywall.js";
+
+        // GLOBAL GUARD
+        guardConsole("student");
 
         // LOGOUT LOGIC
         const logoutBtn = document.getElementById('logout-btn');
@@ -34,164 +34,124 @@
             });
         }
 
-        // GLOBAL GUARD
-        guardConsole("student");
-
         // Data Loader
         window.loadConsoleData = async (profile) => {
-            console.log("Loading Student Portfolio for:", profile.uid);
-            document.getElementById("user-name").textContent = profile.displayName || "Student";
+            console.log("Loading Class Hub for:", profile.displayName);
+            document.getElementById("user-name").textContent = profile.displayName;
 
-            // Determine Grade
-            let grade = "9";
-            // Check params first (allow override for demos if authorized?)
-            // Better to stick to profile for security.
-            // But we might want to let them see their other grades history.
-            // Let's use profile.paidClasses active one or default to 9.
-
-            // For now, let's look for a query param but maybe we should default to 9
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get("grade")) {
-                grade = urlParams.get("grade");
+            // Extract Grade
+            // Assumes format "studentX" -> "X" or "student12" -> "12"
+            // Or use profile.paidClasses
+            let grade = "9"; // Default
+            const name = profile.displayName || "";
+            const match = name.match(/student(\d+)/i);
+            if (match) {
+                grade = match[1];
             } else if (profile.paidClasses) {
                  const active = Object.keys(profile.paidClasses).find(k => profile.paidClasses[k]);
                  if (active) grade = active;
+            } else {
+                // Fallback URL param
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get("grade")) grade = urlParams.get("grade");
             }
 
-            document.getElementById("grade-display").textContent = `Class ${grade}`;
+            document.getElementById("class-title").textContent = `Class ${grade} Hub`;
+            document.getElementById("grade-badge").textContent = `Grade ${grade}`;
 
-            // Load Curriculum & Progress
-            try {
-                const curriculum = await loadCurriculum(grade);
-                await loadProgress(profile, curriculum, grade);
-            } catch (e) {
-                console.error(e);
-                document.getElementById("dependency-graph").innerHTML = `<p class="text-red-500">Failed to load data.</p>`;
-            }
+            // Setup Click Handlers
+            setupNavigation(grade);
         };
 
-        async function loadProgress(user, curriculum, grade) {
-            const { db } = getInitializedClients();
-
-            // Strict Isolation
-            let constraints = [where("user_id", "==", user.uid)];
-            if (user.tenantType === "school" && user.school_id) {
-                constraints.push(where("school_id", "==", user.school_id));
-            }
-
-            const q = query(collection(db, "quiz_scores"), ...constraints);
-
-            try {
-                const snap = await getDocs(q);
-                const scores = {};
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    scores[d.chapter] = scores[d.chapter] || [];
-                    scores[d.chapter].push(d);
-                });
-                renderGraph(scores, curriculum, grade);
-            } catch (e) {
-                console.error("Error loading progress:", e);
-            }
-        }
-
-        function renderGraph(scores, curriculum, grade) {
-            const container = document.getElementById("dependency-graph");
-            let html = "";
-
-            // Subjects
-            const subjects = ["Science", "Mathematics", "Social Science", "English"];
-
-            subjects.forEach(sub => {
-                const subData = curriculum[sub];
-                if(!subData) return;
-
-                html += `
-                <div class="mb-12">
-                    <h3 class="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
-                        <span class="bg-blue-100 w-8 h-8 rounded-lg flex items-center justify-center text-blue-600 text-sm">
-                            <i class="fas fa-book"></i>
-                        </span>
-                        ${sub}
-                    </h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">`;
-
-                Object.keys(subData).forEach(book => {
-                    subData[book].forEach(ch => {
-                        const name = ch.chapter_title || ch.title || ch;
-
-                        // Try to find score
-                        let best = 0;
-                        let status = "unattempted";
-
-                        // Naive match
-                        if (scores[name]) {
-                             const attempts = scores[name];
-                             best = attempts.reduce((max, a) => Math.max(max, a.percentage || ((a.score/a.total)*100)), 0);
-                        } else {
-                             const key = Object.keys(scores).find(k => k.toLowerCase() === name.toLowerCase());
-                             if (key) {
-                                 const attempts = scores[key];
-                                 best = attempts.reduce((max, a) => Math.max(max, a.percentage || ((a.score/a.total)*100)), 0);
-                             }
-                        }
-
-                        // Brick Style
-                        let bg = "bg-slate-50";
-                        let border = "border-slate-200";
-                        let text = "text-slate-400";
-                        let icon = "fa-lock";
-
-                        if (best > 0) {
-                            if (best >= 85) {
-                                status = "mastered";
-                                bg = "bg-emerald-500";
-                                border = "border-emerald-700";
-                                text = "text-white";
-                                icon = "fa-star";
-                            } else {
-                                status = "in-progress";
-                                bg = "bg-amber-400";
-                                border = "border-amber-600";
-                                text = "text-amber-900";
-                                icon = "fa-bolt";
-                            }
-                        }
-
-                        html += `
-                            <div class="${bg} ${text} ${border} border-b-4 rounded-xl p-4 h-32 flex flex-col justify-between relative overflow-hidden transition hover:scale-105 shadow-sm group cursor-pointer" onclick="goToChapter('${grade}', '${sub}')">
-                                <div class="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-40 transition transform group-hover:rotate-12">
-                                    <i class="fas ${icon} text-4xl"></i>
-                                </div>
-                                <span class="text-xs font-bold leading-tight relative z-10 line-clamp-3">${name}</span>
-                                <div class="relative z-10">
-                                    <div class="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">
-                                        ${status === 'unattempted' ? 'Locked' : status}
-                                    </div>
-                                    <div class="h-1 w-full bg-black/10 rounded-full overflow-hidden">
-                                        <div class="h-full bg-white/80" style="width: ${best}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                });
-
-                html += `</div></div>`;
+        function setupNavigation(grade) {
+            const cards = document.querySelectorAll(".subject-card");
+            cards.forEach(card => {
+                card.onclick = () => {
+                    const subject = card.dataset.subject;
+                    window.location.href = `../chapter-selection.html?subject=${encodeURIComponent(subject)}&grade=${grade}`;
+                };
             });
-
-            container.innerHTML = html;
         }
-
-        window.goToChapter = (grade, subject) => {
-             location.href = `../../app/curriculum.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
-        };
     </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
     <nav class="fixed top-0 right-0 p-4 z-50">
         <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
             <i class="fas fa-sign-out-alt text-red-400"></i>
             <span>Sign Out</span>
         </button>
     </nav>
+
+    <div id="loading" class="flex items-center justify-center min-h-screen">
+        <div class="animate-pulse font-bold text-slate-400">Verifying Student Access...</div>
+    </div>
+
+    <div id="app" class="hidden max-w-4xl mx-auto p-4 md:p-8 fade-in">
+        <header class="flex justify-between items-end mb-12">
+            <div>
+                <h1 id="class-title" class="text-4xl font-black text-slate-900 tracking-tight mb-2">Class Hub</h1>
+                <p class="text-slate-500 font-medium">Welcome back, <span id="user-name" class="text-slate-900 font-bold">Student</span>.</p>
+            </div>
+            <div id="grade-badge" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20">
+                Grade --
+            </div>
+        </header>
+
+        <div class="grid md:grid-cols-3 gap-6">
+
+            <!-- Science Card -->
+            <div class="subject-card group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Science">
+                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
+                    <i class="fas fa-atom text-8xl text-purple-600"></i>
+                </div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:bg-purple-600 group-hover:text-white transition">
+                        <i class="fas fa-flask text-xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">Science</h3>
+                    <p class="text-slate-500 text-sm font-medium">Physics, Chemistry, Biology</p>
+                    <div class="mt-6 flex items-center gap-2 text-purple-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+                        Explore <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Math Card -->
+            <div class="subject-card group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Mathematics">
+                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
+                    <i class="fas fa-calculator text-8xl text-blue-600"></i>
+                </div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition">
+                        <i class="fas fa-square-root-alt text-xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">Mathematics</h3>
+                    <p class="text-slate-500 text-sm font-medium">Algebra, Geometry, Arithmetic</p>
+                    <div class="mt-6 flex items-center gap-2 text-blue-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+                        Solve <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Science Card -->
+            <div class="subject-card group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Social Science">
+                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
+                    <i class="fas fa-globe-americas text-8xl text-amber-600"></i>
+                </div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mb-6 group-hover:bg-amber-600 group-hover:text-white transition">
+                        <i class="fas fa-landmark text-xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">Social Science</h3>
+                    <p class="text-slate-500 text-sm font-medium">History, Geo, Civics, Eco</p>
+                    <div class="mt-6 flex items-center gap-2 text-amber-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+                        Discover <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
