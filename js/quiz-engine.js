@@ -85,7 +85,8 @@ function parseUrlParameters() {
     const params = new URLSearchParams(location.search);
 
     quizState.difficulty = params.get("difficulty") || "Simple";
-    quizState.classId = params.get("class") || "9";
+    // Important: Prefer 'grade' param over 'class' as that's what Class Hub sends
+    quizState.classId = params.get("grade") || params.get("class") || "9";
     quizState.subject = params.get("subject") || "Physics";
 
     // Check for Term Prep Mode
