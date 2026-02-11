@@ -326,16 +326,11 @@ async function init() {
             if (user) {
                 UI.updateAuthUI(user);
 
-                const access = await checkClassAccess(quizState.classId, quizState.subject);
+                // BYPASS: No paywall for authenticated students (as requested)
+                // Just load the quiz
+                questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
+                await loadQuiz();
 
-                if (access.allowed) {
-                    questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
-                    await loadQuiz();
-                } else {
-                    UI.hideStatus();
-                    UI.showView("paywall-screen");
-                    showExpiredPopup(access.reason);
-                }
             } else {
                 UI.showView("paywall-screen");
             }
