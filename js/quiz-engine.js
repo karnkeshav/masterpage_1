@@ -98,7 +98,7 @@ function parseUrlParameters() {
         return;
     }
 
-    quizState.topicSlug = params.get("table") || params.get("topic") || "";
+    quizState.topicSlug = params.get("table") || params.get("topic") || params.get("chapter") || "";
 
     // A. TRY TO GET EXACT CHAPTER NAME FROM URL
     let displayChapter = params.get("chapter_name");
@@ -326,11 +326,22 @@ async function init() {
             if (user) {
                 UI.updateAuthUI(user);
 
-                // BYPASS: No paywall for authenticated students (as requested)
-                // Just load the quiz
-                questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
-                await loadQuiz();
-
+                // BYPASS for Students & Sovereign IDs
+                if (profile?.role === 'student' || profile?.isSovereign === true) {
+                    questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
+                    await loadQuiz();
+                } else {
+                    // Existing gatekeeper for others
+                    const access = await checkClassAccess(quizState.classId, quizState.subject);
+                    if (access.allowed) {
+                        questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
+                        await loadQuiz();
+                    } else {
+                        UI.hideStatus();
+                        UI.showView("paywall-screen");
+                        showExpiredPopup(access.reason);
+                    }
+                }
             } else {
                 UI.showView("paywall-screen");
             }
@@ -341,4 +352,9 @@ async function init() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", init);
+// EXECUTION GUARD
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    init();
+} else {
+    document.addEventListener("DOMContentLoaded", init);
+}
