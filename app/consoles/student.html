@@ -15,6 +15,7 @@
     <script type="module">
         import { guardConsole } from "../../js/guard.js";
         import { signOut } from "../../js/auth-paywall.js";
+        import { fetchQuizAttempts } from "../../js/api.js";
 
         // GLOBAL GUARD
         guardConsole("student");
@@ -59,8 +60,17 @@
             document.getElementById("class-title").textContent = `Class ${grade} Hub`;
             document.getElementById("grade-badge").textContent = `Grade ${grade}`;
 
-            // Setup Click Handlers
+            // Update Start New Quiz Link (Request said "app/curriculum.html", so we link there with params)
+            const startLink = document.getElementById("start-new-quiz-btn");
+            if (startLink) {
+                startLink.href = `../../app/curriculum.html?grade=${grade}`;
+            }
+
+            // Setup Click Handlers (Legacy Hub Cards if we keep them for quick access)
             setupNavigation(grade);
+
+            // Load Learning History
+            await loadLearningHistory(profile.uid);
         };
 
         function setupNavigation(grade) {
@@ -68,9 +78,81 @@
             cards.forEach(card => {
                 card.onclick = () => {
                     const subject = card.dataset.subject;
+                    // Keep using chapter-selection for the specific subject card flow
+                    // But general button goes to curriculum.html
                     window.location.href = `../chapter-selection.html?subject=${encodeURIComponent(subject)}&grade=${grade}`;
                 };
             });
+        }
+
+        async function loadLearningHistory(uid) {
+            try {
+                const attempts = await fetchQuizAttempts(uid);
+
+                // Stats
+                const total = attempts.length;
+                const avg = total > 0 ? Math.round(attempts.reduce((sum, a) => sum + (a.percentage||0), 0) / total) : 0;
+
+                // Most Practiced
+                const subjects = {};
+                attempts.forEach(a => {
+                    const s = a.subject || "General";
+                    subjects[s] = (subjects[s] || 0) + 1;
+                });
+                let mostPracticed = "None";
+                let maxCount = 0;
+                Object.entries(subjects).forEach(([sub, count]) => {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        mostPracticed = sub;
+                    }
+                });
+
+                document.getElementById("stat-total").textContent = total;
+                document.getElementById("stat-avg").textContent = `${avg}%`;
+                document.getElementById("stat-subject").textContent = mostPracticed;
+
+                // Table
+                const tbody = document.getElementById("history-body");
+                if (attempts.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No quizzes taken yet.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = attempts.slice(0, 10).map(a => `
+                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                        <td class="p-4 font-bold text-slate-700">${a.subject || 'General'}</td>
+                        <td class="p-4 text-sm text-slate-600">${formatChapterName(a.chapter)}</td>
+                        <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${a.difficulty}</span></td>
+                        <td class="p-4 font-mono font-bold ${getScoreColor(a.percentage)}">${a.percentage}%</td>
+                        <td class="p-4 text-right text-xs text-slate-400">${a.date.toLocaleDateString()}</td>
+                    </tr>
+                `).join("");
+
+            } catch (e) {
+                console.error("History Load Error", e);
+            }
+        }
+
+        function formatChapterName(slug) {
+            if (!slug) return "Unknown";
+            // Check if it looks like a table ID (science_force_...)
+            // If so, try to make it readable
+            if (slug.includes("_quiz")) {
+                const parts = slug.replace("_quiz", "").split("_");
+                // remove subject if possible (first part)
+                if (parts.length > 1) parts.shift();
+                // remove grade (last part usually)
+                if (parts.length > 1 && !isNaN(parts[parts.length-1])) parts.pop();
+                return parts.join(" ").replace(/\b\w/g, l => l.toUpperCase());
+            }
+            return slug.replace(/[_-]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function getScoreColor(p) {
+            if (p >= 85) return "text-emerald-500";
+            if (p >= 50) return "text-blue-500";
+            return "text-red-500";
         }
     </script>
 </head>
@@ -87,70 +169,114 @@
         <div class="animate-pulse font-bold text-slate-400">Verifying Student Access...</div>
     </div>
 
-    <div id="app" class="hidden max-w-4xl mx-auto p-4 md:p-8 fade-in">
+    <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8 fade-in">
         <header class="flex justify-between items-end mb-12">
             <div>
                 <h1 id="class-title" class="text-4xl font-black text-slate-900 tracking-tight mb-2">Class Hub</h1>
                 <p class="text-slate-500 font-medium">Welcome back, <span id="user-name" class="text-slate-900 font-bold">Student</span>.</p>
             </div>
-            <div id="grade-badge" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20">
-                Grade --
+            <div class="flex flex-col items-end gap-2">
+                <div id="grade-badge" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20">
+                    Grade --
+                </div>
+                <a id="start-new-quiz-btn" href="#" class="text-sm font-bold text-blue-600 hover:underline flex items-center gap-1">
+                    Start New Quiz <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
         </header>
 
-        <div class="grid md:grid-cols-3 gap-6">
+        <!-- Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Tests</div>
+                <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Avg Mastery</div>
+                <div id="stat-avg" class="text-4xl font-black text-blue-600">--%</div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Most Practiced</div>
+                <div id="stat-subject" class="text-xl font-black text-slate-900 mt-2 truncate">--</div>
+            </div>
+        </div>
 
-            <!-- Science Card -->
-            <div class="subject-card group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Science">
-                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                    <i class="fas fa-atom text-8xl text-purple-600"></i>
-                </div>
-                <div class="relative z-10">
-                    <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:bg-purple-600 group-hover:text-white transition">
-                        <i class="fas fa-flask text-xl"></i>
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Subject Cards (Left Column) -->
+            <div class="lg:col-span-1 space-y-6">
+                 <h3 class="font-bold text-slate-900 text-lg">Quick Access</h3>
+
+                <!-- Science Card -->
+                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Science">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
+                        <i class="fas fa-atom text-6xl text-purple-600"></i>
                     </div>
-                    <h3 class="text-2xl font-black text-slate-900 mb-2">Science</h3>
-                    <p class="text-slate-500 text-sm font-medium">Physics, Chemistry, Biology</p>
-                    <div class="mt-6 flex items-center gap-2 text-purple-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-                        Explore <i class="fas fa-arrow-right"></i>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
+                            <i class="fas fa-flask text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-slate-900">Science</h3>
+                            <p class="text-slate-500 text-xs font-medium">Physics, Chemistry, Bio</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Math Card -->
+                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Mathematics">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
+                        <i class="fas fa-calculator text-6xl text-blue-600"></i>
+                    </div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
+                            <i class="fas fa-square-root-alt text-xl"></i>
+                        </div>
+                         <div>
+                            <h3 class="text-lg font-black text-slate-900">Mathematics</h3>
+                            <p class="text-slate-500 text-xs font-medium">Algebra, Geometry</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Science Card -->
+                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Social Science">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
+                        <i class="fas fa-globe-americas text-6xl text-amber-600"></i>
+                    </div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
+                            <i class="fas fa-landmark text-xl"></i>
+                        </div>
+                         <div>
+                            <h3 class="text-lg font-black text-slate-900">Social Science</h3>
+                            <p class="text-slate-500 text-xs font-medium">History, Geo, Civics</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Math Card -->
-            <div class="subject-card group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Mathematics">
-                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                    <i class="fas fa-calculator text-8xl text-blue-600"></i>
-                </div>
-                <div class="relative z-10">
-                    <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition">
-                        <i class="fas fa-square-root-alt text-xl"></i>
+            <!-- Learning History (Right Column - Wider) -->
+            <div class="lg:col-span-2">
+                 <h3 class="font-bold text-slate-900 text-lg mb-6">Learning History</h3>
+                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100">
+                                <tr>
+                                    <th class="p-4">Subject</th>
+                                    <th class="p-4">Chapter</th>
+                                    <th class="p-4">Difficulty</th>
+                                    <th class="p-4">Score</th>
+                                    <th class="p-4 text-right">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-body">
+                                <tr><td colspan="5" class="p-8 text-center text-slate-400 animate-pulse">Loading records...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <h3 class="text-2xl font-black text-slate-900 mb-2">Mathematics</h3>
-                    <p class="text-slate-500 text-sm font-medium">Algebra, Geometry, Arithmetic</p>
-                    <div class="mt-6 flex items-center gap-2 text-blue-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-                        Solve <i class="fas fa-arrow-right"></i>
-                    </div>
-                </div>
+                 </div>
             </div>
-
-            <!-- Social Science Card -->
-            <div class="subject-card group bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Social Science">
-                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                    <i class="fas fa-globe-americas text-8xl text-amber-600"></i>
-                </div>
-                <div class="relative z-10">
-                    <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mb-6 group-hover:bg-amber-600 group-hover:text-white transition">
-                        <i class="fas fa-landmark text-xl"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-slate-900 mb-2">Social Science</h3>
-                    <p class="text-slate-500 text-sm font-medium">History, Geo, Civics, Eco</p>
-                    <div class="mt-6 flex items-center gap-2 text-amber-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-                        Discover <i class="fas fa-arrow-right"></i>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 </body>

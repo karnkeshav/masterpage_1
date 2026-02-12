@@ -1,6 +1,6 @@
 // js/api.js
 import { getInitializedClients, getAuthUser, logAnalyticsEvent } from "./config.js";
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 function getTableName(topic) {
   // If it's a Supabase table ID (e.g., science_force_pressure_8_quiz), use it directly
@@ -207,6 +207,42 @@ export async function getChapterMastery(userId, topic) {
         console.error("Mastery check failed:", e);
         return 0;
     }
+}
+
+export async function fetchQuizAttempts(userId) {
+    if (!userId) return [];
+
+    try {
+        const { db } = getInitializedClients();
+        const q = query(
+            collection(db, "quiz_scores"),
+            where("user_id", "==", userId),
+            orderBy("timestamp", "desc")
+        );
+
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                date: data.timestamp ? data.timestamp.toDate() : new Date(),
+                // Infer Subject if possible, or use placeholder if chapter name isn't clear
+                subject: inferSubject(data.chapter)
+            };
+        });
+    } catch (e) {
+        console.error("Fetch attempts failed:", e);
+        return [];
+    }
+}
+
+function inferSubject(chapterSlug) {
+    // Basic heuristic based on naming conventions
+    const s = (chapterSlug || "").toLowerCase();
+    if (s.includes("science") || s.includes("physics") || s.includes("chem") || s.includes("bio")) return "Science";
+    if (s.includes("math") || s.includes("algebra") || s.includes("geo")) return "Mathematics";
+    if (s.includes("social") || s.includes("history") || s.includes("civics")) return "Social Science";
+    return "General";
 }
 
 // --- GOVERNANCE & LEDGER ---
