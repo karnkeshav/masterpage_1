@@ -17,27 +17,22 @@
 
         // --- HELPER: Transliterate to Table Name ---
         function buildTableName(chapterTitle, subject, grade) {
+            const SKIP_LIST = ["as","of","the","a","an","in","on","for","to","ki","ke","ka"];
+
             // sanitize
             let clean = chapterTitle.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-            const words = clean.split(/\s+/);
+            const words = clean.split(/\s+/).filter(w => !SKIP_LIST.includes(w) && w.length > 0);
+
+            if (words.length === 0) return "unknown_topic";
 
             // Format: subject_firstword_lastword_grade_quiz
-            // e.g. Science, Force and Pressure, 8 -> science_force_pressure_8_quiz
-
-            // Handle edge cases where title is short
             let first = words[0];
             let last = words.length > 1 ? words[words.length-1] : "";
 
-            // Special overrides or robust logic if needed
-            // For now, simple first_last logic
+            // Ensure subject slug is just the FIRST word (e.g. "Social Science" -> "social")
+            const subjectSlug = subject.toLowerCase().split(' ')[0];
 
-            const subSlug = subject.toLowerCase().replace(/\s+/g, ""); // socialscience
-
-            // If social science, maybe just 'social'? Or keep full.
-            // The prompt example: "science_some_phenomena_8_quiz" for "Some Natural Phenomena"
-            // This implies: subject_first_last_grade_quiz
-
-            let tableID = `${subSlug}_${first}`;
+            let tableID = `${subjectSlug}_${first}`;
             if (last) tableID += `_${last}`;
             tableID += `_${grade}_quiz`;
 
@@ -132,10 +127,24 @@
             `;
         }
 
+        // GLOBAL STATE FOR MODAL
+        let selectedQuiz = null;
+
         window.startQuiz = (tableId, title, grade) => {
-            // Direct jump to quiz engine with table param
-            // Assuming quiz-engine.html handles 'table' and 'topic'
-            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}`;
+            selectedQuiz = { tableId, title, grade };
+            document.getElementById("difficulty-modal").classList.remove("hidden");
+            document.getElementById("modal-chapter-title").textContent = title;
+        };
+
+        window.selectDifficulty = (level) => {
+            if (!selectedQuiz) return;
+            const { tableId, title, grade } = selectedQuiz;
+            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${level}`;
+        };
+
+        window.closeModal = () => {
+            document.getElementById("difficulty-modal").classList.add("hidden");
+            selectedQuiz = null;
         };
 
         // Init
@@ -158,6 +167,30 @@
             <!-- Dynamic Content -->
             <div class="flex items-center justify-center h-64">
                 <div class="animate-pulse font-bold text-slate-300">Fetching Curriculum...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Difficulty Selection Modal -->
+    <div id="difficulty-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-100">
+            <div class="p-6 text-center border-b border-slate-100">
+                <h3 class="text-lg font-black text-slate-900 mb-1">Select Difficulty</h3>
+                <p id="modal-chapter-title" class="text-sm text-slate-500 font-medium truncate">Chapter Title</p>
+            </div>
+            <div class="p-6 space-y-3">
+                <button onclick="selectDifficulty('Simple')" class="w-full py-3 bg-green-50 text-green-700 font-bold rounded-xl border border-green-200 hover:bg-green-100 hover:border-green-300 transition flex items-center justify-center gap-2">
+                    <span>🌱</span> Simple
+                </button>
+                <button onclick="selectDifficulty('Medium')" class="w-full py-3 bg-yellow-50 text-yellow-700 font-bold rounded-xl border border-yellow-200 hover:bg-yellow-100 hover:border-yellow-300 transition flex items-center justify-center gap-2">
+                    <span>⚡</span> Medium
+                </button>
+                <button onclick="selectDifficulty('Advanced')" class="w-full py-3 bg-red-50 text-red-700 font-bold rounded-xl border border-red-200 hover:bg-red-100 hover:border-red-300 transition flex items-center justify-center gap-2">
+                    <span>🔥</span> Advanced
+                </button>
+            </div>
+            <div class="bg-slate-50 p-4 text-center">
+                <button onclick="closeModal()" class="text-slate-400 font-bold text-xs uppercase hover:text-slate-600 transition">Cancel</button>
             </div>
         </div>
     </div>

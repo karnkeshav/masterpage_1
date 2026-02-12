@@ -327,21 +327,21 @@ async function init() {
                 UI.updateAuthUI(user);
 
                 // BYPASS for Students & Sovereign IDs
-                if (profile?.role === 'student' || profile?.isSovereign === true) {
+                // if (profile?.role === 'student' || profile?.isSovereign === true) {
                     questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
                     await loadQuiz();
-                } else {
-                    // Existing gatekeeper for others
-                    const access = await checkClassAccess(quizState.classId, quizState.subject);
-                    if (access.allowed) {
-                        questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
-                        await loadQuiz();
-                    } else {
-                        UI.hideStatus();
-                        UI.showView("paywall-screen");
-                        showExpiredPopup(access.reason);
-                    }
-                }
+                // } else {
+                //     // Existing gatekeeper for others
+                //     const access = await checkClassAccess(quizState.classId, quizState.subject);
+                //     if (access.allowed) {
+                //         questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
+                //         await loadQuiz();
+                //     } else {
+                //         UI.hideStatus();
+                //         UI.showView("paywall-screen");
+                //         showExpiredPopup(access.reason);
+                //     }
+                // }
             } else {
                 UI.showView("paywall-screen");
             }
@@ -353,8 +353,8 @@ async function init() {
 }
 
 // EXECUTION GUARD
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    init();
-} else {
+if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", init);
+} else {
+    init();
 }
