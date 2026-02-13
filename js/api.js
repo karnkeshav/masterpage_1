@@ -3,8 +3,10 @@ import { getInitializedClients, getAuthUser, logAnalyticsEvent } from "./config.
 import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 function getTableName(topic) {
-  // If it's a Supabase table ID (e.g., science_force_pressure_8_quiz), use it directly
-  if (topic.includes("_") && topic.includes("quiz")) return topic;
+  // Prevent double-slugging if already a table ID
+  if (topic && topic.includes("_") && topic.includes("quiz")) {
+      return topic;
+  }
 
   // Fallback for older chapter names -> simple slug
   return (topic || "").toLowerCase().replace(/\s+/g, "_").trim();
