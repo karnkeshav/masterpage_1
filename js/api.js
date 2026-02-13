@@ -91,24 +91,27 @@ export async function fetchQuestions(topic, difficulty) {
 }
 
 export async function saveResult(result) {
-  const user = getAuthUser();
-  if (!user) return;
+  const { auth } = getInitializedClients();
+  const uid = auth.currentUser?.uid || window.currentUserProfile?.uid;
+  if (!uid) throw new Error("User ID missing for result save.");
 
   try {
     const { db } = getInitializedClients();
 
     // TENANT CONTEXT INJECTION
-    const userSnap = await getDoc(doc(db, "users", user.uid));
+    const userSnap = await getDoc(doc(db, "users", uid));
     const userData = userSnap.exists() ? userSnap.data() : {};
 
     const data = {
-      user_id: user.uid,
-      email: user.email,
-      chapter: result.topicSlug || result.topic || "Unknown",
+      user_id: uid,
+      email: auth.currentUser?.email || "",
+      subject: result.subject || "Unknown",
+      topic: result.topicSlug || result.topic || "Unknown",
       difficulty: result.difficulty,
       score: result.score,
       total: result.total,
-      percentage: Math.round((result.score / result.total) * 100),
+      score_percent: Math.round((result.score / result.total) * 100),
+      percentage: Math.round((result.score / result.total) * 100), // Keep for backward compatibility
       timestamp: serverTimestamp(),
 
       quiz_mode: result.quiz_mode || "standard",
@@ -137,8 +140,9 @@ export async function saveResult(result) {
 }
 
 export async function saveMistakes(questions, userAnswers, topic, classId) {
-    const user = getAuthUser();
-    if (!user) return;
+    const { auth } = getInitializedClients();
+    const uid = auth.currentUser?.uid || window.currentUserProfile?.uid;
+    if (!uid) return;
 
     try {
         const { db } = getInitializedClients();
@@ -149,11 +153,14 @@ export async function saveMistakes(questions, userAnswers, topic, classId) {
         if (mistakes.length === 0) return;
 
         const data = {
-            user_id: user.uid,
+            user_id: uid,
             topic: topic,
+            chapter_slug: topic,
             class_id: classId,
             timestamp: serverTimestamp(),
             mistakes: mistakes.map(q => ({
+                user_id: uid,
+                chapter_slug: topic,
                 id: q.id,
                 question: q.text,
                 options: q.options,
