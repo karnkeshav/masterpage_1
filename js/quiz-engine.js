@@ -323,16 +323,23 @@ async function init() {
 
         // Check Auth & Access
         await initializeAuthListener(async user => {
-            if (user) {
-                UI.updateAuthUI(user);
+            try {
+                if (user) {
+                    UI.updateAuthUI(user);
 
-                // BYPASS: No paywall for authenticated students (as requested)
-                // Just load the quiz
+                    // BYPASS: No paywall for authenticated students (as requested)
+                    // Just load the quiz
+                    questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
+                    await loadQuiz();
+
+                } else {
+                    UI.showView("paywall-screen");
+                }
+            } catch (e) {
+                console.error("UI Update failed, but continuing quiz load:", e);
+                // Ensure quiz still tries to load even if UI names fail
                 questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
                 await loadQuiz();
-
-            } else {
-                UI.showView("paywall-screen");
             }
         });
     } catch (err) {
