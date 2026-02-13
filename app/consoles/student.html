@@ -15,7 +15,7 @@
     <script type="module">
         import { guardConsole } from "../../js/guard.js";
         import { signOut } from "../../js/auth-paywall.js";
-        import { fetchQuizAttempts, getInitializedClients } from "../../js/api.js";
+        import { fetchQuizAttempts, getInitializedClients, initializeServices } from "../../js/api.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // GLOBAL GUARD
@@ -77,6 +77,7 @@
         window.refreshDashboardStats = async (uid) => {
             if (!uid) return;
             try {
+                await initializeServices();
                 const { db } = getInitializedClients();
                 const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
                 const snapshot = await getDocs(q);
