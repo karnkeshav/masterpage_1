@@ -98,7 +98,7 @@ function parseUrlParameters() {
         return;
     }
 
-    quizState.topicSlug = params.get("table") || params.get("topic") || "";
+    quizState.topicSlug = params.get("table") || params.get("topic") || params.get("chapter") || "";
 
     // A. TRY TO GET EXACT CHAPTER NAME FROM URL
     let displayChapter = params.get("chapter_name");
