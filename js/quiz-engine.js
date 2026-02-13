@@ -247,20 +247,9 @@ async function handleSubmit() {
 
     // --- CLOSED-LOOP REMEDIATION ---
     const percentage = (stats.correct / stats.total) * 100;
-    if (percentage < 85) {
-        // Save to Mistake Notebook
-        saveMistakes(quizState.questions, quizState.userAnswers, quizState.topicSlug, quizState.classId);
 
-        // Trigger In-Page Review
-        setTimeout(() => {
-            alert("⚠️ Mastery Alert: Score below 85%.\nQuestions have been added to your Mistake Notebook.");
-            // VISUAL INTELLIGENCE: Focus Mode
-            UI.toggleFocusMode(true);
-            UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
-        }, 1000);
-    }
-
-    saveResult({
+    // Save Result First (Critical)
+    await saveResult({
         ...quizState,
         score: stats.correct,
         total: stats.total,
@@ -268,6 +257,19 @@ async function handleSubmit() {
         latency_vector: quizState.latency,
         quiz_mode: quizState.quizMode
     });
+
+    if (percentage < 85) {
+        // Save to Mistake Notebook
+        await saveMistakes(quizState.questions, quizState.userAnswers, quizState.topicSlug, quizState.classId);
+
+        // Trigger In-Page Review
+        setTimeout(() => {
+            alert("⚠️ Mastery Alert: Score below 85%.\nQuestions have been added to your Mistake Notebook.");
+            // VISUAL INTELLIGENCE: Focus Mode
+            UI.toggleFocusMode(true);
+            UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
+        }, 500);
+    }
 }
 
 /* -----------------------------------

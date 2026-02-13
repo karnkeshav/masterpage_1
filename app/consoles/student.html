@@ -15,7 +15,8 @@
     <script type="module">
         import { guardConsole } from "../../js/guard.js";
         import { signOut } from "../../js/auth-paywall.js";
-        import { fetchQuizAttempts } from "../../js/api.js";
+        import { fetchQuizAttempts, getInitializedClients } from "../../js/api.js";
+        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // GLOBAL GUARD
         guardConsole("student");
@@ -60,7 +61,7 @@
             document.getElementById("class-title").textContent = `Class ${grade} Hub`;
             document.getElementById("grade-badge").textContent = `Grade ${grade}`;
 
-            // Update Start New Quiz Link (Request said "app/curriculum.html", so we link there with params)
+            // Update Start New Quiz Link
             const startLink = document.getElementById("start-new-quiz-btn");
             if (startLink) {
                 startLink.href = `../../app/curriculum.html?grade=${grade}`;
@@ -69,8 +70,74 @@
             // Setup Click Handlers (Legacy Hub Cards if we keep them for quick access)
             setupNavigation(grade);
 
-            // Load Learning History
-            await loadLearningHistory(profile.uid);
+            // Load Dashboard Stats & History
+            await refreshDashboardStats(profile.uid);
+        };
+
+        window.refreshDashboardStats = async (uid) => {
+            if (!uid) return;
+            try {
+                const { db } = getInitializedClients();
+                const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
+                const snapshot = await getDocs(q);
+
+                // 1. Total Tests
+                const totalTests = snapshot.size;
+                document.getElementById("stat-total").textContent = totalTests;
+
+                if (totalTests === 0) {
+                     document.getElementById("stat-avg").textContent = "0%";
+                     document.getElementById("stat-subject").textContent = "None";
+                     document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No quizzes taken yet.</td></tr>`;
+                     return;
+                }
+
+                let totalScore = 0;
+                const subjectCounts = {};
+                const historyHtml = [];
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const score = data.score_percent !== undefined ? data.score_percent : (data.percentage || 0);
+                    totalScore += score;
+
+                    const subject = data.subject || "General";
+                    subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
+
+                    // History Row
+                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
+                    historyHtml.push(`
+                        <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                            <td class="p-4 font-bold text-slate-700">${subject}</td>
+                            <td class="p-4 text-sm text-slate-600">${formatChapterName(data.chapter || data.topic)}</td>
+                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty}</span></td>
+                            <td class="p-4 font-mono font-bold ${getScoreColor(score)}">${score}%</td>
+                            <td class="p-4 text-right text-xs text-slate-400">${dateStr}</td>
+                        </tr>
+                    `);
+                });
+
+                // 2. Avg Mastery
+                const avg = Math.round(totalScore / totalTests);
+                document.getElementById("stat-avg").textContent = `${avg}%`;
+
+                // 3. Most Practiced
+                let mostPracticed = "None";
+                let maxCount = 0;
+                Object.entries(subjectCounts).forEach(([sub, count]) => {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        mostPracticed = sub;
+                    }
+                });
+                document.getElementById("stat-subject").textContent = mostPracticed;
+
+                // 4. Update Table
+                document.getElementById("history-body").innerHTML = historyHtml.slice(0, 10).join("");
+
+            } catch (e) {
+                console.error("Dashboard Sync Failed:", e);
+            }
         };
 
         function setupNavigation(grade) {
@@ -181,6 +248,9 @@
                 </div>
                 <a id="start-new-quiz-btn" href="#" class="text-sm font-bold text-blue-600 hover:underline flex items-center gap-1">
                     Start New Quiz <i class="fas fa-arrow-right"></i>
+                </a>
+                 <a href="../mistake-book.html" class="text-sm font-bold text-red-500 hover:underline flex items-center gap-1 mt-2">
+                    <i class="fas fa-book-open"></i> Mistake Book
                 </a>
             </div>
         </header>

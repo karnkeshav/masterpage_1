@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mistake Notebook — Ready4Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>body{font-family:'Inter',sans-serif;}</style>
+
+    <script src="../js/firebase-master-config.js"></script>
+    <script src="../js/config.js" type="module"></script>
+
+    <script type="module">
+        import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
+        import { getInitializedClients } from "../js/api.js";
+        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { cleanKatexMarkers } from "../js/utils.js";
+
+        async function loadMistakes(user) {
+            const container = document.getElementById("mistakes-container");
+            container.innerHTML = `<div class="text-center p-8 animate-pulse text-slate-400">Loading your learning gaps...</div>`;
+
+            try {
+                const { db } = getInitializedClients();
+                // Query mistakes
+                const q = query(
+                    collection(db, "mistake_notebook"),
+                    where("user_id", "==", user.uid),
+                    orderBy("timestamp", "desc")
+                );
+
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="text-center p-12 bg-white rounded-3xl border border-dashed border-slate-300">
+                            <div class="text-4xl mb-4">🎉</div>
+                            <h3 class="text-xl font-bold text-slate-700">No Mistakes Recorded!</h3>
+                            <p class="text-slate-500">Keep practicing to find areas for improvement.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = "";
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
+
+                    data.mistakes.forEach(m => {
+                        html += `
+                            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6 hover:shadow-md transition">
+                                <div class="flex justify-between items-start mb-4">
+                                    <span class="px-3 py-1 bg-red-50 text-red-600 text-xs font-bold uppercase rounded-full tracking-wide">Mistake</span>
+                                    <span class="text-xs text-slate-400 font-mono">${dateStr}</span>
+                                </div>
+
+                                <h4 class="font-bold text-slate-900 text-lg mb-4">${cleanKatexMarkers(m.question)}</h4>
+
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div class="p-4 bg-red-50 rounded-xl border border-red-100">
+                                        <div class="text-xs font-bold text-red-400 uppercase tracking-wide mb-1">You Selected</div>
+                                        <div class="font-bold text-red-800">${m.selected}</div>
+                                    </div>
+                                    <div class="p-4 bg-green-50 rounded-xl border border-green-100">
+                                        <div class="text-xs font-bold text-green-600 uppercase tracking-wide mb-1">Correct Answer</div>
+                                        <div class="font-bold text-green-800">${m.correct}</div>
+                                    </div>
+                                </div>
+
+                                ${m.explanation ? `
+                                    <div class="mt-4 p-4 bg-slate-50 rounded-xl border-l-4 border-slate-300 text-sm text-slate-600 italic">
+                                        <span class="font-bold not-italic text-slate-700">Explanation:</span> ${cleanKatexMarkers(m.explanation)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                });
+
+                container.innerHTML = html;
+
+            } catch (e) {
+                console.error("Mistake Load Error:", e);
+                container.innerHTML = `<div class="text-center text-red-500">Failed to load mistakes. Please try again.</div>`;
+            }
+        }
+
+        // Init
+        initializeAuthListener(async (user) => {
+            if (user) {
+                document.getElementById("student-name").textContent = user.displayName || "Scholar";
+                await loadMistakes(user);
+            } else {
+                window.location.href = "../index.html";
+            }
+        });
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="flex justify-between items-center mb-10 fade-in">
+            <div>
+                <a href="consoles/student.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 font-bold text-sm mb-2 transition">
+                    <i class="fas fa-arrow-left"></i> Back to Hub
+                </a>
+                <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Mistake Notebook</h1>
+                <p class="text-slate-500 font-medium">Reviewing gaps for <span id="student-name" class="text-slate-800 font-bold">--</span>.</p>
+            </div>
+            <div class="hidden md:block">
+                <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center text-red-500 text-2xl">
+                    <i class="fas fa-book-open"></i>
+                </div>
+            </div>
+        </header>
+
+        <div id="mistakes-container" class="fade-in">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+</body>
+</html>
