@@ -1,6 +1,9 @@
 // js/api.js
-import { getInitializedClients, getAuthUser, logAnalyticsEvent } from "./config.js";
+import { getInitializedClients, getAuthUser, logAnalyticsEvent, initializeServices } from "./config.js";
 import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Re-export core services for consumers (e.g., student.html)
+export { getInitializedClients, initializeServices };
 
 function getTableName(topic) {
   // Prevent double-slugging if already a table ID
