@@ -1,4 +1,5 @@
 import { initializeServices, getInitializedClients } from "./config.js";
+import { ensureStudentProfile } from "./api.js";
 import { signInAnonymously, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -27,8 +28,9 @@ const CREDENTIALS = {
 };
 
 export async function authenticateWithCredentials(username, password) {
-    await initializeServices();
-    const { auth, db } = getInitializedClients();
+    const { auth, db } = await initializeServices();
+
+    if (!auth) throw new Error("Auth not initialized");
 
     const userProfile = CREDENTIALS[username];
     if (!userProfile) throw new Error("Invalid username");
@@ -60,6 +62,9 @@ export async function authenticateWithCredentials(username, password) {
 
         // 3. Immutable Write
         await setDoc(doc(db, "users", uid), userData);
+
+        // 4. Ensure Student Profile Container Exists
+        await ensureStudentProfile({ uid }, { displayName: username });
 
         return userData;
 
