@@ -324,6 +324,23 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 <script type="module">
 import { authenticateWithCredentials, routeUser, initializeAuthListener } from "./js/auth-paywall.js";
 
+// Global Login Handler for Student Cards
+window.handleStudentLogin = async (grade) => {
+    if (grade === '9') {
+        try {
+            // Auto-login as student9
+            document.body.style.cursor = 'wait';
+            await authenticateWithCredentials('student9', 'student9'); // Using correct password from map
+            // Listener will route, but we force redirect for speed
+            window.location.href = "app/consoles/student.html";
+        } catch (e) {
+            console.error("Auto-login failed", e);
+            alert("Login System Busy. Please try again.");
+            document.body.style.cursor = 'default';
+        }
+    }
+};
+
 // 1. Initialize Auth Listener to check for existing session
 initializeAuthListener(async (user, profile) => {
     if (user && profile) {
