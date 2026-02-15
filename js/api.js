@@ -1,9 +1,35 @@
 // js/api.js
 import { getInitializedClients, getAuthUser, logAnalyticsEvent, initializeServices } from "./config.js";
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };
+
+export async function ensureStudentProfile(user, meta) {
+    if (!user) return;
+    try {
+        const { db } = getInitializedClients();
+        const ref = doc(db, "students", user.uid); // or "users" depending on architecture, prompt said "students" collection but auth-paywall uses "users".
+        // NOTE: auth-paywall uses 'users' collection. Prompt explicitly said check 'students' collection. I will stick to prompt but it might be redundant if 'users' is the main one.
+        // Actually, prompt says: "Check if a document exists in the 'students' collection... If MISSING, create it...".
+        // I will implement exactly that.
+
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+            console.log("Creating new student profile for:", user.uid);
+            await setDoc(ref, {
+                uid: user.uid,
+                name: meta?.displayName || "Student",
+                grade: "9",
+                schoolId: "DPS_001",
+                role: "student",
+                createdAt: serverTimestamp()
+            });
+        }
+    } catch (e) {
+        console.error("Profile Ensure Failed", e);
+    }
+}
 
 function getTableName(topic) {
   // Prevent double-slugging if already a table ID
