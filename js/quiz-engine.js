@@ -248,6 +248,8 @@ async function handleSubmit() {
     // --- CLOSED-LOOP REMEDIATION ---
     const percentage = (stats.correct / stats.total) * 100;
 
+    console.log('Submitting Quiz...');
+
     // Save Result First (Critical)
     await saveResult({
         ...quizState,
@@ -270,6 +272,8 @@ async function handleSubmit() {
             UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
         }, 500);
     }
+
+    console.log('Data persistence complete.');
 }
 
 /* -----------------------------------

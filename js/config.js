@@ -1,77 +1,40 @@
 // js/config.js
-// Optimized: Lazy-loads heavy libraries to fix initial quiz latency
-
-// We only keep the absolute essentials for the first paint
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; //
-import { createClient as createSupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-let firebaseApp = null;
-let firebaseAuth = null;
-let firebaseDB = null; //
-let supabase = null;
-let analyticsInstance = null;
+let db, auth, supabase;
 
-/**
- * High-speed initialization.
- * Starts Auth, Firestore (for Admin/Saving), and Supabase.
- */
 export async function initializeServices() {
-  // If already initialized, return existing clients
-  if (firebaseApp && firebaseDB && supabase) {
-    return { auth: firebaseAuth, db: firebaseDB, supabase };
-  }
+    if (db && auth && supabase) return { db, auth, supabase };
 
-  const cfg = window.__firebase_config;
-  if (!cfg?.apiKey) throw new Error("Firebase config missing"); //
+    const app = initializeApp(window.__firebase_config);
+    db = getFirestore(app);
+    auth = getAuth(app);
 
-  // Initialize Core Firebase (Fast)
-  firebaseApp = initializeApp(cfg); //
-  firebaseAuth = getAuth(firebaseApp); //
+    // Supabase
+    if (window.__supabase_config) {
+        supabase = createClient(window.__supabase_config.url, window.__supabase_config.key, {
+            auth: { persistSession: false }
+        });
+        window.supabase = supabase;
+    }
 
-  // Initialize Firestore - Required for Admin Panel and User Access
-  firebaseDB = getFirestore(firebaseApp);
-
-  // Initialize Supabase (Essential for fetching questions)
-  supabase = createSupabaseClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
-    auth: { persistSession: false }
-  }); //
-
-  window.supabase = supabase; //
-
-  return { auth: firebaseAuth, db: firebaseDB, supabase }; //
+    return { db, auth, supabase };
 }
 
-/**
- * Returns clients.
- */
-export function getInitializedClients() {
-  if (!firebaseApp) throw new Error("Call initializeServices FIRST"); //
-  return { auth: firebaseAuth, db: firebaseDB, supabase }; //
+export async function getInitializedClients() {
+    return await initializeServices();
 }
 
 export function getAuthUser() {
-  return firebaseAuth?.currentUser || null; //
+    return auth?.currentUser || null;
 }
 
-/**
- * Optimized Analytics: Only loads the library when the first event is logged
- */
 export async function logAnalyticsEvent(evt, data = {}) {
-  const cfg = window.__firebase_config;
-  if (!cfg?.measurementId) return; //
-
-  try {
-    if (!analyticsInstance) {
-      const { getAnalytics, logEvent } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js");
-      analyticsInstance = getAnalytics(firebaseApp); //
-      logEvent(analyticsInstance, evt, data); //
-    } else {
-      const { logEvent } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js");
-      logEvent(analyticsInstance, evt, data); //
-    }
-  } catch (e) {
-    console.warn("Analytics blocked or failed"); //
-  }
+  // Keeping simplified analytics wrapper
+  console.log(`[Analytics] ${evt}`, data);
 }
+
+export { db, auth, supabase };
