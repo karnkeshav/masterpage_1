@@ -36,7 +36,9 @@ export async function authenticateWithCredentials(username, password) {
 
     try {
         // Force session-only persistence so the user is logged out when the tab closes
-        await setPersistence(auth, browserSessionPersistence);
+        if (auth) {
+            await setPersistence(auth, browserSessionPersistence);
+        }
 
         // 1. Establish Secure Session
         const res = await signInAnonymously(auth);
@@ -131,11 +133,15 @@ export async function initializeAuthListener(onReady) {
   const { auth } = getInitializedClients();
   
   // Set persistence to session so auth is not remembered across browser restarts
-  await setPersistence(auth, browserSessionPersistence).catch(() => {});
+  if (auth) {
+      await setPersistence(auth, browserSessionPersistence).catch(() => {});
+  }
 
   onAuthStateChanged(auth, async (user) => {
     let profile = null;
     if (user) {
+      // If we have a special student login, ensure profile creation
+      // We can infer credentials if they are active, but ensureUserInFirestore handles the sync.
       profile = await ensureUserInFirestore(user);
 
       if (profile) {
