@@ -4,28 +4,31 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-let db, auth, supabase;
+let db, auth, supabase, initPromise = null;
 
 export async function initializeServices() {
-    if (db && auth && supabase) return { db, auth, supabase };
+    if (initPromise) return initPromise;
 
-    const app = initializeApp(window.__firebase_config);
-    db = getFirestore(app);
-    auth = getAuth(app);
+    initPromise = (async () => {
+        const app = initializeApp(window.__firebase_config);
+        db = getFirestore(app);
+        auth = getAuth(app);
 
-    // Supabase
-    if (window.__supabase_config) {
-        supabase = createClient(window.__supabase_config.url, window.__supabase_config.key, {
-            auth: { persistSession: false }
-        });
-        window.supabase = supabase;
-    }
+        // Supabase
+        if (window.__supabase_config) {
+            supabase = createClient(window.__supabase_config.url, window.__supabase_config.key, {
+                auth: { persistSession: false }
+            });
+            window.supabase = supabase;
+        }
+        return { db, auth, supabase };
+    })();
 
-    return { db, auth, supabase };
+    return initPromise;
 }
 
-export async function getInitializedClients() {
-    return await initializeServices();
+export function getInitializedClients() {
+    return { db, auth, supabase };
 }
 
 export function getAuthUser() {

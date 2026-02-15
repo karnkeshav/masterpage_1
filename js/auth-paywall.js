@@ -46,27 +46,10 @@ export async function authenticateWithCredentials(username, password) {
         const res = await signInAnonymously(auth);
         const uid = res.user.uid;
 
-        // 2. Bind Sovereign Identity
-        const userData = {
-            uid: uid,
-            email: username === "keshav" ? "keshav.karn@gmail.com" : `${username}@ready4exam.com`, // Simulated email
-            displayName: username,
-            tenantType: userProfile.tenantType,
-            tenantId: userProfile.tenantId,
-            role: userProfile.role,
-            school_id: userProfile.school_id || null,
-            createdAt: serverTimestamp(),
-            lastLogin: serverTimestamp(),
-            isSovereign: true
-        };
+        // 2. Ensure Student Profile Container Exists (Crucial for History)
+        await ensureStudentProfile(uid, username);
 
-        // 3. Immutable Write
-        await setDoc(doc(db, "users", uid), userData);
-
-        // 4. Ensure Student Profile Container Exists
-        await ensureStudentProfile({ uid }, { displayName: username });
-
-        return userData;
+        return { uid, displayName: username, role: userProfile.role }; // Minimal return for routing
 
     } catch (e) {
         console.error(LOG, "Auth Binding Failed", e);
@@ -134,8 +117,8 @@ export async function routeUser(user) {
  * Changed from browserLocalPersistence to browserSessionPersistence to force re-login.
  */
 export async function initializeAuthListener(onReady) {
-  await initializeServices();
-  const { auth } = getInitializedClients();
+  const { auth } = await initializeServices();
+  if (!auth) return;
   
   // Set persistence to session so auth is not remembered across browser restarts
   if (auth) {
