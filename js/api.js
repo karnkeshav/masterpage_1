@@ -94,9 +94,14 @@ export async function fetchQuestions(topic, difficulty) {
 }
 
 export async function saveResult(result) {
+  console.log('Attempting to save result...', result);
   const { auth } = getInitializedClients();
-  const uid = auth.currentUser?.uid || window.currentUserProfile?.uid;
-  if (!uid) throw new Error("User ID missing for result save.");
+  const uid = auth?.currentUser?.uid || window.currentUserProfile?.uid || sessionStorage.getItem('sovereign_uid');
+
+  if (!uid) {
+      console.error('Save failed: No UID found');
+      return;
+  }
 
   try {
     const { db } = getInitializedClients();
@@ -129,12 +134,13 @@ export async function saveResult(result) {
     };
 
     await addDoc(collection(db, "quiz_scores"), data);
+    console.log('Result saved successfully to Firestore');
 
     logAnalyticsEvent("quiz_completed", {
-        topic: data.chapter,
+        topic: data.topic,
         score: data.score,
         mode: data.quiz_mode,
-        user_id: user.uid,
+        user_id: uid,
         tenant: data.tenantType
     });
   } catch (err) {

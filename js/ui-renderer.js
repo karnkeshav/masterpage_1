@@ -325,7 +325,7 @@ export function updateAuthUI(u) {
     if (!isInit) initializeElements();
     if (u && els.welcomeUser) {
         // Displays "Student: [Name]" using the Google Display Name
-        const name = u.displayName || (u.email ? u.email.split("@")[0] : 'Scholar');
+        const name = u?.displayName || (u?.email ? u.email.split("@")[0] : 'Scholar');
         els.welcomeUser.textContent = `Student: ${name}`;
         els.welcomeUser.classList.remove("hidden");
     }
