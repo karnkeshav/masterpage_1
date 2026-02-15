@@ -5,25 +5,25 @@ import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where,
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };
 
-export async function ensureStudentProfile(user, meta) {
-    if (!user) return;
+export async function ensureStudentProfile(uid, username) {
+    if (!uid) return;
     try {
         const { db } = getInitializedClients();
-        const ref = doc(db, "students", user.uid); // or "users" depending on architecture, prompt said "students" collection but auth-paywall uses "users".
-        // NOTE: auth-paywall uses 'users' collection. Prompt explicitly said check 'students' collection. I will stick to prompt but it might be redundant if 'users' is the main one.
-        // Actually, prompt says: "Check if a document exists in the 'students' collection... If MISSING, create it...".
-        // I will implement exactly that.
+        const ref = doc(db, "users", uid);
 
         const snap = await getDoc(ref);
         if (!snap.exists()) {
-            console.log("Creating new student profile for:", user.uid);
+            console.log("Creating new student profile for:", uid);
             await setDoc(ref, {
-                uid: user.uid,
-                name: meta?.displayName || "Student",
-                grade: "9",
-                schoolId: "DPS_001",
-                role: "student",
-                createdAt: serverTimestamp()
+                uid: uid,
+                displayName: username,
+                role: 'student',
+                classId: '9',
+                schoolId: 'DPS_001',
+                createdAt: serverTimestamp(),
+                // Add fields required by auth-paywall logic if needed, or rely on this
+                tenantType: "school", // Assuming student9 is school-linked per previous context
+                tenantId: "DPS_001"
             });
         }
     } catch (e) {

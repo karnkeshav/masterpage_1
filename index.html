@@ -330,7 +330,11 @@ window.handleStudentLogin = async (grade) => {
         try {
             // Auto-login as student9
             document.body.style.cursor = 'wait';
-            await authenticateWithCredentials('student9', 'student9'); // Using correct password from map
+            const btn = document.querySelector('.class-card div'); // Visual feedback
+            if(btn) btn.textContent = "BINDING...";
+
+            await authenticateWithCredentials('student9', 'student9');
+
             // Listener will route, but we force redirect for speed
             window.location.href = "app/consoles/student.html";
         } catch (e) {
