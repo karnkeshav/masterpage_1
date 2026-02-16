@@ -1,5 +1,5 @@
 // js/config.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -10,7 +10,13 @@ export async function initializeServices() {
     if (initPromise) return initPromise;
 
     initPromise = (async () => {
-        const app = initializeApp(window.__firebase_config);
+        let app;
+        if (getApps().length > 0) {
+            app = getApp();
+        } else {
+            app = initializeApp(window.__firebase_config);
+        }
+
         db = getFirestore(app);
         auth = getAuth(app);
 
