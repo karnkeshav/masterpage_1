@@ -5,7 +5,7 @@ import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where,
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };
 
-export async function ensureStudentProfile(uid, username) {
+export async function ensureUserProfile(uid, username) {
     if (!uid) return;
     try {
         const { db } = getInitializedClients();
@@ -13,18 +13,23 @@ export async function ensureStudentProfile(uid, username) {
 
         const snap = await getDoc(ref);
         if (!snap.exists()) {
-            console.log("Creating new student profile for:", uid);
-            await setDoc(ref, {
+            console.log("Creating new user profile for:", uid);
+
+            let profile = {
                 uid: uid,
                 displayName: username,
-                role: 'student',
-                classId: '9',
-                schoolId: 'DPS_001',
-                createdAt: serverTimestamp(),
-                // Add fields required by auth-paywall logic if needed, or rely on this
-                tenantType: "school", // Assuming student9 is school-linked per previous context
-                tenantId: "DPS_001"
-            });
+                createdAt: serverTimestamp()
+            };
+
+            if (username.includes("dps.ready4exam")) {
+                profile = { ...profile, role: 'admin', schoolId: 'DPS_001', tenantType: 'school' };
+            } else if (username.includes("student")) {
+                profile = { ...profile, role: 'student', classId: '9', schoolId: 'DPS_001', tenantType: 'school' };
+            } else {
+                profile = { ...profile, role: 'student', tenantType: 'individual' };
+            }
+
+            await setDoc(ref, profile);
         }
     } catch (e) {
         console.error("Profile Ensure Failed", e);

@@ -1,5 +1,5 @@
 import { initializeServices, getInitializedClients } from "./config.js";
-import { ensureStudentProfile } from "./api.js";
+import { ensureUserProfile } from "./api.js";
 import { signInAnonymously, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -46,8 +46,8 @@ export async function authenticateWithCredentials(username, password) {
         const res = await signInAnonymously(auth);
         const uid = res.user.uid;
 
-        // 2. Ensure Student Profile Container Exists (Crucial for History)
-        await ensureStudentProfile(uid, username);
+        // 2. Ensure Profile Container Exists (Crucial for History & Dashboard)
+        await ensureUserProfile(uid, username);
 
         return { uid, displayName: username, role: userProfile.role }; // Minimal return for routing
 
