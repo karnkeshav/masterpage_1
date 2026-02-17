@@ -1,4 +1,5 @@
 import { initializeAuthListener, ensureUserInFirestore, signOut } from "./auth-paywall.js";
+import { initializeServices } from "./config.js";
 
 /**
  * Universal Guard for Console Pages.
@@ -11,7 +12,9 @@ import { initializeAuthListener, ensureUserInFirestore, signOut } from "./auth-p
  * If passed, calls window.loadConsoleData(profile).
  * If failed, redirects to index.html (Sovereign Gate).
  */
-export function guardConsole(requiredRole) {
+export async function guardConsole(requiredRole) {
+    await initializeServices();
+
     initializeAuthListener(async (user) => {
         if (!user) {
             console.warn("Guard: No user session.");

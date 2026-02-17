@@ -218,6 +218,9 @@ function handleNavigation(delta) {
     6. SUBMIT & RESULTS
 ----------------------------------- */
 async function handleSubmit() {
+    const btn = document.getElementById("submit-btn");
+    if (btn) btn.disabled = true;
+
     updateLatency();
     quizState.isSubmitted = true;
 
@@ -274,6 +277,7 @@ async function handleSubmit() {
     }
 
     console.log('Data persistence complete.');
+    if (btn) btn.disabled = false;
 }
 
 /* -----------------------------------
