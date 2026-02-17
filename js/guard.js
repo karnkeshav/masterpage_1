@@ -71,3 +71,27 @@ function revealApp(profile) {
         window.loadConsoleData(profile);
     }
 }
+
+export function bindConsoleLogout(buttonId = "logout-btn", redirectPath = "../../index.html") {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => attachLogout(buttonId, redirectPath));
+    } else {
+        attachLogout(buttonId, redirectPath);
+    }
+}
+
+function attachLogout(buttonId, redirectPath) {
+    const btn = document.getElementById(buttonId);
+    if (btn) {
+        btn.onclick = async () => {
+            if (confirm("Sign out of your Ready4Exam session?")) {
+                try {
+                    await signOut();
+                    window.location.href = redirectPath;
+                } catch (err) {
+                    console.error("Logout failed", err);
+                }
+            }
+        };
+    }
+}

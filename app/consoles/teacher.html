@@ -13,25 +13,9 @@
     <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { guardConsole } from "../../js/guard.js";
-        import { signOut } from "../../js/auth-paywall.js";
+        import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 
-        // LOGOUT LOGIC
-        const logoutBtn = document.getElementById('logout-btn');
-        if(logoutBtn) {
-            logoutBtn.addEventListener('click', async () => {
-                if (confirm("Sign out of your Ready4Exam session?")) {
-                    try {
-                        await signOut();
-                        window.location.href = "../../index.html";
-                    } catch (err) {
-                        console.error("Logout failed", err);
-                    }
-                }
-            });
-        }
-
-        // GLOBAL GUARD
+        bindConsoleLogout();
         guardConsole("teacher");
 
         // Data Loader
