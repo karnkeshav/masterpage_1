@@ -28,7 +28,7 @@ const CREDENTIALS = {
 };
 
 export async function authenticateWithCredentials(username, password) {
-    const { auth, db } = await initializeServices();
+    const { auth } = await initializeServices();
 
     if (!auth) throw new Error("Auth not initialized");
 
@@ -49,7 +49,7 @@ export async function authenticateWithCredentials(username, password) {
         // 2. Ensure Profile Container Exists (Crucial for History & Dashboard)
         await ensureUserProfile(uid, username);
 
-        return { uid, displayName: username, role: userProfile.role }; // Minimal return for routing
+        return { uid, displayName: username, role: userProfile.role };
 
     } catch (e) {
         console.error(LOG, "Auth Binding Failed", e);
