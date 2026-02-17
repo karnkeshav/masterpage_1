@@ -33,7 +33,8 @@ export async function initializeServices() {
     return initPromise;
 }
 
-export function getInitializedClients() {
+export async function getInitializedClients() {
+    await initializeServices();
     return { db, auth, supabase };
 }
 
