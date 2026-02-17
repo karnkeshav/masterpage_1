@@ -13,52 +13,42 @@
     <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { guardConsole } from "../../js/guard.js";
-        import { signOut } from "../../js/auth-paywall.js";
+        import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // GLOBAL GUARD
+        bindConsoleLogout();
         guardConsole("student");
 
-        // LOGOUT LOGIC
-        const logoutBtn = document.getElementById('logout-btn');
-        if(logoutBtn) {
-            logoutBtn.addEventListener('click', async () => {
-                if (confirm("Sign out of your Ready4Exam session?")) {
-                    try {
-                        await signOut();
-                        window.location.href = "../../index.html";
-                    } catch (err) {
-                        console.error("Logout failed", err);
-                    }
-                }
-            });
-        }
+        // Data Loader (Called by Guard)
+        window.loadConsoleData = async (profile) => {
+            console.log("Loading Class Hub for:", profile.displayName);
+            document.getElementById("user-name").textContent = profile.displayName;
 
-        window.onload = async () => {
-             const { db, auth } = await getInitializedClients();
+            // Extract Grade
+            let grade = "9"; // Default
+            // Priority: URL > Profile Class > Default
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get("grade")) {
+                grade = urlParams.get("grade");
+            } else if (profile.classId) {
+                grade = profile.classId;
+            }
 
-             auth.onAuthStateChanged(user => {
-                 if(user) {
-                     console.log('Student dashboard loading for:', user.uid);
-                     // Set user name (fallback logic similar to previous implementation)
-                     document.getElementById("user-name").textContent = user.displayName || "Student";
-                     loadStudentStats(user.uid);
+            document.getElementById("class-title").textContent = `Class ${grade} Hub`;
+            document.getElementById("grade-badge").textContent = `Grade ${grade}`;
 
-                     // Keep existing grade extraction logic if needed, or simplified:
-                     let grade = "9";
-                     const urlParams = new URLSearchParams(window.location.search);
-                     if (urlParams.get("grade")) grade = urlParams.get("grade");
+            // Update Start New Quiz Link
+            const startLink = document.getElementById("start-new-quiz-btn");
+            if (startLink) {
+                startLink.href = `../../app/curriculum.html?grade=${grade}`;
+            }
 
-                     document.getElementById("class-title").textContent = `Class ${grade} Hub`;
-                     document.getElementById("grade-badge").textContent = `Grade ${grade}`;
-                     const startLink = document.getElementById("start-new-quiz-btn");
-                     if (startLink) startLink.href = `../../app/curriculum.html?grade=${grade}`;
+            // Setup Click Handlers
+            setupNavigation(grade);
 
-                     setupNavigation(grade);
-                 }
-             });
+            // Load Stats
+            await loadStudentStats(profile.uid);
         };
 
         window.loadStudentStats = async (uid) => {
