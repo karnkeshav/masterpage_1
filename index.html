@@ -322,7 +322,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 </div>
 
 <script type="module">
-import { authenticateWithCredentials, routeUser, initializeAuthListener } from "./js/auth-paywall.js";
+import { authenticateWithCredentials, routeUser, initializeAuthListener, ensureUserInFirestore } from "./js/auth-paywall.js";
 
 // Global Login Handler for Student Cards
 window.handleStudentLogin = async (grade) => {
@@ -369,6 +369,8 @@ loginForm.addEventListener("submit", async (e) => {
 
     try {
         const res = await authenticateWithCredentials(u, p);
+        // Explicitly wait for profile sync before routing
+        await ensureUserInFirestore({ uid: res.uid });
         await routeUser({ uid: res.uid });
     } catch (err) {
         console.error(err);
