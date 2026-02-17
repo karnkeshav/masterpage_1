@@ -46,6 +46,29 @@ export async function ensureUserProfile(uid, username) {
     }
 }
 
+export async function waitForProfileReady(uid) {
+    const { db } = await getInitializedClients();
+    const ref = doc(db, "users", uid);
+    const maxTime = 5000;
+    let elapsed = 0;
+    let delay = 50;
+
+    while (elapsed < maxTime) {
+        const snap = await getDoc(ref);
+        if (snap.exists() && snap.data().role) {
+            console.log("Profile ready for:", uid);
+            return true;
+        }
+
+        console.log(`Waiting for profile... (${elapsed}ms)`);
+        await new Promise(r => setTimeout(r, delay));
+        elapsed += delay;
+        delay = Math.min(delay * 2, 1000); // Exponential backoff capped at 1s
+    }
+
+    throw new Error("Timeout waiting for user profile creation.");
+}
+
 function getTableName(topic) {
   // Prevent double-slugging if already a table ID
   if (topic && topic.includes("_") && topic.includes("quiz")) {

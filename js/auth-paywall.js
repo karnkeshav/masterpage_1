@@ -1,5 +1,5 @@
 import { initializeServices, getInitializedClients } from "./config.js";
-import { ensureUserProfile } from "./api.js";
+import { ensureUserProfile, waitForProfileReady } from "./api.js";
 import { signInAnonymously, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -48,6 +48,9 @@ export async function authenticateWithCredentials(username, password) {
 
         // 2. Ensure Profile Container Exists (Crucial for History & Dashboard)
         await ensureUserProfile(uid, username);
+
+        // 3. Blocking Wait for Firestore Consistency (Prevents "Guard: No Profile")
+        await waitForProfileReady(uid);
 
         return { uid, displayName: username, role: userProfile.role };
 
