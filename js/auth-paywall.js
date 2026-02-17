@@ -96,7 +96,7 @@ export async function routeUser(user) {
     }
 
     if (data.tenantType === "school") {
-        if (data.displayName === "dps.ready4exam") {
+        if (data.role === "admin" && data.school_id) {
              window.location.href = `school-landing.html?schoolId=${data.school_id}`;
              return;
         }
