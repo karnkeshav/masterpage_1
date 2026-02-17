@@ -42,7 +42,7 @@
         async function init() {
             try {
                 const user = await requireAuth();
-                const { db } = getInitializedClients();
+                const { db } = await getInitializedClients();
 
                 const q = query(
                     collection(db, "mistake_notebook"),
