@@ -130,8 +130,7 @@
         window.refreshDashboardStats = async (uid) => {
             if (!uid) return;
             try {
-                await initializeServices();
-                const { db } = getInitializedClients();
+                const { db } = await getInitializedClients();
                 const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
                 const snapshot = await getDocs(q);
 

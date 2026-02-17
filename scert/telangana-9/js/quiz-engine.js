@@ -1,4 +1,4 @@
-import { initializeServices, getInitializedClients } from "./config.js"; 
+import { getInitializedClients } from "./config.js";
 import { fetchQuestions, saveResult } from "./api.js";
 import * as UI from "./ui-renderer.js";
 import { initializeAuthListener, requireAuth } from "./auth-paywall.js";
@@ -71,7 +71,7 @@ function attachDomEvents() {
 async function init() {
     UI.initializeElements(); parseUrlParameters(); attachDomEvents(); UI.attachAnswerListeners(handleAnswerSelection);
     try {
-        await initializeServices();
+        await getInitializedClients();
         const btn = document.getElementById("google-signin-btn");
         if (btn) btn.onclick = async () => { await requireAuth(); location.reload(); };
         await initializeAuthListener(async user => {
