@@ -368,16 +368,8 @@ loginForm.addEventListener("submit", async (e) => {
     errorBox.classList.add("hidden");
 
     try {
-        await authenticateWithCredentials(u, p);
-        // Auth listener will catch the state change and route,
-        // but we can also route explicitly to be sure/faster.
-        // Wait a moment for Firestore write to propagate if needed,
-        // but authenticateWithCredentials awaits the write.
-        // The listener might trigger too.
-        // Let's rely on routeUser calls.
-        // Actually, initializeAuthListener runs on page load.
-        // onAuthStateChanged triggers on sign-in.
-        // So the listener *will* fire.
+        const res = await authenticateWithCredentials(u, p);
+        await routeUser({ uid: res.uid });
     } catch (err) {
         console.error(err);
         errorBox.textContent = "Identity Verification Failed: Invalid ID or Passkey.";
