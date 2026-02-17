@@ -21,9 +21,19 @@ export async function ensureUserProfile(uid, username) {
                 createdAt: serverTimestamp()
             };
 
-            if (username.includes("dps.ready4exam")) {
+            const lowerUser = username.toLowerCase();
+            if (lowerUser.includes("dps.ready4exam") || lowerUser.includes("admin")) {
                 profile = { ...profile, role: 'admin', schoolId: 'DPS_001', tenantType: 'school' };
-            } else if (username.includes("student")) {
+            } else if (lowerUser.includes("teacher")) {
+                profile = { ...profile, role: 'teacher', schoolId: 'DPS_001', tenantType: 'school' };
+            } else if (lowerUser.includes("principal")) {
+                profile = { ...profile, role: 'principal', schoolId: 'DPS_001', tenantType: 'school' };
+            } else if (lowerUser.includes("parent")) {
+                profile = { ...profile, role: 'parent', schoolId: 'DPS_001', tenantType: 'school' };
+            } else if (lowerUser.includes("student9")) {
+                profile = { ...profile, role: 'student', classId: '9', schoolId: 'DPS_001', tenantType: 'school' };
+            } else if (lowerUser.includes("student")) {
+                // Generic student fallback (e.g. student1, student2)
                 profile = { ...profile, role: 'student', classId: '9', schoolId: 'DPS_001', tenantType: 'school' };
             } else {
                 profile = { ...profile, role: 'student', tenantType: 'individual' };
@@ -127,7 +137,8 @@ export async function fetchQuestions(topic, difficulty) {
 export async function saveResult(result) {
   console.log('Attempting to save result...', result);
   const { auth } = getInitializedClients();
-  const uid = auth?.currentUser?.uid || window.currentUserProfile?.uid || sessionStorage.getItem('sovereign_uid');
+  // Persistence Priority: Auth > Window Profile > Session Storage
+  const uid = auth?.currentUser?.uid || window.userProfile?.uid || sessionStorage.getItem('uid');
 
   if (!uid) {
       console.error('Save failed: No UID found');
