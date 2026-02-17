@@ -125,8 +125,7 @@
         }
 
         async function loadSchool() {
-            await initializeServices();
-            const { db } = getInitializedClients();
+            const { db } = await getInitializedClients();
             try {
                 // Initial Default
                 let data = {
