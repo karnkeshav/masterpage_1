@@ -10,7 +10,7 @@ import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.
 ----------------------------------- */
 export async function checkClassAccess(classId, subject) {
     try {
-        const { auth, db } = getInitializedClients();
+        const { auth, db } = await getInitializedClients();
 
         const user = auth.currentUser;
         if (!user) return { allowed: false, reason: "no_user" };
@@ -140,7 +140,7 @@ async function loadQuiz() {
         // --- FORTRESS PHILOSOPHY: GATEKEEPER ---
         // Block 'Advanced' if 'Medium' mastery < 85%
         if (quizState.difficulty === "Advanced" && quizState.quizMode === "standard") {
-            const { auth } = getInitializedClients();
+            const { auth } = await getInitializedClients();
             const mastery = await getChapterMastery(auth.currentUser.uid, quizState.topicSlug);
             if (mastery < 85) {
                 // VISUAL INTELLIGENCE: Peel Back Animation
@@ -328,7 +328,7 @@ async function init() {
     UI.attachAnswerListeners(handleAnswerSelection);
 
     try {
-        await initializeServices();
+        await getInitializedClients();
         wireGoogleLogin();
 
         // Check Auth & Access

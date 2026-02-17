@@ -1,4 +1,4 @@
-import { initializeServices, getInitializedClients } from "./config.js";
+import { getInitializedClients } from "./config.js";
 import {
   doc, getDoc, setDoc, updateDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -20,8 +20,7 @@ export function isSignupExpired(userData) {
  * Ensures user document structure matches Admin Portal requirements.
  */
 export async function ensureUserDocExists() {
-  await initializeServices();
-  const { auth, db } = getInitializedClients();
+  const { auth, db } = await getInitializedClients();
   const user = auth.currentUser;
   if (!user) return;
 
@@ -93,8 +92,7 @@ export function showExpiredPopup(message) {
  * Ensures the first class clicked is "Ticked Green" in the Admin Portal.
  */
 export async function checkClassAccess(classId, stream) {
-  await initializeServices();
-  const { auth, db } = getInitializedClients();
+  const { auth, db } = await getInitializedClients();
   const user = auth.currentUser;
 
   // 1. Force Authentication

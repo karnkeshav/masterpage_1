@@ -28,7 +28,7 @@ const CREDENTIALS = {
 };
 
 export async function authenticateWithCredentials(username, password) {
-    const { auth } = await initializeServices();
+    const { auth, db } = await getInitializedClients();
 
     if (!auth) throw new Error("Auth not initialized");
 
@@ -59,7 +59,7 @@ export async function authenticateWithCredentials(username, password) {
 
 export async function ensureUserInFirestore(user) {
   if (!user?.uid) return null;
-  const { db } = getInitializedClients();
+  const { db } = await getInitializedClients();
   const ref = doc(db, "users", user.uid);
 
   try {
@@ -78,7 +78,7 @@ export async function ensureUserInFirestore(user) {
 
 export async function routeUser(user) {
     if (!user) return;
-    const { db } = getInitializedClients();
+    const { db } = await getInitializedClients();
     const snap = await getDoc(doc(db, "users", user.uid));
 
     if (!snap.exists()) {
@@ -117,7 +117,7 @@ export async function routeUser(user) {
  * Changed from browserLocalPersistence to browserSessionPersistence to force re-login.
  */
 export async function initializeAuthListener(onReady) {
-  const { auth } = await initializeServices();
+  const { auth } = await getInitializedClients();
   if (!auth) return;
   
   // Set persistence to session so auth is not remembered across browser restarts
@@ -146,8 +146,7 @@ export async function initializeAuthListener(onReady) {
 }
 
 export async function requireAuth(skipUI = false, redirect = false) {
-  await initializeServices();
-  const { auth } = getInitializedClients();
+  const { auth } = await getInitializedClients();
 
   if (auth.currentUser) {
     if(redirect) routeUser(auth.currentUser);
@@ -161,7 +160,7 @@ export async function requireAuth(skipUI = false, redirect = false) {
 }
 
 export async function checkRole(requiredRole) {
-    const { auth, db } = getInitializedClients();
+    const { auth, db } = await getInitializedClients();
     const user = auth.currentUser;
     if (!user) return false;
     const snap = await getDoc(doc(db, "users", user.uid));
@@ -172,6 +171,6 @@ export async function checkRole(requiredRole) {
 }
 
 export const signOut = async () => {
-  const { auth } = getInitializedClients();
+  const { auth } = await getInitializedClients();
   return firebaseSignOut(auth);
 };

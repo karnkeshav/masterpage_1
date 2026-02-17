@@ -1,5 +1,5 @@
 import { initializeAuthListener, ensureUserInFirestore, signOut } from "./auth-paywall.js";
-import { initializeServices } from "./config.js";
+import { getInitializedClients } from "./config.js";
 
 /**
  * Universal Guard for Console Pages.
@@ -13,7 +13,7 @@ import { initializeServices } from "./config.js";
  * If failed, redirects to index.html (Sovereign Gate).
  */
 export async function guardConsole(requiredRole) {
-    await initializeServices();
+    await getInitializedClients();
 
     initializeAuthListener(async (user) => {
         if (!user) {

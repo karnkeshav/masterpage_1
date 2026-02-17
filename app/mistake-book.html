@@ -23,7 +23,7 @@
             container.innerHTML = `<div class="text-center p-8 animate-pulse text-slate-400">Loading your learning gaps...</div>`;
 
             try {
-                const { db } = getInitializedClients();
+                const { db } = await getInitializedClients();
                 // Query mistakes
                 const q = query(
                     collection(db, "mistake_notebook"),

@@ -1,10 +1,11 @@
 // js/config.js
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-let db, auth, supabase, initPromise = null;
+let services = null;
+let initPromise = null;
 
 export async function initializeServices() {
     if (initPromise) return initPromise;
@@ -17,34 +18,41 @@ export async function initializeServices() {
             app = initializeApp(window.__firebase_config);
         }
 
-        db = getFirestore(app);
-        auth = getAuth(app);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // Supabase
+        // Auth Hydration Barrier
+        await new Promise(resolve => {
+            const unsubscribe = onAuthStateChanged(auth, () => {
+                unsubscribe();
+                resolve();
+            });
+        });
+
+        let supabase = null;
         if (window.__supabase_config) {
             supabase = createClient(window.__supabase_config.url, window.__supabase_config.key, {
                 auth: { persistSession: false }
             });
             window.supabase = supabase;
         }
-        return { db, auth, supabase };
+
+        services = { db, auth, supabase };
+        return services;
     })();
 
     return initPromise;
 }
 
 export async function getInitializedClients() {
-    await initializeServices();
-    return { db, auth, supabase };
+    if (services) return services;
+    return await initializeServices();
 }
 
 export function getAuthUser() {
-    return auth?.currentUser || null;
+    return services?.auth?.currentUser || null;
 }
 
 export async function logAnalyticsEvent(evt, data = {}) {
-  // Keeping simplified analytics wrapper
   console.log(`[Analytics] ${evt}`, data);
 }
-
-export { db, auth, supabase };

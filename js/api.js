@@ -90,7 +90,7 @@ function normalizeQuestionData(q) {
 }
 
 export async function fetchQuestions(topic, difficulty) {
-  const { supabase } = getInitializedClients();
+  const { supabase } = await getInitializedClients();
   const cleanDiff = (difficulty || "Simple").trim();
 
   let topics = [];
@@ -136,7 +136,7 @@ export async function fetchQuestions(topic, difficulty) {
 
 export async function saveResult(result) {
   console.log('Attempting to save result...', result);
-  const { auth } = await getInitializedClients();
+  const { auth, db } = await getInitializedClients();
   // Persistence Priority: Auth > Window Profile > Session Storage
   const uid = auth?.currentUser?.uid || window.userProfile?.uid || sessionStorage.getItem('uid');
 
@@ -146,8 +146,6 @@ export async function saveResult(result) {
   }
 
   try {
-    const { db } = getInitializedClients();
-
     // TENANT CONTEXT INJECTION
     const userSnap = await getDoc(doc(db, "users", uid));
     const userData = userSnap.exists() ? userSnap.data() : {};
@@ -191,13 +189,11 @@ export async function saveResult(result) {
 }
 
 export async function saveMistakes(questions, userAnswers, topic, classId) {
-    const { auth } = getInitializedClients();
-    const uid = auth.currentUser?.uid || window.currentUserProfile?.uid;
+    const { auth, db } = await getInitializedClients();
+    const uid = auth?.currentUser?.uid || window.currentUserProfile?.uid;
     if (!uid) return;
 
     try {
-        const { db } = getInitializedClients();
-
         // Filter for wrong answers
         const mistakes = questions.filter(q => userAnswers[q.id] !== q.correct_answer);
 
@@ -233,7 +229,7 @@ export async function getChapterMastery(userId, topic) {
     if (!userId || !topic) return 0;
 
     try {
-        const { db } = getInitializedClients();
+        const { db } = await getInitializedClients();
         const userSnap = await getDoc(doc(db, "users", userId));
         const userData = userSnap.exists() ? userSnap.data() : {};
 
@@ -273,7 +269,7 @@ export async function fetchQuizAttempts(userId) {
     if (!userId) return [];
 
     try {
-        const { db } = getInitializedClients();
+        const { db } = await getInitializedClients();
         const q = query(
             collection(db, "quiz_scores"),
             where("user_id", "==", userId),
@@ -308,7 +304,7 @@ function inferSubject(chapterSlug) {
 // --- GOVERNANCE & LEDGER ---
 
 export async function recordFinancialEvent(schoolId, type, amount, details) {
-    const { db } = getInitializedClients();
+    const { db } = await getInitializedClients();
     if (!schoolId) return;
 
     try {
@@ -327,7 +323,7 @@ export async function recordFinancialEvent(schoolId, type, amount, details) {
 }
 
 export async function fetchB2CUsers() {
-    const { db } = getInitializedClients();
+    const { db } = await getInitializedClients();
     try {
         const q = query(collection(db, "users"), where("tenantType", "==", "individual"));
         const snap = await getDocs(q);
@@ -349,7 +345,7 @@ export async function fetchB2CUsers() {
 }
 
 export async function fetchSchoolAnalytics(schoolId) {
-    const { db } = getInitializedClients();
+    const { db } = await getInitializedClients();
     if (!schoolId) return null;
 
     try {
