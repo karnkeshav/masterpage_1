@@ -32,6 +32,14 @@ export async function authenticateWithCredentials(username, password) {
 
     if (!auth) throw new Error("Auth not initialized");
 
+    // 0. Clean Session Restart (Critical for Hot-Swap)
+    if (auth.currentUser) {
+        console.log(LOG, "Terminating active session...");
+        await firebaseSignOut(auth);
+        // Wait for hydration barrier to clear
+        while(auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
+    }
+
     const userProfile = CREDENTIALS[username];
     if (!userProfile) throw new Error("Invalid username");
     if (userProfile.pass !== password) throw new Error("Invalid password");
