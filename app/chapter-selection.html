@@ -95,7 +95,7 @@
                 // Note: In real app, table_name might be in the JSON. If not, generate it.
                 // Assuming we generate it strictly based on title for now.
                 // Or if the object has `table_name`, use it.
-                const tableId = ch.table_name || buildTableName(title, subject, grade);
+                const tableId = ch.table_id || ch.table_name || buildTableName(title, subject, grade);
 
                 return `
                     <div onclick="startQuiz('${tableId}', '${title}', '${grade}')"

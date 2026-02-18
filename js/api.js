@@ -114,6 +114,8 @@ function normalizeQuestionData(q) {
 
 export async function fetchQuestions(topic, difficulty) {
   const { supabase } = await getInitializedClients();
+  if (!supabase) throw new Error("Question service unavailable: Supabase not initialized");
+
   const cleanDiff = (difficulty || "Simple").trim();
 
   let topics = [];
