@@ -30,11 +30,18 @@ export async function initializeServices() {
         });
 
         let supabase = null;
-        if (window.__supabase_config) {
-            supabase = createClient(window.__supabase_config.url, window.__supabase_config.key, {
+        const supConfig = window.__supabase_config || {
+            url: window.__firebase_config?.supabaseUrl,
+            key: window.__firebase_config?.supabaseAnonKey
+        };
+
+        if (supConfig.url && supConfig.key) {
+            supabase = createClient(supConfig.url, supConfig.key, {
                 auth: { persistSession: false }
             });
             window.supabase = supabase;
+        } else {
+            console.warn("[Config] Supabase credentials missing. Questions service disabled.");
         }
 
         services = { db, auth, supabase };
