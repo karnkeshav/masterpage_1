@@ -48,41 +48,56 @@ export async function migrateAnonymousData(oldUid, newUid) {
     }
 }
 
-export async function ensureUserProfile(uid, username) {
+export async function ensureUserProfile(uid, username, additionalData = {}) {
     if (!uid) return;
     try {
         const { db } = await getInitializedClients();
         const ref = doc(db, "users", uid);
 
         const snap = await getDoc(ref);
+
+        // Base profile structure
+        let profile = {
+            uid: uid,
+            displayName: username,
+            lastLogin: serverTimestamp()
+        };
+
         if (!snap.exists()) {
+            // NEW PROFILE: Set creation timestamp and infer from username
             console.log("Creating new user profile for:", uid);
+            profile.createdAt = serverTimestamp();
 
-            let profile = {
-                uid: uid,
-                displayName: username,
-                createdAt: serverTimestamp()
-            };
+            // Merge with additionalData from CREDENTIALS (passed from auth-paywall)
+            if (additionalData.role) profile.role = additionalData.role;
+            if (additionalData.school_id) profile.school_id = additionalData.school_id;
+            if (additionalData.tenantType) profile.tenantType = additionalData.tenantType;
+            if (additionalData.tenantId) profile.tenantId = additionalData.tenantId;
+            if (additionalData.classId) profile.classId = additionalData.classId;
 
-            const lowerUser = username.toLowerCase();
-            if (lowerUser.includes("dps.ready4exam") || lowerUser.includes("admin")) {
-                profile = { ...profile, role: 'admin', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("teacher")) {
-                profile = { ...profile, role: 'teacher', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("principal")) {
-                profile = { ...profile, role: 'principal', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("parent")) {
-                profile = { ...profile, role: 'parent', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("student9")) {
-                profile = { ...profile, role: 'student', classId: '9', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("student")) {
-                // Generic student fallback
-                profile = { ...profile, role: 'student', classId: '9', school_id: 'DPS_001', tenantType: 'school' };
-            } else {
-                profile = { ...profile, role: 'student', tenantType: 'individual' };
+            // Fallback inference from username if no explicit data
+            if (!profile.role) {
+                const lowerUser = username.toLowerCase();
+                if (lowerUser.includes("dps.ready4exam") || lowerUser.includes("admin")) {
+                    profile = { ...profile, role: 'admin', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("teacher")) {
+                    profile = { ...profile, role: 'teacher', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("principal")) {
+                    profile = { ...profile, role: 'principal', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("parent")) {
+                    profile = { ...profile, role: 'parent', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("student")) {
+                    profile = { ...profile, role: 'student', classId: '9', school_id: 'DPS_001', tenantType: 'school' };
+                } else {
+                    profile = { ...profile, role: 'student', tenantType: 'individual' };
+                }
             }
 
             await setDoc(ref, profile);
+        } else {
+            // EXISTING PROFILE: Update lastLogin only
+            console.log("Updating existing profile for:", uid);
+            await updateDoc(ref, { lastLogin: serverTimestamp() });
         }
     } catch (e) {
         console.error("Profile Ensure Failed", e);
@@ -205,8 +220,8 @@ export async function fetchQuestions(topic, difficulty) {
 export async function saveResult(result) {
   console.log('Attempting to save result...', result);
   const { auth, db } = await getInitializedClients();
-  // Persistence Priority: Auth > Window Profile > Session Storage
-  const uid = auth?.currentUser?.uid || window.userProfile?.uid || sessionStorage.getItem('uid');
+  // Persistence Priority: Session Storage > Window Profile > Auth
+  const uid = sessionStorage.getItem('uid') || window.userProfile?.uid || auth?.currentUser?.uid;
 
   if (!uid) {
       console.error('Save failed: No UID found');
@@ -258,8 +273,8 @@ export async function saveResult(result) {
 
 export async function saveMistakes(questions, userAnswers, topic, classId) {
     const { auth, db } = await getInitializedClients();
-    // Persistence Priority: Auth > Window Profile > Session Storage
-    const uid = auth?.currentUser?.uid || window.userProfile?.uid || sessionStorage.getItem('uid');
+    // Persistence Priority: Session Storage > Window Profile > Auth
+    const uid = sessionStorage.getItem('uid') || window.userProfile?.uid || auth?.currentUser?.uid;
     if (!uid) return;
 
     try {

@@ -1,6 +1,6 @@
 import { initializeServices, getInitializedClients } from "./config.js";
 import { ensureUserProfile, waitForProfileReady, migrateAnonymousData } from "./api.js";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { signInAnonymously, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const LOG = "[AUTH]";
@@ -27,14 +27,18 @@ const CREDENTIALS = {
     "student12": { pass: "student12", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
 };
 
+function generateStableUID(username) {
+    // Create a deterministic hash from username
+    const normalized = username.toLowerCase().trim();
+    return `user_${btoa(normalized).replace(/[^a-zA-Z0-9]/g, '_')}`;
+}
+
 export async function authenticateWithCredentials(username, password) {
     const { auth, db } = await getInitializedClients();
 
     if (!auth) throw new Error("Auth not initialized");
 
-    // 0. Capture Old UID for Migration & Clean Session Restart
-    const oldUid = auth.currentUser?.uid;
-
+    // 0. Clean Session Restart (Critical for Hot-Swap)
     if (auth.currentUser) {
         console.log(LOG, "Terminating active session...");
         await firebaseSignOut(auth);
@@ -45,40 +49,39 @@ export async function authenticateWithCredentials(username, password) {
     if (!userProfile) throw new Error("Invalid username");
     if (userProfile.pass !== password) throw new Error("Invalid password");
 
+    // NEW: Generate stable UID from username
+    const stableUID = generateStableUID(username);
+
     try {
-        if (auth) {
-            await setPersistence(auth, browserSessionPersistence);
-        }
+        await setPersistence(auth, browserSessionPersistence);
 
-        // 1. Establish Deterministic Session (Email/Password)
-        const email = `${username}@ready4exam.internal`;
-        let user;
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, "persistent-pass-123");
-            user = userCredential.user;
-        } catch (e) {
-            if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, "persistent-pass-123");
-                user = userCredential.user;
-            } else {
-                throw e;
-            }
-        }
+        // 1. Establish Secure Session (still use anonymous auth for Firebase session)
+        const res = await signInAnonymously(auth);
 
-        const uid = user.uid;
+        // 2. Store stable UID in session and window
+        sessionStorage.setItem('uid', stableUID);
+        sessionStorage.setItem('username', username);
+        window.userProfile = {
+            uid: stableUID,
+            displayName: username,
+            role: userProfile.role,
+            tenantType: userProfile.tenantType,
+            tenantId: userProfile.tenantId,
+            school_id: userProfile.school_id
+        };
 
-        // 2. Migrate Data if needed
-        if (oldUid && oldUid !== uid) {
-            await migrateAnonymousData(oldUid, uid);
-        }
+        // 3. Ensure Profile Container Exists with stable UID
+        await ensureUserProfile(stableUID, username, {
+            role: userProfile.role,
+            tenantType: userProfile.tenantType,
+            tenantId: userProfile.tenantId,
+            school_id: userProfile.school_id
+        });
 
-        // 3. Ensure Profile Container Exists
-        await ensureUserProfile(uid, username);
+        // 4. Blocking Wait for Firestore Consistency
+        await waitForProfileReady(stableUID);
 
-        // 3. Blocking Wait for Firestore Consistency (Prevents "Guard: No Profile")
-        await waitForProfileReady(uid);
-
-        return { uid, displayName: username, role: userProfile.role };
+        return { uid: stableUID, displayName: username, role: userProfile.role };
 
     } catch (e) {
         console.error(LOG, "Auth Binding Failed", e);
