@@ -94,16 +94,13 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   body { height: 100vh; overflow: hidden; display: flex; }
   .split-layout { width: 100%; height: 100%; display: flex; }
 
-  /* Left Panel (Hero) - 60% */
   .left-panel {
     width: 60%; height: 100%;
-    padding: 3rem 4rem; /* Adjusted padding for better fit */
+    padding: 3rem 4rem; 
     display: flex; flex-direction: column;
-    /* justify-content: space-between; Removed to allow better stacking */
     border-radius: 0;
   }
 
-  /* Right Panel (Curriculum) - 40% */
   .right-panel {
     width: 40%; height: 100%;
     background: #f8fafc;
@@ -273,6 +270,19 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
       <div class="text-center p-6">
           <p class="text-slate-400 text-sm font-medium">Please authenticate to access your institution's portal.</p>
       </div>
+      <div id="content-area" class="hidden w-full">
+          <div class="flex gap-4 mb-6">
+              <button class="board-btn active" data-board="CBSE">CBSE</button>
+              <button class="board-btn" data-board="SCERT">SCERT</button>
+              <button class="board-btn" data-board="ICSE">ICSE</button>
+          </div>
+          <p id="board-note" class="text-[10px] text-center mb-4 text-slate-400 font-bold uppercase"></p>
+          <div id="class-grid" class="grid grid-cols-2 gap-3"></div>
+          <div id="coming-soon" class="hidden text-center p-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+              <p class="text-slate-500 text-xs mb-3">Curriculum in final QA phase.</p>
+              <button onclick="openRequestModal()" class="text-cbse-blue font-bold text-xs underline">Request Early Access</button>
+          </div>
+      </div>
     </div>
 
     <footer id="site-footer" class="py-4 text-center">
@@ -324,19 +334,19 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 <script type="module">
 import { authenticateWithCredentials, routeUser, initializeAuthListener, ensureUserInFirestore } from "./js/auth-paywall.js";
 
-// Global Login Handler for Student Cards
+/* ---------------------------
+   AUTO LOGIN FOR DEMO CLASS
+--------------------------- */
 window.handleStudentLogin = async (grade) => {
     if (grade === '9') {
         try {
-            // Auto-login as student9
             document.body.style.cursor = 'wait';
-            const btn = document.querySelector('.class-card div'); // Visual feedback
+            const btn = document.querySelector('.class-card div');
             if(btn) btn.textContent = "BINDING...";
 
-            await authenticateWithCredentials('student9', 'student9');
+            const res = await authenticateWithCredentials('student9', 'student9');
+            await routeUser({ uid: res.uid });
 
-            // Listener will route, but we force redirect for speed
-            window.location.href = "app/consoles/student.html";
         } catch (e) {
             console.error("Auto-login failed", e);
             alert("Login System Busy. Please try again.");
@@ -345,7 +355,9 @@ window.handleStudentLogin = async (grade) => {
     }
 };
 
-// 1. Initialize Auth Listener to check for existing session
+/* ---------------------------
+   SESSION LISTENER
+--------------------------- */
 initializeAuthListener(async (user, profile) => {
     if (user && profile) {
         console.log("User already logged in, routing...");
@@ -353,12 +365,15 @@ initializeAuthListener(async (user, profile) => {
     }
 });
 
-// 2. Handle Sovereign Login
+/* ---------------------------
+   LOGIN FORM
+--------------------------- */
 const loginForm = document.getElementById("sovereign-login-form");
 const errorBox = document.getElementById("login-error");
 
 loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const u = document.getElementById("username").value.trim();
     const p = document.getElementById("password").value.trim();
     const btn = loginForm.querySelector("button");
@@ -369,9 +384,9 @@ loginForm.addEventListener("submit", async (e) => {
 
     try {
         const res = await authenticateWithCredentials(u, p);
-        // Explicitly wait for profile sync before routing
         await ensureUserInFirestore({ uid: res.uid });
         await routeUser({ uid: res.uid });
+
     } catch (err) {
         console.error(err);
         errorBox.textContent = "Identity Verification Failed: Invalid ID or Passkey.";
@@ -381,7 +396,9 @@ loginForm.addEventListener("submit", async (e) => {
     }
 });
 
-// Expose handleRequestSubmit globally
+/* ---------------------------
+   GLOBAL HANDLERS & UI
+--------------------------- */
 window.handleRequestSubmit = function(e) {
   e.preventDefault();
   const board = document.getElementById("reqBoard").value;
@@ -423,7 +440,6 @@ buttons.forEach(btn=>{
       note.textContent="NCERT Aligned (6-12)";
       [6,7,8,9,10,11,12].forEach(c=>{
         if (c === 9) {
-            // Special Login Flow for Class 9 Demo
             grid.innerHTML+=`
             <div onclick="window.handleStudentLogin('9')" class="class-card text-center group cursor-pointer">
               <h3 class="text-base font-black text-heading mb-1">Class ${c}</h3>
