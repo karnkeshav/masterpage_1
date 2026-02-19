@@ -5,41 +5,99 @@ import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where,
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };
 
-export async function ensureUserProfile(uid, username) {
+export async function migrateAnonymousData(oldUid, newUid) {
+    if (!oldUid || !newUid || oldUid === newUid) return;
+    console.log(`[MIGRATE] Moving data from ${oldUid} to ${newUid}`);
+
+    try {
+        const { db } = await getInitializedClients();
+        const batch = writeBatch(db);
+        let opCount = 0;
+
+        // 1. Move Quiz Scores
+        const scoresQ = query(collection(db, "quiz_scores"), where("user_id", "==", oldUid));
+        const scoresSnap = await getDocs(scoresQ);
+        scoresSnap.forEach(doc => {
+            batch.update(doc.ref, { user_id: newUid });
+            opCount++;
+        });
+
+        // 2. Move Mistake Notebook
+        const mistakesQ = query(collection(db, "mistake_notebook"), where("user_id", "==", oldUid));
+        const mistakesSnap = await getDocs(mistakesQ);
+        mistakesSnap.forEach(doc => {
+            // Update top level user_id and nested mistakes array
+            const data = doc.data();
+            const updatedMistakes = (data.mistakes || []).map(m => ({ ...m, user_id: newUid }));
+
+            batch.update(doc.ref, { user_id: newUid, mistakes: updatedMistakes });
+            opCount++;
+        });
+
+        if (opCount > 0) {
+            await batch.commit();
+            console.log(`[MIGRATE] Moved ${opCount} records.`);
+        }
+
+        // 3. Delete old profile
+        await deleteDoc(doc(db, "users", oldUid));
+        console.log("[MIGRATE] Old profile deleted.");
+
+    } catch (e) {
+        console.error("[MIGRATE] Failed:", e);
+    }
+}
+
+export async function ensureUserProfile(uid, username, additionalData = {}) {
     if (!uid) return;
     try {
         const { db } = await getInitializedClients();
         const ref = doc(db, "users", uid);
 
         const snap = await getDoc(ref);
+
+        // Base profile structure
+        let profile = {
+            uid: uid,
+            displayName: username,
+            lastLogin: serverTimestamp()
+        };
+
         if (!snap.exists()) {
+            // NEW PROFILE: Set creation timestamp and infer from username
             console.log("Creating new user profile for:", uid);
+            profile.createdAt = serverTimestamp();
 
-            let profile = {
-                uid: uid,
-                displayName: username,
-                createdAt: serverTimestamp()
-            };
+            // Merge with additionalData from CREDENTIALS (passed from auth-paywall)
+            if (additionalData.role) profile.role = additionalData.role;
+            if (additionalData.school_id) profile.school_id = additionalData.school_id;
+            if (additionalData.tenantType) profile.tenantType = additionalData.tenantType;
+            if (additionalData.tenantId) profile.tenantId = additionalData.tenantId;
+            if (additionalData.classId) profile.classId = additionalData.classId;
 
-            const lowerUser = username.toLowerCase();
-            if (lowerUser.includes("dps.ready4exam") || lowerUser.includes("admin")) {
-                profile = { ...profile, role: 'admin', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("teacher")) {
-                profile = { ...profile, role: 'teacher', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("principal")) {
-                profile = { ...profile, role: 'principal', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("parent")) {
-                profile = { ...profile, role: 'parent', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("student9")) {
-                profile = { ...profile, role: 'student', classId: '9', school_id: 'DPS_001', tenantType: 'school' };
-            } else if (lowerUser.includes("student")) {
-                // Generic student fallback
-                profile = { ...profile, role: 'student', classId: '9', school_id: 'DPS_001', tenantType: 'school' };
-            } else {
-                profile = { ...profile, role: 'student', tenantType: 'individual' };
+            // Fallback inference from username if no explicit data
+            if (!profile.role) {
+                const lowerUser = username.toLowerCase();
+                if (lowerUser.includes("dps.ready4exam") || lowerUser.includes("admin")) {
+                    profile = { ...profile, role: 'admin', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("teacher")) {
+                    profile = { ...profile, role: 'teacher', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("principal")) {
+                    profile = { ...profile, role: 'principal', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("parent")) {
+                    profile = { ...profile, role: 'parent', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("student")) {
+                    profile = { ...profile, role: 'student', classId: '9', school_id: 'DPS_001', tenantType: 'school' };
+                } else {
+                    profile = { ...profile, role: 'student', tenantType: 'individual' };
+                }
             }
 
             await setDoc(ref, profile);
+        } else {
+            // EXISTING PROFILE: Update lastLogin only
+            console.log("Updating existing profile for:", uid);
+            await updateDoc(ref, { lastLogin: serverTimestamp() });
         }
     } catch (e) {
         console.error("Profile Ensure Failed", e);
@@ -162,8 +220,8 @@ export async function fetchQuestions(topic, difficulty) {
 export async function saveResult(result) {
   console.log('Attempting to save result...', result);
   const { auth, db } = await getInitializedClients();
-  // Persistence Priority: Auth > Window Profile > Session Storage
-  const uid = auth?.currentUser?.uid || window.userProfile?.uid || sessionStorage.getItem('uid');
+  // Persistence Priority: Session Storage > Window Profile > Auth
+  const uid = sessionStorage.getItem('uid') || window.userProfile?.uid || auth?.currentUser?.uid;
 
   if (!uid) {
       console.error('Save failed: No UID found');
@@ -215,8 +273,8 @@ export async function saveResult(result) {
 
 export async function saveMistakes(questions, userAnswers, topic, classId) {
     const { auth, db } = await getInitializedClients();
-    // Persistence Priority: Auth > Window Profile > Session Storage
-    const uid = auth?.currentUser?.uid || window.userProfile?.uid || sessionStorage.getItem('uid');
+    // Persistence Priority: Session Storage > Window Profile > Auth
+    const uid = sessionStorage.getItem('uid') || window.userProfile?.uid || auth?.currentUser?.uid;
     if (!uid) return;
 
     try {

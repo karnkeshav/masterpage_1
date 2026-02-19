@@ -61,6 +61,16 @@ export async function guardConsole(requiredRole) {
 
 function revealApp(profile) {
     console.log("Guard: Access Granted", profile);
+
+    // Ensure window.userProfile is set with stable UID
+    window.userProfile = profile;
+
+    // Sync sessionStorage if not already set
+    if (!sessionStorage.getItem('uid')) {
+        sessionStorage.setItem('uid', profile.uid);
+        sessionStorage.setItem('username', profile.displayName);
+    }
+
     const app = document.getElementById("app");
     const loading = document.getElementById("loading");
 
