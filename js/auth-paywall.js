@@ -1,6 +1,14 @@
 import { initializeServices, getInitializedClients } from "./config.js";
 import { ensureUserProfile, waitForProfileReady, migrateAnonymousData } from "./api.js";
-import { signInAnonymously, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    updateProfile,
+    onAuthStateChanged,
+    setPersistence,
+    browserSessionPersistence,
+    signOut as firebaseSignOut
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const LOG = "[AUTH]";
@@ -27,22 +35,18 @@ const CREDENTIALS = {
     "student12": { pass: "student12", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
 };
 
-function generateStableUID(username) {
-    // Create a deterministic hash from username
-    const normalized = username.toLowerCase().trim();
-    return `user_${btoa(normalized).replace(/[^a-zA-Z0-9]/g, '_')}`;
-}
-
 export async function authenticateWithCredentials(username, password) {
     const { auth, db } = await getInitializedClients();
 
     if (!auth) throw new Error("Auth not initialized");
 
     // 0. Clean Session Restart (Critical for Hot-Swap)
+    // Capture old UID for migration before signing out
+    const oldUid = sessionStorage.getItem('uid');
+
     if (auth.currentUser) {
         console.log(LOG, "Terminating active session...");
         await firebaseSignOut(auth);
-        // Wait for hydration barrier to clear
         while(auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
     }
 
@@ -50,16 +54,32 @@ export async function authenticateWithCredentials(username, password) {
     if (!userProfile) throw new Error("Invalid username");
     if (userProfile.pass !== password) throw new Error("Invalid password");
 
-    // NEW: Generate stable UID from username
-    const stableUID = generateStableUID(username);
+    // NEW: Synthetic Email for Persistent Identity
+    const email = `${username}@ready4exam.internal`;
 
     try {
         await setPersistence(auth, browserSessionPersistence);
 
-        // 1. Establish Secure Session (still use anonymous auth for Firebase session)
-        const res = await signInAnonymously(auth);
+        let userCredential;
+        try {
+            // 1. Attempt to sign in
+            userCredential = await signInWithEmailAndPassword(auth, email, password);
+        } catch (signInError) {
+            // 2. If user not found, auto-provision
+            if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
+                 console.log(LOG, "Auto-provisioning new user:", email);
+                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                 // Update Display Name immediately
+                 await updateProfile(userCredential.user, { displayName: username });
+            } else {
+                throw signInError;
+            }
+        }
 
-        // 2. Store stable UID in session and window
+        const user = userCredential.user;
+        const stableUID = user.uid;
+
+        // 3. Store stable UID in session and window
         sessionStorage.setItem('uid', stableUID);
         sessionStorage.setItem('username', username);
         window.userProfile = {
@@ -71,7 +91,13 @@ export async function authenticateWithCredentials(username, password) {
             school_id: userProfile.school_id
         };
 
-        // 3. Ensure Profile Container Exists with stable UID
+        // 4. Data Migration Hook
+        if (oldUid && oldUid !== stableUID) {
+            console.log(LOG, `Detected identity switch. Migrating data from ${oldUid} to ${stableUID}...`);
+            await migrateAnonymousData(oldUid, stableUID);
+        }
+
+        // 5. Ensure Profile Container Exists with stable UID
         await ensureUserProfile(stableUID, username, {
             role: userProfile.role,
             tenantType: userProfile.tenantType,
@@ -79,7 +105,7 @@ export async function authenticateWithCredentials(username, password) {
             school_id: userProfile.school_id
         });
 
-        // 4. Blocking Wait for Firestore Consistency
+        // 6. Blocking Wait for Firestore Consistency
         await waitForProfileReady(stableUID);
 
         return { uid: stableUID, displayName: username, role: userProfile.role };
