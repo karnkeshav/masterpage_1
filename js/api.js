@@ -1,52 +1,9 @@
 // js/api.js
 import { getInitializedClients, getAuthUser, logAnalyticsEvent, initializeServices } from "./config.js";
-import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };
-
-export async function migrateAnonymousData(oldUid, newUid) {
-    if (!oldUid || !newUid || oldUid === newUid) return;
-    console.log(`[MIGRATE] Moving data from ${oldUid} to ${newUid}`);
-
-    try {
-        const { db } = await getInitializedClients();
-        const batch = writeBatch(db);
-        let opCount = 0;
-
-        // 1. Move Quiz Scores
-        const scoresQ = query(collection(db, "quiz_scores"), where("user_id", "==", oldUid));
-        const scoresSnap = await getDocs(scoresQ);
-        scoresSnap.forEach(doc => {
-            batch.update(doc.ref, { user_id: newUid });
-            opCount++;
-        });
-
-        // 2. Move Mistake Notebook
-        const mistakesQ = query(collection(db, "mistake_notebook"), where("user_id", "==", oldUid));
-        const mistakesSnap = await getDocs(mistakesQ);
-        mistakesSnap.forEach(doc => {
-            // Update top level user_id and nested mistakes array
-            const data = doc.data();
-            const updatedMistakes = (data.mistakes || []).map(m => ({ ...m, user_id: newUid }));
-
-            batch.update(doc.ref, { user_id: newUid, mistakes: updatedMistakes });
-            opCount++;
-        });
-
-        if (opCount > 0) {
-            await batch.commit();
-            console.log(`[MIGRATE] Moved ${opCount} records.`);
-        }
-
-        // 3. Delete old profile
-        await deleteDoc(doc(db, "users", oldUid));
-        console.log("[MIGRATE] Old profile deleted.");
-
-    } catch (e) {
-        console.error("[MIGRATE] Failed:", e);
-    }
-}
 
 export async function ensureUserProfile(uid, username) {
     if (!uid) return;
