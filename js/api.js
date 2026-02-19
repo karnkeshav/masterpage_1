@@ -1,6 +1,6 @@
 // js/api.js
 import { getInitializedClients, getAuthUser, logAnalyticsEvent, initializeServices } from "./config.js";
-import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };

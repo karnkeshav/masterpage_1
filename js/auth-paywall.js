@@ -42,6 +42,7 @@ export async function authenticateWithCredentials(username, password) {
     if (auth.currentUser) {
         console.log(LOG, "Terminating active session...");
         await firebaseSignOut(auth);
+        // Wait for hydration barrier to clear
         while(auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
     }
 
