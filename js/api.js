@@ -215,7 +215,8 @@ export async function saveResult(result) {
 
 export async function saveMistakes(questions, userAnswers, topic, classId) {
     const { auth, db } = await getInitializedClients();
-    const uid = auth?.currentUser?.uid || window.currentUserProfile?.uid;
+    // Persistence Priority: Auth > Window Profile > Session Storage
+    const uid = auth?.currentUser?.uid || window.userProfile?.uid || sessionStorage.getItem('uid');
     if (!uid) return;
 
     try {
