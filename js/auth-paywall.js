@@ -1,6 +1,6 @@
 import { initializeServices, getInitializedClients } from "./config.js";
-import { ensureUserProfile, waitForProfileReady, migrateAnonymousData } from "./api.js";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { ensureUserProfile, waitForProfileReady } from "./api.js";
+import { signInAnonymously, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const LOG = "[AUTH]";
@@ -32,12 +32,11 @@ export async function authenticateWithCredentials(username, password) {
 
     if (!auth) throw new Error("Auth not initialized");
 
-    // 0. Capture Old UID for Migration & Clean Session Restart
-    const oldUid = auth.currentUser?.uid;
-
+    // 0. Clean Session Restart (Critical for Hot-Swap)
     if (auth.currentUser) {
         console.log(LOG, "Terminating active session...");
         await firebaseSignOut(auth);
+        // Wait for hydration barrier to clear
         while(auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
     }
 
@@ -46,33 +45,16 @@ export async function authenticateWithCredentials(username, password) {
     if (userProfile.pass !== password) throw new Error("Invalid password");
 
     try {
+        // Force session-only persistence so the user is logged out when the tab closes
         if (auth) {
             await setPersistence(auth, browserSessionPersistence);
         }
 
-        // 1. Establish Deterministic Session (Email/Password)
-        const email = `${username}@ready4exam.internal`;
-        let user;
-        try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, "persistent-pass-123");
-            user = userCredential.user;
-        } catch (e) {
-            if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, "persistent-pass-123");
-                user = userCredential.user;
-            } else {
-                throw e;
-            }
-        }
+        // 1. Establish Secure Session
+        const res = await signInAnonymously(auth);
+        const uid = res.user.uid;
 
-        const uid = user.uid;
-
-        // 2. Migrate Data if needed
-        if (oldUid && oldUid !== uid) {
-            await migrateAnonymousData(oldUid, uid);
-        }
-
-        // 3. Ensure Profile Container Exists
+        // 2. Ensure Profile Container Exists (Crucial for History & Dashboard)
         await ensureUserProfile(uid, username);
 
         // 3. Blocking Wait for Firestore Consistency (Prevents "Guard: No Profile")
