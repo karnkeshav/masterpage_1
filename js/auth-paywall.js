@@ -94,9 +94,9 @@ export async function authenticateWithCredentials(username, password) {
             school_id: userProfile.school_id
         };
 
-        // 4. Data Migration Hook
+        // 4. Trigger Data Migration if an old anonymous session existed
         if (oldUid && oldUid !== stableUID) {
-            console.log(LOG, `Detected identity switch. Migrating data from ${oldUid} to ${stableUID}...`);
+            console.log(LOG, "Triggering data migration from", oldUid, "to", stableUID);
             await migrateAnonymousData(oldUid, stableUID);
         }
 
