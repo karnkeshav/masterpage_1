@@ -70,33 +70,42 @@
                      return;
                 }
 
-                let totalScore = 0;
+                let totalScoreSum = 0;
                 const subjectCounts = {};
                 const historyHtml = [];
 
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const score = data.score_percent !== undefined ? data.score_percent : (data.percentage || 0);
-                    totalScore += score;
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
 
+                    // Dynamic Calculation (as requested)
+                    const scoreVal = data.score || 0;
+                    const totalVal = data.totalQuestions || data.total || 0;
+                    const percentage = totalVal > 0 ? Math.round((scoreVal / totalVal) * 100) : (data.score_percent || 0);
+
+                    totalScoreSum += percentage;
+
+                    // Dynamic Subject
                     const subject = data.subject || "General";
                     subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
+
+                    // Dynamic Chapter
+                    const chapterName = formatChapterName(data.topicSlug || data.topic || data.chapter);
 
                     // History Row
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
                     historyHtml.push(`
                         <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
                             <td class="p-4 font-bold text-slate-700">${subject}</td>
-                            <td class="p-4 text-sm text-slate-600">${formatChapterName(data.chapter || data.topic)}</td>
-                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty}</span></td>
-                            <td class="p-4 font-mono font-bold ${getScoreColor(score)}">${score}%</td>
+                            <td class="p-4 text-sm text-slate-600">${chapterName}</td>
+                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty || 'Mixed'}</span></td>
+                            <td class="p-4 font-mono font-bold ${getScoreColor(percentage)}">${percentage}%</td>
                             <td class="p-4 text-right text-xs text-slate-400">${dateStr}</td>
                         </tr>
                     `);
                 });
 
                 // 2. Avg Mastery
-                const avg = Math.round(totalScore / totalTests);
+                const avg = Math.round(totalScoreSum / totalTests);
                 document.getElementById("stat-avg").textContent = `${avg}%`;
 
                 // 3. Most Practiced
@@ -125,69 +134,8 @@
         };
 
         window.refreshDashboardStats = async (uid) => {
-            if (!uid) return;
-            try {
-                const { db } = await getInitializedClients();
-                const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
-                const snapshot = await getDocs(q);
-
-                // 1. Total Tests
-                const totalTests = snapshot.size;
-                document.getElementById("stat-total").textContent = totalTests;
-
-                if (totalTests === 0) {
-                     document.getElementById("stat-avg").textContent = "0%";
-                     document.getElementById("stat-subject").textContent = "None";
-                     document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No quizzes taken yet.</td></tr>`;
-                     return;
-                }
-
-                let totalScore = 0;
-                const subjectCounts = {};
-                const historyHtml = [];
-
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const score = data.score_percent !== undefined ? data.score_percent : (data.percentage || 0);
-                    totalScore += score;
-
-                    const subject = data.subject || "General";
-                    subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
-
-                    // History Row
-                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
-                    historyHtml.push(`
-                        <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                            <td class="p-4 font-bold text-slate-700">${subject}</td>
-                            <td class="p-4 text-sm text-slate-600">${formatChapterName(data.chapter || data.topic)}</td>
-                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty}</span></td>
-                            <td class="p-4 font-mono font-bold ${getScoreColor(score)}">${score}%</td>
-                            <td class="p-4 text-right text-xs text-slate-400">${dateStr}</td>
-                        </tr>
-                    `);
-                });
-
-                // 2. Avg Mastery
-                const avg = Math.round(totalScore / totalTests);
-                document.getElementById("stat-avg").textContent = `${avg}%`;
-
-                // 3. Most Practiced
-                let mostPracticed = "None";
-                let maxCount = 0;
-                Object.entries(subjectCounts).forEach(([sub, count]) => {
-                    if (count > maxCount) {
-                        maxCount = count;
-                        mostPracticed = sub;
-                    }
-                });
-                document.getElementById("stat-subject").textContent = mostPracticed;
-
-                // 4. Update Table
-                document.getElementById("history-body").innerHTML = historyHtml.slice(0, 10).join("");
-
-            } catch (e) {
-                console.error("Dashboard Sync Failed:", e);
-            }
+            // Re-use logic for consistency
+            await loadStudentStats(uid);
         };
 
         function setupNavigation(grade) {
@@ -203,66 +151,35 @@
         }
 
         async function loadLearningHistory(uid) {
-            try {
-                const attempts = await fetchQuizAttempts(uid);
-
-                // Stats
-                const total = attempts.length;
-                const avg = total > 0 ? Math.round(attempts.reduce((sum, a) => sum + (a.percentage||0), 0) / total) : 0;
-
-                // Most Practiced
-                const subjects = {};
-                attempts.forEach(a => {
-                    const s = a.subject || "General";
-                    subjects[s] = (subjects[s] || 0) + 1;
-                });
-                let mostPracticed = "None";
-                let maxCount = 0;
-                Object.entries(subjects).forEach(([sub, count]) => {
-                    if (count > maxCount) {
-                        maxCount = count;
-                        mostPracticed = sub;
-                    }
-                });
-
-                document.getElementById("stat-total").textContent = total;
-                document.getElementById("stat-avg").textContent = `${avg}%`;
-                document.getElementById("stat-subject").textContent = mostPracticed;
-
-                // Table
-                const tbody = document.getElementById("history-body");
-                if (attempts.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No quizzes taken yet.</td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = attempts.slice(0, 10).map(a => `
-                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                        <td class="p-4 font-bold text-slate-700">${a.subject || 'General'}</td>
-                        <td class="p-4 text-sm text-slate-600">${formatChapterName(a.chapter)}</td>
-                        <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${a.difficulty}</span></td>
-                        <td class="p-4 font-mono font-bold ${getScoreColor(a.percentage)}">${a.percentage}%</td>
-                        <td class="p-4 text-right text-xs text-slate-400">${a.date.toLocaleDateString()}</td>
-                    </tr>
-                `).join("");
-
-            } catch (e) {
-                console.error("History Load Error", e);
-            }
+             // Redundant function kept for backward compat if called elsewhere, but loadStudentStats handles it now.
+             await loadStudentStats(uid);
         }
 
         function formatChapterName(slug) {
             if (!slug) return "Unknown";
-            // Check if it looks like a table ID (science_force_...)
-            // If so, try to make it readable
+
+            // Clean specific slug format: subject_topic_grade_quiz
+            // Example: science_gravitation_9_quiz -> Gravitation
             if (slug.includes("_quiz")) {
                 const parts = slug.replace("_quiz", "").split("_");
-                // remove subject if possible (first part)
-                if (parts.length > 1) parts.shift();
-                // remove grade (last part usually)
-                if (parts.length > 1 && !isNaN(parts[parts.length-1])) parts.pop();
+                // remove subject if possible (first part) - naive check if part 0 is a known subject alias?
+                // Or just rely on middle parts.
+                // Assuming format: subject_topic..._grade
+
+                // Remove grade if it's the last part and numeric
+                if (parts.length > 1 && !isNaN(parts[parts.length-1])) {
+                    parts.pop();
+                }
+
+                // Remove subject (first part)
+                if (parts.length > 1) {
+                    parts.shift();
+                }
+
                 return parts.join(" ").replace(/\b\w/g, l => l.toUpperCase());
             }
+
+            // Fallback: replace underscores/hyphens with spaces
             return slug.replace(/[_-]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
         }
 

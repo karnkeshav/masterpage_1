@@ -66,11 +66,9 @@ function revealApp(profile) {
     // Ensure window.userProfile is set with stable UID
     window.userProfile = profile;
 
-    // Sync sessionStorage if not already set (legacy support)
-    if (!sessionStorage.getItem('uid')) {
-        sessionStorage.setItem('uid', profile.uid);
-        sessionStorage.setItem('username', profile.displayName);
-    }
+    // Force synchronize sessionStorage with the authenticated user
+    sessionStorage.setItem('uid', profile.uid);
+    sessionStorage.setItem('username', profile.displayName);
 
     const app = document.getElementById("app");
     const loading = document.getElementById("loading");

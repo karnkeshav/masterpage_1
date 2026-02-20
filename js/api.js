@@ -262,10 +262,16 @@ export async function saveResult(result) {
       user_id: uid,
       email: auth.currentUser?.email || "",
       subject: result.subject || "Unknown",
-      topic: result.topicSlug || result.topic || "Unknown",
+
+      // Standardized Fields for Frontend
+      topicSlug: result.topicSlug || result.topic || "Unknown",
+      topic: result.topicSlug || result.topic || "Unknown", // Keep both for safety
+
       difficulty: result.difficulty,
       score: result.score,
       total: result.total,
+      totalQuestions: result.total, // Alias for clarity
+
       score_percent: Math.round((result.score / result.total) * 100),
       percentage: Math.round((result.score / result.total) * 100), // Keep for backward compatibility
       timestamp: serverTimestamp(),
@@ -273,7 +279,10 @@ export async function saveResult(result) {
       quiz_mode: result.quiz_mode || "standard",
       latency_vector: result.latency_vector || [],
       term_id: result.term_id || null,
-      class_id: result.classId || "9",
+
+      // Standardized Class ID
+      classId: result.classId || "9",
+      class_id: result.classId || "9", // Snake case alias
 
       // ISOLATION FIELDS
       tenantType: userData.tenantType || "individual",
