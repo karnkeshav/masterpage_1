@@ -84,6 +84,9 @@
 
             } catch (e) {
                 console.error("Mistake Load Error:", e);
+                if (e.code === 'permission-denied') {
+                     console.error("🛑 Missing Permissions: Update Firebase Security Rules to allow read/write for 'mistake_notebook'.");
+                }
                 container.innerHTML = `<div class="text-center text-red-500">Failed to load mistakes. Please try again.</div>`;
             }
         }

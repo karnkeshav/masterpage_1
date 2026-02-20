@@ -55,6 +55,7 @@
             if (!uid) return;
             try {
                 const { db } = await getInitializedClients();
+                // Ensure we use the stable UID for querying
                 const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
                 const snapshot = await getDocs(q);
 
@@ -114,6 +115,9 @@
 
             } catch (e) {
                 console.error("Dashboard Sync Failed:", e);
+                if (e.code === 'permission-denied') {
+                     console.error("🛑 Missing Permissions: Update Firebase Security Rules to allow read/write for 'quiz_scores'.");
+                }
                 if (e.code === 'failed-precondition') {
                     console.error("🔥 Missing Firestore Index. Create one for quiz_scores: user_id ASC, timestamp DESC");
                 }

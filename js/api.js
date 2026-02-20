@@ -1,6 +1,6 @@
 // js/api.js
 import { getInitializedClients, getAuthUser, logAnalyticsEvent, initializeServices } from "./config.js";
-import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };
@@ -37,6 +37,8 @@ export async function migrateAnonymousData(oldUid, newUid) {
         if (opCount > 0) {
             await batch.commit();
             console.log(`[MIGRATE] Moved ${opCount} records.`);
+        } else {
+            console.log("[MIGRATE] No records to move.");
         }
 
         // 3. Delete old profile
@@ -220,11 +222,12 @@ export async function fetchQuestions(topic, difficulty) {
 export async function saveResult(result) {
   console.log('Attempting to save result...', result);
   const { auth, db } = await getInitializedClients();
-  // Persistence Priority: Session Storage > Window Profile > Auth
-  const uid = sessionStorage.getItem('uid') || window.userProfile?.uid || auth?.currentUser?.uid;
+
+  // Persistence Priority: Auth > Window Profile (fallback)
+  const uid = auth.currentUser?.uid || window.userProfile?.uid;
 
   if (!uid) {
-      console.error('Save failed: No UID found');
+      console.error('Save failed: No UID found (User not authenticated)');
       return;
   }
 
@@ -273,9 +276,13 @@ export async function saveResult(result) {
 
 export async function saveMistakes(questions, userAnswers, topic, classId) {
     const { auth, db } = await getInitializedClients();
-    // Persistence Priority: Session Storage > Window Profile > Auth
-    const uid = sessionStorage.getItem('uid') || window.userProfile?.uid || auth?.currentUser?.uid;
-    if (!uid) return;
+    // Persistence Priority: Auth > Window Profile (fallback)
+    const uid = auth.currentUser?.uid || window.userProfile?.uid;
+
+    if (!uid) {
+        console.error("Save failed: No UID found (User not authenticated)");
+        return;
+    }
 
     try {
         // Filter for wrong answers
@@ -326,9 +333,6 @@ export async function getChapterMastery(userId, topic) {
         // STRICT SCOPING
         if (userData.tenantType === 'school' && userData.school_id) {
             constraints.push(where("school_id", "==", userData.school_id));
-        } else if (userData.tenantType === 'individual') {
-            // Optional: limit to individual scores if desired, but user might have legacy data
-            // constraints.push(where("tenantType", "==", "individual"));
         }
 
         const q = query(collection(db, "quiz_scores"), ...constraints);
@@ -367,7 +371,7 @@ export async function fetchQuizAttempts(userId) {
                 ...data,
                 date: data.timestamp ? data.timestamp.toDate() : new Date(),
                 // Infer Subject if possible, or use placeholder if chapter name isn't clear
-                subject: inferSubject(data.chapter)
+                subject: inferSubject(data.chapter || data.topic)
             };
         });
     } catch (e) {

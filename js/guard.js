@@ -15,14 +15,15 @@ import { getInitializedClients } from "./config.js";
 export async function guardConsole(requiredRole) {
     await getInitializedClients();
 
-    initializeAuthListener(async (user) => {
+    initializeAuthListener(async (user, initialProfile) => {
         if (!user) {
             console.warn("Guard: No user session.");
             window.location.href = "../../index.html";
             return;
         }
 
-        const profile = await ensureUserInFirestore(user);
+        // Use pre-fetched profile or fetch if missing
+        const profile = initialProfile || await ensureUserInFirestore(user);
 
         if (!profile) {
             console.warn("Guard: No profile found.");
@@ -65,7 +66,7 @@ function revealApp(profile) {
     // Ensure window.userProfile is set with stable UID
     window.userProfile = profile;
 
-    // Sync sessionStorage if not already set
+    // Sync sessionStorage if not already set (legacy support)
     if (!sessionStorage.getItem('uid')) {
         sessionStorage.setItem('uid', profile.uid);
         sessionStorage.setItem('username', profile.displayName);
