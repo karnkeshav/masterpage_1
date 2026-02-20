@@ -55,18 +55,15 @@
             if (!uid) return;
             try {
                 const { db } = await getInitializedClients();
-                // Ensure we use the stable UID for querying
                 const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
                 const snapshot = await getDocs(q);
 
-                // 1. Total Tests
-                const totalTests = snapshot.size;
-                document.getElementById("stat-total").textContent = totalTests;
+                document.getElementById("stat-total").textContent = snapshot.size;
 
-                if (totalTests === 0) {
+                if (snapshot.empty) {
                      document.getElementById("stat-avg").textContent = "0%";
                      document.getElementById("stat-subject").textContent = "None";
-                     document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No quizzes taken yet.</td></tr>`;
+                     document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No records found.</td></tr>`;
                      return;
                 }
 
@@ -74,28 +71,41 @@
                 const subjectCounts = {};
                 const historyHtml = [];
 
+                // Subject Normalizer Mapping
+                const normalizeSubject = (sub) => {
+                    if (!sub) return "General";
+                    const s = sub.toLowerCase();
+                    if (['physics', 'chemistry', 'biology', 'science'].some(x => s.includes(x))) return "Science";
+                    if (['mathematics', 'math', 'algebra', 'geometry'].some(x => s.includes(x))) return "Mathematics";
+                    if (['social science', 'history', 'civics', 'geography', 'social'].some(x => s.includes(x))) return "Social Science";
+                    return sub; // Fallback
+                };
+
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
+                    const rawSubject = data.subject || "General";
+                    const cleanSubject = normalizeSubject(rawSubject);
 
-                    // Dynamic Calculation (as requested)
+                    // Calculate Percentage
                     const scoreVal = data.score || 0;
-                    const totalVal = data.totalQuestions || data.total || 0;
+                    const totalVal = data.totalQuestions || data.total || 20;
                     const percentage = totalVal > 0 ? Math.round((scoreVal / totalVal) * 100) : (data.score_percent || 0);
 
                     totalScoreSum += percentage;
 
-                    // Dynamic Subject
-                    const subject = data.subject || "General";
-                    subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
+                    // Track for "Most Practiced"
+                    subjectCounts[cleanSubject] = (subjectCounts[cleanSubject] || 0) + 1;
 
                     // Dynamic Chapter
-                    const chapterName = formatChapterName(data.topicSlug || data.topic || data.chapter);
+                    // If topicSlug is missing, fallback to topic or chapter
+                    const rawSlug = data.topicSlug || data.topic || data.chapter || "General Quiz";
+                    const chapterName = formatChapterName(rawSlug);
 
                     // History Row
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
                     historyHtml.push(`
                         <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                            <td class="p-4 font-bold text-slate-700">${subject}</td>
+                            <td class="p-4 font-bold text-slate-700">${cleanSubject}</td>
                             <td class="p-4 text-sm text-slate-600">${chapterName}</td>
                             <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty || 'Mixed'}</span></td>
                             <td class="p-4 font-mono font-bold ${getScoreColor(percentage)}">${percentage}%</td>
@@ -104,22 +114,18 @@
                     `);
                 });
 
-                // 2. Avg Mastery
-                const avg = Math.round(totalScoreSum / totalTests);
+                // Update Average Mastery
+                const avg = Math.round(totalScoreSum / snapshot.size);
                 document.getElementById("stat-avg").textContent = `${avg}%`;
 
-                // 3. Most Practiced
+                // Update Most Practiced (using Clean names)
                 let mostPracticed = "None";
-                let maxCount = 0;
-                Object.entries(subjectCounts).forEach(([sub, count]) => {
-                    if (count > maxCount) {
-                        maxCount = count;
-                        mostPracticed = sub;
-                    }
-                });
+                if (Object.keys(subjectCounts).length > 0) {
+                     mostPracticed = Object.keys(subjectCounts).reduce((a, b) => subjectCounts[a] > subjectCounts[b] ? a : b);
+                }
                 document.getElementById("stat-subject").textContent = mostPracticed;
 
-                // 4. Update Table
+                // Update Table
                 document.getElementById("history-body").innerHTML = historyHtml.slice(0, 10).join("");
 
             } catch (e) {
@@ -156,24 +162,28 @@
         }
 
         function formatChapterName(slug) {
-            if (!slug) return "Unknown";
+            if (!slug) return "General Quiz";
 
             // Clean specific slug format: subject_topic_grade_quiz
             // Example: science_gravitation_9_quiz -> Gravitation
             if (slug.includes("_quiz")) {
-                const parts = slug.replace("_quiz", "").split("_");
-                // remove subject if possible (first part) - naive check if part 0 is a known subject alias?
-                // Or just rely on middle parts.
-                // Assuming format: subject_topic..._grade
+                let parts = slug.replace("_quiz", "").split("_");
 
-                // Remove grade if it's the last part and numeric
-                if (parts.length > 1 && !isNaN(parts[parts.length-1])) {
-                    parts.pop();
-                }
-
-                // Remove subject (first part)
-                if (parts.length > 1) {
-                    parts.shift();
+                // If standard format (e.g. science_gravitation_9), slice middle
+                // Remove first part (subject) and last part (grade) if length >= 3
+                if (parts.length >= 3) {
+                     // Check if last part is numeric (grade)
+                     if (!isNaN(parts[parts.length-1])) {
+                         parts.pop(); // Remove grade
+                     }
+                     parts.shift(); // Remove subject
+                } else if (parts.length === 2) {
+                    // e.g. gravitation_9 -> remove grade
+                    if (!isNaN(parts[parts.length-1])) {
+                         parts.pop();
+                    }
+                    // If format was subject_topic (science_gravitation) -> remove subject?
+                    // Hard to guess, but usually removing first part is safer for readability if subject is duplicated
                 }
 
                 return parts.join(" ").replace(/\b\w/g, l => l.toUpperCase());
