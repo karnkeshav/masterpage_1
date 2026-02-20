@@ -15,7 +15,7 @@
     <script type="module">
         import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
-        import { normalizeSubject, formatChapterName } from "../../js/utils.js";
+        import { normalizeSubject, formatChapterName, cleanKatexMarkers } from "../../js/utils.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         bindConsoleLogout();
@@ -63,19 +63,23 @@
 
                 if (snapshot.empty) {
                      document.getElementById("stat-avg").textContent = "0%";
-                     document.getElementById("subject-mastery-container").innerHTML = `<div class="text-slate-400 text-sm">No data yet.</div>`;
+                     document.getElementById("subject-mastery-container").innerHTML = `<div class="text-slate-400 text-sm">Welcome! Start your first quiz to see your progress.</div>`;
                      document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No records found.</td></tr>`;
+                     document.getElementById("chapter-health-grid").innerHTML = `<div class="text-center text-slate-400 text-sm py-4">Welcome! Start your first quiz to see your progress.</div>`;
+                     document.getElementById("advice-container").innerHTML = `<div class="text-xs text-slate-400">Take a quiz to get personalized advice.</div>`;
                      return;
                 }
 
                 let totalScoreSum = 0;
+
                 const historyHtml = [];
 
                 // Aggregation Data
+                // Structure: { totalPercentage: 0, count: 0 } for average percentage
                 const subjectStats = {
-                    "Science": { total: 0, count: 0 },
-                    "Mathematics": { total: 0, count: 0 },
-                    "Social Science": { total: 0, count: 0 }
+                    "Science": { totalPercentage: 0, count: 0 },
+                    "Mathematics": { totalPercentage: 0, count: 0 },
+                    "Social Science": { totalPercentage: 0, count: 0 }
                 };
 
                 const chapterStats = {}; // { "Chapter Name": { maxScore: 0, attempts: [] } }
@@ -93,15 +97,15 @@
 
                     totalScoreSum += percentage;
 
-                    // Subject Stats
+                    // Subject Stats (Simple Average Accumulation)
                     if (subjectStats[cleanSubject]) {
-                        subjectStats[cleanSubject].total += percentage;
+                        subjectStats[cleanSubject].totalPercentage += percentage;
                         subjectStats[cleanSubject].count++;
                     } else {
-                        // Handle "General" or others if needed, for now stick to main 3
-                        if (!subjectStats["General"]) subjectStats["General"] = { total: 0, count: 0 };
-                        subjectStats["General"].total += percentage;
-                        subjectStats["General"].count++;
+                        // Handle "General" or others if needed
+                         if (!subjectStats["General"]) subjectStats["General"] = { totalPercentage: 0, count: 0 };
+                         subjectStats["General"].totalPercentage += percentage;
+                         subjectStats["General"].count++;
                     }
 
                     // Chapter Stats
@@ -122,7 +126,7 @@
                     historyHtml.push(`
                         <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
                             <td class="p-4 font-bold text-slate-700">${cleanSubject}</td>
-                            <td class="p-4 text-sm text-slate-600">${cleanChapter}</td>
+                            <td class="p-4 text-sm text-slate-600">${chapterName}</td>
                             <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty || 'Mixed'}</span></td>
                             <td class="p-4 font-mono font-bold ${getScoreColor(percentage)}">${percentage}%</td>
                             <td class="p-4 text-right text-xs text-slate-400">${dateStr}</td>
@@ -130,7 +134,7 @@
                     `);
                 });
 
-                // Update Average Mastery
+                // Update Average Mastery (Simple Average of Percentages)
                 const avg = Math.round(totalScoreSum / snapshot.size);
                 document.getElementById("stat-avg").textContent = `${avg}%`;
 
@@ -143,7 +147,7 @@
                 // Render Advice
                 renderActionableAdvice(subjectStats, chapterStats);
 
-                // Update Table
+                // Update Table (Last 10)
                 document.getElementById("history-body").innerHTML = historyHtml.slice(0, 10).join("");
 
             } catch (e) {
@@ -161,18 +165,28 @@
             const subjects = ["Mathematics", "Science", "Social Science"];
             subjects.forEach(sub => {
                 const s = stats[sub];
-                const avg = s && s.count > 0 ? Math.round(s.total / s.count) : 0;
+                // Average Calculation: Total Percentage / Count
+                let avg = 0;
+                if (s && s.count > 0) {
+                    avg = Math.round(s.totalPercentage / s.count);
+                }
+
                 const color = sub === "Mathematics" ? "bg-blue-500" : (sub === "Science" ? "bg-purple-500" : "bg-amber-500");
-                const width = avg > 0 ? avg : 5; // Min width for visibility
+                const width = avg > 0 ? avg : 5; // Min width for visibility if 0 but exists? No, if 0, width 0.
+                // Requirement: "If a subject has no data, default to 0% and a grayed-out state."
+                const hasData = s && s.count > 0;
+                const barColor = hasData ? color : "bg-slate-300";
+                const displayWidth = hasData ? (avg > 0 ? avg : 0) : 0;
+                const opacity = hasData ? "" : "opacity-50";
 
                 html += `
-                    <div class="mb-4">
+                    <div class="mb-4 ${opacity}">
                         <div class="flex justify-between text-xs font-bold mb-1">
                             <span class="text-slate-600">${sub}</span>
                             <span class="text-slate-900">${avg}%</span>
                         </div>
                         <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                            <div class="${color} h-2 rounded-full transition-all duration-1000" style="width: ${width}%"></div>
+                            <div class="${barColor} h-2 rounded-full transition-all duration-1000" style="width: ${displayWidth}%"></div>
                         </div>
                     </div>
                 `;
@@ -184,7 +198,18 @@
             const container = document.getElementById("chapter-health-grid");
             let html = "";
 
-            Object.keys(stats).forEach(ch => {
+            // Sort chapters by most recent activity (which is implicitly order of keys insertion if we iterate? No.
+            // But we don't have order in keys. We can just list them.
+            // Maybe sort by "Needs Focus" first? The prompt doesn't specify sort order.
+            // I'll just list them.
+
+            const chapters = Object.keys(stats);
+            if (chapters.length === 0) {
+                container.innerHTML = `<div class="text-center text-slate-400 text-sm py-4">Complete quizzes to see health stats.</div>`;
+                return;
+            }
+
+            chapters.forEach(ch => {
                 const data = stats[ch];
                 const max = data.maxScore;
 
@@ -201,11 +226,7 @@
 
                 // Grit: Attempts until mastery (>85)
                 // attempts is ordered DESC (newest first).
-                // We need to count how many attempts it took to reach >85 for the first time?
-                // Actually, "Attempts to Mastery" usually means how many tries it took.
-                // If never mastered, it's just total attempts.
-                // If mastered, count attempts up to the first mastery occurrence (chronologically).
-                // Since array is DESC, let's reverse it to be chronological.
+                // We need to count how many attempts it took to reach >85 for the first time (chronologically).
                 const chronological = [...data.attempts].reverse();
                 let gritCount = 0;
                 let mastered = false;
@@ -216,7 +237,6 @@
                         break;
                     }
                 }
-                const gritLabel = mastered ? `${gritCount} Attempts` : "In Progress";
 
                 html += `
                     <div class="p-3 rounded-xl border ${colorClass} flex justify-between items-center mb-2">
@@ -232,21 +252,35 @@
                 `;
             });
 
-            if (!html) html = `<div class="text-center text-slate-400 text-sm py-4">Complete quizzes to see health stats.</div>`;
             container.innerHTML = html;
         }
 
         function renderActionableAdvice(subjectStats, chapterStats) {
             const container = document.getElementById("advice-container");
             let advice = [];
+            const subjects = ["Mathematics", "Science", "Social Science"];
 
-            // 1. Basic Subject Advice
-            const math = subjectStats["Mathematics"];
-            if (math && math.count > 0 && (math.total/math.count) < 50) {
-                advice.push(`<div class="flex items-start gap-3 mb-3"><i class="fas fa-lightbulb text-yellow-500 mt-1"></i> <p class="text-sm text-slate-600"><strong>Math Basics:</strong> Your average is low. Revisit fundamental formulas in the Warm-up Room.</p></div>`);
-            }
+            // 1. Basic Subject Advice (<50% Average)
+            subjects.forEach(sub => {
+                const s = subjectStats[sub];
+                // Average logic again
+                let avg = 0;
+                if (s && s.count > 0) {
+                    avg = Math.round(s.totalPercentage / s.count);
+                }
 
-            // 2. Chapter Specific
+                if (s && s.count > 0 && avg < 50) {
+                     // Icon mapping
+                     let icon = "fa-lightbulb text-yellow-500";
+                     if (sub === "Mathematics") icon = "fa-calculator text-blue-500";
+                     if (sub === "Science") icon = "fa-flask text-purple-500";
+                     if (sub === "Social Science") icon = "fa-globe-americas text-amber-500";
+
+                     advice.push(`<div class="flex items-start gap-3 mb-3"><i class="fas ${icon} mt-1"></i> <p class="text-sm text-slate-600"><strong>${sub} Basics:</strong> Your average is low (${avg}%). Revisit fundamental formulas in the Warm-up Room.</p></div>`);
+                }
+            });
+
+            // 2. Chapter Specific (Improving -> Mastery Nudge)
             // Find a chapter that is "Improving" (50-85)
             const improving = Object.keys(chapterStats).find(ch => {
                 const m = chapterStats[ch].maxScore;

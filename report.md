@@ -1,17 +1,17 @@
 ## Performance Test Results
 
 ### Mobile
-- **First Contentful Paint:** 3.4 s
-- **Speed Index:** 3.4 s
-- **Largest Contentful Paint:** 6.0 s
-- **Time to Interactive:** 9.0 s
+- **First Contentful Paint:** 3.1 s
+- **Speed Index:** 3.1 s
+- **Largest Contentful Paint:** 6.7 s
+- **Time to Interactive:** 8.2 s
 - **Cumulative Layout Shift:** 0
 
 ### Desktop
-- **First Contentful Paint:** 4.0 s
-- **Speed Index:** 4.0 s
-- **Largest Contentful Paint:** 5.8 s
-- **Time to Interactive:** 8.6 s
+- **First Contentful Paint:** 4.2 s
+- **Speed Index:** 4.2 s
+- **Largest Contentful Paint:** 6.1 s
+- **Time to Interactive:** 8.7 s
 - **Cumulative Layout Shift:** 0.001
 
 ## Outage Resilience Test Results
@@ -24,5 +24,5 @@ A screenshot of the page without CSS has been saved to `outage.png`.
 
 ### Rapid Click Test
 Simulated 100 rapid clicks on the login button.
-**Time taken:** 1.587 seconds.
+**Time taken:** 1.518 seconds.
 **No console errors found.**
