@@ -71,50 +71,52 @@
                 const subjectCounts = {};
                 const historyHtml = [];
 
-                // 1. Subject Normalizer Mapping
-                const normalizeSubject = (data) => {
-                    // Check explicit subject
-                    const sub = (data.subject || "").toLowerCase();
-                    if (sub.includes("math") || sub.includes("algebra") || sub.includes("geometry")) return "Mathematics";
-                    if (sub.includes("science") || sub.includes("physics") || sub.includes("chem") || sub.includes("bio")) return "Science";
-                    if (sub.includes("social")) return "Social Science";
+                // 1. Subject Intelligence Function
+                const getActualSubject = (data) => {
+                    // Create a combined searchable string from all possible fields
+                    const context = `${data.subject || ''} ${data.topicSlug || ''} ${data.topic || ''}`.toLowerCase();
 
-                    // Fallback: Check topicSlug
-                    const slug = (data.topicSlug || data.topic || "").toLowerCase();
-                    if (slug.includes("triangle") || slug.includes("polynomial") || slug.includes("probability") || slug.includes("math")) return "Mathematics";
-                    if (slug.includes("motion") || slug.includes("gravitation") || slug.includes("force") || slug.includes("atom") || slug.includes("science")) return "Science";
-                    if (slug.includes("history") || slug.includes("civics") || slug.includes("social")) return "Social Science";
+                    // Identify Social Science (Highest Priority due to 'Social' keyword)
+                    if (context.includes("social") || context.includes("history") || context.includes("nazism") || context.includes("hitler") || context.includes("civics") || context.includes("geography")) {
+                        return "Social Science";
+                    }
 
-                    return sub || "General";
+                    // Identify Mathematics
+                    if (context.includes("math") || context.includes("triangle") || context.includes("polynomial") || context.includes("probability") || context.includes("algebra") || context.includes("geometry")) {
+                        return "Mathematics";
+                    }
+
+                    // Identify Science
+                    if (context.includes("science") || context.includes("physics") || context.includes("gravitation") || context.includes("motion") || context.includes("force") || context.includes("atom") || context.includes("chem") || context.includes("bio")) {
+                        return "Science";
+                    }
+
+                    return "General"; // Fallback if no keywords found
                 };
 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
 
-                    // 2. Use normalized subject
-                    const cleanSubject = normalizeSubject(data);
+                    // 2. Use the Intelligence Function
+                    const cleanSubject = getActualSubject(data);
 
                     // Calculate Percentage
                     const scoreVal = data.score || 0;
                     const totalVal = data.totalQuestions || data.total || 20;
-                    const percentage = totalVal > 0 ? Math.round((scoreVal / totalVal) * 100) : (data.score_percent || 0);
+                    const percentage = Math.round((scoreVal / totalVal) * 100);
 
                     totalScoreSum += percentage;
 
                     // Track for "Most Practiced"
                     subjectCounts[cleanSubject] = (subjectCounts[cleanSubject] || 0) + 1;
 
-                    // Dynamic Chapter
-                    // If topicSlug is missing, fallback to topic or chapter
-                    const rawSlug = data.topicSlug || data.topic || data.chapter || "General Quiz";
-                    const chapterName = formatChapterName(rawSlug);
-
-                    // History Row
+                    const cleanChapter = formatChapterName(data.topicSlug || data.topic || data.chapter);
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
+
                     historyHtml.push(`
                         <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
                             <td class="p-4 font-bold text-slate-700">${cleanSubject}</td>
-                            <td class="p-4 text-sm text-slate-600">${chapterName}</td>
+                            <td class="p-4 text-sm text-slate-600">${cleanChapter}</td>
                             <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty || 'Mixed'}</span></td>
                             <td class="p-4 font-mono font-bold ${getScoreColor(percentage)}">${percentage}%</td>
                             <td class="p-4 text-right text-xs text-slate-400">${dateStr}</td>
