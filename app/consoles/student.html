@@ -15,6 +15,7 @@
     <script type="module">
         import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
+        import { normalizeSubject, formatChapterName } from "../../js/utils.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         bindConsoleLogout();
@@ -62,43 +63,28 @@
 
                 if (snapshot.empty) {
                      document.getElementById("stat-avg").textContent = "0%";
-                     document.getElementById("stat-subject").textContent = "None";
+                     document.getElementById("subject-mastery-container").innerHTML = `<div class="text-slate-400 text-sm">No data yet.</div>`;
                      document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No records found.</td></tr>`;
                      return;
                 }
 
                 let totalScoreSum = 0;
-                const subjectCounts = {};
                 const historyHtml = [];
 
-                // 1. Subject Intelligence Function
-                const getActualSubject = (data) => {
-                    // Create a combined searchable string from all possible fields
-                    const context = `${data.subject || ''} ${data.topicSlug || ''} ${data.topic || ''}`.toLowerCase();
-
-                    // Identify Social Science (Highest Priority due to 'Social' keyword)
-                    if (context.includes("social") || context.includes("history") || context.includes("nazism") || context.includes("hitler") || context.includes("civics") || context.includes("geography")) {
-                        return "Social Science";
-                    }
-
-                    // Identify Mathematics
-                    if (context.includes("math") || context.includes("triangle") || context.includes("polynomial") || context.includes("probability") || context.includes("algebra") || context.includes("geometry")) {
-                        return "Mathematics";
-                    }
-
-                    // Identify Science
-                    if (context.includes("science") || context.includes("physics") || context.includes("gravitation") || context.includes("motion") || context.includes("force") || context.includes("atom") || context.includes("chem") || context.includes("bio")) {
-                        return "Science";
-                    }
-
-                    return "General"; // Fallback if no keywords found
+                // Aggregation Data
+                const subjectStats = {
+                    "Science": { total: 0, count: 0 },
+                    "Mathematics": { total: 0, count: 0 },
+                    "Social Science": { total: 0, count: 0 }
                 };
+
+                const chapterStats = {}; // { "Chapter Name": { maxScore: 0, attempts: [] } }
 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
 
-                    // 2. Use the Intelligence Function
-                    const cleanSubject = getActualSubject(data);
+                    // Normalize Subject
+                    const cleanSubject = normalizeSubject(data);
 
                     // Calculate Percentage
                     const scoreVal = data.score || 0;
@@ -107,10 +93,30 @@
 
                     totalScoreSum += percentage;
 
-                    // Track for "Most Practiced"
-                    subjectCounts[cleanSubject] = (subjectCounts[cleanSubject] || 0) + 1;
+                    // Subject Stats
+                    if (subjectStats[cleanSubject]) {
+                        subjectStats[cleanSubject].total += percentage;
+                        subjectStats[cleanSubject].count++;
+                    } else {
+                        // Handle "General" or others if needed, for now stick to main 3
+                        if (!subjectStats["General"]) subjectStats["General"] = { total: 0, count: 0 };
+                        subjectStats["General"].total += percentage;
+                        subjectStats["General"].count++;
+                    }
 
-                    const cleanChapter = formatChapterName(data.topicSlug || data.topic || data.chapter);
+                    // Chapter Stats
+                    const rawSlug = data.topicSlug || data.topic || data.chapter || "General Quiz";
+                    const chapterName = formatChapterName(rawSlug);
+
+                    if (!chapterStats[chapterName]) {
+                        chapterStats[chapterName] = { maxScore: 0, attempts: [], subject: cleanSubject };
+                    }
+                    chapterStats[chapterName].attempts.push(percentage); // Note: snapshot is DESC order (newest first)
+                    if (percentage > chapterStats[chapterName].maxScore) {
+                        chapterStats[chapterName].maxScore = percentage;
+                    }
+
+                    // History Row
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
 
                     historyHtml.push(`
@@ -128,12 +134,14 @@
                 const avg = Math.round(totalScoreSum / snapshot.size);
                 document.getElementById("stat-avg").textContent = `${avg}%`;
 
-                // Update Most Practiced (using Clean names)
-                let mostPracticed = "None";
-                if (Object.keys(subjectCounts).length > 0) {
-                     mostPracticed = Object.keys(subjectCounts).reduce((a, b) => subjectCounts[a] > subjectCounts[b] ? a : b);
-                }
-                document.getElementById("stat-subject").textContent = mostPracticed;
+                // Render Subject Mastery
+                renderSubjectMastery(subjectStats);
+
+                // Render Chapter Health & Grit
+                renderChapterHealth(chapterStats);
+
+                // Render Advice
+                renderActionableAdvice(subjectStats, chapterStats);
 
                 // Update Table
                 document.getElementById("history-body").innerHTML = historyHtml.slice(0, 10).join("");
@@ -143,14 +151,121 @@
                 if (e.code === 'permission-denied') {
                      console.error("🛑 Missing Permissions: Update Firebase Security Rules to allow read/write for 'quiz_scores'.");
                 }
-                if (e.code === 'failed-precondition') {
-                    console.error("🔥 Missing Firestore Index. Create one for quiz_scores: user_id ASC, timestamp DESC");
-                }
             }
         };
 
+        function renderSubjectMastery(stats) {
+            const container = document.getElementById("subject-mastery-container");
+            let html = "";
+
+            const subjects = ["Mathematics", "Science", "Social Science"];
+            subjects.forEach(sub => {
+                const s = stats[sub];
+                const avg = s && s.count > 0 ? Math.round(s.total / s.count) : 0;
+                const color = sub === "Mathematics" ? "bg-blue-500" : (sub === "Science" ? "bg-purple-500" : "bg-amber-500");
+                const width = avg > 0 ? avg : 5; // Min width for visibility
+
+                html += `
+                    <div class="mb-4">
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-600">${sub}</span>
+                            <span class="text-slate-900">${avg}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div class="${color} h-2 rounded-full transition-all duration-1000" style="width: ${width}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderChapterHealth(stats) {
+            const container = document.getElementById("chapter-health-grid");
+            let html = "";
+
+            Object.keys(stats).forEach(ch => {
+                const data = stats[ch];
+                const max = data.maxScore;
+
+                let status = "Needs Focus";
+                let colorClass = "bg-red-50 text-red-600 border-red-100";
+
+                if (max >= 85) {
+                    status = "Mastered";
+                    colorClass = "bg-emerald-50 text-emerald-600 border-emerald-100";
+                } else if (max >= 50) {
+                    status = "Improving";
+                    colorClass = "bg-blue-50 text-blue-600 border-blue-100";
+                }
+
+                // Grit: Attempts until mastery (>85)
+                // attempts is ordered DESC (newest first).
+                // We need to count how many attempts it took to reach >85 for the first time?
+                // Actually, "Attempts to Mastery" usually means how many tries it took.
+                // If never mastered, it's just total attempts.
+                // If mastered, count attempts up to the first mastery occurrence (chronologically).
+                // Since array is DESC, let's reverse it to be chronological.
+                const chronological = [...data.attempts].reverse();
+                let gritCount = 0;
+                let mastered = false;
+                for (let score of chronological) {
+                    gritCount++;
+                    if (score >= 85) {
+                        mastered = true;
+                        break;
+                    }
+                }
+                const gritLabel = mastered ? `${gritCount} Attempts` : "In Progress";
+
+                html += `
+                    <div class="p-3 rounded-xl border ${colorClass} flex justify-between items-center mb-2">
+                        <div>
+                            <div class="font-bold text-xs truncate max-w-[120px] md:max-w-[150px]" title="${ch}">${ch}</div>
+                            <div class="text-[10px] opacity-75 font-mono">${status}</div>
+                        </div>
+                        <div class="text-right">
+                             <div class="font-black text-sm">${max}%</div>
+                             ${mastered ? `<div class="text-[9px] font-bold uppercase tracking-wider opacity-80" title="Grit: Attempts to Mastery">Grit: ${gritCount}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (!html) html = `<div class="text-center text-slate-400 text-sm py-4">Complete quizzes to see health stats.</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderActionableAdvice(subjectStats, chapterStats) {
+            const container = document.getElementById("advice-container");
+            let advice = [];
+
+            // 1. Basic Subject Advice
+            const math = subjectStats["Mathematics"];
+            if (math && math.count > 0 && (math.total/math.count) < 50) {
+                advice.push(`<div class="flex items-start gap-3 mb-3"><i class="fas fa-lightbulb text-yellow-500 mt-1"></i> <p class="text-sm text-slate-600"><strong>Math Basics:</strong> Your average is low. Revisit fundamental formulas in the Warm-up Room.</p></div>`);
+            }
+
+            // 2. Chapter Specific
+            // Find a chapter that is "Improving" (50-85)
+            const improving = Object.keys(chapterStats).find(ch => {
+                const m = chapterStats[ch].maxScore;
+                return m >= 50 && m < 85;
+            });
+
+            if (improving) {
+                 advice.push(`<div class="flex items-start gap-3 mb-3"><i class="fas fa-rocket text-blue-500 mt-1"></i> <p class="text-sm text-slate-600"><strong>Push for Mastery:</strong> You are doing well in <em>${improving}</em>. Try one more quiz to reach the 85% Expert Level!</p></div>`);
+            }
+
+            // 3. General
+            if (advice.length === 0) {
+                 advice.push(`<div class="flex items-start gap-3"><i class="fas fa-check-circle text-green-500 mt-1"></i> <p class="text-sm text-slate-600">Great job! Maintain your consistency by exploring new chapters.</p></div>`);
+            }
+
+            container.innerHTML = advice.join("");
+        }
+
         window.refreshDashboardStats = async (uid) => {
-            // Re-use logic for consistency
             await loadStudentStats(uid);
         };
 
@@ -159,37 +274,10 @@
             cards.forEach(card => {
                 card.onclick = () => {
                     const subject = card.dataset.subject;
-                    // Keep using chapter-selection for the specific subject card flow
-                    // But general button goes to curriculum.html
-                    window.location.href = `../chapter-selection.html?subject=${encodeURIComponent(subject)}&grade=${grade}`;
+                    // Updated to point to Study Library
+                    window.location.href = `../study-library.html?subject=${encodeURIComponent(subject)}&grade=${grade}`;
                 };
             });
-        }
-
-        async function loadLearningHistory(uid) {
-             // Redundant function kept for backward compat if called elsewhere, but loadStudentStats handles it now.
-             await loadStudentStats(uid);
-        }
-
-        function formatChapterName(slug) {
-            if (!slug) return "General Quiz";
-
-            // 3. Robust formatting logic
-            // science_gravitation_9_quiz -> gravitation
-            let parts = slug.replace("_quiz", "").split("_");
-
-            // Remove the subject prefix and grade suffix if format is standard (>= 3 parts)
-            // e.g. [science, gravitation, 9] -> [gravitation]
-            if (parts.length >= 3) {
-                parts = parts.slice(1, -1);
-            } else if (parts.length === 2 && !isNaN(parts[parts.length-1])) {
-                 // e.g. gravitation_9 -> gravitation
-                 parts.pop();
-            }
-
-            // Join and remove duplicate words (e.g., "Gravitation Gravitation")
-            let name = parts.join(" ");
-            return [...new Set(name.split(" "))].join(" ").replace(/\b\w/g, l => l.toUpperCase());
         }
 
         function getScoreColor(p) {
@@ -212,7 +300,7 @@
         <div class="animate-pulse font-bold text-slate-400">Verifying Student Access...</div>
     </div>
 
-    <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8 fade-in">
+    <div id="app" class="hidden max-w-7xl mx-auto p-4 md:p-8 fade-in">
         <header class="flex justify-between items-end mb-12">
             <div>
                 <h1 id="class-title" class="text-4xl font-black text-slate-900 tracking-tight mb-2">Class Hub</h1>
@@ -231,80 +319,109 @@
             </div>
         </header>
 
-        <!-- Stats Row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Tests</div>
-                <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
-            </div>
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Avg Mastery</div>
-                <div id="stat-avg" class="text-4xl font-black text-blue-600">--%</div>
-            </div>
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Most Practiced</div>
-                <div id="stat-subject" class="text-xl font-black text-slate-900 mt-2 truncate">--</div>
-            </div>
-        </div>
-
+        <!-- Main Grid -->
         <div class="grid lg:grid-cols-3 gap-8">
-            <!-- Subject Cards (Left Column) -->
-            <div class="lg:col-span-1 space-y-6">
-                 <h3 class="font-bold text-slate-900 text-lg">Quick Access</h3>
 
-                <!-- Science Card -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Science">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-atom text-6xl text-purple-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
-                            <i class="fas fa-flask text-xl"></i>
+            <!-- LEFT COLUMN: Quick Access -->
+            <div class="lg:col-span-1 space-y-8">
+                 <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <h3 class="font-bold text-slate-900 text-lg mb-4">Quick Access</h3>
+                    <p class="text-xs text-slate-400 mb-4">Visit the Study Library</p>
+
+                    <!-- Science Card -->
+                    <div class="subject-card group bg-white p-4 mb-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-purple-200 transition cursor-pointer flex items-center gap-4" data-subject="Science">
+                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
+                            <i class="fas fa-flask"></i>
                         </div>
                         <div>
-                            <h3 class="text-lg font-black text-slate-900">Science</h3>
-                            <p class="text-slate-500 text-xs font-medium">Physics, Chemistry, Bio</p>
+                            <h4 class="font-bold text-slate-800">Science</h4>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Physics, Chem, Bio</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Math Card -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Mathematics">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-calculator text-6xl text-blue-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
-                            <i class="fas fa-square-root-alt text-xl"></i>
+                    <!-- Math Card -->
+                    <div class="subject-card group bg-white p-4 mb-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 transition cursor-pointer flex items-center gap-4" data-subject="Mathematics">
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
+                            <i class="fas fa-calculator"></i>
                         </div>
                          <div>
-                            <h3 class="text-lg font-black text-slate-900">Mathematics</h3>
-                            <p class="text-slate-500 text-xs font-medium">Algebra, Geometry</p>
+                            <h4 class="font-bold text-slate-800">Mathematics</h4>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Algebra, Geometry</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Social Science Card -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Social Science">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-globe-americas text-6xl text-amber-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
-                            <i class="fas fa-landmark text-xl"></i>
+                    <!-- Social Science Card -->
+                    <div class="subject-card group bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition cursor-pointer flex items-center gap-4" data-subject="Social Science">
+                        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
+                            <i class="fas fa-globe-americas"></i>
                         </div>
                          <div>
-                            <h3 class="text-lg font-black text-slate-900">Social Science</h3>
-                            <p class="text-slate-500 text-xs font-medium">History, Geo, Civics</p>
+                            <h4 class="font-bold text-slate-800">Social Science</h4>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">History, Civics</p>
                         </div>
                     </div>
-                </div>
+                 </div>
+
+                 <!-- Actionable Advice -->
+                 <div class="bg-gradient-to-br from-indigo-50 to-white p-6 rounded-3xl border border-indigo-100 shadow-sm">
+                    <h3 class="font-bold text-indigo-900 text-lg mb-4">Mentor Insights</h3>
+                    <div id="advice-container">
+                        <div class="animate-pulse text-xs text-indigo-300">Analyzing performance...</div>
+                    </div>
+                 </div>
             </div>
 
-            <!-- Learning History (Right Column - Wider) -->
-            <div class="lg:col-span-2">
-                 <h3 class="font-bold text-slate-900 text-lg mb-6">Learning History</h3>
+            <!-- RIGHT COLUMN: Stats & History -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Top Stats Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div>
+                            <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Tests</div>
+                            <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
+                        </div>
+                         <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div>
+                            <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Avg Mastery</div>
+                            <div id="stat-avg" class="text-4xl font-black text-blue-600">--%</div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subject Mastery & Chapter Health -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-slate-900 text-sm uppercase tracking-widest mb-6">Subject Mastery</h3>
+                        <div id="subject-mastery-container">
+                             <div class="animate-pulse space-y-4">
+                                <div class="h-2 bg-slate-100 rounded w-full"></div>
+                                <div class="h-2 bg-slate-100 rounded w-3/4"></div>
+                                <div class="h-2 bg-slate-100 rounded w-5/6"></div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-slate-900 text-sm uppercase tracking-widest mb-6">Chapter Health</h3>
+                        <div id="chapter-health-grid" class="max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                             <div class="text-center text-slate-400 text-xs">Loading health stats...</div>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- History -->
                  <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-900 text-lg">Recent Activity</h3>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
                             <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100">
