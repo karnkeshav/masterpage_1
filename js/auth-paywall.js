@@ -13,31 +13,28 @@ import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gst
 
 const LOG = "[AUTH]";
 
-// Hardcoded Credential Map for "Sovereign Identity"
+/* ----------------------------------------------------
+   HARD CODED CREDENTIAL MAP (SCHOOL IDENTITY SYSTEM)
+---------------------------------------------------- */
 const CREDENTIALS = {
     "keshav": { pass: "keshav", role: "owner", tenantType: "owner", tenantId: "global" },
     "dps.ready4exam": { pass: "keshav", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "student": { pass: "student", role: "student", tenantType: "individual", tenantId: "individual_b2c" },
-    // Persona Entry Points (Simulated)
+
     "admin": { pass: "admin", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "principal": { pass: "principal", role: "principal", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "teacher": { pass: "teacher", role: "teacher", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student1": { pass: "student1", role: "student", tenantType: "individual", tenantId: "DPS_001", school_id: "DPS_001" },
-    "parent": { pass: "parent", role: "parent", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "parent1": { pass: "parent1", role: "parent", tenantType: "individual", tenantId: "DPS_001", school_id: "DPS_001" },
-    // Class Hub Personas
+
     "student6": { pass: "student6", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "student7": { pass: "student7", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "student8": { pass: "student8", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "student9": { pass: "student9", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student10": { pass: "student10", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student11": { pass: "student11", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student12": { pass: "student12", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
+    "student10": { pass: "student10", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
 };
 
 export async function authenticateWithCredentials(username, password) {
-    const { auth, db } = await getInitializedClients();
 
+    const { auth } = await getInitializedClients();
     if (!auth) throw new Error("Auth not initialized");
 
     // 0. Clean Session Restart (Critical for Hot-Swap)
@@ -50,9 +47,9 @@ export async function authenticateWithCredentials(username, password) {
         while(auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
     }
 
-    const userProfile = CREDENTIALS[username];
-    if (!userProfile) throw new Error("Invalid username");
-    if (userProfile.pass !== password) throw new Error("Invalid password");
+    const profile = CREDENTIALS[username];
+    if (!profile) throw new Error("Invalid ID or Passkey");
+    if (profile.pass !== password) throw new Error("Invalid ID or Passkey");
 
     // NEW: Synthetic Email for Persistent Identity
     const email = `${username}@ready4exam.internal`;
@@ -83,12 +80,13 @@ export async function authenticateWithCredentials(username, password) {
         sessionStorage.setItem('uid', stableUID);
         sessionStorage.setItem('username', username);
         window.userProfile = {
-            uid: stableUID,
+            uid: firebaseUID,
+            stableUID,
             displayName: username,
-            role: userProfile.role,
-            tenantType: userProfile.tenantType,
-            tenantId: userProfile.tenantId,
-            school_id: userProfile.school_id
+            role: profile.role,
+            tenantType: profile.tenantType,
+            tenantId: profile.tenantId,
+            school_id: profile.school_id
         };
 
         // 4. Data Migration Hook
@@ -108,7 +106,7 @@ export async function authenticateWithCredentials(username, password) {
         // 6. Blocking Wait for Firestore Consistency
         await waitForProfileReady(stableUID);
 
-        return { uid: stableUID, displayName: username, role: userProfile.role };
+        return { uid: firebaseUID, role: profile.role };
 
     } catch (e) {
         console.error(LOG, "Auth Binding Failed", e);
@@ -116,120 +114,71 @@ export async function authenticateWithCredentials(username, password) {
     }
 }
 
-export async function ensureUserInFirestore(user) {
-  if (!user?.uid) return null;
-  const { db } = await getInitializedClients();
-  const ref = doc(db, "users", user.uid);
+/* ----------------------------------------------------
+   SESSION LISTENER
+---------------------------------------------------- */
+export async function initializeAuthListener(onReady) {
+    const { auth } = await getInitializedClients();
+    if (!auth) return;
 
-  try {
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-        return null;
-    } else {
-        await updateDoc(ref, { lastLogin: serverTimestamp() });
-        return snap.data();
-    }
-  } catch (e) {
-    console.warn(LOG, "Sync failed", e);
-    return null;
-  }
+    await setPersistence(auth, browserSessionPersistence).catch(()=>{});
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) return onReady?.(null, null);
+
+        const { db } = await getInitializedClients();
+        const snap = await getDoc(doc(db, "users", user.uid));
+
+        if (!snap.exists()) return onReady?.(user, null);
+
+        const data = snap.data();
+
+        window.userProfile = { uid: user.uid, ...data };
+
+        onReady?.(user, data);
+    });
 }
 
+/* ----------------------------------------------------
+   ROLE ROUTING
+---------------------------------------------------- */
 export async function routeUser(user) {
-    if (!user) return;
+
     const { db } = await getInitializedClients();
     const snap = await getDoc(doc(db, "users", user.uid));
 
-    if (!snap.exists()) {
-        console.warn("User authenticated but no profile found.");
-        await signOut();
-        return;
-    }
+    if (!snap.exists()) return signOut();
 
     const data = snap.data();
 
-    // Deterministic Routing Table
-    if (data.tenantType === "owner") {
-        window.location.href = "owner-console.html";
-        return;
-    }
+    if (data.tenantType === "owner")
+        return window.location.href = "owner-console.html";
 
     if (data.tenantType === "school") {
-        if (data.role === "admin" && data.school_id) {
-             window.location.href = `school-landing.html?schoolId=${data.school_id}`;
-             return;
-        }
-        window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
-        return;
+        if (data.role === "admin")
+            return window.location.href = `school-landing.html?schoolId=${data.school_id}`;
+
+        return window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
     }
 
-    if (data.tenantType === "individual") {
-        window.location.href = "app/consoles/student.html";
-        return;
-    }
-
-    await signOut();
+    if (data.tenantType === "individual")
+        return window.location.href = "app/consoles/student.html";
 }
 
-/**
- * Updated to prevent automatic routing on page load.
- * Changed from browserLocalPersistence to browserSessionPersistence to force re-login.
- */
-export async function initializeAuthListener(onReady) {
-  const { auth } = await getInitializedClients();
-  if (!auth) return;
-  
-  // Set persistence to session so auth is not remembered across browser restarts
-  if (auth) {
-      await setPersistence(auth, browserSessionPersistence).catch(() => {});
-  }
-
-  onAuthStateChanged(auth, async (user) => {
-    let profile = null;
-    if (user) {
-      // If we have a special student login, ensure profile creation
-      // We can infer credentials if they are active, but ensureUserInFirestore handles the sync.
-      profile = await ensureUserInFirestore(user);
-
-      if (profile) {
-        // Inject Lens for Owner
-        if (profile?.role === "owner") {
-            import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
-        }
-        // IMPORTANT: routeUser(user) is NOT called here automatically.
-        // This ensures index.html stays on the login screen even if a session exists.
-      }
+/* ----------------------------------------------------
+   HELPERS
+---------------------------------------------------- */
+export async function requireAuth() {
+    const { auth } = await getInitializedClients();
+    if (!auth.currentUser) {
+        window.location.href = "index.html";
+        throw new Error("Redirect login");
     }
-    if (onReady) onReady(user, profile);
-  });
-}
-
-export async function requireAuth(skipUI = false, redirect = false) {
-  const { auth } = await getInitializedClients();
-
-  if (auth.currentUser) {
-    if(redirect) routeUser(auth.currentUser);
     return auth.currentUser;
-  }
-
-  if (skipUI) return null;
-
-  window.location.href = "index.html";
-  throw new Error("Redirecting to Login");
-}
-
-export async function checkRole(requiredRole) {
-    const { auth, db } = await getInitializedClients();
-    const user = auth.currentUser;
-    if (!user) return false;
-    const snap = await getDoc(doc(db, "users", user.uid));
-    if (!snap.exists()) return false;
-    const data = snap.data();
-    if (data.tenantType === "owner" || data.role === "owner") return true;
-    return data.role === requiredRole;
 }
 
 export const signOut = async () => {
-  const { auth } = await getInitializedClients();
-  return firebaseSignOut(auth);
+    const { auth } = await getInitializedClients();
+    sessionStorage.clear();
+    return firebaseSignOut(auth);
 };
