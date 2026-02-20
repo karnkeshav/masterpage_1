@@ -1,6 +1,8 @@
 // js/api.js
 import { getInitializedClients, getAuthUser, logAnalyticsEvent, initializeServices } from "./config.js";
-import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy, writeBatch, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const LOG = "[API]";
 
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };
@@ -105,6 +107,26 @@ export async function ensureUserProfile(uid, username, additionalData = {}) {
         console.error("Profile Ensure Failed", e);
     }
 }
+
+export async function ensureUserInFirestore(user) {
+  if (!user?.uid) return null;
+  const { db } = await getInitializedClients();
+  const ref = doc(db, "users", user.uid);
+
+  try {
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+        return null;
+    } else {
+        await updateDoc(ref, { lastLogin: serverTimestamp() });
+        return snap.data();
+    }
+  } catch (e) {
+    console.warn(LOG, "Sync failed", e);
+    return null;
+  }
+}
+
 
 export async function waitForProfileReady(uid) {
     const { db } = await getInitializedClients();
