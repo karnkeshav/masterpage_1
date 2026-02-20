@@ -71,20 +71,28 @@
                 const subjectCounts = {};
                 const historyHtml = [];
 
-                // Subject Normalizer Mapping
-                const normalizeSubject = (sub) => {
-                    if (!sub) return "General";
-                    const s = sub.toLowerCase();
-                    if (['physics', 'chemistry', 'biology', 'science'].some(x => s.includes(x))) return "Science";
-                    if (['mathematics', 'math', 'algebra', 'geometry'].some(x => s.includes(x))) return "Mathematics";
-                    if (['social science', 'history', 'civics', 'geography', 'social'].some(x => s.includes(x))) return "Social Science";
-                    return sub; // Fallback
+                // 1. Subject Normalizer Mapping
+                const normalizeSubject = (data) => {
+                    // Check explicit subject
+                    const sub = (data.subject || "").toLowerCase();
+                    if (sub.includes("math") || sub.includes("algebra") || sub.includes("geometry")) return "Mathematics";
+                    if (sub.includes("science") || sub.includes("physics") || sub.includes("chem") || sub.includes("bio")) return "Science";
+                    if (sub.includes("social")) return "Social Science";
+
+                    // Fallback: Check topicSlug
+                    const slug = (data.topicSlug || data.topic || "").toLowerCase();
+                    if (slug.includes("triangle") || slug.includes("polynomial") || slug.includes("probability") || slug.includes("math")) return "Mathematics";
+                    if (slug.includes("motion") || slug.includes("gravitation") || slug.includes("force") || slug.includes("atom") || slug.includes("science")) return "Science";
+                    if (slug.includes("history") || slug.includes("civics") || slug.includes("social")) return "Social Science";
+
+                    return sub || "General";
                 };
 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
-                    const rawSubject = data.subject || "General";
-                    const cleanSubject = normalizeSubject(rawSubject);
+
+                    // 2. Use normalized subject
+                    const cleanSubject = normalizeSubject(data);
 
                     // Calculate Percentage
                     const scoreVal = data.score || 0;
@@ -164,33 +172,22 @@
         function formatChapterName(slug) {
             if (!slug) return "General Quiz";
 
-            // Clean specific slug format: subject_topic_grade_quiz
-            // Example: science_gravitation_9_quiz -> Gravitation
-            if (slug.includes("_quiz")) {
-                let parts = slug.replace("_quiz", "").split("_");
+            // 3. Robust formatting logic
+            // science_gravitation_9_quiz -> gravitation
+            let parts = slug.replace("_quiz", "").split("_");
 
-                // If standard format (e.g. science_gravitation_9), slice middle
-                // Remove first part (subject) and last part (grade) if length >= 3
-                if (parts.length >= 3) {
-                     // Check if last part is numeric (grade)
-                     if (!isNaN(parts[parts.length-1])) {
-                         parts.pop(); // Remove grade
-                     }
-                     parts.shift(); // Remove subject
-                } else if (parts.length === 2) {
-                    // e.g. gravitation_9 -> remove grade
-                    if (!isNaN(parts[parts.length-1])) {
-                         parts.pop();
-                    }
-                    // If format was subject_topic (science_gravitation) -> remove subject?
-                    // Hard to guess, but usually removing first part is safer for readability if subject is duplicated
-                }
-
-                return parts.join(" ").replace(/\b\w/g, l => l.toUpperCase());
+            // Remove the subject prefix and grade suffix if format is standard (>= 3 parts)
+            // e.g. [science, gravitation, 9] -> [gravitation]
+            if (parts.length >= 3) {
+                parts = parts.slice(1, -1);
+            } else if (parts.length === 2 && !isNaN(parts[parts.length-1])) {
+                 // e.g. gravitation_9 -> gravitation
+                 parts.pop();
             }
 
-            // Fallback: replace underscores/hyphens with spaces
-            return slug.replace(/[_-]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+            // Join and remove duplicate words (e.g., "Gravitation Gravitation")
+            let name = parts.join(" ");
+            return [...new Set(name.split(" "))].join(" ").replace(/\b\w/g, l => l.toUpperCase());
         }
 
         function getScoreColor(p) {
