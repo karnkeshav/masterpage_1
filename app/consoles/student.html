@@ -18,6 +18,15 @@
         import { normalizeSubject, formatChapterName } from "../../js/utils.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        const escapeHtml = (unsafe) => {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        };
+
         bindConsoleLogout();
         guardConsole("student");
 
@@ -89,7 +98,7 @@
                     // Calculate Percentage
                     const scoreVal = data.score || 0;
                     const totalVal = data.totalQuestions || data.total || 20;
-                    const percentage = Math.round((scoreVal / totalVal) * 100);
+                    const percentage = totalVal > 0 ? Math.round((scoreVal / totalVal) * 100) : (data.score_percent || 0);
 
                     totalScoreSum += percentage;
 
@@ -118,12 +127,11 @@
 
                     // History Row
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
-
                     historyHtml.push(`
                         <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                            <td class="p-4 font-bold text-slate-700">${cleanSubject}</td>
-                            <td class="p-4 text-sm text-slate-600">${cleanChapter}</td>
-                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty || 'Mixed'}</span></td>
+                            <td class="p-4 font-bold text-slate-700">${escapeHtml(cleanSubject)}</td>
+                            <td class="p-4 text-sm text-slate-600">${escapeHtml(chapterName)}</td>
+                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${escapeHtml(data.difficulty || 'Mixed')}</span></td>
                             <td class="p-4 font-mono font-bold ${getScoreColor(percentage)}">${percentage}%</td>
                             <td class="p-4 text-right text-xs text-slate-400">${dateStr}</td>
                         </tr>
