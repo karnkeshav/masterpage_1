@@ -15,7 +15,7 @@
     <script type="module">
         import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
-        import { normalizeSubject, formatChapterName } from "../../js/utils.js";
+        import { normalizeSubject, formatChapterName, cleanKatexMarkers } from "../../js/utils.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         bindConsoleLogout();
@@ -63,30 +63,23 @@
 
                 if (snapshot.empty) {
                      document.getElementById("stat-avg").textContent = "0%";
-                     document.getElementById("subject-mastery-container").innerHTML = `<div class="text-slate-400 text-sm">No data yet.</div>`;
+                     document.getElementById("subject-mastery-container").innerHTML = `<div class="text-slate-400 text-sm">Welcome! Start your first quiz to see your progress.</div>`;
                      document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No records found.</td></tr>`;
-                     document.getElementById("chapter-health-grid").innerHTML = `<div class="text-center text-slate-400 text-sm py-4">Complete quizzes to see health stats.</div>`;
+                     document.getElementById("chapter-health-grid").innerHTML = `<div class="text-center text-slate-400 text-sm py-4">Welcome! Start your first quiz to see your progress.</div>`;
                      document.getElementById("advice-container").innerHTML = `<div class="text-xs text-slate-400">Take a quiz to get personalized advice.</div>`;
                      return;
                 }
 
                 let totalScoreSum = 0;
-                let totalPossibleSum = 0; // For overall average calculation if needed
-                // But usually "Avg Mastery" is average of percentages. The prompt says "Calculate the weighted average of score_percent".
-                // I will use simple average of percentages for the MAIN stat (as per existing logic),
-                // but use Weighted Average for Subject Mastery bars as requested.
-                // Wait, if I change Subject Mastery to weighted, maybe Main Stat should be too?
-                // "Avg Mastery" usually means average of all attempts percentages.
-                // I'll stick to Sum(Percentage) / Count for the big number to be consistent with "Avg Score".
 
                 const historyHtml = [];
 
                 // Aggregation Data
-                // Structure: { totalScore: 0, totalMax: 0 } for weighted average
+                // Structure: { totalPercentage: 0, count: 0 } for average percentage
                 const subjectStats = {
-                    "Science": { totalScore: 0, totalMax: 0 },
-                    "Mathematics": { totalScore: 0, totalMax: 0 },
-                    "Social Science": { totalScore: 0, totalMax: 0 }
+                    "Science": { totalPercentage: 0, count: 0 },
+                    "Mathematics": { totalPercentage: 0, count: 0 },
+                    "Social Science": { totalPercentage: 0, count: 0 }
                 };
 
                 const chapterStats = {}; // { "Chapter Name": { maxScore: 0, attempts: [] } }
@@ -104,15 +97,15 @@
 
                     totalScoreSum += percentage;
 
-                    // Subject Stats (Weighted Accumulation)
+                    // Subject Stats (Simple Average Accumulation)
                     if (subjectStats[cleanSubject]) {
-                        subjectStats[cleanSubject].totalScore += scoreVal;
-                        subjectStats[cleanSubject].totalMax += totalVal;
+                        subjectStats[cleanSubject].totalPercentage += percentage;
+                        subjectStats[cleanSubject].count++;
                     } else {
                         // Handle "General" or others if needed
-                         if (!subjectStats["General"]) subjectStats["General"] = { totalScore: 0, totalMax: 0 };
-                         subjectStats["General"].totalScore += scoreVal;
-                         subjectStats["General"].totalMax += totalVal;
+                         if (!subjectStats["General"]) subjectStats["General"] = { totalPercentage: 0, count: 0 };
+                         subjectStats["General"].totalPercentage += percentage;
+                         subjectStats["General"].count++;
                     }
 
                     // Chapter Stats
@@ -172,16 +165,16 @@
             const subjects = ["Mathematics", "Science", "Social Science"];
             subjects.forEach(sub => {
                 const s = stats[sub];
-                // Weighted Average Calculation: (Total Score / Total Max) * 100
+                // Average Calculation: Total Percentage / Count
                 let avg = 0;
-                if (s && s.totalMax > 0) {
-                    avg = Math.round((s.totalScore / s.totalMax) * 100);
+                if (s && s.count > 0) {
+                    avg = Math.round(s.totalPercentage / s.count);
                 }
 
                 const color = sub === "Mathematics" ? "bg-blue-500" : (sub === "Science" ? "bg-purple-500" : "bg-amber-500");
                 const width = avg > 0 ? avg : 5; // Min width for visibility if 0 but exists? No, if 0, width 0.
                 // Requirement: "If a subject has no data, default to 0% and a grayed-out state."
-                const hasData = s && s.totalMax > 0;
+                const hasData = s && s.count > 0;
                 const barColor = hasData ? color : "bg-slate-300";
                 const displayWidth = hasData ? (avg > 0 ? avg : 0) : 0;
                 const opacity = hasData ? "" : "opacity-50";
@@ -270,13 +263,13 @@
             // 1. Basic Subject Advice (<50% Average)
             subjects.forEach(sub => {
                 const s = subjectStats[sub];
-                // Weighted average logic again
+                // Average logic again
                 let avg = 0;
-                if (s && s.totalMax > 0) {
-                    avg = Math.round((s.totalScore / s.totalMax) * 100);
+                if (s && s.count > 0) {
+                    avg = Math.round(s.totalPercentage / s.count);
                 }
 
-                if (s && s.totalMax > 0 && avg < 50) {
+                if (s && s.count > 0 && avg < 50) {
                      // Icon mapping
                      let icon = "fa-lightbulb text-yellow-500";
                      if (sub === "Mathematics") icon = "fa-calculator text-blue-500";
