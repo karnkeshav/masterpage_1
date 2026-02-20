@@ -24,93 +24,350 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Katex + Auto-render -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/contrib/auto-render.min.js"></script>
+
     <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../js/firebase-master-config.js"></script>
     <script src="../js/config.js" type="module"></script>
 
     <script type="module">
-        import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
+        import { initializeAuthListener } from "../js/auth-paywall.js";
         import { getInitializedClients } from "../js/api.js";
         import { bindConsoleLogout } from "../js/guard.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { cleanKatexMarkers } from "../js/utils.js";
+
+        // Inject shared styles (glassmorphism)
+        injectStyles();
+
+        // Custom Styles for Nested Accordions
+        const style = document.createElement('style');
+        style.textContent = `
+            .accordion-content { transition: max-height 0.3s ease-out; overflow: hidden; max-height: 0; }
+            .accordion-open { max-height: 2000px; } /* Large enough */
+            .rotate-180 { transform: rotate(180deg); }
+        `;
+        document.head.appendChild(style);
 
         // Bind Logout
         bindConsoleLogout("logout-nav-btn", "../index.html");
 
         async function loadMistakes(user) {
             const container = document.getElementById("mistakes-container");
-            container.innerHTML = `<div class="text-center p-8 animate-pulse text-slate-400">Loading your learning gaps...</div>`;
+            container.innerHTML = `<div class="text-center p-8 animate-pulse text-slate-400">Loading your learning journey...</div>`;
 
             try {
                 const { db } = await getInitializedClients();
-                // Query mistakes
-                const q = query(
+
+                // 1. Fetch Data in Parallel
+                const mistakesQ = query(
                     collection(db, "mistake_notebook"),
                     where("user_id", "==", user.uid),
                     orderBy("timestamp", "desc")
                 );
 
-                const snapshot = await getDocs(q);
+                const scoresQ = query(
+                    collection(db, "quiz_scores"),
+                    where("user_id", "==", user.uid),
+                    orderBy("timestamp", "desc")
+                );
 
-                if (snapshot.empty) {
-                    container.innerHTML = `
-                        <div class="text-center p-12 bg-white rounded-3xl border border-dashed border-slate-300">
-                            <div class="text-4xl mb-4">🎉</div>
-                            <h3 class="text-xl font-bold text-slate-700">No Mistakes Recorded!</h3>
-                            <p class="text-slate-500">Keep practicing to find areas for improvement.</p>
-                        </div>
-                    `;
+                const [mistakesSnap, scoresSnap] = await Promise.all([
+                    getDocs(mistakesQ),
+                    getDocs(scoresQ)
+                ]);
+
+                if (mistakesSnap.empty) {
+                    renderEmptyState(container);
                     return;
                 }
 
-                let html = "";
-                snapshot.forEach(doc => {
+                // 2. Process Quiz History for Context
+                // Map: ChapterName -> Array of { score, date } (sorted Newest -> Oldest)
+                const chapterHistory = {};
+                scoresSnap.forEach(doc => {
                     const data = doc.data();
-                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
-
-                    data.mistakes.forEach(m => {
-                        html += `
-                            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6 hover:shadow-md transition">
-                                <div class="flex justify-between items-start mb-4">
-                                    <span class="px-3 py-1 bg-red-50 text-red-600 text-xs font-bold uppercase rounded-full tracking-wide">Mistake</span>
-                                    <span class="text-xs text-slate-400 font-mono">${dateStr}</span>
-                                </div>
-
-                                <h4 class="font-bold text-slate-900 text-lg mb-4">${cleanKatexMarkers(m.question)}</h4>
-
-                                <div class="grid md:grid-cols-2 gap-4">
-                                    <div class="p-4 bg-red-50 rounded-xl border border-red-100">
-                                        <div class="text-xs font-bold text-red-400 uppercase tracking-wide mb-1">You Selected</div>
-                                        <div class="font-bold text-red-800">${m.selected}</div>
-                                    </div>
-                                    <div class="p-4 bg-green-50 rounded-xl border border-green-100">
-                                        <div class="text-xs font-bold text-green-600 uppercase tracking-wide mb-1">Correct Answer</div>
-                                        <div class="font-bold text-green-800">${m.correct}</div>
-                                    </div>
-                                </div>
-
-                                ${m.explanation ? `
-                                    <div class="mt-4 p-4 bg-slate-50 rounded-xl border-l-4 border-slate-300 text-sm text-slate-600 italic">
-                                        <span class="font-bold not-italic text-slate-700">Explanation:</span> ${cleanKatexMarkers(m.explanation)}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `;
+                    const chName = formatChapterName(data.topicSlug || data.topic || data.chapter || "");
+                    if (!chapterHistory[chName]) chapterHistory[chName] = [];
+                    chapterHistory[chName].push({
+                        score: data.percentage || data.score_percent || 0,
+                        date: data.timestamp ? data.timestamp.toDate() : new Date()
                     });
                 });
 
-                container.innerHTML = html;
+                // 3. Group Mistakes: Subject -> Chapter -> Question Text (to aggregate history)
+                const tree = {};
+
+                mistakesSnap.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.timestamp ? data.timestamp.toDate() : new Date();
+
+                    const subject = normalizeSubject({ topic: data.topic, subject: data.subject });
+                    const chapter = formatChapterName(data.topic || data.chapter_slug);
+
+                    if (!tree[subject]) tree[subject] = {};
+                    if (!tree[subject][chapter]) tree[subject][chapter] = {};
+
+                    (data.mistakes || []).forEach(m => {
+                        const qKey = m.question; // Group by question text
+                        if (!tree[subject][chapter][qKey]) {
+                            tree[subject][chapter][qKey] = {
+                                id: m.id,
+                                question: m.question,
+                                explanation: m.explanation,
+                                correct: m.correct,
+                                history: []
+                            };
+                        }
+                        // Add occurrence
+                        tree[subject][chapter][qKey].history.push({
+                            date: date,
+                            selected: m.selected
+                        });
+                    });
+                });
+
+                // 4. Render Hierarchy
+                renderTree(container, tree, chapterHistory);
+
+                // 5. Render Math (Auto-render)
+                renderMath(container);
 
             } catch (e) {
                 console.error("Mistake Load Error:", e);
-                if (e.code === 'permission-denied') {
-                     console.error("🛑 Missing Permissions: Update Firebase Security Rules to allow read/write for 'mistake_notebook'.");
-                }
-                container.innerHTML = `<div class="text-center text-red-500">Failed to load mistakes. Please try again.</div>`;
+                container.innerHTML = `<div class="text-center text-red-500">Failed to load mistakes. Please refresh.</div>`;
             }
         }
+
+        function renderEmptyState(container) {
+             container.innerHTML = `
+                <div class="glass-panel text-center p-12 rounded-3xl">
+                    <div class="text-6xl mb-4">🎉</div>
+                    <h3 class="text-2xl font-bold text-slate-800">Clean Slate!</h3>
+                    <p class="text-slate-500 mt-2">You have no recorded mistakes. Keep practicing!</p>
+                </div>
+            `;
+        }
+
+        function renderTree(container, tree, chapterHistory) {
+            let html = "";
+            const subjects = Object.keys(tree).sort();
+
+            subjects.forEach((subject, sIdx) => {
+                const chapters = tree[subject];
+                const subjectId = `subj-${sIdx}`;
+
+                // Level 1: Subject Accordion
+                html += `
+                <div class="mb-6">
+                    <button onclick="toggleAccordion('${subjectId}')" class="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition mb-2">
+                        <div class="flex items-center gap-3">
+                            <span class="w-1.5 h-8 bg-blue-600 rounded-full"></span>
+                            <h2 class="text-xl font-black text-slate-800">${subject}</h2>
+                        </div>
+                        <i id="icon-${subjectId}" class="fas fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </button>
+
+                    <div id="${subjectId}" class="accordion-content pl-2 md:pl-4 border-l-2 border-slate-100 ml-4">
+                        <div class="py-2 space-y-4">
+                `;
+
+                Object.keys(chapters).sort().forEach((chapter, cIdx) => {
+                    const questionsMap = chapters[chapter];
+                    const chapterId = `chap-${sIdx}-${cIdx}`;
+
+                    // Determine Status Logic for this Question based on Chapter History
+                    const chHistory = chapterHistory[chapter] || [];
+
+                    // Level 2: Chapter Accordion
+                    html += `
+                        <div class="glass-panel rounded-xl overflow-hidden mb-2">
+                            <button onclick="toggleAccordion('${chapterId}')" class="w-full flex items-center justify-between p-4 text-left hover:bg-white/50 transition">
+                                <h3 class="font-bold text-slate-700 text-lg">${chapter}</h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-full">${Object.keys(questionsMap).length} Issues</span>
+                                    <i id="icon-${chapterId}" class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-300"></i>
+                                </div>
+                            </button>
+
+                            <div id="${chapterId}" class="accordion-content bg-slate-50/50">
+                                <div class="p-4 space-y-4">
+                    `;
+
+                    // Level 3: Questions
+                    Object.values(questionsMap).forEach((qData, qIdx) => {
+                        const uniqueId = `q-${sIdx}-${cIdx}-${qIdx}`;
+
+                        // Sort history (Oldest -> Newest for timeline)
+                        qData.history.sort((a, b) => a.date - b.date);
+                        const latestMistakeDate = qData.history[qData.history.length - 1].date;
+
+                        // Check attempts AFTER the latest mistake
+                        const subsequentAttempts = chHistory.filter(h => h.date > latestMistakeDate);
+
+                        // Status Logic
+                        let status = "Unresolved";
+                        let badgeClass = "bg-red-100 text-red-600 border-red-200";
+                        let nudge = "";
+
+                        // Strict "Mastered": 2 consecutive high scores AFTER last mistake
+                        // "Learning": 1 high score AFTER last mistake
+                        const isHigh = (score) => score >= 85;
+
+                        if (subsequentAttempts.length >= 2 && isHigh(subsequentAttempts[0].score) && isHigh(subsequentAttempts[1].score)) {
+                            status = "Mastered";
+                            badgeClass = "bg-emerald-100 text-emerald-600 border-emerald-200";
+                        } else if (subsequentAttempts.some(a => isHigh(a.score))) {
+                            status = "Learning";
+                            badgeClass = "bg-blue-100 text-blue-600 border-blue-200";
+                            nudge = "Earlier you were not aware of this, but now you are getting it right! Excellent progress.";
+                        }
+
+                        // Victory Timeline HTML
+                        const timeline = qData.history.map(h => `
+                            <div class="flex flex-col items-center min-w-[60px]">
+                                <div class="text-[10px] text-slate-400 font-mono mb-1">${h.date.toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>
+                                <div class="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-[10px] font-bold shadow-sm">❌</div>
+                            </div>
+                            <div class="w-8 h-0.5 bg-slate-200 mt-5"></div>
+                        `).join('');
+
+                        let finalNode = `
+                            <div class="flex flex-col items-center min-w-[60px] opacity-50">
+                                <div class="text-[10px] text-slate-400 font-mono mb-1">Next</div>
+                                <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[10px] font-bold border border-slate-200">?</div>
+                            </div>
+                        `;
+
+                        if (status === "Mastered") {
+                            finalNode = `
+                                <div class="flex flex-col items-center min-w-[60px]">
+                                    <div class="text-[10px] text-emerald-600 font-mono font-bold mb-1">Today</div>
+                                    <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold shadow-sm border border-emerald-200">✅</div>
+                                </div>
+                            `;
+                        } else if (status === "Learning") {
+                             finalNode = `
+                                <div class="flex flex-col items-center min-w-[60px]">
+                                    <div class="text-[10px] text-blue-600 font-mono font-bold mb-1">Recent</div>
+                                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shadow-sm border border-blue-200">Wait...</div>
+                                </div>
+                            `;
+                        }
+
+
+                        html += `
+                            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group">
+                                <button onclick="toggleAccordion('${uniqueId}')" class="w-full text-left p-4 hover:bg-slate-50 transition relative">
+                                    <div class="absolute top-4 right-4">
+                                        <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded border ${badgeClass}">${status}</span>
+                                    </div>
+                                    <div class="pr-24">
+                                        <h4 class="font-bold text-slate-800 text-sm leading-relaxed truncate">${qData.question}</h4>
+                                    </div>
+                                </button>
+
+                                <div id="${uniqueId}" class="accordion-content bg-slate-50 border-t border-slate-100">
+                                    <div class="p-6">
+                                        <!-- Nudge -->
+                                        ${nudge ? `
+                                            <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-white border border-blue-100 rounded-xl flex items-start gap-3 shadow-sm">
+                                                <div class="p-2 bg-blue-100 rounded-lg text-blue-600"><i class="fas fa-magic"></i></div>
+                                                <div>
+                                                    <h5 class="font-bold text-blue-900 text-xs uppercase tracking-wide mb-1">Cognitive Growth</h5>
+                                                    <p class="text-sm text-blue-800 italic">"${nudge}"</p>
+                                                </div>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- Timeline -->
+                                        <div class="mb-8 overflow-x-auto pb-2">
+                                            <h5 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Progress History</h5>
+                                            <div class="flex items-start">
+                                                ${timeline}
+                                                ${finalNode}
+                                            </div>
+                                        </div>
+
+                                        <!-- Full Question Details -->
+                                        <div class="space-y-4">
+                                            <div>
+                                                <div class="text-xs font-bold text-slate-400 uppercase mb-2">Question</div>
+                                                <div class="text-slate-900 font-medium text-base">${qData.question}</div>
+                                            </div>
+
+                                            <div class="grid md:grid-cols-2 gap-4">
+                                                <div class="p-3 bg-red-50 border border-red-100 rounded-lg">
+                                                    <div class="text-[10px] font-black text-red-400 uppercase mb-1">Your Choice (Latest)</div>
+                                                    <div class="font-mono font-bold text-red-800">${qData.history[qData.history.length-1].selected}</div>
+                                                </div>
+                                                <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                                                    <div class="text-[10px] font-black text-emerald-600 uppercase mb-1">Correct Answer</div>
+                                                    <div class="font-mono font-bold text-emerald-800">${qData.correct}</div>
+                                                </div>
+                                            </div>
+
+                                            ${qData.explanation ? `
+                                                <div class="bg-amber-50 p-4 rounded-xl border border-amber-100 text-sm text-amber-900">
+                                                    <span class="font-bold block mb-1 text-amber-600 uppercase text-[10px] tracking-widest">Explanation</span>
+                                                    <span>${qData.explanation}</span>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderMath(container) {
+            if (window.renderMathInElement) {
+                renderMathInElement(container, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+
+        window.toggleAccordion = (id) => {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(`icon-${id}`);
+
+            // Toggle
+            if (el.classList.contains('accordion-open')) {
+                el.classList.remove('accordion-open');
+                if(icon) icon.classList.remove('rotate-180');
+            } else {
+                el.classList.add('accordion-open');
+                if(icon) icon.classList.add('rotate-180');
+            }
+        };
 
         // Init
         initializeAuthListener(async (user) => {
@@ -160,7 +417,7 @@
             </a>
         </div>
 
-        <div id="mistakes-container" class="fade-in">
+        <div id="mistakes-container" class="fade-in space-y-4">
             <!-- Dynamic Content -->
         </div>
     </div>

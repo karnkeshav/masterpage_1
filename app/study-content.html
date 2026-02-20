@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Content — Ready4Exam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme:{
+        extend:{
+          fontFamily:{sans:['Inter','sans-serif']},
+          colors:{'cbse-blue':'#1a3e6a','accent-gold':'#ffb703'}
+        }
+      }
+    }
+    </script>
+    <!-- Katex for Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/contrib/auto-render.min.js"></script>
+
+    <script src="../js/firebase-master-config.js"></script>
+    <script src="../js/config.js" type="module"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col items-center py-10 px-4">
+
+    <div class="max-w-4xl w-full">
+        <header class="mb-8 flex items-center justify-between">
+            <div>
+                 <a href="#" onclick="history.back()" class="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 font-bold text-sm mb-2 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back to Library
+                </a>
+                <h1 id="chapter-title" class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Loading...</h1>
+                <p id="subject-subtitle" class="text-slate-500 font-medium uppercase tracking-wide text-sm">--</p>
+            </div>
+            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm text-2xl border border-slate-100" id="header-icon">
+                📚
+            </div>
+        </header>
+
+        <div id="content-area" class="space-y-8">
+            <!-- Dynamic Content -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 animate-pulse">
+                <div class="h-4 bg-slate-100 rounded w-3/4 mb-4"></div>
+                <div class="h-4 bg-slate-100 rounded w-1/2"></div>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeAuthListener } from "../js/auth-paywall.js";
+    import { getInitializedClients } from "../js/api.js";
+    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { cleanKatexMarkers } from "../js/utils.js";
+
+    // Guard
+    console.log("Initializing Auth Listener for Content...");
+    initializeAuthListener(async (user) => {
+        if (!user) { window.location.href = "../index.html"; return; }
+        loadContent();
+    });
+
+    async function loadContent() {
+        const params = new URLSearchParams(location.search);
+        const chapter = params.get("chapter") || "General";
+        const subject = params.get("subject") || "General";
+        const slug = params.get("slug"); // Optional precise slug
+
+        document.getElementById("chapter-title").textContent = chapter;
+        document.getElementById("subject-subtitle").textContent = subject;
+
+        const container = document.getElementById("content-area");
+
+        // Normalize Subject Key
+        let type = "General";
+        if (subject.toLowerCase().includes("math")) type = "Mathematics";
+        if (subject.toLowerCase().includes("science") || subject.toLowerCase().includes("physics")) type = "Science";
+        if (subject.toLowerCase().includes("social") || subject.toLowerCase().includes("history")) type = "Social Science";
+
+        // Update Icon
+        const iconMap = {
+            "Mathematics": "📐",
+            "Science": "🧬",
+            "Social Science": "🏛️",
+            "General": "📚"
+        };
+        document.getElementById("header-icon").textContent = iconMap[type];
+
+        // 1. Try Fetching from Firestore
+        try {
+            const { db } = await getInitializedClients();
+            let summaryData = null;
+
+            // Strategy 1: Search by Slug (Precise)
+            if (slug) {
+                const qSlug = query(collection(db, "ncert_summaries"), where("slug", "==", slug));
+                const snapSlug = await getDocs(qSlug);
+                if (!snapSlug.empty) summaryData = snapSlug.docs[0].data();
+            }
+
+            // Strategy 2: Search by Topic/Chapter Name (Fallback)
+            if (!summaryData) {
+                // Try exact match on chapter/topic field
+                const qTopic = query(collection(db, "ncert_summaries"), where("chapter", "==", chapter));
+                const snapTopic = await getDocs(qTopic);
+                if (!snapTopic.empty) summaryData = snapTopic.docs[0].data();
+            }
+
+            if (summaryData) {
+                console.log("Loaded Summary from Firestore:", summaryData);
+                renderDynamicContent(container, summaryData, type, chapter);
+            } else {
+                console.warn("Summary not found, using template.");
+                renderTemplate(container, type, chapter);
+            }
+
+        } catch (e) {
+            console.error("Content Load Error:", e);
+            renderTemplate(container, type, chapter);
+        }
+
+        // Render Katex
+        renderMath(container);
+    }
+
+    function renderDynamicContent(container, data, type, chapterName) {
+        let html = "";
+
+        // Common Header if description exists
+        if (data.description) {
+            html += `
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mb-6">
+                    <h3 class="font-bold text-slate-900 mb-2">Overview</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">${cleanKatexMarkers(data.description)}</p>
+                </div>
+            `;
+        }
+
+        // Render based on available fields (Flexible)
+
+        // 1. Formulas (Math/Science)
+        if (data.formulas && data.formulas.length > 0) {
+            html += `
+                <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200 mb-6">
+                    <div class="bg-blue-600 p-6 text-white">
+                        <h2 class="font-black text-xl uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-calculator"></i> Formula Vault
+                        </h2>
+                    </div>
+                    <div class="p-8 grid md:grid-cols-2 gap-6">
+                        ${data.formulas.map(f => `
+                            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                                <div class="text-xs font-bold text-blue-500 uppercase tracking-wide mb-2">${f.name || 'Formula'}</div>
+                                <div class="text-xl font-mono text-slate-800 katex-render">${cleanKatexMarkers(f.equation || f.text)}</div>
+                                ${f.note ? `<p class="text-xs text-slate-500 mt-2">${f.note}</p>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 2. Theorems / Laws
+        if (data.theorems && data.theorems.length > 0) {
+             html += `
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 mb-6">
+                    <h3 class="font-bold text-slate-900 mb-4">Theorems & Laws</h3>
+                    <div class="space-y-4">
+                        ${data.theorems.map(t => `
+                             <div class="p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r-xl">
+                                <p class="text-slate-700 text-sm leading-relaxed">
+                                    <strong>${t.name}:</strong> ${cleanKatexMarkers(t.statement || t.text)}
+                                </p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+             `;
+        }
+
+        // 3. Definitions (Science/Social)
+        if (data.definitions && data.definitions.length > 0) {
+            html += `
+                <div class="space-y-6 mb-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        ${data.definitions.map(d => `
+                             <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                                 <h3 class="font-black text-slate-800 text-sm uppercase tracking-wide mb-2">${d.term}</h3>
+                                 <p class="text-sm text-slate-600 leading-relaxed">${cleanKatexMarkers(d.definition || d.text)}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. SI Units (Science)
+        if (data.si_units && data.si_units.length > 0) {
+            html += `
+                 <div class="bg-orange-50 p-6 rounded-3xl border border-orange-100 mb-6">
+                     <h3 class="font-black text-orange-900 text-lg mb-4">SI Units</h3>
+                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        ${data.si_units.map(u => `
+                            <div class="bg-white/60 p-3 rounded-xl text-center border border-orange-200/50">
+                                <div class="text-xs text-slate-500 uppercase font-bold">${u.quantity}</div>
+                                <div class="font-black text-slate-800">${cleanKatexMarkers(u.unit)}</div>
+                            </div>
+                        `).join('')}
+                     </div>
+                </div>
+            `;
+        }
+
+        // 5. Timeline (Social Science)
+        if (data.timeline && data.timeline.length > 0) {
+            html += `
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                    <div class="bg-amber-600 p-8 text-white">
+                         <h2 class="font-black text-2xl">Timeline</h2>
+                         <p class="text-amber-100">Key Events</p>
+                    </div>
+                    <div class="p-8 relative">
+                        <div class="absolute left-12 top-8 bottom-8 w-0.5 bg-slate-200"></div>
+                        <div class="space-y-8 pl-12 relative">
+                             ${data.timeline.map(t => `
+                                <div class="relative">
+                                    <div class="absolute -left-[3.25rem] w-6 h-6 bg-amber-500 rounded-full border-4 border-white shadow-sm"></div>
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-amber-200 transition">
+                                        <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wide">${t.date}</span>
+                                        <h4 class="font-bold text-slate-900 mt-2">${t.event}</h4>
+                                        <p class="text-sm text-slate-600 mt-1">${cleanKatexMarkers(t.description || "")}</p>
+                                    </div>
+                                </div>
+                             `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (html === "") {
+            html = `<div class="text-center p-8 text-slate-400">No specific summary data available for this chapter.</div>`;
+        }
+
+        safeRender(container, html, chapterName);
+    }
+
+    function renderTemplate(container, type, chapter) {
+        if (type === "Mathematics") renderMathTemplate(container, chapter);
+        else if (type === "Social Science") renderSocialTemplate(container, chapter);
+        else if (type === "Science") renderScienceTemplate(container, chapter);
+        else renderGeneralTemplate(container, chapter);
+    }
+
+    function safeRender(container, html, chapter) {
+        container.innerHTML = html;
+        container.querySelectorAll('.chapter-name-placeholder').forEach(el => {
+            el.textContent = chapter;
+        });
+    }
+
+    // --- FALLBACK TEMPLATES (Kept for Robustness) ---
+    function renderMathTemplate(container, chapter) {
+        const html = `
+            <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200">
+                <div class="bg-blue-600 p-6 text-white">
+                    <h2 class="font-black text-xl uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-calculator"></i> Formula Vault
+                    </h2>
+                    <p class="opacity-80 text-sm">Key equations for <span class="chapter-name-placeholder font-bold"></span></p>
+                </div>
+                <div class="p-8 grid md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                        <div class="text-xs font-bold text-blue-500 uppercase tracking-wide mb-2">Primary Equation</div>
+                        <div class="text-xl font-mono text-slate-800 katex-render">x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}</div>
+                        <p class="text-xs text-slate-500 mt-2">Example Placeholder</p>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Identity</div>
+                        <div class="text-xl font-mono text-slate-800 katex-render">(a+b)^2 = a^2 + 2ab + b^2</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        safeRender(container, html, chapter);
+    }
+
+    function renderScienceTemplate(container, chapter) {
+        const html = `
+            <div class="space-y-6">
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="bg-purple-50 p-6 rounded-3xl border border-purple-100 relative overflow-hidden group hover:shadow-md transition">
+                         <div class="absolute -right-4 -top-4 bg-purple-100 w-20 h-20 rounded-full opacity-50"></div>
+                         <h3 class="font-black text-purple-900 text-lg mb-2 relative z-10">Definitions</h3>
+                         <ul class="space-y-2 relative z-10 text-sm text-slate-700">
+                            <li class="flex items-start gap-2"><span class="text-purple-400">•</span> <span><strong>Force:</strong> A push or pull upon an object.</span></li>
+                            <li class="flex items-start gap-2"><span class="text-purple-400">•</span> <span><strong>Inertia:</strong> Resistance to change in motion.</span></li>
+                         </ul>
+                    </div>
+                    <div class="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 relative overflow-hidden group hover:shadow-md transition">
+                         <div class="absolute -right-4 -top-4 bg-emerald-100 w-20 h-20 rounded-full opacity-50"></div>
+                         <h3 class="font-black text-emerald-900 text-lg mb-2 relative z-10">Laws & Principles</h3>
+                         <p class="text-sm text-slate-700 relative z-10 leading-relaxed">
+                            <strong>Newton's 2nd Law:</strong> The rate of change of momentum is directly proportional to the applied force.
+                         </p>
+                    </div>
+                </div>
+            </div>
+        `;
+        safeRender(container, html, chapter);
+    }
+
+    function renderSocialTemplate(container, chapter) {
+        const html = `
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-amber-600 p-8 text-white relative overflow-hidden">
+                     <h2 class="font-black text-2xl relative z-10">Timeline & Events</h2>
+                     <p class="text-amber-100 relative z-10">Chronological flow of <span class="chapter-name-placeholder font-bold"></span></p>
+                </div>
+                <div class="p-8 relative">
+                    <div class="absolute left-12 top-8 bottom-8 w-0.5 bg-slate-200"></div>
+                    <div class="space-y-8 pl-12 relative">
+                        <div class="relative">
+                            <div class="absolute -left-[3.25rem] w-6 h-6 bg-amber-500 rounded-full border-4 border-white shadow-sm"></div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-1 rounded uppercase tracking-wide">Key Date</span>
+                                <h4 class="font-bold text-slate-900 mt-2">Major Event Starts</h4>
+                                <p class="text-sm text-slate-600 mt-1">Placeholder description.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        safeRender(container, html, chapter);
+    }
+
+    function renderGeneralTemplate(container, chapter) {
+        const html = `
+            <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center">
+                <h3 class="font-bold text-slate-900 text-xl mb-4">Study Overview</h3>
+                <p class="text-slate-600 leading-relaxed mb-8">
+                    Review your textbook notes for <strong class="chapter-name-placeholder"></strong>. Focus on key definitions, formulas, and historical context.
+                </p>
+            </div>
+        `;
+        safeRender(container, html, chapter);
+    }
+
+    function renderMath(container) {
+        if (window.renderMathInElement) {
+             renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false
+            });
+        }
+    }
+</script>
+</body>
+</html>

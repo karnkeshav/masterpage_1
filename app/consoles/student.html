@@ -32,6 +32,7 @@
     <script type="module">
         import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
+        import { normalizeSubject, formatChapterName } from "../../js/utils.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Bind Logout to the new nav button
@@ -82,13 +83,12 @@
 
                 if (snapshot.empty) {
                      document.getElementById("stat-avg").textContent = "0%";
-                     document.getElementById("stat-subject").textContent = "None";
+                     document.getElementById("subject-mastery-container").innerHTML = `<div class="text-slate-400 text-sm">No data yet.</div>`;
                      document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No records found.</td></tr>`;
                      return;
                 }
 
                 let totalScoreSum = 0;
-                const subjectCounts = {};
                 const historyHtml = [];
 
                 // 1. Subject Intelligence Function
@@ -99,6 +99,8 @@
                     if (context.includes("science") || context.includes("physics") || context.includes("gravitation") || context.includes("motion") || context.includes("force") || context.includes("atom") || context.includes("chem") || context.includes("bio")) return "Science";
                     return "General";
                 };
+
+                const chapterStats = {}; // { "Chapter Name": { maxScore: 0, attempts: [] } }
 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
@@ -115,11 +117,21 @@
                     const cleanChapter = formatChapterName(rawSlug);
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
 
+                    if (!chapterStats[chapterName]) {
+                        chapterStats[chapterName] = { maxScore: 0, attempts: [], subject: cleanSubject };
+                    }
+                    chapterStats[chapterName].attempts.push(percentage); // Note: snapshot is DESC order (newest first)
+                    if (percentage > chapterStats[chapterName].maxScore) {
+                        chapterStats[chapterName].maxScore = percentage;
+                    }
+
+                    // History Row
+                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
                     historyHtml.push(`
                         <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                            <td class="p-4 font-bold text-slate-700">${cleanSubject}</td>
-                            <td class="p-4 text-sm text-slate-600">${cleanChapter}</td>
-                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${data.difficulty || 'Mixed'}</span></td>
+                            <td class="p-4 font-bold text-slate-700">${escapeHtml(cleanSubject)}</td>
+                            <td class="p-4 text-sm text-slate-600">${escapeHtml(chapterName)}</td>
+                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${escapeHtml(data.difficulty || 'Mixed')}</span></td>
                             <td class="p-4 font-mono font-bold ${getScoreColor(percentage)}">${percentage}%</td>
                             <td class="p-4 text-right text-xs text-slate-400">${dateStr}</td>
                         </tr>
@@ -203,22 +215,7 @@
             </a>
         </div>
 
-        <!-- Stats Row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Tests</div>
-                <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
-            </div>
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Avg Mastery</div>
-                <div id="stat-avg" class="text-4xl font-black text-blue-600">--%</div>
-            </div>
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Most Practiced</div>
-                <div id="stat-subject" class="text-xl font-black text-slate-900 mt-2 truncate">--</div>
-            </div>
-        </div>
-
+        <!-- Main Grid -->
         <div class="grid lg:grid-cols-3 gap-8">
             <!-- Subject Cards -->
             <div class="lg:col-span-1 space-y-6">
@@ -234,49 +231,69 @@
                             <i class="fas fa-flask text-xl"></i>
                         </div>
                         <div>
-                            <h3 class="text-lg font-black text-slate-900">Science</h3>
-                            <p class="text-slate-500 text-xs font-medium">Physics, Chemistry, Bio</p>
+                            <h4 class="font-bold text-slate-800">Science</h4>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Physics, Chem, Bio</p>
                         </div>
                     </div>
-                </div>
 
                 <!-- Math -->
                 <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Mathematics">
                     <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
                         <i class="fas fa-calculator text-6xl text-blue-600"></i>
                     </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
-                            <i class="fas fa-square-root-alt text-xl"></i>
+
+                    <!-- Social Science Card -->
+                    <div class="subject-card group bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition cursor-pointer flex items-center gap-4" data-subject="Social Science">
+                        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
+                            <i class="fas fa-globe-americas"></i>
                         </div>
                          <div>
-                            <h3 class="text-lg font-black text-slate-900">Mathematics</h3>
-                            <p class="text-slate-500 text-xs font-medium">Algebra, Geometry</p>
+                            <h4 class="font-bold text-slate-800">Social Science</h4>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">History, Civics</p>
                         </div>
                     </div>
-                </div>
+                 </div>
 
                 <!-- Social Science -->
                 <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Social Science">
                     <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
                         <i class="fas fa-globe-americas text-6xl text-amber-600"></i>
                     </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
-                            <i class="fas fa-landmark text-xl"></i>
+                 </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Stats & History -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Top Stats Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div>
+                            <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Tests</div>
+                            <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
                         </div>
-                         <div>
-                            <h3 class="text-lg font-black text-slate-900">Social Science</h3>
-                            <p class="text-slate-500 text-xs font-medium">History, Geo, Civics</p>
+                         <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div>
+                            <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Avg Mastery</div>
+                            <div id="stat-avg" class="text-4xl font-black text-blue-600">--%</div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                            <i class="fas fa-chart-pie"></i>
                         </div>
                     </div>
                 </div>
-            </div>
 
             <!-- Learning History -->
             <div class="lg:col-span-2">
                  <h3 class="font-bold text-slate-900 text-lg mb-6">Learning History</h3>
                  <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-900 text-lg">Recent Activity</h3>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
                             <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100">

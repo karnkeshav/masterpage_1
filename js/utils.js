@@ -38,3 +38,66 @@ export function capitalizeFirstLetter(s) {
     if (typeof s !== 'string' || s.length === 0) return s;
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+/**
+ * Normalizes subject names from various inputs (data object or string).
+ * @param {Object|string} input - The data object containing subject/topic or the subject string itself.
+ * @returns {string} The normalized subject name (Mathematics, Science, Social Science, or General).
+ */
+export function normalizeSubject(input) {
+    let sub = "";
+    let slug = "";
+
+    if (typeof input === 'string') {
+        sub = input.toLowerCase();
+    } else if (input && typeof input === 'object') {
+        sub = (input.subject || "").toLowerCase();
+        slug = (input.topicSlug || input.topic || "").toLowerCase();
+    }
+
+    if (sub.includes("math") || sub.includes("algebra") || sub.includes("geometry")) return "Mathematics";
+    if (sub.includes("science") || sub.includes("physics") || sub.includes("chem") || sub.includes("bio")) return "Science";
+    if (sub.includes("social")) return "Social Science";
+
+    // Fallback: Check topicSlug if provided
+    if (slug) {
+        if (slug.includes("triangle") || slug.includes("polynomial") || slug.includes("probability") || slug.includes("math")) return "Mathematics";
+        if (slug.includes("motion") || slug.includes("gravitation") || slug.includes("force") || slug.includes("atom") || slug.includes("science")) return "Science";
+        if (slug.includes("history") || slug.includes("civics") || slug.includes("social")) return "Social Science";
+    }
+
+    // If input was just a string and didn't match, return it capitalized (or "General")
+    if (typeof input === 'string' && sub) {
+        return input.charAt(0).toUpperCase() + input.slice(1);
+    }
+
+    return "General";
+}
+
+/**
+ * Formats a technical slug into a readable chapter name.
+ * e.g. science_gravitation_9_quiz -> Gravitation
+ * @param {string} slug - The slug to format.
+ * @returns {string} The formatted chapter name.
+ */
+export function formatChapterName(slug) {
+    if (!slug) return "General Quiz";
+
+    // science_gravitation_9_quiz -> gravitation
+    let parts = slug.replace("_quiz", "").split("_");
+
+    // Remove the subject prefix and grade suffix if format is standard (>= 3 parts)
+    // e.g. [science, gravitation, 9] -> [gravitation]
+    // Check if first part is a known subject prefix to be safer
+    const knownPrefixes = ["science", "math", "social", "history", "geo", "civics", "physics", "chemistry", "biology"];
+    if (parts.length >= 3 && knownPrefixes.includes(parts[0].toLowerCase())) {
+        parts = parts.slice(1, -1);
+    } else if (parts.length === 2 && !isNaN(parts[parts.length-1])) {
+            // e.g. gravitation_9 -> gravitation
+            parts.pop();
+    }
+
+    // Join and remove duplicate words (e.g., "Gravitation Gravitation")
+    let name = parts.join(" ");
+    return [...new Set(name.split(" "))].join(" ").replace(/\b\w/g, l => l.toUpperCase());
+}
