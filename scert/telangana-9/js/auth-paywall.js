@@ -32,7 +32,7 @@ provider.setCustomParameters({ prompt: "select_account" });
 export async function ensureUserInFirestore(user) {
   if (!user?.uid) return;
 
-  const { db } = await getInitializedClients();
+  const { db } = getInitializedClients();
   const ref = doc(db, "users", user.uid);
 
   try {
@@ -63,7 +63,8 @@ export async function ensureUserInFirestore(user) {
    AUTH STATE LISTENER (PASSIVE ONLY — NO POPUPS HERE)
    ============================================================================ */
 export async function initializeAuthListener(onReady) {
-  const { auth } = await getInitializedClients();
+  await initializeServices();
+  const { auth } = getInitializedClients();
 
   await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
@@ -82,7 +83,8 @@ export async function initializeAuthListener(onReady) {
    HARD AUTH GATE — MUST BE CALLED FROM A USER CLICK
    ============================================================================ */
 export async function requireAuth() {
-  const { auth } = await getInitializedClients();
+  await initializeServices();
+  const { auth } = getInitializedClients();
 
   if (auth.currentUser) {
     return auth.currentUser;
@@ -108,13 +110,13 @@ export async function requireAuth() {
    OPTIONAL HELPERS
    ============================================================================ */
 export const signOut = async () => {
-  const { auth } = await getInitializedClients();
+  const { auth } = getInitializedClients();
   return firebaseSignOut(auth);
 };
 
-export const checkAccess = async () => {
+export const checkAccess = () => {
   try {
-    const { auth } = await getInitializedClients();
+    const { auth } = getInitializedClients();
     return !!auth.currentUser;
   } catch {
     return false;

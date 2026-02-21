@@ -10,7 +10,7 @@ import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.
 ----------------------------------- */
 export async function checkClassAccess(classId, subject) {
     try {
-        const { auth, db } = await getInitializedClients();
+        const { auth, db } = getInitializedClients();
 
         const user = auth.currentUser;
         if (!user) return { allowed: false, reason: "no_user" };
@@ -98,7 +98,7 @@ function parseUrlParameters() {
         return;
     }
 
-    quizState.topicSlug = params.get("table") || params.get("topic") || params.get("chapter") || "";
+    quizState.topicSlug = params.get("table") || params.get("topic") || "";
 
     // A. TRY TO GET EXACT CHAPTER NAME FROM URL
     let displayChapter = params.get("chapter_name");
@@ -140,7 +140,7 @@ async function loadQuiz() {
         // --- FORTRESS PHILOSOPHY: GATEKEEPER ---
         // Block 'Advanced' if 'Medium' mastery < 85%
         if (quizState.difficulty === "Advanced" && quizState.quizMode === "standard") {
-            const { auth } = await getInitializedClients();
+            const { auth } = getInitializedClients();
             const mastery = await getChapterMastery(auth.currentUser.uid, quizState.topicSlug);
             if (mastery < 85) {
                 // VISUAL INTELLIGENCE: Peel Back Animation
@@ -218,9 +218,6 @@ function handleNavigation(delta) {
     6. SUBMIT & RESULTS
 ----------------------------------- */
 async function handleSubmit() {
-    const btn = document.getElementById("submit-btn");
-    if (btn) btn.disabled = true;
-
     updateLatency();
     quizState.isSubmitted = true;
 
@@ -250,22 +247,9 @@ async function handleSubmit() {
 
     // --- CLOSED-LOOP REMEDIATION ---
     const percentage = (stats.correct / stats.total) * 100;
-
-    console.log('Submitting Quiz...');
-
-    // Save Result First (Critical)
-    await saveResult({
-        ...quizState,
-        score: stats.correct,
-        total: stats.total,
-        topic: quizState.topicSlug,
-        latency_vector: quizState.latency,
-        quiz_mode: quizState.quizMode
-    });
-
     if (percentage < 85) {
         // Save to Mistake Notebook
-        await saveMistakes(quizState.questions, quizState.userAnswers, quizState.topicSlug, quizState.classId);
+        saveMistakes(quizState.questions, quizState.userAnswers, quizState.topicSlug, quizState.classId);
 
         // Trigger In-Page Review
         setTimeout(() => {
@@ -273,11 +257,17 @@ async function handleSubmit() {
             // VISUAL INTELLIGENCE: Focus Mode
             UI.toggleFocusMode(true);
             UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
-        }, 500);
+        }, 1000);
     }
 
-    console.log('Data persistence complete.');
-    if (btn) btn.disabled = false;
+    saveResult({
+        ...quizState,
+        score: stats.correct,
+        total: stats.total,
+        topic: quizState.topicSlug,
+        latency_vector: quizState.latency,
+        quiz_mode: quizState.quizMode
+    });
 }
 
 /* -----------------------------------
@@ -328,28 +318,21 @@ async function init() {
     UI.attachAnswerListeners(handleAnswerSelection);
 
     try {
-        await getInitializedClients();
+        await initializeServices();
         wireGoogleLogin();
 
         // Check Auth & Access
         await initializeAuthListener(async user => {
-            try {
-                if (user) {
-                    UI.updateAuthUI(user);
+            if (user) {
+                UI.updateAuthUI(user);
 
-                    // BYPASS: No paywall for authenticated students (as requested)
-                    // Just load the quiz
-                    questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
-                    await loadQuiz();
-
-                } else {
-                    UI.showView("paywall-screen");
-                }
-            } catch (e) {
-                console.error("UI Update failed, but continuing quiz load:", e);
-                // Ensure quiz still tries to load even if UI names fail
+                // BYPASS: No paywall for authenticated students (as requested)
+                // Just load the quiz
                 questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
                 await loadQuiz();
+
+            } else {
+                UI.showView("paywall-screen");
             }
         });
     } catch (err) {
@@ -358,8 +341,4 @@ async function init() {
     }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener("DOMContentLoaded", init);
-} else {
-    init();
-}
+document.addEventListener("DOMContentLoaded", init);

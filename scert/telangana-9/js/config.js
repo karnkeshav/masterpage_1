@@ -1,58 +1,77 @@
 // js/config.js
-import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Optimized: Lazy-loads heavy libraries to fix initial quiz latency
 
-let services = null;
-let initPromise = null;
+// We only keep the absolute essentials for the first paint
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; //
+import { createClient as createSupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+let firebaseApp = null;
+let firebaseAuth = null;
+let firebaseDB = null; //
+let supabase = null;
+let analyticsInstance = null;
+
+/**
+ * High-speed initialization.
+ * Starts Auth, Firestore (for Admin/Saving), and Supabase.
+ */
 export async function initializeServices() {
-    if (initPromise) return initPromise;
+  // If already initialized, return existing clients
+  if (firebaseApp && firebaseDB && supabase) {
+    return { auth: firebaseAuth, db: firebaseDB, supabase };
+  }
 
-    initPromise = (async () => {
-        let app;
-        if (getApps().length > 0) {
-            app = getApp();
-        } else {
-            app = initializeApp(window.__firebase_config);
-        }
+  const cfg = window.__firebase_config;
+  if (!cfg?.apiKey) throw new Error("Firebase config missing"); //
 
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+  // Initialize Core Firebase (Fast)
+  firebaseApp = initializeApp(cfg); //
+  firebaseAuth = getAuth(firebaseApp); //
 
-        // Auth Hydration Barrier
-        await new Promise(resolve => {
-            const unsubscribe = onAuthStateChanged(auth, () => {
-                unsubscribe();
-                resolve();
-            });
-        });
+  // Initialize Firestore - Required for Admin Panel and User Access
+  firebaseDB = getFirestore(firebaseApp);
 
-        let supabase = null;
-        if (window.__supabase_config) {
-            supabase = createClient(window.__supabase_config.url, window.__supabase_config.key, {
-                auth: { persistSession: false }
-            });
-            window.supabase = supabase;
-        }
+  // Initialize Supabase (Essential for fetching questions)
+  supabase = createSupabaseClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+    auth: { persistSession: false }
+  }); //
 
-        services = { db, auth, supabase };
-        return services;
-    })();
+  window.supabase = supabase; //
 
-    return initPromise;
+  return { auth: firebaseAuth, db: firebaseDB, supabase }; //
 }
 
-export async function getInitializedClients() {
-    if (services) return services;
-    return await initializeServices();
+/**
+ * Returns clients.
+ */
+export function getInitializedClients() {
+  if (!firebaseApp) throw new Error("Call initializeServices FIRST"); //
+  return { auth: firebaseAuth, db: firebaseDB, supabase }; //
 }
 
 export function getAuthUser() {
-    return services?.auth?.currentUser || null;
+  return firebaseAuth?.currentUser || null; //
 }
 
+/**
+ * Optimized Analytics: Only loads the library when the first event is logged
+ */
 export async function logAnalyticsEvent(evt, data = {}) {
-  console.log(`[Analytics] ${evt}`, data);
+  const cfg = window.__firebase_config;
+  if (!cfg?.measurementId) return; //
+
+  try {
+    if (!analyticsInstance) {
+      const { getAnalytics, logEvent } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js");
+      analyticsInstance = getAnalytics(firebaseApp); //
+      logEvent(analyticsInstance, evt, data); //
+    } else {
+      const { logEvent } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js");
+      logEvent(analyticsInstance, evt, data); //
+    }
+  } catch (e) {
+    console.warn("Analytics blocked or failed"); //
+  }
 }

@@ -5,23 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Console — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily:{ sans:['Inter','sans-serif'] },
-          colors:{
-            'cbse-blue':'#1a3e6a',
-            'cbse-light':'#f5f7fa',
-            'accent-gold':'#ffb703',
-            'success-green': '#16a34a',
-            'warning-yellow': '#ca8a04',
-            'danger-red': '#dc2626'
-          }
-        }
-      }
-    }
-    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>body{font-family:'Inter',sans-serif;}</style>
@@ -30,26 +13,40 @@
     <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
+        import { guardConsole } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
         import { collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import * as UI from "../../js/ui-renderer.js";
+        import { signOut } from "../../js/auth-paywall.js";
 
-        UI.injectStyles();
-        bindConsoleLogout("logout-nav-btn", "../../index.html");
+        // LOGOUT LOGIC
+        const logoutBtn = document.getElementById('logout-btn');
+        if(logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                if (confirm("Sign out of your Ready4Exam session?")) {
+                    try {
+                        await signOut();
+                        window.location.href = "../../index.html";
+                    } catch (err) {
+                        console.error("Logout failed", err);
+                    }
+                }
+            });
+        }
+
+        // GLOBAL GUARD
         guardConsole("admin");
 
         // Data Loader (Called by Guard)
         window.loadConsoleData = async (profile) => {
-            // Header User
-            document.getElementById("user-welcome").textContent = "Admin";
-
             const schoolId = profile.school_id;
             if (!schoolId) {
                 alert("Critical Error: No School ID found for Admin.");
                 return;
             }
             console.log(`Loading Admin Console for School: ${schoolId}`);
+
+            // Here we would strictly fetch users belonging to this school
+            // const q = query(collection(db, "users"), where("school_id", "==", schoolId));
 
             // MOCK DATA (Simulating Scoped Fetch)
             const users = [
@@ -58,94 +55,76 @@
                 { email: "student1@school.com", role: "student", class: "9-A", school_id: schoolId },
             ];
 
-            const columns = [
-                { key: 'email', header: 'User Email', cell: (u) => `<span class="font-bold text-slate-700">${u.email}</span>` },
-                { key: 'role', header: 'Role', cell: (u) => `
-                    <select class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-600 outline-none focus:border-cbse-blue">
-                        <option ${u.role==='student'?'selected':''}>student</option>
-                        <option ${u.role==='teacher'?'selected':''}>teacher</option>
-                        <option ${u.role==='principal'?'selected':''}>principal</option>
-                    </select>`
-                },
-                { key: 'class', header: 'Mapping', cell: (u) => `<span class="text-sm text-slate-500 font-medium">${u.class}</span>` },
-                { key: 'actions', header: 'Actions', cell: (u) => `<button class="text-danger-red hover:bg-red-50 px-3 py-1 rounded-lg font-bold text-[10px] uppercase transition">Revoke</button>` }
-            ];
-
-            const cardRenderer = (u) => `
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="font-bold text-slate-800">${u.email}</span>
-                        <span class="text-xs bg-slate-100 px-2 py-1 rounded font-bold uppercase">${u.role}</span>
-                    </div>
-                    <div class="text-xs text-slate-500 mb-3">Class: ${u.class}</div>
-                    <div class="flex justify-end">
-                        <button class="text-danger-red font-bold text-xs">REVOKE ACCESS</button>
-                    </div>
-                </div>
-            `;
-
-            UI.renderResponsiveGrid(document.getElementById("user-grid"), users, columns, cardRenderer);
+            renderUsers(users);
         };
+
+        function renderUsers(users) {
+            const list = document.getElementById("user-list");
+            list.innerHTML = users.map(u => `
+                <tr class="border-b border-slate-50">
+                    <td class="p-4 font-bold text-slate-700">${u.email}</td>
+                    <td class="p-4">
+                        <select class="bg-slate-50 border-none rounded px-2 py-1 text-sm font-bold text-slate-600">
+                            <option ${u.role==='student'?'selected':''}>student</option>
+                            <option ${u.role==='teacher'?'selected':''}>teacher</option>
+                            <option ${u.role==='principal'?'selected':''}>principal</option>
+                        </select>
+                    </td>
+                    <td class="p-4 text-sm text-slate-500">${u.class}</td>
+                    <td class="p-4 text-right">
+                         <button class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Revoke</button>
+                    </td>
+                </tr>
+            `).join("");
+        }
     </script>
 </head>
-<body class="bg-cbse-light min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+    <nav class="fixed top-0 right-0 p-4 z-50">
+        <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
+            <i class="fas fa-sign-out-alt text-red-400"></i>
+            <span>Sign Out</span>
+        </button>
+    </nav>
 
-    <!-- Glass Header -->
-    <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
-      <div class="flex items-center space-x-4">
-        <a href="../../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
-        <div>
-          <h2 class="text-xl font-black text-cbse-blue leading-none tracking-tight">Master<span class="text-accent-gold">IAM</span></h2>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Identity & Access</p>
-        </div>
-      </div>
-
-      <div class="flex items-center space-x-3">
-          <div class="hidden md:flex flex-col items-end mr-2">
-              <span id="user-welcome" class="text-xs font-bold text-slate-700">Admin</span>
-              <span class="text-[10px] font-black text-white bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">School Root</span>
-          </div>
-          <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg">🛡️</div>
-          <button id="logout-nav-btn" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
-      </div>
-    </header>
-
-    <div id="loading" class="flex items-center justify-center flex-grow">
+    <div id="loading" class="flex items-center justify-center min-h-screen">
         <div class="animate-pulse font-bold text-slate-400">Verifying Admin Privileges...</div>
     </div>
 
-    <div id="app" class="hidden max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
-
-        <div class="flex justify-between items-end mb-8">
+    <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8 fade-in">
+        <header class="flex justify-between items-end mb-12">
             <div>
-                <h1 class="text-3xl font-black text-slate-900 tracking-tight">User Directory</h1>
-                <p class="text-slate-500 font-medium text-sm mt-1">Manage provisioned accounts.</p>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Master<span class="text-blue-600">IAM</span></h1>
+                <p class="text-slate-500 font-medium">Identity & Access Management.</p>
             </div>
-            <button class="peel-back-anim bg-cbse-blue text-white px-6 py-3 rounded-xl font-black uppercase text-xs shadow-lg shadow-blue-600/20 hover:bg-blue-800 transition">
-                + Bulk Onboard
+            <button class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition">
+                + Bulk Onboard (CSV)
             </button>
-        </div>
+        </header>
 
-        <div class="glass-panel rounded-3xl p-6">
-             <div class="mb-6 flex gap-4">
-                <input type="text" placeholder="Search by email..." class="bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm flex-grow outline-none focus:border-cbse-blue transition">
-                <select class="bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+             <div class="p-6 border-b border-slate-50 flex gap-4">
+                <input type="text" placeholder="Search by email..." class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm flex-grow outline-none">
+                <select class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none">
                     <option>All Roles</option>
                     <option>Students</option>
                     <option>Teachers</option>
                 </select>
             </div>
-
-            <div id="user-grid">
-                <!-- Grid Injected Here -->
-            </div>
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                    <tr>
+                        <th class="p-4">User Email</th>
+                        <th class="p-4">Role</th>
+                        <th class="p-4">Mapping</th>
+                        <th class="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="user-list">
+                    <!-- Injected -->
+                </tbody>
+            </table>
         </div>
     </div>
-
-    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-      <p class="font-medium tracking-wide">Powered by Ready4Exam AI</p>
-      <p class="mt-1 opacity-70">© 2025 Academic Portal</p>
-    </footer>
-
 </body>
 </html>

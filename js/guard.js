@@ -1,5 +1,4 @@
 import { initializeAuthListener, ensureUserInFirestore, signOut } from "./auth-paywall.js";
-import { getInitializedClients } from "./config.js";
 
 /**
  * Universal Guard for Console Pages.
@@ -12,18 +11,15 @@ import { getInitializedClients } from "./config.js";
  * If passed, calls window.loadConsoleData(profile).
  * If failed, redirects to index.html (Sovereign Gate).
  */
-export async function guardConsole(requiredRole) {
-    await getInitializedClients();
-
-    initializeAuthListener(async (user, initialProfile) => {
+export function guardConsole(requiredRole) {
+    initializeAuthListener(async (user) => {
         if (!user) {
             console.warn("Guard: No user session.");
             window.location.href = "../../index.html";
             return;
         }
 
-        // Use pre-fetched profile or fetch if missing
-        const profile = initialProfile || await ensureUserInFirestore(user);
+        const profile = await ensureUserInFirestore(user);
 
         if (!profile) {
             console.warn("Guard: No profile found.");
@@ -62,14 +58,6 @@ export async function guardConsole(requiredRole) {
 
 function revealApp(profile) {
     console.log("Guard: Access Granted", profile);
-
-    // Ensure window.userProfile is set with stable UID
-    window.userProfile = profile;
-
-    // Force synchronize sessionStorage with the authenticated user
-    sessionStorage.setItem('uid', profile.uid);
-    sessionStorage.setItem('username', profile.displayName);
-
     const app = document.getElementById("app");
     const loading = document.getElementById("loading");
 
@@ -78,29 +66,5 @@ function revealApp(profile) {
 
     if (window.loadConsoleData) {
         window.loadConsoleData(profile);
-    }
-}
-
-export function bindConsoleLogout(buttonId = "logout-btn", redirectPath = "../../index.html") {
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => attachLogout(buttonId, redirectPath));
-    } else {
-        attachLogout(buttonId, redirectPath);
-    }
-}
-
-function attachLogout(buttonId, redirectPath) {
-    const btn = document.getElementById(buttonId);
-    if (btn) {
-        btn.onclick = async () => {
-            if (confirm("Sign out of your Ready4Exam session?")) {
-                try {
-                    await signOut();
-                    window.location.href = redirectPath;
-                } catch (err) {
-                    console.error("Logout failed", err);
-                }
-            }
-        };
     }
 }
