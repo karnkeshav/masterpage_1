@@ -127,8 +127,7 @@
         async function loadSchool() {
             try {
                 // Robust Initialization Guard
-                // Note: getInitializedClients is now async and handles initialization
-                const clients = await getInitializedClients();
+                const clients = await getInitializedClients(); // Might return null if failed/not ready but usually async waits
 
                 if (!clients || !clients.db) {
                     console.error("DB Not Ready");
