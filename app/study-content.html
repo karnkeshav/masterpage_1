@@ -27,6 +27,8 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 
     <script src="../js/firebase-master-config.js"></script>
@@ -46,6 +48,7 @@
         const subject = params.get("subject") || "Mathematics";
         const chapter = params.get("chapter") || "Polynomials";
 
+        // Init session and load data
         initializeAuthListener(async (user) => {
             if (user) {
                 document.getElementById("user-welcome").textContent = user.displayName || "Scholar";
@@ -63,7 +66,7 @@
             const container = document.getElementById("content-container");
             UI.showSkeleton(container);
 
-            // Fetching directly from ncert_summaries via the API helper
+            // Fetching dynamic summary from Firestore
             const data = await fetchChapterSummary(grade, subject, chapter);
 
             if (!data) {
@@ -76,19 +79,21 @@
 
         function renderKnowledgeHub(container, data) {
             container.innerHTML = `
-                <div class="grid lg:grid-cols-3 gap-8">
+                <div class="grid lg:grid-cols-3 gap-8 fade-in">
                     
                     <div class="lg:col-span-1 space-y-6">
-                        ${data.formulaVault && data.formulaVault.length > 0 ? `
-                        <div class="glass-panel p-6 rounded-3xl bg-slate-900 text-white shadow-xl">
-                            <h3 class="text-accent-gold font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                        
+                        ${data.formulaVault && Array.isArray(data.formulaVault) && data.formulaVault.length > 0 ? `
+                        <div class="glass-panel p-6 rounded-3xl bg-slate-900 text-white shadow-xl relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">∑</div>
+                            <h3 class="text-accent-gold font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2 relative z-10">
                                 <i class="fas fa-square-root-alt"></i> Formula Vault
                             </h3>
-                            <div class="space-y-3">
+                            <div class="space-y-3 relative z-10">
                                 ${data.formulaVault.map(f => `
-                                    <div class="p-3 bg-white/5 rounded-xl border border-white/10">
-                                        <div class="text-[10px] text-white/40 font-bold uppercase mb-1">${f.label || 'Standard Formula'}</div>
-                                        <div class="font-mono text-sm font-bold text-white">${f.tex || f.content}</div>
+                                    <div class="p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all">
+                                        <div class="text-[10px] text-accent-gold font-bold uppercase mb-1">${f.label || f.topic || 'Essential Formula'}</div>
+                                        <div class="font-mono text-sm font-bold text-white break-words">${f.tex || f.content || 'Data Missing'}</div>
                                     </div>
                                 `).join("")}
                             </div>
@@ -109,6 +114,7 @@
                     </div>
 
                     <div class="lg:col-span-2 space-y-6">
+                        
                         <div class="glass-panel p-8 rounded-3xl shadow-sm">
                             <h3 class="text-cbse-blue font-black text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
                                 <i class="fas fa-bullseye text-accent-gold"></i> Core Takeaways
@@ -123,19 +129,20 @@
                             </ul>
                         </div>
 
+                        ${data.tipsAndTricks && data.tipsAndTricks.length > 0 ? `
                         <div class="bg-indigo-50 p-8 rounded-3xl border border-indigo-100">
                             <h3 class="text-indigo-900 font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <i class="fas fa-lightbulb"></i> Tips & Hacks
                             </h3>
                             <div class="grid md:grid-cols-2 gap-4">
-                                ${(data.tipsAndTricks || []).map(tip => `
+                                ${data.tipsAndTricks.map(tip => `
                                     <div class="flex gap-3 items-start">
                                         <i class="fas fa-bolt text-amber-500 mt-1"></i>
                                         <p class="text-xs text-indigo-800 font-medium">${tip}</p>
                                     </div>
                                 `).join("")}
                             </div>
-                        </div>
+                        </div>` : ''}
 
                         <div class="pt-6">
                             <button id="btn-start-test" class="w-full py-5 bg-cbse-blue text-white rounded-2xl font-black text-lg shadow-xl hover:scale-[1.02] transition active:scale-95 flex items-center justify-center gap-3">
@@ -147,24 +154,25 @@
                 </div>
             `;
 
-            // Logic to launch Difficulty Prompt and Quiz Flow
-            document.getElementById("btn-start-test").onclick = () => launchQuizFlow();
+            document.getElementById("btn-start-test").onclick = () => launchDifficultySelector();
         }
 
-        function launchQuizFlow() {
+        function launchDifficultySelector() {
             const difficulty = prompt("Select Difficulty: Basic, Intermediate, or Expert", "Basic");
             if (difficulty) {
                 const slug = chapter.toLowerCase().replace(/\s+/g, '_');
+                // Redirects to Quiz Engine with full context
                 window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&topic=${slug}&difficulty=${difficulty}`;
             }
         }
 
         function renderUnderConstruction(container) {
             container.innerHTML = `
-                <div class="text-center py-20 glass-panel rounded-3xl">
+                <div class="text-center py-20 glass-panel rounded-3xl fade-in">
                     <div class="text-6xl mb-6">⛺</div>
                     <h3 class="text-2xl font-black text-slate-800 mb-2">Base Camp Under Construction</h3>
-                    <p class="text-slate-500 max-w-md mx-auto">We are currently deploying the AI summary for this chapter. Check back in a few hours.</p>
+                    <p class="text-slate-500 max-w-md mx-auto">We are currently deploying the AI summary for this chapter. Check back in a few hours or visit the Warm-up Room.</p>
+                    <a href="curriculum.html?grade=${grade}" class="inline-block mt-8 px-8 py-3 bg-cbse-blue text-white font-bold rounded-xl shadow-lg transition">Go to Warm-up Room</a>
                 </div>
             `;
         }
@@ -177,11 +185,11 @@
         <a href="../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition text-lg">🏠</a>
         <div>
           <h2 class="text-xl font-black text-cbse-blue leading-none">Base<span class="text-accent-gold">Camp</span></h2>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">High-Density Hub</p>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Ready4Exam Hub</p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
-          <div class="hidden md:flex flex-col items-end mr-2">
+          <div class="hidden md:flex flex-col items-end mr-2 text-right">
               <span id="user-welcome" class="text-xs font-bold text-slate-700">Scholar</span>
               <span id="context-badge" class="text-[10px] font-black text-white bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">Grade --</span>
           </div>
@@ -199,8 +207,9 @@
             </div>
     </div>
 
-    <footer class="bg-cbse-blue text-white/50 text-[10px] text-center py-8 mt-auto">
-      <p class="font-medium tracking-wide">Ready4Exam Academic "Boot Camp" Engine</p>
+    <footer class="bg-cbse-blue text-white/50 text-[10px] text-center py-10 mt-auto">
+      <p class="font-black tracking-widest uppercase mb-2">Ready4Exam Academic "Boot Camp" Engine</p>
+      <p class="opacity-70">© 2025 Academic Portal • Precision Learning Systems</p>
     </footer>
 </body>
 </html>
