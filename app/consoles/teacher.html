@@ -5,23 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Console — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily:{ sans:['Inter','sans-serif'] },
-          colors:{
-            'cbse-blue':'#1a3e6a',
-            'cbse-light':'#f5f7fa',
-            'accent-gold':'#ffb703',
-            'success-green': '#16a34a',
-            'warning-yellow': '#ca8a04',
-            'danger-red': '#dc2626'
-          }
-        }
-      }
-    }
-    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>body{font-family:'Inter',sans-serif;}</style>
@@ -30,41 +13,59 @@
     <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
-        import * as UI from "../../js/ui-renderer.js";
+        import { guardConsole } from "../../js/guard.js";
+        import { signOut } from "../../js/auth-paywall.js";
 
-        UI.injectStyles();
-        bindConsoleLogout("logout-nav-btn", "../../index.html");
+        // LOGOUT LOGIC
+        const logoutBtn = document.getElementById('logout-btn');
+        if(logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                if (confirm("Sign out of your Ready4Exam session?")) {
+                    try {
+                        await signOut();
+                        window.location.href = "../../index.html";
+                    } catch (err) {
+                        console.error("Logout failed", err);
+                    }
+                }
+            });
+        }
+
+        // GLOBAL GUARD
         guardConsole("teacher");
 
         // Data Loader
         window.loadConsoleData = async (profile) => {
             console.log("Loading Teacher Console for:", profile.school_id);
-
-            // Header
-            document.getElementById("user-welcome").textContent = profile.displayName || "Faculty";
-
             const params = new URLSearchParams(location.search);
+            // Default to first assigned class or generic if none (Prototype)
             const section = params.get("section") || "Class 9-A";
+
             document.getElementById("section-title").textContent = section;
 
-            // Mock Students
+            // In production: Fetch students where school_id == profile.school_id AND class == section
+            // const q = query(collection(db, "users"), where("school_id", "==", profile.school_id), where("class", "==", section));
+
+            // Mock Students (Simulating School-Scoped Data)
             const students = [
                 { name: "Aarav Patel", status: "Mastered", score: 92, lastActive: "10m ago", avatar: "adventurer", school_id: profile.school_id },
                 { name: "Vivaan Singh", status: "Remedial Loop", score: 45, lastActive: "Now", avatar: "avataaars", school_id: profile.school_id },
                 { name: "Aditya Kumar", status: "Learning", score: 68, lastActive: "2h ago", avatar: "croodles", school_id: profile.school_id },
                 { name: "Vihaan Gupta", status: "Remedial Loop", score: 42, lastActive: "1d ago", avatar: "micah", school_id: profile.school_id },
                 { name: "Arjun Mehta", status: "Mastered", score: 88, lastActive: "5m ago", avatar: "miniavs", school_id: profile.school_id },
+                { name: "Rohan Sharma", status: "Learning", score: 72, lastActive: "3h ago", avatar: "open-peeps", school_id: profile.school_id },
+                { name: "Ishaan Verma", status: "Mastered", score: 95, lastActive: "1h ago", avatar: "personas", school_id: profile.school_id },
+                { name: "Reyansh Iyer", status: "Remedial Loop", score: 48, lastActive: "Now", avatar: "pixel-art", school_id: profile.school_id },
             ];
 
-            // 1. Render Ticker (Anomalies)
+            // Render Ticker (Anomalies)
             const anomalies = students.filter(s => s.status === "Remedial Loop");
             const ticker = document.getElementById("anomaly-ticker");
 
             if (anomalies.length) {
                 document.getElementById("anomaly-container").classList.remove("hidden");
                 ticker.innerHTML = anomalies.map(s => `
-                    <div class="glass-panel bg-red-50/50 text-red-800 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 border border-red-100 min-w-[250px]">
+                    <div class="bg-red-50 text-red-800 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-3 border border-red-100 shadow-sm min-w-[250px]">
                         <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0"></span>
                         <div>
                             <div class="leading-none">${s.name}</div>
@@ -74,113 +75,90 @@
                 `).join("");
             }
 
-            // 2. Render Student Grid
-            const getStatusColor = (s) => {
-                if (s === "Mastered") return "bg-green-50 text-success-green border-green-100";
-                if (s === "Remedial Loop") return "bg-red-50 text-danger-red border-red-100";
-                return "bg-blue-50 text-cbse-blue border-blue-100";
-            };
-
-            const columns = [
-                { key: 'name', header: 'Student', cell: (s) => `
-                    <div class="flex items-center gap-3">
-                        <img src="https://api.dicebear.com/7.x/${s.avatar}/svg?seed=${s.name}" class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200" />
-                        <span class="font-bold text-slate-800">${s.name}</span>
-                    </div>`
-                },
-                { key: 'status', header: 'Status', cell: (s) => `<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(s.status)}">${s.status}</span>` },
-                { key: 'score', header: 'Avg Score', cell: (s) => `<span class="font-mono font-bold text-slate-600">${s.score}%</span>` },
-                { key: 'lastActive', header: 'Last Active', cell: (s) => `<span class="text-xs text-slate-500 font-medium">${s.lastActive}</span>` },
-                { key: 'action', header: 'Action', cell: (s) => `<button class="text-cbse-blue bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase transition">View Profile</button>` }
-            ];
-
-            const cardRenderer = (s) => `
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <div class="flex items-center gap-3 mb-3">
-                        <img src="https://api.dicebear.com/7.x/${s.avatar}/svg?seed=${s.name}" class="w-10 h-10 rounded-full bg-slate-100 border" />
-                        <div>
-                            <div class="font-bold text-slate-900">${s.name}</div>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${getStatusColor(s.status)}">${s.status}</span>
+            // Render Student List
+            const list = document.getElementById("student-list");
+            list.innerHTML = students.map(s => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition group">
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            <img src="https://api.dicebear.com/7.x/${s.avatar}/svg?seed=${s.name}" class="w-8 h-8 rounded-full bg-slate-100" />
+                            <span class="font-bold text-slate-800">${s.name}</span>
                         </div>
-                    </div>
-                    <div class="flex justify-between text-xs text-slate-500 border-t border-slate-50 pt-3">
-                        <span>Score: <b class="text-slate-800">${s.score}%</b></span>
-                        <span>Active: ${s.lastActive}</span>
-                    </div>
-                </div>
-            `;
-
-            UI.renderResponsiveGrid(document.getElementById("student-grid"), students, columns, cardRenderer);
+                    </td>
+                    <td class="p-4">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(s.status)}">
+                            ${s.status}
+                        </span>
+                    </td>
+                    <td class="p-4 font-mono font-bold text-slate-600">${s.score}%</td>
+                    <td class="p-4 text-xs text-slate-500 font-medium">${s.lastActive}</td>
+                    <td class="p-4 text-right">
+                        <button class="text-cbse-blue bg-blue-50 px-3 py-1.5 rounded-lg font-bold text-xs uppercase opacity-0 group-hover:opacity-100 transition">View</button>
+                    </td>
+                </tr>
+            `).join("");
         };
+
+        function getStatusColor(s) {
+            if (s === "Mastered") return "bg-green-50 text-green-700 border-green-100";
+            if (s === "Remedial Loop") return "bg-red-50 text-red-700 border-red-100";
+            return "bg-blue-50 text-blue-700 border-blue-100";
+        }
     </script>
 </head>
-<body class="bg-cbse-light min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+    <nav class="fixed top-0 right-0 p-4 z-50">
+        <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
+            <i class="fas fa-sign-out-alt text-red-400"></i>
+            <span>Sign Out</span>
+        </button>
+    </nav>
 
-    <!-- Glass Header -->
-    <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
-      <div class="flex items-center space-x-4">
-        <a href="../../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
-        <div>
-          <h2 class="text-xl font-black text-cbse-blue leading-none tracking-tight">Faculty<span class="text-accent-gold">Board</span></h2>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Classroom Intelligence</p>
-        </div>
-      </div>
-
-      <div class="flex items-center space-x-3">
-          <div class="hidden md:flex flex-col items-end mr-2">
-              <span id="user-welcome" class="text-xs font-bold text-slate-700">Faculty</span>
-              <span class="text-[10px] font-black text-white bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">Science Dept</span>
-          </div>
-          <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg">🎓</div>
-          <button id="logout-nav-btn" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
-      </div>
-    </header>
-
-    <div id="loading" class="flex items-center justify-center flex-grow">
+    <div id="loading" class="flex items-center justify-center min-h-screen">
         <div class="animate-pulse font-bold text-slate-400">Verifying Faculty Access...</div>
     </div>
 
-    <div id="app" class="hidden max-w-7xl mx-auto w-full p-4 md:p-8 fade-in flex flex-col lg:flex-row gap-8">
+    <div id="app" class="hidden max-w-7xl mx-auto p-4 md:p-8 fade-in flex gap-6 flex-col lg:flex-row">
 
-        <!-- SIDEBAR (Glass Style) -->
-        <aside class="w-full lg:w-64 flex-shrink-0 space-y-6">
-            <div class="glass-panel p-4 rounded-3xl">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 px-2">Navigation</h3>
-                <nav class="space-y-2">
-                    <a href="#" class="block bg-cbse-blue text-white font-bold px-4 py-3 rounded-xl shadow-lg shadow-blue-600/20 text-sm">
-                        My Classes
-                    </a>
-                    <a href="#" class="block text-slate-500 font-bold px-4 py-3 rounded-xl hover:bg-white hover:text-cbse-blue transition text-sm">
-                        Reports
-                    </a>
-                    <a href="#" class="block text-slate-500 font-bold px-4 py-3 rounded-xl hover:bg-white hover:text-cbse-blue transition text-sm">
-                        Curriculum
-                    </a>
-                </nav>
-            </div>
+        <!-- SIDEBAR -->
+        <aside class="w-full lg:w-64 flex-shrink-0">
+            <h1 class="text-xl font-black text-slate-900 tracking-tight mb-8">Faculty<span class="text-blue-600">Board</span></h1>
 
-            <div class="glass-panel p-4 rounded-3xl">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 px-2">Sections</h3>
-                <div class="space-y-2">
-                    <button class="w-full text-left px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-bold text-cbse-blue hover:border-cbse-blue transition">Class 9-A</button>
-                    <button class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium text-slate-500 hover:bg-white transition">Class 9-B</button>
+            <nav class="space-y-1">
+                <a href="#" class="block bg-blue-600 text-white font-bold px-4 py-3 rounded-xl shadow-lg shadow-blue-600/30">
+                    My Classes
+                </a>
+                <a href="#" class="block text-slate-500 font-bold px-4 py-3 rounded-xl hover:bg-white hover:text-slate-900 transition">
+                    Reports
+                </a>
+                <a href="#" class="block text-slate-500 font-bold px-4 py-3 rounded-xl hover:bg-white hover:text-slate-900 transition">
+                    Curriculum
+                </a>
+            </nav>
+
+            <div class="mt-8">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-4">Sections</h3>
+                <div class="space-y-1">
+                    <button class="w-full text-left px-4 py-2 rounded-lg bg-white border border-slate-200 text-sm font-bold text-slate-700 hover:border-blue-500 transition">Class 9-A</button>
+                    <button class="w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-white transition">Class 9-B</button>
+                    <button class="w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-white transition">Class 9-C</button>
                 </div>
             </div>
         </aside>
 
         <!-- MAIN -->
-        <main class="flex-1 min-w-0 space-y-8">
-            <div class="flex justify-between items-center">
-                <h2 id="section-title" class="text-3xl font-black text-slate-900 tracking-tight">Class 9-A</h2>
-                <button class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold uppercase hover:bg-slate-50 transition">
-                    ⬇ Export CSV
+        <main class="flex-1 min-w-0">
+            <header class="flex justify-between items-center mb-8">
+                <h2 id="section-title" class="text-3xl font-black text-slate-900">Class 9-A</h2>
+                <button class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-50">
+                    Export Report
                 </button>
-            </div>
+            </header>
 
             <!-- ANOMALY TICKER -->
-            <div id="anomaly-container" class="hidden">
+            <div id="anomaly-container" class="hidden mb-8">
                 <div class="flex items-center gap-2 mb-3">
-                    <h3 class="text-xs font-black text-danger-red uppercase tracking-widest">⚠️ Needs Attention</h3>
+                    <h3 class="text-xs font-black text-red-500 uppercase tracking-widest">⚠️ Needs Attention</h3>
                     <span class="h-px bg-red-100 flex-1"></span>
                 </div>
                 <div class="flex overflow-x-auto gap-4 pb-2 scrollbar-hide" id="anomaly-ticker">
@@ -189,22 +167,29 @@
             </div>
 
             <!-- STUDENT LIST -->
-            <div class="glass-panel rounded-3xl p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-bold text-cbse-blue">Student Performance</h3>
-                    <input type="text" placeholder="Search student..." class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold w-48 focus:border-cbse-blue outline-none transition">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800">Student Performance</h3>
+                    <input type="text" placeholder="Search student..." class="bg-slate-50 border-none rounded-lg px-4 py-2 text-sm w-48 focus:ring-2 focus:ring-blue-100 outline-none">
                 </div>
-                <div id="student-grid">
-                    <!-- Injected -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-4">Name</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Avg Score</th>
+                                <th class="p-4">Last Active</th>
+                                <th class="p-4 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-list">
+                            <!-- Injected -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
     </div>
-
-    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-      <p class="font-medium tracking-wide">Powered by Ready4Exam AI</p>
-      <p class="mt-1 opacity-70">© 2025 Academic Portal</p>
-    </footer>
-
 </body>
 </html>

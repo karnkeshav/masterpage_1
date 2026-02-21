@@ -35,96 +35,52 @@
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
 
-        // Initialize UI styles (Glassmorphism etc)
         UI.injectStyles();
-
-        // Bind Logout to the new nav button
         bindConsoleLogout("logout-nav-btn", "../../index.html");
         guardConsole("student");
 
-        // Data Loader (Called by Guard)
         window.loadConsoleData = async (profile) => {
             console.log("Loading Class Hub for:", profile.displayName);
-
-            // Populate Header
             document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
 
-            // Extract Grade
-            let grade = "9"; // Default
+            let grade = "9";
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get("grade")) {
-                grade = urlParams.get("grade");
-            } else if (profile.classId) {
-                grade = profile.classId;
-            }
+            if (urlParams.get("grade")) grade = urlParams.get("grade");
+            else if (profile.classId) grade = profile.classId;
 
             document.getElementById("class-title").textContent = `Class ${grade} Hub`;
             document.getElementById("context-badge").textContent = `Grade ${grade}`;
 
-            // Update Start New Quiz Link
-            const startLink = document.getElementById("start-new-quiz-btn");
-            if (startLink) {
-                startLink.href = `../../app/curriculum.html?grade=${grade}`;
-            }
-
-            // Setup Click Handlers
-            setupNavigation(grade);
-
-            // Load Stats
+            setupRoomNavigation(grade);
             await loadStudentStats(profile.uid);
         };
+
+        function setupRoomNavigation(grade) {
+            // Room Links
+            document.getElementById("btn-library").href = `../study-library.html?grade=${grade}`;
+            document.getElementById("btn-warmup").href = `../curriculum.html?grade=${grade}`; // Warm-up Room
+            document.getElementById("btn-mistakes").href = `../mistake-book.html`;
+
+            // Subject Shortcuts
+            document.querySelectorAll(".subject-shortcut").forEach(btn => {
+                btn.onclick = () => {
+                    const subject = btn.dataset.subject;
+                    window.location.href = `../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
+                };
+            });
+        }
 
         window.loadStudentStats = async (uid) => {
             if (!uid) return;
             try {
                 const { db } = await getInitializedClients();
-
-                // 1. Load Quiz Scores
-                const qScores = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
-
-                // 2. Load Mistake Notebook (For Quick Access Badges)
-                const qMistakes = query(collection(db, "mistake_notebook"), where("user_id", "==", uid));
-
-                const [snapshot, mistakeSnap] = await Promise.all([
-                    getDocs(qScores),
-                    getDocs(qMistakes)
-                ]);
+                const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
+                const snapshot = await getDocs(q);
 
                 document.getElementById("stat-total").textContent = snapshot.size;
 
-                // Process Mistakes for Badges
-                const mistakeCounts = {
-                    "Science": 0,
-                    "Mathematics": 0,
-                    "Social Science": 0
-                };
-
-                mistakeSnap.forEach(doc => {
-                    const data = doc.data();
-                    const sub = normalizeSubject(data);
-                    // Increment count
-                    if (mistakeCounts[sub] !== undefined) {
-                        mistakeCounts[sub]++;
-                    } else {
-                        // Handle "General" or others if necessary
-                        if (mistakeCounts["General"] === undefined) mistakeCounts["General"] = 0;
-                        mistakeCounts["General"]++;
-                    }
-                });
-
-                // Update Quick Access Badges
-                Object.keys(mistakeCounts).forEach(sub => {
-                    const count = mistakeCounts[sub];
-                    // Normalize ID (remove spaces)
-                    const badgeId = `badge-${sub.replace(/\s+/g, '-')}`;
-                    const badgeEl = document.getElementById(badgeId);
-
-                    if (badgeEl && count > 0) {
-                        badgeEl.textContent = `${count} Issues`;
-                        badgeEl.classList.remove("hidden");
-                    }
-                });
-
+                // Also fetch mistake count for badges if needed (optional optimization)
+                // For now, assume mistake badge is static or loaded separately.
 
                 if (snapshot.empty) {
                      document.getElementById("stat-avg").textContent = "0%";
@@ -137,7 +93,6 @@
                 const subjectCounts = {};
                 const gridData = [];
 
-                // 1. Subject Intelligence Function
                 const getActualSubject = (data) => {
                     const context = `${data.subject || ''} ${data.topicSlug || ''} ${data.topic || ''}`.toLowerCase();
                     if (context.includes("social") || context.includes("history") || context.includes("nazism") || context.includes("hitler") || context.includes("civics") || context.includes("geography")) return "Social Science";
@@ -179,7 +134,6 @@
                 }
                 document.getElementById("stat-subject").textContent = mostPracticed;
 
-                // Render Grid using UI Renderer
                 const columns = [
                     { key: 'subject', header: 'Subject', cell: (item) => `<span class="font-bold text-cbse-blue">${item.subject}</span>` },
                     { key: 'chapter', header: 'Chapter', cell: (item) => `<span class="text-sm font-medium text-slate-600">${item.chapter}</span>` },
@@ -206,20 +160,8 @@
 
             } catch (e) {
                 console.error("Dashboard Sync Failed:", e);
-                if (e.code === 'permission-denied') console.error("🛑 Missing Permissions: Update Firebase Security Rules.");
             }
         };
-
-        window.refreshDashboardStats = async (uid) => { await loadStudentStats(uid); };
-
-        function setupNavigation(grade) {
-            const cards = document.querySelectorAll(".subject-card");
-            cards.forEach(card => {
-                card.onclick = () => {
-                    window.location.href = `../chapter-selection.html?subject=${encodeURIComponent(card.dataset.subject)}&grade=${grade}`;
-                };
-            });
-        }
 
         function formatChapterName(slug) {
             if (!slug) return "General Quiz";
@@ -239,7 +181,6 @@
 </head>
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
-    <!-- Glass Header -->
     <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
       <div class="flex items-center space-x-4">
         <a href="../../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
@@ -265,16 +206,6 @@
 
     <div id="app" class="hidden max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
 
-        <!-- Action Bar -->
-        <div class="flex justify-end gap-4 mb-8">
-             <a href="../mistake-book.html" class="peel-back-anim px-6 py-3 bg-white border border-slate-100 text-slate-700 font-black uppercase text-xs rounded-xl hover:shadow-lg transition flex items-center gap-2">
-                <i class="fas fa-book-open text-danger-red"></i> Mistake Notebook
-            </a>
-            <a id="start-new-quiz-btn" href="#" class="peel-back-anim px-6 py-3 bg-cbse-blue text-white font-black uppercase text-xs rounded-xl hover:shadow-xl hover:shadow-blue-900/20 transition flex items-center gap-2">
-                Start New Quiz <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
-
         <!-- Stats Row -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div class="glass-panel p-6 rounded-3xl">
@@ -292,65 +223,73 @@
         </div>
 
         <div class="grid lg:grid-cols-3 gap-8">
-            <!-- Subject Cards -->
+            <!-- QUICK ACCESS: Rooms & Shortcuts -->
             <div class="lg:col-span-1 space-y-6">
                  <h3 class="font-bold text-slate-900 text-lg">Quick Access</h3>
 
-                <!-- Science -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer relative overflow-hidden" data-subject="Science">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-atom text-6xl text-purple-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
-                            <i class="fas fa-flask text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-black text-slate-900">Science</h3>
-                            <p class="text-slate-500 text-xs font-medium">Physics, Chemistry, Bio</p>
-                        </div>
-                    </div>
-                </div>
+                 <!-- ROOMS -->
+                 <div class="space-y-4">
+                     <a id="btn-library" href="#" class="block glass-panel p-5 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition group relative overflow-hidden">
+                         <div class="flex items-center gap-4">
+                             <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">📚</div>
+                             <div>
+                                 <h4 class="font-bold text-slate-800">Study Library</h4>
+                                 <p class="text-[10px] text-slate-500 font-medium">Access curated notes & summaries.</p>
+                             </div>
+                         </div>
+                     </a>
 
-                <!-- Math -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer relative overflow-hidden" data-subject="Mathematics">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-calculator text-6xl text-blue-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
-                            <i class="fas fa-square-root-alt text-xl"></i>
-                        </div>
-                         <div>
-                            <h3 class="text-lg font-black text-slate-900">Mathematics</h3>
-                            <p class="text-slate-500 text-xs font-medium">Algebra, Geometry</p>
-                        </div>
-                    </div>
-                </div>
+                     <a id="btn-warmup" href="#" class="block glass-panel p-5 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition group relative overflow-hidden">
+                         <div class="flex items-center gap-4">
+                             <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl">⚡</div>
+                             <div>
+                                 <h4 class="font-bold text-slate-800">Warm-up Room</h4>
+                                 <p class="text-[10px] text-slate-500 font-medium">Priming before quizzes.</p>
+                             </div>
+                         </div>
+                     </a>
 
-                <!-- Social Science -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer relative overflow-hidden" data-subject="Social Science">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-globe-americas text-6xl text-amber-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
-                            <i class="fas fa-landmark text-xl"></i>
-                        </div>
-                         <div>
-                            <h3 class="text-lg font-black text-slate-900">Social Science</h3>
-                            <p class="text-slate-500 text-xs font-medium">History, Geo, Civics</p>
-                        </div>
-                    </div>
-                </div>
+                     <a id="btn-mistakes" href="#" class="block glass-panel p-5 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition group relative overflow-hidden">
+                         <div class="flex items-center gap-4">
+                             <div class="w-12 h-12 rounded-2xl bg-red-100 text-danger-red flex items-center justify-center text-xl">🧠</div>
+                             <div>
+                                 <h4 class="font-bold text-slate-800">Mistake Book</h4>
+                                 <p class="text-[10px] text-slate-500 font-medium">Review your learning gaps.</p>
+                             </div>
+                         </div>
+                     </a>
+                 </div>
+
+                 <!-- SHORTCUTS -->
+                 <div class="flex justify-between items-center px-2">
+                     <button class="subject-shortcut group flex flex-col items-center gap-2" data-subject="Mathematics">
+                         <div class="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm group-hover:scale-110 transition">
+                             <i class="fas fa-calculator"></i>
+                         </div>
+                         <span class="text-[10px] font-bold text-slate-500">Math</span>
+                     </button>
+                     <button class="subject-shortcut group flex flex-col items-center gap-2" data-subject="Science">
+                         <div class="w-14 h-14 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shadow-sm group-hover:scale-110 transition">
+                             <i class="fas fa-atom"></i>
+                         </div>
+                         <span class="text-[10px] font-bold text-slate-500">Science</span>
+                     </button>
+                     <button class="subject-shortcut group flex flex-col items-center gap-2" data-subject="Social Science">
+                         <div class="w-14 h-14 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-sm group-hover:scale-110 transition relative">
+                             <i class="fas fa-globe-americas"></i>
+                             <!-- Badge Example -->
+                             <span class="absolute -top-1 -right-1 w-5 h-5 bg-danger-red text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white animate-pulse">3</span>
+                         </div>
+                         <span class="text-[10px] font-bold text-slate-500">SST</span>
+                     </button>
+                 </div>
             </div>
 
             <!-- Learning History -->
             <div class="lg:col-span-2">
                  <h3 class="font-bold text-slate-900 text-lg mb-6">Learning History</h3>
-                 <!-- Responsive Grid Container -->
                  <div id="grid-container">
-                     <!-- Populated by renderResponsiveGrid -->
+                     <!-- Injected -->
                  </div>
             </div>
         </div>

@@ -1,20 +1,8 @@
 import { initializeServices, getInitializedClients } from "./config.js";
-import { ensureUserProfile, ensureUserInFirestore, waitForProfileReady, migrateAnonymousData } from "./api.js";
-import {
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    updateProfile,
-    onAuthStateChanged,
-    setPersistence,
-    browserSessionPersistence,
-    signOut as firebaseSignOut
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { signInAnonymously, onAuthStateChanged, setPersistence, browserSessionPersistence, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const LOG = "[AUTH]";
-
-// Re-export ensureUserInFirestore for backward compatibility with index.html
-export { ensureUserInFirestore };
 
 // Hardcoded Credential Map for "Sovereign Identity"
 const CREDENTIALS = {
@@ -39,79 +27,39 @@ const CREDENTIALS = {
 };
 
 export async function authenticateWithCredentials(username, password) {
-    const { auth, db } = await getInitializedClients();
-
-    if (!auth) throw new Error("Auth not initialized");
-
-    // 0. Clean Session Restart (Critical for Hot-Swap)
-    // Capture old UID for migration before signing out
-    const oldUid = sessionStorage.getItem('uid');
-
-    if (auth.currentUser) {
-        console.log(LOG, "Terminating active session...");
-        await firebaseSignOut(auth);
-        while(auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
-    }
+    await initializeServices();
+    const { auth, db } = getInitializedClients();
 
     const userProfile = CREDENTIALS[username];
     if (!userProfile) throw new Error("Invalid username");
     if (userProfile.pass !== password) throw new Error("Invalid password");
 
-    // NEW: Synthetic Email for Persistent Identity
-    const email = `${username}@ready4exam.internal`;
-
     try {
+        // Force session-only persistence so the user is logged out when the tab closes
         await setPersistence(auth, browserSessionPersistence);
 
-        let userCredential;
-        try {
-            // 1. Attempt to sign in
-            userCredential = await signInWithEmailAndPassword(auth, email, password);
-        } catch (signInError) {
-            // 2. If user not found, auto-provision
-            if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
-                 console.log(LOG, "Auto-provisioning new user:", email);
-                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                 // Update Display Name immediately
-                 await updateProfile(userCredential.user, { displayName: username });
-            } else {
-                throw signInError;
-            }
-        }
+        // 1. Establish Secure Session
+        const res = await signInAnonymously(auth);
+        const uid = res.user.uid;
 
-        const user = userCredential.user;
-        const stableUID = user.uid;
-
-        // 3. Store stable UID in session and window
-        sessionStorage.setItem('uid', stableUID);
-        sessionStorage.setItem('username', username);
-        window.userProfile = {
-            uid: stableUID,
+        // 2. Bind Sovereign Identity
+        const userData = {
+            uid: uid,
+            email: username === "keshav" ? "keshav.karn@gmail.com" : `${username}@ready4exam.com`, // Simulated email
             displayName: username,
-            role: userProfile.role,
             tenantType: userProfile.tenantType,
             tenantId: userProfile.tenantId,
-            school_id: userProfile.school_id
+            role: userProfile.role,
+            school_id: userProfile.school_id || null,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+            isSovereign: true
         };
 
-        // 4. Trigger Data Migration if an old anonymous session existed
-        if (oldUid && oldUid !== stableUID) {
-            console.log(LOG, "Triggering data migration from", oldUid, "to", stableUID);
-            await migrateAnonymousData(oldUid, stableUID);
-        }
+        // 3. Immutable Write
+        await setDoc(doc(db, "users", uid), userData);
 
-        // 5. Ensure Profile Container Exists with stable UID
-        await ensureUserProfile(stableUID, username, {
-            role: userProfile.role,
-            tenantType: userProfile.tenantType,
-            tenantId: userProfile.tenantId,
-            school_id: userProfile.school_id
-        });
-
-        // 6. Blocking Wait for Firestore Consistency
-        await waitForProfileReady(stableUID);
-
-        return { uid: stableUID, displayName: username, role: userProfile.role };
+        return userData;
 
     } catch (e) {
         console.error(LOG, "Auth Binding Failed", e);
@@ -119,9 +67,28 @@ export async function authenticateWithCredentials(username, password) {
     }
 }
 
+export async function ensureUserInFirestore(user) {
+  if (!user?.uid) return null;
+  const { db } = getInitializedClients();
+  const ref = doc(db, "users", user.uid);
+
+  try {
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+        return null;
+    } else {
+        await updateDoc(ref, { lastLogin: serverTimestamp() });
+        return snap.data();
+    }
+  } catch (e) {
+    console.warn(LOG, "Sync failed", e);
+    return null;
+  }
+}
+
 export async function routeUser(user) {
     if (!user) return;
-    const { db } = await getInitializedClients();
+    const { db } = getInitializedClients();
     const snap = await getDoc(doc(db, "users", user.uid));
 
     if (!snap.exists()) {
@@ -139,7 +106,7 @@ export async function routeUser(user) {
     }
 
     if (data.tenantType === "school") {
-        if (data.role === "admin" && data.school_id) {
+        if (data.displayName === "dps.ready4exam") {
              window.location.href = `school-landing.html?schoolId=${data.school_id}`;
              return;
         }
@@ -160,19 +127,15 @@ export async function routeUser(user) {
  * Changed from browserLocalPersistence to browserSessionPersistence to force re-login.
  */
 export async function initializeAuthListener(onReady) {
-  const { auth } = await getInitializedClients();
-  if (!auth) return;
+  await initializeServices();
+  const { auth } = getInitializedClients();
 
   // Set persistence to session so auth is not remembered across browser restarts
-  if (auth) {
-      await setPersistence(auth, browserSessionPersistence).catch(() => {});
-  }
+  await setPersistence(auth, browserSessionPersistence).catch(() => {});
 
   onAuthStateChanged(auth, async (user) => {
     let profile = null;
     if (user) {
-      // If we have a special student login, ensure profile creation
-      // We can infer credentials if they are active, but ensureUserInFirestore handles the sync.
       profile = await ensureUserInFirestore(user);
 
       if (profile) {
@@ -189,7 +152,8 @@ export async function initializeAuthListener(onReady) {
 }
 
 export async function requireAuth(skipUI = false, redirect = false) {
-  const { auth } = await getInitializedClients();
+  await initializeServices();
+  const { auth } = getInitializedClients();
 
   if (auth.currentUser) {
     if(redirect) routeUser(auth.currentUser);
@@ -203,7 +167,7 @@ export async function requireAuth(skipUI = false, redirect = false) {
 }
 
 export async function checkRole(requiredRole) {
-    const { auth, db } = await getInitializedClients();
+    const { auth, db } = getInitializedClients();
     const user = auth.currentUser;
     if (!user) return false;
     const snap = await getDoc(doc(db, "users", user.uid));
@@ -214,6 +178,6 @@ export async function checkRole(requiredRole) {
 }
 
 export const signOut = async () => {
-  const { auth } = await getInitializedClients();
+  const { auth } = getInitializedClients();
   return firebaseSignOut(auth);
 };

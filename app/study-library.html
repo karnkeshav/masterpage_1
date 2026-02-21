@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Library — Ready4Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily:{ sans:['Inter','sans-serif'] },
+          colors:{
+            'cbse-blue':'#1a3e6a',
+            'cbse-light':'#f5f7fa',
+            'accent-gold':'#ffb703',
+            'success-green': '#16a34a',
+            'warning-yellow': '#ca8a04',
+            'danger-red': '#dc2626'
+          }
+        }
+      }
+    }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>body{font-family:'Inter',sans-serif;}</style>
+
+    <script src="../js/firebase-master-config.js"></script>
+    <script src="../js/config.js" type="module"></script>
+
+    <script type="module">
+        import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
+        import { bindConsoleLogout } from "../js/guard.js";
+        import * as UI from "../js/ui-renderer.js";
+
+        UI.injectStyles();
+        bindConsoleLogout("logout-nav-btn", "../index.html");
+
+        // Mock Curriculum Data (In production, fetch from Firestore curriculum collection)
+        const CURRICULUM = {
+            "Mathematics": ["Number Systems", "Polynomials", "Coordinate Geometry", "Linear Equations", "Euclid Geometry", "Lines and Angles", "Triangles", "Quadrilaterals", "Circles", "Heron Formula", "Surface Areas", "Statistics", "Probability"],
+            "Science": ["Matter in Our Surroundings", "Is Matter Around Us Pure", "Atoms and Molecules", "Structure of the Atom", "The Fundamental Unit of Life", "Tissues", "Motion", "Force and Laws of Motion", "Gravitation", "Work and Energy", "Sound", "Improvement in Food Resources"],
+            "Social Science": ["The French Revolution", "Socialism in Europe", "Nazism and the Rise of Hitler", "Forest Society and Colonialism", "India - Size and Location", "Physical Features of India", "Drainage", "Climate", "Natural Vegetation", "Population", "What is Democracy", "Constitutional Design", "Electoral Politics", "Working of Institutions", "Democratic Rights", "The Story of Village Palampur", "People as Resource", "Poverty as a Challenge", "Food Security in India"]
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const grade = params.get("grade") || "9";
+        const preSelectedSubject = params.get("subject");
+
+        // Init
+        initializeAuthListener(async (user) => {
+            if (user) {
+                document.getElementById("user-welcome").textContent = user.displayName || "Scholar";
+                document.getElementById("context-badge").textContent = `Grade ${grade}`;
+                renderLibrary();
+            } else {
+                window.location.href = "../index.html";
+            }
+        });
+
+        function renderLibrary() {
+            const container = document.getElementById("library-container");
+            container.innerHTML = "";
+
+            Object.entries(CURRICULUM).forEach(([subject, chapters]) => {
+                // If a subject is pre-selected via URL, skip others
+                if (preSelectedSubject && subject !== preSelectedSubject) return;
+
+                const section = document.createElement("div");
+                section.className = "mb-12 fade-in";
+
+                const gridId = `grid-${subject.replace(/\s+/g,'-')}`;
+
+                section.innerHTML = `
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-lg shadow-sm">
+                            ${getSubjectIcon(subject)}
+                        </div>
+                        <h3 class="text-xl font-black text-slate-800 tracking-tight">${subject}</h3>
+                    </div>
+                    <div id="${gridId}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                `;
+
+                container.appendChild(section);
+
+                const grid = document.getElementById(gridId);
+                chapters.forEach(chapter => {
+                    const card = document.createElement("a");
+                    // Link to the Dynamic Content Page
+                    card.href = `study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;
+                    card.className = "group block bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden";
+                    card.innerHTML = `
+                        <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity text-cbse-blue">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-700 group-hover:text-cbse-blue transition-colors pr-6">${chapter}</h4>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-2">Study Summary</p>
+                    `;
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        function getSubjectIcon(subject) {
+            if (subject.includes("Math")) return "📐";
+            if (subject.includes("Science")) return "🔬";
+            if (subject.includes("Social")) return "🌍";
+            return "📚";
+        }
+    </script>
+</head>
+<body class="bg-cbse-light min-h-screen flex flex-col">
+
+    <!-- Glass Header -->
+    <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
+      <div class="flex items-center space-x-4">
+        <a href="../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
+        <div>
+          <h2 class="text-xl font-black text-cbse-blue leading-none tracking-tight">Study<span class="text-accent-gold">Library</span></h2>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Curated Notes & Insights</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+          <div class="hidden md:flex flex-col items-end mr-2">
+              <span id="user-welcome" class="text-xs font-bold text-slate-700">Student</span>
+              <span id="context-badge" class="text-[10px] font-black text-white bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">Grade --</span>
+          </div>
+          <button id="logout-nav-btn" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
+      </div>
+    </header>
+
+    <div class="flex-grow max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
+        <div class="mb-8">
+             <a href="consoles/student.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
+                <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back to Hub
+            </a>
+        </div>
+
+        <div id="library-container">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
+      <p class="font-medium tracking-wide">Powered by Ready4Exam AI</p>
+      <p class="mt-1 opacity-70">© 2025 Academic Portal</p>
+    </footer>
+
+</body>
+</html>

@@ -151,6 +151,29 @@ export async function waitForProfileReady(uid) {
     throw new Error("Timeout waiting for user profile creation.");
 }
 
+export async function fetchChapterSummary(grade, subject, topic) {
+    const { db } = await getInitializedClients();
+    // Doc ID Format: grade_subjectSlug_topicSlug
+    // e.g. 9_mathematics_polynomials
+    const subjectSlug = subject.toLowerCase().split(' ')[0]; // "Mathematics" -> "mathematics", "Social Science" -> "social"
+    const topicSlug = topic.toLowerCase().replace(/\s+/g, '_');
+    const docId = `${grade}_${subjectSlug}_${topicSlug}`;
+
+    console.log("[API] Fetching Summary for:", docId);
+
+    try {
+        const snap = await getDoc(doc(db, "ncert_summaries", docId));
+        if (snap.exists()) {
+            return snap.data();
+        }
+        console.warn("[API] Summary not found:", docId);
+        return null;
+    } catch (e) {
+        console.error("[API] Failed to fetch summary:", e);
+        return null;
+    }
+}
+
 function getTableName(topic) {
   // Prevent double-slugging if already a table ID
   if (topic && topic.includes("_") && topic.includes("quiz")) {

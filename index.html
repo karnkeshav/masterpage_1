@@ -322,28 +322,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 </div>
 
 <script type="module">
-import { authenticateWithCredentials, routeUser, initializeAuthListener, ensureUserInFirestore } from "./js/auth-paywall.js";
-
-// Global Login Handler for Student Cards
-window.handleStudentLogin = async (grade) => {
-    if (grade === '9') {
-        try {
-            // Auto-login as student9
-            document.body.style.cursor = 'wait';
-            const btn = document.querySelector('.class-card div'); // Visual feedback
-            if(btn) btn.textContent = "BINDING...";
-
-            await authenticateWithCredentials('student9', 'student9');
-
-            // Listener will route, but we force redirect for speed
-            window.location.href = "app/consoles/student.html";
-        } catch (e) {
-            console.error("Auto-login failed", e);
-            alert("Login System Busy. Please try again.");
-            document.body.style.cursor = 'default';
-        }
-    }
-};
+import { authenticateWithCredentials, routeUser, initializeAuthListener } from "./js/auth-paywall.js";
 
 // 1. Initialize Auth Listener to check for existing session
 initializeAuthListener(async (user, profile) => {
@@ -368,10 +347,16 @@ loginForm.addEventListener("submit", async (e) => {
     errorBox.classList.add("hidden");
 
     try {
-        const res = await authenticateWithCredentials(u, p);
-        // Explicitly wait for profile sync before routing
-        await ensureUserInFirestore({ uid: res.uid });
-        await routeUser({ uid: res.uid });
+        await authenticateWithCredentials(u, p);
+        // Auth listener will catch the state change and route,
+        // but we can also route explicitly to be sure/faster.
+        // Wait a moment for Firestore write to propagate if needed,
+        // but authenticateWithCredentials awaits the write.
+        // The listener might trigger too.
+        // Let's rely on routeUser calls.
+        // Actually, initializeAuthListener runs on page load.
+        // onAuthStateChanged triggers on sign-in.
+        // So the listener *will* fire.
     } catch (err) {
         console.error(err);
         errorBox.textContent = "Identity Verification Failed: Invalid ID or Passkey.";
@@ -422,21 +407,11 @@ buttons.forEach(btn=>{
     if(board==="CBSE"){
       note.textContent="NCERT Aligned (6-12)";
       [6,7,8,9,10,11,12].forEach(c=>{
-        if (c === 9) {
-            // Special Login Flow for Class 9 Demo
-            grid.innerHTML+=`
-            <div onclick="window.handleStudentLogin('9')" class="class-card text-center group cursor-pointer">
-              <h3 class="text-base font-black text-heading mb-1">Class ${c}</h3>
-              <p class="text-[10px] text-slate-400">Live Demo</p>
-              <div class="text-[10px] text-cbse-blue font-bold opacity-0 group-hover:opacity-100 transition">LOGIN &rarr;</div>
-            </div>`;
-        } else {
-            grid.innerHTML+=`
-            <a href="./app/class-hub.html?grade=${c}" class="class-card text-center group" onclick="gtag('event','class_opened',{board:'CBSE',class:${c}})">
-              <h3 class="text-base font-black text-heading mb-1">Class ${c}</h3>
-              <div class="text-[10px] text-cbse-blue font-bold opacity-0 group-hover:opacity-100 transition">ENTER &rarr;</div>
-            </a>`;
-        }
+        grid.innerHTML+=`
+        <a href="./app/class-hub.html?grade=${c}" class="class-card text-center group" onclick="gtag('event','class_opened',{board:'CBSE',class:${c}})">
+          <h3 class="text-base font-black text-heading mb-1">Class ${c}</h3>
+          <div class="text-[10px] text-cbse-blue font-bold opacity-0 group-hover:opacity-100 transition">ENTER &rarr;</div>
+        </a>`;
       });
     }
     if(board==="SCERT"){
