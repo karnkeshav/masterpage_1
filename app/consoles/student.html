@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Console — Ready4Exam</title>
+    <title>Class Hub — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
     tailwind.config = {
@@ -11,12 +11,8 @@
         extend: {
           fontFamily:{ sans:['Inter','sans-serif'] },
           colors:{
-            'cbse-blue':'#1a3e6a',
-            'cbse-light':'#f5f7fa',
-            'accent-gold':'#ffb703',
-            'success-green': '#16a34a',
-            'warning-yellow': '#ca8a04',
-            'danger-red': '#dc2626'
+            'cbse-blue':'#1a3e6a', 'cbse-light':'#f5f7fa', 'accent-gold':'#ffb703',
+            'success-green': '#16a34a', 'warning-yellow': '#ca8a04', 'danger-red': '#dc2626'
           }
         }
       }
@@ -37,7 +33,7 @@
     <script type="module">
         import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
-        import { collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
 
         UI.injectStyles();
@@ -48,14 +44,22 @@
             const grade = profile.classId || "9";
             document.getElementById("user-welcome").textContent = profile.displayName || "Scholar";
             document.getElementById("context-badge").textContent = `Grade ${grade}`;
+            document.getElementById("class-title").textContent = `Class ${grade} Hub`;
             
-            await renderMentorHub(profile.uid, grade);
+            setupNavigation(grade);
+            await renderMentorHub(profile.uid);
             
             document.getElementById("loading").classList.add("hidden");
             document.getElementById("app").classList.remove("hidden");
         };
 
-        async function renderMentorHub(uid, grade) {
+        function setupNavigation(grade) {
+            // Restore quiz flow to curriculum.html
+            document.getElementById("btn-start-test").href = `../curriculum.html?grade=${grade}`;
+            document.getElementById("btn-mistakes-hub").href = `../mistake-book.html`;
+        }
+
+        async function renderMentorHub(uid) {
             const { db } = await getInitializedClients();
             const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
             const snap = await getDocs(q);
@@ -67,26 +71,26 @@
 
             const scores = snap.docs.map(doc => doc.data());
 
-            // 1. Update Performance Metric Cards
+            // 1. Performance Metrics
             document.getElementById("stat-total").textContent = scores.length;
-            document.getElementById("stat-recent").textContent = scores[0].subject || "General";
+            const latest = scores[0];
+            document.getElementById("stat-recent").textContent = `${formatChapterName(latest.topic)} (${latest.score_percent}%)`;
             
-            const avgMastery = Math.round(scores.reduce((a, b) => a + (b.score_percent || 0), 0) / scores.length);
-            document.getElementById("stat-avg-mastery").textContent = `${avgMastery}%`;
+            const avg = Math.round(scores.reduce((a, b) => a + (b.score_percent || 0), 0) / scores.length);
+            document.getElementById("stat-avg-mastery").textContent = `${avg}%`;
 
-            // 2. Health Meters & Grid
+            // 2. Data Visualizations
             renderSubjectHealth(scores);
             renderChapterHealth(scores);
             renderRecentActivity(scores.slice(0, 10));
-            renderMentorAdvice(scores);
         }
 
         function renderSubjectHealth(scores) {
             const subjects = ["Mathematics", "Science", "Social Science", "English"];
             const container = document.getElementById("subject-health-meters");
             container.innerHTML = subjects.map(sub => {
-                const subScores = scores.filter(s => normalizeSubject(s) === sub);
-                const avg = subScores.length > 0 ? Math.round(subScores.reduce((a, b) => a + (b.score_percent || 0), 0) / subScores.length) : 0;
+                const subScores = scores.filter(s => s.subject === sub);
+                const avg = subScores.length > 0 ? Math.round(subScores.reduce((a,b)=> a + (b.score_percent || 0), 0) / subScores.length) : 0;
                 const color = avg >= 85 ? 'bg-success-green' : avg >= 50 ? 'bg-cbse-blue' : 'bg-danger-red';
                 return `
                     <div class="mb-4">
@@ -100,32 +104,19 @@
             }).join("");
         }
 
-        function renderRecentActivity(recentScores) {
-            const container = document.getElementById("recent-activity-list");
-            container.innerHTML = recentScores.map(s => `
-                <div class="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition rounded-xl">
-                    <div class="min-w-0">
-                        <div class="text-xs font-bold text-slate-800 truncate">${formatChapterName(s.topic)}</div>
-                        <div class="text-[9px] text-slate-400 font-bold uppercase">${s.subject} • ${s.difficulty}</div>
-                    </div>
-                    <div class="text-sm font-black ${getScoreColor(s.score_percent)}">${s.score_percent}%</div>
-                </div>
-            `).join("");
-        }
-
         function renderChapterHealth(scores) {
             const chapters = {};
             scores.forEach(s => {
-                const name = formatChapterName(s.topicSlug || s.topic);
+                const name = formatChapterName(s.topic || s.topicSlug);
                 if (!chapters[name]) chapters[name] = { max: 0, attempts: 0 };
                 chapters[name].attempts++;
-                if ((s.score_percent || 0) > chapters[name].max) chapters[name].max = s.score_percent;
+                if (s.score_percent > chapters[name].max) chapters[name].max = s.score_percent;
             });
 
             document.getElementById("chapter-health-grid").innerHTML = Object.entries(chapters).slice(0, 4).map(([name, data]) => `
                 <div class="glass-panel p-4 rounded-2xl border border-slate-100">
                     <div class="flex justify-between text-[9px] font-bold uppercase mb-2">
-                        <span class="${getScoreColor(data.max)}">${data.max >= 85 ? 'Mastered' : 'Improving'}</span>
+                        <span class="${data.max >= 85 ? 'text-success-green' : 'text-cbse-blue'}">${data.max >= 85 ? 'Mastered' : 'Improving'}</span>
                         <span class="text-slate-400">Grit: ${data.attempts}</span>
                     </div>
                     <div class="font-bold text-slate-800 text-xs truncate">${name}</div>
@@ -134,38 +125,17 @@
             `).join("");
         }
 
-        function renderMentorAdvice(scores) {
-            const latest = scores[0];
-            const adviceContainer = document.getElementById("advice-box");
-            adviceContainer.innerHTML = `
-                <div class="p-4 bg-white rounded-2xl border border-cbse-blue/10 shadow-sm flex gap-3">
-                    <div class="text-xl">💡</div>
-                    <p class="text-xs text-slate-600"><strong>Mentor Insight:</strong> Focus on <b>${formatChapterName(latest.topic)}</b>. Enter the Base Camp to fix gaps before testing again.</p>
-                </div>`;
-        }
-
-        // Logic for Quiz Flow Gatekeeper
-        window.startQuizFlow = async () => {
-            const subject = prompt("Select Subject: Mathematics, Science, Social Science, English");
-            if (!subject) return;
-
-            // In a full implementation, this would trigger a secondary selection for groups/chapters.
-            const chapter = prompt(`Enter ${subject} Chapter Name:`);
-            if (!chapter) return;
-
-            const difficulty = prompt("Select Difficulty: Simple, Medium, Advanced", "Simple");
-            if (!difficulty) return;
-
-            const slug = chapter.toLowerCase().replace(/\s+/g, '_');
-            window.location.href = `../quiz-engine.html?topic=${slug}&difficulty=${difficulty}`;
-        };
-
-        function normalizeSubject(data) {
-            const ctx = `${data.subject || ''} ${data.topicSlug || ''}`.toLowerCase();
-            if (ctx.includes("math")) return "Mathematics";
-            if (ctx.includes("science")) return "Science";
-            if (ctx.includes("english")) return "English";
-            return "Social Science";
+        function renderRecentActivity(recentScores) {
+            const container = document.getElementById("recent-activity-list");
+            container.innerHTML = recentScores.map(s => `
+                <div class="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition rounded-xl">
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-slate-800 truncate">${formatChapterName(s.topic)}</div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase">${s.subject} • ${s.difficulty}</div>
+                    </div>
+                    <div class="text-sm font-black ${s.score_percent >= 85 ? 'text-success-green' : 'text-cbse-blue'}">${s.score_percent}%</div>
+                </div>
+            `).join("");
         }
 
         function formatChapterName(slug) {
@@ -173,35 +143,38 @@
             return slug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
         }
 
-        function getScoreColor(p) {
-            if (p >= 85) return "text-success-green";
-            if (p >= 50) return "text-cbse-blue";
-            return "text-danger-red";
-        }
-
         function renderZeroState() {
-            document.getElementById("app").innerHTML = `<div class="p-20 text-center">No scores yet. Start a quiz to see your progress!</div>`;
+            document.getElementById("stat-total").textContent = "0";
+            document.getElementById("stat-avg-mastery").textContent = "0%";
+            document.getElementById("recent-activity-list").innerHTML = `<div class="p-4 text-center text-slate-400 text-xs italic">Start your first quiz to see activity.</div>`;
         }
     </script>
 </head>
-<body class="bg-cbse-light min-h-screen">
+<body class="bg-cbse-light">
 
     <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
-        <div class="flex items-center space-x-4">
-            <h2 class="text-xl font-black text-cbse-blue">Class Hub</h2>
+      <div class="flex items-center space-x-4">
+        <a href="../../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition text-lg">🏠</a>
+        <div>
+          <h2 id="class-title" class="text-xl font-black text-cbse-blue leading-none tracking-tight tracking-tight">Class Hub</h2>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Ready4Exam Performance Hub</p>
         </div>
-        <div class="flex items-center space-x-4">
-            <button onclick="startQuizFlow()" class="px-5 py-2.5 bg-cbse-blue text-white text-[11px] font-black rounded-xl shadow-lg">START NEW QUIZ</button>
-            <a href="../mistake-book.html" class="px-5 py-2.5 bg-red-50 text-danger-red text-[11px] font-black rounded-xl border border-red-100">MISTAKE BOOK</a>
-            <button id="logout-nav-btn" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition">🚪</button>
-        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+          <div class="hidden md:flex items-center gap-3 mr-4 border-r border-slate-200 pr-4">
+            <a id="btn-start-test" href="#" class="px-4 py-2 bg-cbse-blue text-white text-[11px] font-black rounded-xl hover:shadow-lg transition">START NEW QUIZ</a>
+            <a id="btn-mistakes-hub" href="#" class="px-4 py-2 bg-red-50 text-danger-red text-[11px] font-black rounded-xl border border-red-100">MISTAKE BOOK</a>
+          </div>
+          <button id="logout-nav-btn" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
+      </div>
     </header>
 
-    <div id="loading" class="flex items-center justify-center h-96"><div class="animate-pulse font-bold text-slate-400">Loading Hub...</div></div>
+    <div id="loading" class="flex items-center justify-center h-96"><div class="animate-pulse font-bold text-slate-400">Syncing Hub...</div></div>
 
-    <main id="app" class="hidden max-w-7xl mx-auto p-4 md:p-8 grid lg:grid-cols-12 gap-8">
+    <main id="app" class="hidden max-w-7xl mx-auto p-4 md:p-8 grid lg:grid-cols-12 gap-8 fade-in">
         
-        <aside class="lg:col-span-2 space-y-4">
+        <aside class="lg:col-span-2 space-y-6">
             <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Quick Access</h3>
             <div class="flex flex-col gap-2">
                 <button onclick="window.location.href='../study-library.html?subject=Mathematics'" class="flex items-center gap-3 p-3 glass-panel rounded-xl hover:bg-cbse-blue hover:text-white transition group">
@@ -214,7 +187,7 @@
                 </button>
                 <button onclick="window.location.href='../study-library.html?subject=Social%20Science'" class="flex items-center gap-3 p-3 glass-panel rounded-xl hover:bg-amber-600 hover:text-white transition group">
                     <i class="fas fa-globe text-amber-500 group-hover:text-white w-4"></i>
-                    <span class="text-xs font-bold">Social Science</span>
+                    <span class="text-xs font-bold">SST</span>
                 </button>
                 <button onclick="window.location.href='../study-library.html?subject=English'" class="flex items-center gap-3 p-3 glass-panel rounded-xl hover:bg-indigo-600 hover:text-white transition group">
                     <i class="fas fa-language text-indigo-500 group-hover:text-white w-4"></i>
@@ -224,43 +197,37 @@
         </aside>
 
         <section class="lg:col-span-10 space-y-8">
-            
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="glass-panel p-6 rounded-3xl">
-                    <div class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Total Tests</div>
-                    <div id="stat-total" class="text-3xl font-black text-slate-900">--</div>
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Tests</div>
+                    <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
                 </div>
                 <div class="glass-panel p-6 rounded-3xl">
-                    <div class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Latest Subject</div>
-                    <div id="stat-recent" class="text-xl font-black text-cbse-blue truncate">--</div>
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Latest Achievement</div>
+                    <div id="stat-recent" class="text-sm font-bold text-cbse-blue truncate mt-2">--</div>
                 </div>
                 <div class="glass-panel p-6 rounded-3xl">
-                    <div class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Avg Mastery</div>
-                    <div id="stat-avg-mastery" class="text-3xl font-black text-success-green">--%</div>
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Avg Mastery</div>
+                    <div id="stat-avg-mastery" class="text-4xl font-black text-success-green">--%</div>
                 </div>
             </div>
 
             <div class="grid lg:grid-cols-2 gap-8">
-                <div class="space-y-6">
-                    <div class="glass-panel p-6 rounded-3xl shadow-sm">
-                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Subject Health</h3>
-                        <div id="subject-health-meters"></div>
-                    </div>
-                    <div id="advice-box"></div>
+                <div class="glass-panel p-6 rounded-3xl">
+                    <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Subject Health</h3>
+                    <div id="subject-health-meters"></div>
                 </div>
+                <div class="glass-panel p-6 rounded-3xl">
+                    <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Recent Activity</h3>
+                    <div id="recent-activity-list" class="space-y-1"></div>
+                </div>
+            </div>
 
-                <div class="space-y-6">
-                    <div class="glass-panel p-6 rounded-3xl shadow-sm">
-                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Recent Activity</h3>
-                        <div id="recent-activity-list" class="space-y-1"></div>
-                    </div>
-                    <div id="chapter-health-grid" class="grid grid-cols-2 gap-4"></div>
-                </div>
+            <div class="space-y-4">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Top Chapter Health</h3>
+                <div id="chapter-health-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
             </div>
         </section>
     </main>
-
-    <footer class="text-center py-10 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Ready4Exam Performance Hub • © 2025</footer>
-
 </body>
 </html>
