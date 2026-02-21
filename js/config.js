@@ -24,29 +24,35 @@ export async function initializeServices() {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-      // If already initialized, return existing clients
-      if (firebaseApp && firebaseDB && supabase) {
-        return { auth: firebaseAuth, db: firebaseDB, supabase };
+      try {
+          // If already initialized, return existing clients
+          if (firebaseApp && firebaseDB && supabase) {
+            return { auth: firebaseAuth, db: firebaseDB, supabase };
+          }
+
+          const cfg = window.__firebase_config;
+          if (!cfg?.apiKey) throw new Error("Firebase config missing"); //
+
+          // Initialize Core Firebase (Fast)
+          firebaseApp = initializeApp(cfg); //
+          firebaseAuth = getAuth(firebaseApp); //
+
+          // Initialize Firestore - Required for Admin Panel and User Access
+          firebaseDB = getFirestore(firebaseApp);
+
+          // Initialize Supabase (Essential for fetching questions)
+          supabase = createSupabaseClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+            auth: { persistSession: false }
+          }); //
+
+          window.supabase = supabase; //
+
+          return { auth: firebaseAuth, db: firebaseDB, supabase };
+      } catch (e) {
+          console.error("Critical Initialization Error:", e);
+          // Return null clients instead of crashing destructuring
+          return { auth: null, db: null, supabase: null };
       }
-
-      const cfg = window.__firebase_config;
-      if (!cfg?.apiKey) throw new Error("Firebase config missing"); //
-
-      // Initialize Core Firebase (Fast)
-      firebaseApp = initializeApp(cfg); //
-      firebaseAuth = getAuth(firebaseApp); //
-
-      // Initialize Firestore - Required for Admin Panel and User Access
-      firebaseDB = getFirestore(firebaseApp);
-
-      // Initialize Supabase (Essential for fetching questions)
-      supabase = createSupabaseClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
-        auth: { persistSession: false }
-      }); //
-
-      window.supabase = supabase; //
-
-      return { auth: firebaseAuth, db: firebaseDB, supabase };
   })();
 
   return initPromise;
