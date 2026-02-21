@@ -110,7 +110,7 @@
     </div>
 
     <script type="module">
-        import { getInitializedClients, initializeServices } from "./js/config.js";
+        import { getInitializedClients } from "./js/config.js";
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { authenticateWithCredentials, signOut } from "./js/auth-paywall.js";
 
@@ -127,19 +127,15 @@
         async function loadSchool() {
             try {
                 // Robust Initialization Guard
-                let clients = null;
-                try {
-                    clients = await getInitializedClients(); // Might throw if not ready
-                } catch(e) {
-                    console.log("Clients not ready, initializing...");
-                }
+                // Note: getInitializedClients is now async and handles initialization
+                const clients = await getInitializedClients();
 
                 if (!clients || !clients.db) {
-                    clients = await initializeServices();
+                    console.error("DB Not Ready");
+                    return;
                 }
 
-                const { db } = clients;
-                if (!db) throw new Error("Firestore instance not initialized");
+                const db = clients.db; // Only access after check
 
                 // Initial Default
                 let data = {
