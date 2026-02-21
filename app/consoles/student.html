@@ -5,23 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Class Hub — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily:{ sans:['Inter','sans-serif'] },
-          colors:{
-            'cbse-blue':'#1a3e6a',
-            'cbse-light':'#f5f7fa',
-            'accent-gold':'#ffb703',
-            'success-green': '#16a34a',
-            'warning-yellow': '#ca8a04',
-            'danger-red': '#dc2626'
-          }
-        }
-      }
-    }
-    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>body{font-family:'Inter',sans-serif;}</style>
@@ -32,8 +15,8 @@
     <script type="module">
         import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
+        import { normalizeSubject, formatChapterName } from "../../js/utils.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import * as UI from "../../js/ui-renderer.js";
 
         UI.injectStyles();
         bindConsoleLogout("logout-nav-btn", "../../index.html");
@@ -49,7 +32,7 @@
             else if (profile.classId) grade = profile.classId;
 
             document.getElementById("class-title").textContent = `Class ${grade} Hub`;
-            document.getElementById("context-badge").textContent = `Grade ${grade}`;
+            document.getElementById("grade-badge").textContent = `Grade ${grade}`;
 
             setupRoomNavigation(grade);
             await loadStudentStats(profile.uid);
@@ -84,8 +67,8 @@
 
                 if (snapshot.empty) {
                      document.getElementById("stat-avg").textContent = "0%";
-                     document.getElementById("stat-subject").textContent = "None";
-                     document.getElementById("grid-container").innerHTML = `<div class="p-8 text-center text-slate-400">No records found.</div>`;
+                     document.getElementById("subject-mastery-container").innerHTML = `<div class="text-slate-400 text-sm">No data yet.</div>`;
+                     document.getElementById("history-body").innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">No records found.</td></tr>`;
                      return;
                 }
 
@@ -101,36 +84,134 @@
                     return "General";
                 };
 
+                const chapterStats = {}; // { "Chapter Name": { maxScore: 0, attempts: [] } }
+
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
-                    const cleanSubject = getActualSubject(data);
 
+                    // Normalize Subject
+                    const cleanSubject = normalizeSubject(data);
+
+                    // Calculate Percentage
                     const scoreVal = data.score || 0;
                     const totalVal = data.totalQuestions || data.total || 20;
                     const percentage = totalVal > 0 ? Math.round((scoreVal / totalVal) * 100) : (data.score_percent || 0);
 
                     totalScoreSum += percentage;
-                    subjectCounts[cleanSubject] = (subjectCounts[cleanSubject] || 0) + 1;
 
+                    // Subject Stats
+                    if (subjectStats[cleanSubject]) {
+                        subjectStats[cleanSubject].total += percentage;
+                        subjectStats[cleanSubject].count++;
+                    } else {
+                        if (!subjectStats["General"]) subjectStats["General"] = { total: 0, count: 0 };
+                        subjectStats["General"].total += percentage;
+                        subjectStats["General"].count++;
+                    }
+
+                    // Chapter Stats
                     const rawSlug = data.topicSlug || data.topic || data.chapter || "General Quiz";
-                    const cleanChapter = formatChapterName(rawSlug);
-                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
+                    const chapterName = formatChapterName(rawSlug);
 
-                    gridData.push({
-                        subject: cleanSubject,
-                        chapter: cleanChapter,
-                        difficulty: data.difficulty || 'Mixed',
-                        percentage: percentage,
-                        date: dateStr
-                    });
+                    if (!chapterStats[chapterName]) {
+                        chapterStats[chapterName] = { maxScore: 0, attempts: [], subject: cleanSubject };
+                    }
+                    chapterStats[chapterName].attempts.push(percentage); // Note: snapshot is DESC order (newest first)
+                    if (percentage > chapterStats[chapterName].maxScore) {
+                        chapterStats[chapterName].maxScore = percentage;
+                    }
+
+                    // History Row
+                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
+                    historyHtml.push(`
+                        <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                            <td class="p-4 font-bold text-slate-700">${escapeHtml(cleanSubject)}</td>
+                            <td class="p-4 text-sm text-slate-600">${escapeHtml(chapterName)}</td>
+                            <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${escapeHtml(data.difficulty || 'Mixed')}</span></td>
+                            <td class="p-4 font-mono font-bold ${getScoreColor(percentage)}">${percentage}%</td>
+                            <td class="p-4 text-right text-xs text-slate-400">${dateStr}</td>
+                        </tr>
+                    `);
                 });
 
+                // Update Average Mastery
                 const avg = Math.round(totalScoreSum / snapshot.size);
                 document.getElementById("stat-avg").textContent = `${avg}%`;
 
-                let mostPracticed = "None";
-                if (Object.keys(subjectCounts).length > 0) {
-                     mostPracticed = Object.keys(subjectCounts).reduce((a, b) => subjectCounts[a] > subjectCounts[b] ? a : b);
+                // Render Subject Mastery
+                renderSubjectMastery(subjectStats);
+
+                // Render Chapter Health & Grit
+                renderChapterHealth(chapterStats);
+
+                // Render Advice
+                renderActionableAdvice(subjectStats, chapterStats);
+
+                // Update Table
+                document.getElementById("history-body").innerHTML = historyHtml.slice(0, 10).join("");
+
+            } catch (e) {
+                console.error("Dashboard Sync Failed:", e);
+                if (e.code === 'permission-denied') {
+                     console.error("🛑 Missing Permissions: Update Firebase Security Rules to allow read/write for 'quiz_scores'.");
+                }
+            }
+        };
+
+        function renderSubjectMastery(stats) {
+            const container = document.getElementById("subject-mastery-container");
+            let html = "";
+
+            const subjects = ["Mathematics", "Science", "Social Science"];
+            subjects.forEach(sub => {
+                const s = stats[sub];
+                const avg = s && s.count > 0 ? Math.round(s.total / s.count) : 0;
+                const color = sub === "Mathematics" ? "bg-blue-500" : (sub === "Science" ? "bg-purple-500" : "bg-amber-500");
+                const width = avg > 0 ? avg : 5; // Min width for visibility
+
+                html += `
+                    <div class="mb-4">
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span class="text-slate-600">${sub}</span>
+                            <span class="text-slate-900">${avg}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div class="${color} h-2 rounded-full transition-all duration-1000" style="width: ${width}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderChapterHealth(stats) {
+            const container = document.getElementById("chapter-health-grid");
+            let html = "";
+
+            Object.keys(stats).forEach(ch => {
+                const data = stats[ch];
+                const max = data.maxScore;
+
+                let status = "Needs Focus";
+                let colorClass = "bg-red-50 text-red-600 border-red-100";
+
+                if (max >= 85) {
+                    status = "Mastered";
+                    colorClass = "bg-emerald-50 text-emerald-600 border-emerald-100";
+                } else if (max >= 50) {
+                    status = "Improving";
+                    colorClass = "bg-blue-50 text-blue-600 border-blue-100";
+                }
+
+                const chronological = [...data.attempts].reverse();
+                let gritCount = 0;
+                let mastered = false;
+                for (let score of chronological) {
+                    gritCount++;
+                    if (score >= 85) {
+                        mastered = true;
+                        break;
+                    }
                 }
                 document.getElementById("stat-subject").textContent = mostPracticed;
 
@@ -145,23 +226,24 @@
                 const cardRenderer = (item) => `
                     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
                         <div>
-                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">${item.subject}</div>
-                            <div class="font-bold text-slate-800">${item.chapter}</div>
-                            <div class="text-xs text-slate-500 mt-1">${item.date}</div>
+                            <div class="font-bold text-xs truncate max-w-[120px] md:max-w-[150px]" title="${ch}">${ch}</div>
+                            <div class="text-[10px] opacity-75 font-mono">${status}</div>
                         </div>
                         <div class="text-right">
-                            <div class="text-xl font-black ${getScoreColor(item.percentage)}">${item.percentage}%</div>
-                            <div class="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded mt-1">${item.difficulty}</div>
+                             <div class="font-black text-sm">${max}%</div>
+                             ${mastered ? `<div class="text-[9px] font-bold uppercase tracking-wider opacity-80" title="Grit: Attempts to Mastery">Grit: ${gritCount}</div>` : ''}
                         </div>
                     </div>
                 `;
+            });
 
-                UI.renderResponsiveGrid(document.getElementById("grid-container"), gridData, columns, cardRenderer);
+            if (!html) html = `<div class="text-center text-slate-400 text-sm py-4">Complete quizzes to see health stats.</div>`;
+            container.innerHTML = html;
+        }
 
             } catch (e) {
                 console.error("Dashboard Sync Failed:", e);
             }
-        };
 
         function formatChapterName(slug) {
             if (!slug) return "General Quiz";
@@ -173,9 +255,9 @@
         }
 
         function getScoreColor(p) {
-            if (p >= 85) return "text-success-green";
-            if (p >= 50) return "text-cbse-blue";
-            return "text-danger-red";
+            if (p >= 85) return "text-emerald-500";
+            if (p >= 50) return "text-blue-500";
+            return "text-red-500";
         }
     </script>
 </head>
@@ -204,7 +286,12 @@
         <div class="animate-pulse font-bold text-slate-400">Verifying Student Access...</div>
     </div>
 
-    <div id="app" class="hidden max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
+    <nav class="fixed top-0 right-0 p-4 z-50">
+        <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
+            <i class="fas fa-sign-out-alt text-red-400"></i>
+            <span>Sign Out</span>
+        </button>
+    </nav>
 
         <!-- Stats Row -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -216,12 +303,20 @@
                 <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Avg Mastery</div>
                 <div id="stat-avg" class="text-4xl font-black text-cbse-blue">--%</div>
             </div>
-            <div class="glass-panel p-6 rounded-3xl">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Most Practiced</div>
-                <div id="stat-subject" class="text-xl font-black text-slate-900 mt-2 truncate">--</div>
+            <div class="flex flex-col items-end gap-2">
+                <div id="grade-badge" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20">
+                    Grade --
+                </div>
+                <a id="start-new-quiz-btn" href="#" class="text-sm font-bold text-blue-600 hover:underline flex items-center gap-1">
+                    Start New Quiz <i class="fas fa-arrow-right"></i>
+                </a>
+                 <a href="../mistake-book.html" class="text-sm font-bold text-red-500 hover:underline flex items-center gap-1 mt-2">
+                    <i class="fas fa-book-open"></i> Mistake Book
+                </a>
             </div>
-        </div>
+        </header>
 
+        <!-- Main Grid -->
         <div class="grid lg:grid-cols-3 gap-8">
             <!-- QUICK ACCESS: Rooms & Shortcuts -->
             <div class="lg:col-span-1 space-y-6">
@@ -294,11 +389,5 @@
             </div>
         </div>
     </div>
-
-    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-      <p class="font-medium tracking-wide">Powered by Ready4Exam AI</p>
-      <p class="mt-1 opacity-70">© 2025 Academic Portal</p>
-    </footer>
-
 </body>
 </html>
