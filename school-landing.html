@@ -125,9 +125,22 @@
         }
 
         async function loadSchool() {
-            await initializeServices();
-            const { db } = getInitializedClients();
             try {
+                // Robust Initialization Guard
+                let clients = null;
+                try {
+                    clients = await getInitializedClients(); // Might throw if not ready
+                } catch(e) {
+                    console.log("Clients not ready, initializing...");
+                }
+
+                if (!clients || !clients.db) {
+                    clients = await initializeServices();
+                }
+
+                const { db } = clients;
+                if (!db) throw new Error("Firestore instance not initialized");
+
                 // Initial Default
                 let data = {
                     name: "DPS Bangalore",
@@ -146,8 +159,8 @@
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("app").classList.remove("hidden");
             } catch(e) {
-                console.error(e);
-                alert("Connection Error");
+                console.error("Critical School Load Error:", e);
+                alert("Connection Error: " + e.message);
             }
         }
 
