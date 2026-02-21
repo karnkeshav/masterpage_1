@@ -78,10 +78,53 @@
             if (!uid) return;
             try {
                 const { db } = await getInitializedClients();
-                const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
-                const snapshot = await getDocs(q);
+
+                // 1. Load Quiz Scores
+                const qScores = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
+
+                // 2. Load Mistake Notebook (For Quick Access Badges)
+                const qMistakes = query(collection(db, "mistake_notebook"), where("user_id", "==", uid));
+
+                const [snapshot, mistakeSnap] = await Promise.all([
+                    getDocs(qScores),
+                    getDocs(qMistakes)
+                ]);
 
                 document.getElementById("stat-total").textContent = snapshot.size;
+
+                // Process Mistakes for Badges
+                const mistakeCounts = {
+                    "Science": 0,
+                    "Mathematics": 0,
+                    "Social Science": 0
+                };
+
+                mistakeSnap.forEach(doc => {
+                    const data = doc.data();
+                    const sub = normalizeSubject(data);
+                    // Increment count
+                    if (mistakeCounts[sub] !== undefined) {
+                        mistakeCounts[sub]++;
+                    } else {
+                        // Handle "General" or others if necessary
+                        if (mistakeCounts["General"] === undefined) mistakeCounts["General"] = 0;
+                        mistakeCounts["General"]++;
+                    }
+                });
+
+                // Update Quick Access Badges
+                Object.keys(mistakeCounts).forEach(sub => {
+                    const count = mistakeCounts[sub];
+                    // Normalize ID (remove spaces)
+                    const badgeId = `badge-${sub.replace(/\s+/g, '-')}`;
+                    const badgeEl = document.getElementById(badgeId);
+
+                    if (badgeEl && count > 0) {
+                        badgeEl.textContent = `${count} Issues`;
+                        badgeEl.classList.remove("hidden");
+                    }
+                });
+
 
                 if (snapshot.empty) {
                      document.getElementById("stat-avg").textContent = "0%";
