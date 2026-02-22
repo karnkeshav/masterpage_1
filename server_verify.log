@@ -1,0 +1,10 @@
+127.0.0.1 - - [22/Feb/2026 13:41:34] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:34] "GET /js/firebase-master-config.js HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:35] "GET /js/auth-paywall.js HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:35] "GET /js/config.js HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:36] "GET /js/api.js HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:44] "GET /app/consoles/student.html HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:44] "GET /js/guard.js HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:44] "GET /js/utils.js HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:44] "GET /app/mistake-book.html HTTP/1.1" 200 -
+127.0.0.1 - - [22/Feb/2026 13:41:44] "GET /js/mistake-book-manager.js HTTP/1.1" 200 -
