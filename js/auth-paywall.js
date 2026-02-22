@@ -169,7 +169,7 @@ export async function initializeAuthListener(onReady) {
       console.error(LOG, "Auth instance missing");
       return;
   }
-
+  
   // Set persistence to session so auth is not remembered across browser restarts
   try {
       await setPersistence(auth, browserSessionPersistence);

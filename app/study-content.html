@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Camp — Ready4Exam</title>
+    <title>Study Content — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
     tailwind.config = {
@@ -24,19 +24,14 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../js/firebase-master-config.js"></script>
     <script src="../js/config.js" type="module"></script>
 
     <script type="module">
-        import { initializeAuthListener } from "../js/auth-paywall.js";
-        import { fetchChapterSummary } from "../js/api.js";
+        import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
+        import { getInitializedClients, fetchChapterSummary } from "../js/api.js";
         import { bindConsoleLogout } from "../js/guard.js";
         import * as UI from "../js/ui-renderer.js";
 
@@ -48,131 +43,96 @@
         const subject = params.get("subject") || "Mathematics";
         const chapter = params.get("chapter") || "Polynomials";
 
-        // Init session and load data
+        // Init
         initializeAuthListener(async (user) => {
             if (user) {
                 document.getElementById("user-welcome").textContent = user.displayName || "Scholar";
                 document.getElementById("context-badge").textContent = `Grade ${grade}`;
-                document.getElementById("chapter-title").textContent = `${chapter} Base Camp`;
-                document.getElementById("subject-subtitle").textContent = `${subject} • High-Density Knowledge Hub`;
+                document.getElementById("chapter-title").textContent = chapter;
+                document.getElementById("subject-subtitle").textContent = `${subject} • Class ${grade}`;
 
-                await loadBaseCampContent(grade, subject, chapter);
+                await loadContent(grade, subject, chapter);
             } else {
                 window.location.href = "../index.html";
             }
         });
 
-        async function loadBaseCampContent(grade, subject, chapter) {
+        async function loadContent(grade, subject, chapter) {
             const container = document.getElementById("content-container");
             UI.showSkeleton(container);
 
-            // Fetching dynamic summary from Firestore
             const data = await fetchChapterSummary(grade, subject, chapter);
 
             if (!data) {
-                renderUnderConstruction(container);
+                renderFallback(container);
                 return;
             }
 
-            renderKnowledgeHub(container, data);
+            renderDynamicContent(container, data);
         }
 
-        function renderKnowledgeHub(container, data) {
+        function renderDynamicContent(container, data) {
             container.innerHTML = `
-                <div class="grid lg:grid-cols-3 gap-8 fade-in">
-                    
-                    <div class="lg:col-span-1 space-y-6">
-                        
-                        ${data.formulaVault && Array.isArray(data.formulaVault) && data.formulaVault.length > 0 ? `
-                        <div class="glass-panel p-6 rounded-3xl bg-slate-900 text-white shadow-xl relative overflow-hidden">
-                            <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">∑</div>
-                            <h3 class="text-accent-gold font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2 relative z-10">
-                                <i class="fas fa-square-root-alt"></i> Formula Vault
-                            </h3>
-                            <div class="space-y-3 relative z-10">
-                                ${data.formulaVault.map(f => `
-                                    <div class="p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all">
-                                        <div class="text-[10px] text-accent-gold font-bold uppercase mb-1">${f.label || f.topic || 'Essential Formula'}</div>
-                                        <div class="font-mono text-sm font-bold text-white break-words">${f.tex || f.content || 'Data Missing'}</div>
-                                    </div>
-                                `).join("")}
-                            </div>
-                        </div>` : ''}
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Major Points -->
+                    <div class="glass-panel p-6 rounded-3xl">
+                        <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 text-sm">📌</span>
+                            Core Takeaways
+                        </h3>
+                        <ul class="space-y-3">
+                            ${(data.majorPoints || []).map(p => `
+                                <li class="flex items-start gap-3 text-sm text-slate-600 leading-relaxed">
+                                    <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent-gold flex-shrink-0"></span>
+                                    <span>${p}</span>
+                                </li>
+                            `).join("")}
+                        </ul>
+                    </div>
 
-                        <div class="glass-panel p-6 rounded-3xl shadow-sm">
-                            <h3 class="text-cbse-blue font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="fas fa-book"></i> One-Line Definitions
-                            </h3>
-                            <div class="space-y-3">
-                                ${(data.oneLineDefinitions || []).map(d => `
-                                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs font-medium text-slate-700">
-                                        ${d}
-                                    </div>
-                                `).join("")}
-                            </div>
+                    <!-- Definitions -->
+                    <div class="glass-panel p-6 rounded-3xl">
+                        <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-sm">📖</span>
+                            Glossary
+                        </h3>
+                        <div class="space-y-4">
+                            ${(data.oneLineDefinitions || []).map(d => `
+                                <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                                    <p class="text-sm font-medium text-slate-700">${d}</p>
+                                </div>
+                            `).join("")}
                         </div>
                     </div>
 
-                    <div class="lg:col-span-2 space-y-6">
-                        
-                        <div class="glass-panel p-8 rounded-3xl shadow-sm">
-                            <h3 class="text-cbse-blue font-black text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
-                                <i class="fas fa-bullseye text-accent-gold"></i> Core Takeaways
-                            </h3>
-                            <ul class="space-y-4">
-                                ${(data.majorPoints || []).map(p => `
-                                    <li class="flex items-start gap-4 text-sm text-slate-600 leading-relaxed">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-accent-gold mt-2 flex-shrink-0"></div>
-                                        <span>${p}</span>
-                                    </li>
-                                `).join("")}
-                            </ul>
+                    <!-- Formulas (Full Width) -->
+                    ${data.formulaVault && data.formulaVault.length > 0 ? `
+                    <div class="md:col-span-2 glass-panel p-6 rounded-3xl bg-slate-900 text-white relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">∑</div>
+                        <h3 class="text-lg font-black text-accent-gold mb-4 flex items-center gap-2 relative z-10">
+                            <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white text-sm">∫</span>
+                            Formula Vault
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-4 relative z-10">
+                            ${data.formulaVault.map(f => `
+                                <div class="bg-white/10 p-4 rounded-xl border border-white/10">
+                                    <div class="text-xs text-white/50 uppercase font-bold tracking-widest mb-1">${f.label || 'Formula'}</div>
+                                    <div class="font-mono text-lg font-bold">${f.tex || f.content}</div>
+                                </div>
+                            `).join("")}
                         </div>
-
-                        ${data.tipsAndTricks && data.tipsAndTricks.length > 0 ? `
-                        <div class="bg-indigo-50 p-8 rounded-3xl border border-indigo-100">
-                            <h3 class="text-indigo-900 font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="fas fa-lightbulb"></i> Tips & Hacks
-                            </h3>
-                            <div class="grid md:grid-cols-2 gap-4">
-                                ${data.tipsAndTricks.map(tip => `
-                                    <div class="flex gap-3 items-start">
-                                        <i class="fas fa-bolt text-amber-500 mt-1"></i>
-                                        <p class="text-xs text-indigo-800 font-medium">${tip}</p>
-                                    </div>
-                                `).join("")}
-                            </div>
-                        </div>` : ''}
-
-                        <div class="pt-6">
-                            <button id="btn-start-test" class="w-full py-5 bg-cbse-blue text-white rounded-2xl font-black text-lg shadow-xl hover:scale-[1.02] transition active:scale-95 flex items-center justify-center gap-3">
-                                <span>I've Camped Enough — Start Quiz</span>
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
+                    </div>` : ''}
                 </div>
             `;
-
-            document.getElementById("btn-start-test").onclick = () => launchDifficultySelector();
         }
 
-        function launchDifficultySelector() {
-            const difficulty = prompt("Select Difficulty: Basic, Intermediate, or Expert", "Basic");
-            if (difficulty) {
-                const slug = chapter.toLowerCase().replace(/\s+/g, '_');
-                // Redirects to Quiz Engine with full context
-                window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&topic=${slug}&difficulty=${difficulty}`;
-            }
-        }
-
-        function renderUnderConstruction(container) {
+        function renderFallback(container) {
             container.innerHTML = `
-                <div class="text-center py-20 glass-panel rounded-3xl fade-in">
-                    <div class="text-6xl mb-6">⛺</div>
-                    <h3 class="text-2xl font-black text-slate-800 mb-2">Base Camp Under Construction</h3>
-                    <p class="text-slate-500 max-w-md mx-auto">We are currently deploying the AI summary for this chapter. Check back in a few hours or visit the Warm-up Room.</p>
-                    <a href="curriculum.html?grade=${grade}" class="inline-block mt-8 px-8 py-3 bg-cbse-blue text-white font-bold rounded-xl shadow-lg transition">Go to Warm-up Room</a>
+                <div class="text-center py-12">
+                    <div class="text-6xl mb-4">🚧</div>
+                    <h3 class="text-xl font-black text-slate-700 mb-2">Content Under Construction</h3>
+                    <p class="text-slate-500 max-w-md mx-auto">We are currently digitizing the summary for this chapter. Please check back later or visit the Warm-up Room.</p>
+                    <a href="curriculum.html?grade=${grade}" class="inline-block mt-6 px-6 py-3 bg-cbse-blue text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition">Go to Warm-up Room</a>
                 </div>
             `;
         }
@@ -180,36 +140,46 @@
 </head>
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
+    <!-- Glass Header -->
     <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
       <div class="flex items-center space-x-4">
-        <a href="../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition text-lg">🏠</a>
+        <a href="../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
         <div>
-          <h2 class="text-xl font-black text-cbse-blue leading-none">Base<span class="text-accent-gold">Camp</span></h2>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Ready4Exam Hub</p>
+          <h2 class="text-xl font-black text-cbse-blue leading-none tracking-tight">Study<span class="text-accent-gold">Library</span></h2>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">N.C.E.R.T. Summaries</p>
         </div>
       </div>
+
       <div class="flex items-center space-x-3">
-          <div class="hidden md:flex flex-col items-end mr-2 text-right">
-              <span id="user-welcome" class="text-xs font-bold text-slate-700">Scholar</span>
+          <div class="hidden md:flex flex-col items-end mr-2">
+              <span id="user-welcome" class="text-xs font-bold text-slate-700">Student</span>
               <span id="context-badge" class="text-[10px] font-black text-white bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">Grade --</span>
           </div>
           <button id="logout-nav-btn" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
       </div>
     </header>
 
-    <div class="flex-grow max-w-6xl mx-auto w-full p-4 md:p-8">
-        <div class="mb-10 text-center">
-            <h1 id="chapter-title" class="text-3xl md:text-5xl font-black text-slate-900 tracking-tight mb-2 uppercase italic">--</h1>
-            <p id="subject-subtitle" class="text-slate-500 font-bold uppercase tracking-widest text-xs">--</p>
+    <div class="flex-grow max-w-5xl mx-auto w-full p-4 md:p-8 fade-in">
+        <div class="mb-8">
+             <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
+                <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back
+            </a>
+        </div>
+
+        <div class="text-center mb-10">
+            <h1 id="chapter-title" class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">--</h1>
+            <p id="subject-subtitle" class="text-slate-500 font-medium">--</p>
         </div>
 
         <div id="content-container">
-            </div>
+            <!-- Dynamic Content -->
+        </div>
     </div>
 
-    <footer class="bg-cbse-blue text-white/50 text-[10px] text-center py-10 mt-auto">
-      <p class="font-black tracking-widest uppercase mb-2">Ready4Exam Academic "Boot Camp" Engine</p>
-      <p class="opacity-70">© 2025 Academic Portal • Precision Learning Systems</p>
+    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
+      <p class="font-medium tracking-wide">Powered by Ready4Exam AI</p>
+      <p class="mt-1 opacity-70">© 2025 Academic Portal</p>
     </footer>
+
 </body>
 </html>

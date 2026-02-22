@@ -176,7 +176,7 @@ export async function fetchChapterSummary(grade, subject, topic) {
 
 function getTableName(topic) {
   // Prevent double-slugging if already a table ID
-  if (topic && topic.includes("_") && topic.includes("quiz")) {
+  if (topic && typeof topic === 'string' && topic.includes("_") && topic.includes("quiz")) {
       return topic;
   }
 
