@@ -4,6 +4,37 @@ import { initializeAuthListener } from "./auth-paywall.js";
 import { bindConsoleLogout } from "./guard.js";
 import * as UI from "./ui-renderer.js";
 
+// --- HELPERS ---
+
+function sanitize(text) {
+    if (typeof text !== 'string') return text;
+    return text.replace(/\*\*/g, "").trim();
+}
+
+function getArray(data) {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'object') return Object.entries(data).map(([k, v]) => ({ key: k, value: v }));
+    return [];
+}
+
+function getCleanText(item) {
+    if (typeof item === 'string') return sanitize(item);
+    if (item && typeof item === 'object') {
+        // Extract text property if exists, or values
+        return sanitize(item.text || item.value || item.content || item.definition || JSON.stringify(item));
+    }
+    return "";
+}
+
+function getFormulaContent(item) {
+    if (typeof item === 'string') return { label: 'Formula', content: item };
+    return {
+        label: item.label || item.name || 'Formula',
+        content: item.tex || item.content || item.formula || item.value || ''
+    };
+}
+
 // --- NCERT RENDERER LOGIC ---
 
 export async function initStudyContent() {
@@ -40,7 +71,7 @@ async function loadContent(grade, subject, chapter) {
         return;
     }
 
-    renderDynamicContent(container, data);
+    renderDynamicContent(container, data, subject);
 
     // Critical: Typeset MathJax
     if (window.MathJax) {
@@ -48,10 +79,14 @@ async function loadContent(grade, subject, chapter) {
     }
 }
 
-function renderDynamicContent(container, data) {
-    // 1. Build Tips & Tricks HTML (if exists)
+function renderDynamicContent(container, data, subject) {
+    const isMathScience = subject.includes("Math") || subject.includes("Science") && !subject.includes("Social");
+    const isSocial = subject.includes("Social") || subject.includes("History") || subject.includes("Civics") || subject.includes("Geography");
+
+    // 1. Build Tips & Tricks HTML (Common)
     let tipsHtml = '';
-    if (data.tipsAndTricks && data.tipsAndTricks.length > 0) {
+    const tipsData = getArray(data.tipsAndTricks);
+    if (tipsData.length > 0) {
         tipsHtml = `
             <div class="glass-panel p-6 rounded-3xl bg-emerald-50 border border-emerald-100 mb-8">
                 <h3 class="text-lg font-black text-emerald-700 mb-4 flex items-center gap-2">
@@ -59,10 +94,10 @@ function renderDynamicContent(container, data) {
                     Tips & Tricks
                 </h3>
                 <ul class="space-y-3">
-                    ${data.tipsAndTricks.map(t => `
+                    ${tipsData.map(t => `
                         <li class="flex items-start gap-3 text-sm text-emerald-800 font-medium">
                             <span class="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
-                            <span>${t}</span>
+                            <span>${getCleanText(t)}</span>
                         </li>
                     `).join("")}
                 </ul>
@@ -70,9 +105,10 @@ function renderDynamicContent(container, data) {
         `;
     }
 
-    // 2. Build Formula Vault HTML (if exists)
+    // 2. Build Formula Vault HTML (Maths & Science Only)
     let formulaHtml = '';
-    if (data.formulaVault && data.formulaVault.length > 0) {
+    const formulaData = getArray(data.formulaVault);
+    if (isMathScience && formulaData.length > 0) {
         formulaHtml = `
             <div class="md:col-span-2 glass-panel p-6 rounded-3xl bg-slate-900 text-white relative overflow-hidden mt-8">
                 <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">∑</div>
@@ -81,24 +117,23 @@ function renderDynamicContent(container, data) {
                     Formula Vault
                 </h3>
                 <div class="grid md:grid-cols-2 gap-4 relative z-10">
-                    ${data.formulaVault.map(f => `
+                    ${formulaData.map(item => {
+                        const f = getFormulaContent(item);
+                        return `
                         <div class="bg-white/10 p-4 rounded-xl border border-white/10">
-                            <div class="text-xs text-white/50 uppercase font-bold tracking-widest mb-1">${f.label || 'Formula'}</div>
-                            <div class="font-mono text-lg font-bold">${f.tex || f.content}</div>
+                            <div class="text-xs text-white/50 uppercase font-bold tracking-widest mb-1">${sanitize(f.label)}</div>
+                            <div class="font-mono text-lg font-bold">${f.content}</div>
                         </div>
-                    `).join("")}
+                    `}).join("")}
                 </div>
             </div>
         `;
     }
 
-    // 3. Build Main Grid
-    // Major Points & Definitions always try to render, empty check inside map handles empty arrays gracefully
-    // But we should wrap them to avoid empty boxes if data is missing completely?
-    // The requirement says "dynamically handles different subjects by checking for field existence".
-
+    // 3. Build Major Points (Core Takeaways)
     let majorPointsHtml = '';
-    if (data.majorPoints && data.majorPoints.length > 0) {
+    const majorData = getArray(data.majorPoints);
+    if (majorData.length > 0) {
         majorPointsHtml = `
             <div class="glass-panel p-6 rounded-3xl">
                 <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
@@ -106,10 +141,10 @@ function renderDynamicContent(container, data) {
                     Core Takeaways
                 </h3>
                 <ul class="space-y-3">
-                    ${data.majorPoints.map(p => `
+                    ${majorData.map(p => `
                         <li class="flex items-start gap-3 text-sm text-slate-600 leading-relaxed">
                             <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent-gold flex-shrink-0"></span>
-                            <span>${p}</span>
+                            <span>${getCleanText(p)}</span>
                         </li>
                     `).join("")}
                 </ul>
@@ -117,8 +152,10 @@ function renderDynamicContent(container, data) {
         `;
     }
 
+    // 4. Build Glossary (Definitions)
     let glossaryHtml = '';
-    if (data.oneLineDefinitions && data.oneLineDefinitions.length > 0) {
+    const glossaryData = getArray(data.oneLineDefinitions);
+    if (glossaryData.length > 0) {
         glossaryHtml = `
             <div class="glass-panel p-6 rounded-3xl">
                 <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
@@ -126,9 +163,9 @@ function renderDynamicContent(container, data) {
                     Glossary
                 </h3>
                 <div class="space-y-4">
-                    ${data.oneLineDefinitions.map(d => `
+                    ${glossaryData.map(d => `
                         <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                            <p class="text-sm font-medium text-slate-700">${d}</p>
+                            <p class="text-sm font-medium text-slate-700">${getCleanText(d)}</p>
                         </div>
                     `).join("")}
                 </div>
@@ -136,9 +173,22 @@ function renderDynamicContent(container, data) {
         `;
     }
 
+    // 5. Special Social Science Data (History/Civics etc.) - if standardized fields used
+    // Prompt says "Display only their respective subject data (e.g., historyData)".
+    // Assuming schema might have 'historyData' or similar if distinct from majorPoints.
+    // For now, if majorPoints is populated, it handles it.
+    // If there are extra fields like 'timeline' or 'events', we could add here.
+    // Given the prompt instruction: "Display only their respective subject data... Hide formulaVault"
+    // We already hid formulaVault via isMathScience check.
+    // We display majorPoints/glossary/tips for everyone.
+
+    // Layout Assembly
+    // If no main grid items, don't render grid wrapper to save space?
+    // Tailwind classes: hidden vs block logic handled by empty string check.
+
     container.innerHTML = `
         ${tipsHtml}
-        <div class="grid md:grid-cols-2 gap-8">
+        <div class="grid md:grid-cols-2 gap-8 ${(!majorPointsHtml && !glossaryHtml && !formulaHtml) ? 'hidden' : ''}">
             ${majorPointsHtml}
             ${glossaryHtml}
             ${formulaHtml}
