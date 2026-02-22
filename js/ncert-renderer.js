@@ -177,7 +177,7 @@ function createDifficultyModal(grade, subject, chapter, user) {
                 <button onclick="window.startQuiz('Simple')" class="w-full p-4 bg-green-50 border-2 border-green-100 rounded-2xl hover:bg-green-100 hover:border-green-300 transition group text-left flex items-center gap-4">
                     <span class="w-10 h-10 rounded-xl bg-green-200 text-green-700 flex items-center justify-center text-xl">🌱</span>
                     <div>
-                        <div class="font-bold text-green-800">Basic</div>
+                        <div class="font-bold text-green-800">Simple</div>
                         <div class="text-[10px] text-green-600 font-bold uppercase tracking-wider">Foundation</div>
                     </div>
                     <span class="ml-auto text-green-400 group-hover:translate-x-1 transition">➔</span>
@@ -186,7 +186,7 @@ function createDifficultyModal(grade, subject, chapter, user) {
                 <button onclick="window.startQuiz('Medium')" class="w-full p-4 bg-yellow-50 border-2 border-yellow-100 rounded-2xl hover:bg-yellow-100 hover:border-yellow-300 transition group text-left flex items-center gap-4">
                     <span class="w-10 h-10 rounded-xl bg-yellow-200 text-yellow-700 flex items-center justify-center text-xl">⚡</span>
                     <div>
-                        <div class="font-bold text-yellow-800">Intermediate</div>
+                        <div class="font-bold text-yellow-800">Medium</div>
                         <div class="text-[10px] text-yellow-600 font-bold uppercase tracking-wider">Standard</div>
                     </div>
                     <span class="ml-auto text-yellow-400 group-hover:translate-x-1 transition">➔</span>
@@ -195,7 +195,7 @@ function createDifficultyModal(grade, subject, chapter, user) {
                 <button onclick="window.startQuiz('Advanced')" class="w-full p-4 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 hover:border-red-300 transition group text-left flex items-center gap-4">
                     <span class="w-10 h-10 rounded-xl bg-red-200 text-red-700 flex items-center justify-center text-xl">🔥</span>
                     <div>
-                        <div class="font-bold text-red-800">Expert</div>
+                        <div class="font-bold text-red-800">Advanced</div>
                         <div class="text-[10px] text-red-600 font-bold uppercase tracking-wider">Challenger</div>
                     </div>
                     <span class="ml-auto text-red-400 group-hover:translate-x-1 transition">➔</span>
