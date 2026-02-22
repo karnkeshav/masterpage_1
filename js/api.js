@@ -1,10 +1,184 @@
 // js/api.js
-import { getInitializedClients, getAuthUser, logAnalyticsEvent } from "./config.js";
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getInitializedClients, getAuthUser, logAnalyticsEvent, initializeServices } from "./config.js";
+import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy, writeBatch, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const LOG = "[API]";
+
+// Re-export core services for consumers (e.g., student.html)
+export { getInitializedClients, initializeServices };
+
+export async function migrateAnonymousData(oldUid, newUid) {
+    if (!oldUid || !newUid || oldUid === newUid) return;
+    console.log(`[MIGRATE] Moving data from ${oldUid} to ${newUid}`);
+
+    try {
+        const { db } = await getInitializedClients();
+        const batch = writeBatch(db);
+        let opCount = 0;
+
+        // 1. Move Quiz Scores
+        const scoresQ = query(collection(db, "quiz_scores"), where("user_id", "==", oldUid));
+        const scoresSnap = await getDocs(scoresQ);
+        scoresSnap.forEach(doc => {
+            batch.update(doc.ref, { user_id: newUid });
+            opCount++;
+        });
+
+        // 2. Move Mistake Notebook
+        const mistakesQ = query(collection(db, "mistake_notebook"), where("user_id", "==", oldUid));
+        const mistakesSnap = await getDocs(mistakesQ);
+        mistakesSnap.forEach(doc => {
+            // Update top level user_id and nested mistakes array
+            const data = doc.data();
+            const updatedMistakes = (data.mistakes || []).map(m => ({ ...m, user_id: newUid }));
+
+            batch.update(doc.ref, { user_id: newUid, mistakes: updatedMistakes });
+            opCount++;
+        });
+
+        if (opCount > 0) {
+            await batch.commit();
+            console.log(`[MIGRATE] Moved ${opCount} records.`);
+        } else {
+            console.log("[MIGRATE] No records to move.");
+        }
+
+        // 3. Delete old profile
+        await deleteDoc(doc(db, "users", oldUid));
+        console.log("[MIGRATE] Old profile deleted.");
+
+    } catch (e) {
+        console.error("[MIGRATE] Failed:", e);
+    }
+}
+
+export async function ensureUserProfile(uid, username, additionalData = {}) {
+    if (!uid) return;
+    try {
+        const { db } = await getInitializedClients();
+        const ref = doc(db, "users", uid);
+
+        const snap = await getDoc(ref);
+
+        // Base profile structure
+        let profile = {
+            uid: uid,
+            displayName: username,
+            lastLogin: serverTimestamp()
+        };
+
+        if (!snap.exists()) {
+            // NEW PROFILE: Set creation timestamp and infer from username
+            console.log("Creating new user profile for:", uid);
+            profile.createdAt = serverTimestamp();
+
+            // Merge with additionalData from CREDENTIALS (passed from auth-paywall)
+            if (additionalData.role) profile.role = additionalData.role;
+            if (additionalData.school_id) profile.school_id = additionalData.school_id;
+            if (additionalData.tenantType) profile.tenantType = additionalData.tenantType;
+            if (additionalData.tenantId) profile.tenantId = additionalData.tenantId;
+            if (additionalData.classId) profile.classId = additionalData.classId;
+
+            // Fallback inference from username if no explicit data
+            if (!profile.role) {
+                const lowerUser = username.toLowerCase();
+                if (lowerUser.includes("dps.ready4exam") || lowerUser.includes("admin")) {
+                    profile = { ...profile, role: 'admin', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("teacher")) {
+                    profile = { ...profile, role: 'teacher', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("principal")) {
+                    profile = { ...profile, role: 'principal', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("parent")) {
+                    profile = { ...profile, role: 'parent', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("student")) {
+                    profile = { ...profile, role: 'student', classId: '9', school_id: 'DPS_001', tenantType: 'school' };
+                } else {
+                    profile = { ...profile, role: 'student', tenantType: 'individual' };
+                }
+            }
+
+            await setDoc(ref, profile);
+        } else {
+            // EXISTING PROFILE: Update lastLogin only
+            console.log("Updating existing profile for:", uid);
+            await updateDoc(ref, { lastLogin: serverTimestamp() });
+        }
+    } catch (e) {
+        console.error("Profile Ensure Failed", e);
+    }
+}
+
+export async function ensureUserInFirestore(user) {
+  if (!user?.uid) return null;
+  const { db } = await getInitializedClients();
+  const ref = doc(db, "users", user.uid);
+
+  try {
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+        return null;
+    } else {
+        await updateDoc(ref, { lastLogin: serverTimestamp() });
+        return snap.data();
+    }
+  } catch (e) {
+    console.warn(LOG, "Sync failed", e);
+    return null;
+  }
+}
+
+
+export async function waitForProfileReady(uid) {
+    const { db } = await getInitializedClients();
+    const ref = doc(db, "users", uid);
+    const maxTime = 5000;
+    let elapsed = 0;
+    let delay = 50;
+
+    while (elapsed < maxTime) {
+        const snap = await getDoc(ref);
+        if (snap.exists() && snap.data().role) {
+            console.log("Profile ready for:", uid);
+            return true;
+        }
+
+        console.log(`Waiting for profile... (${elapsed}ms)`);
+        await new Promise(r => setTimeout(r, delay));
+        elapsed += delay;
+        delay = Math.min(delay * 2, 1000); // Exponential backoff capped at 1s
+    }
+
+    throw new Error("Timeout waiting for user profile creation.");
+}
+
+export async function fetchChapterSummary(grade, subject, topic) {
+    const { db } = await getInitializedClients();
+    // Doc ID Format: grade_subjectSlug_topicSlug
+    // e.g. 9_mathematics_polynomials
+    const subjectSlug = subject.toLowerCase().split(' ')[0]; // "Mathematics" -> "mathematics", "Social Science" -> "social"
+    const topicSlug = topic.toLowerCase().replace(/\s+/g, '_');
+    const docId = `${grade}_${subjectSlug}_${topicSlug}`;
+
+    console.log("[API] Fetching Summary for:", docId);
+
+    try {
+        const snap = await getDoc(doc(db, "ncert_summaries", docId));
+        if (snap.exists()) {
+            return snap.data();
+        }
+        console.warn("[API] Summary not found:", docId);
+        return null;
+    } catch (e) {
+        console.error("[API] Failed to fetch summary:", e);
+        return null;
+    }
+}
 
 function getTableName(topic) {
-  // If it's a Supabase table ID (e.g., science_force_pressure_8_quiz), use it directly
-  if (topic.includes("_") && topic.includes("quiz")) return topic;
+  // Prevent double-slugging if already a table ID
+  if (topic && typeof topic === 'string' && topic.includes("_") && topic.includes("quiz")) {
+      return topic;
+  }
 
   // Fallback for older chapter names -> simple slug
   return (topic || "").toLowerCase().replace(/\s+/g, "_").trim();
@@ -44,7 +218,9 @@ function normalizeQuestionData(q) {
 }
 
 export async function fetchQuestions(topic, difficulty) {
-  const { supabase } = getInitializedClients();
+  const { supabase } = await getInitializedClients();
+  if (!supabase) throw new Error("Question service unavailable: Supabase not initialized");
+
   const cleanDiff = (difficulty || "Simple").trim();
 
   let topics = [];
@@ -89,30 +265,47 @@ export async function fetchQuestions(topic, difficulty) {
 }
 
 export async function saveResult(result) {
-  const user = getAuthUser();
-  if (!user) return;
+  console.log('Attempting to save result...', result);
+  const { auth, db } = await getInitializedClients();
+
+  // Persistence Priority: Auth > Window Profile (fallback)
+  const uid = auth.currentUser?.uid || window.userProfile?.uid;
+
+  if (!uid) {
+      console.error('Save failed: No UID found (User not authenticated)');
+      return;
+  }
 
   try {
-    const { db } = getInitializedClients();
-
     // TENANT CONTEXT INJECTION
-    const userSnap = await getDoc(doc(db, "users", user.uid));
+    const userSnap = await getDoc(doc(db, "users", uid));
     const userData = userSnap.exists() ? userSnap.data() : {};
 
     const data = {
-      user_id: user.uid,
-      email: user.email,
-      chapter: result.topicSlug || result.topic || "Unknown",
+      user_id: uid,
+      email: auth.currentUser?.email || "",
+      subject: result.subject || "Unknown",
+
+      // Standardized Fields for Frontend
+      topicSlug: result.topicSlug || result.topic || "Unknown",
+      topic: result.topicSlug || result.topic || "Unknown", // Keep both for safety
+
       difficulty: result.difficulty,
       score: result.score,
       total: result.total,
-      percentage: Math.round((result.score / result.total) * 100),
+      totalQuestions: result.total, // Alias for clarity
+
+      score_percent: Math.round((result.score / result.total) * 100),
+      percentage: Math.round((result.score / result.total) * 100), // Keep for backward compatibility
       timestamp: serverTimestamp(),
 
       quiz_mode: result.quiz_mode || "standard",
       latency_vector: result.latency_vector || [],
       term_id: result.term_id || null,
-      class_id: result.classId || "9",
+
+      // Standardized Class ID
+      classId: result.classId || "9",
+      class_id: result.classId || "9", // Snake case alias
 
       // ISOLATION FIELDS
       tenantType: userData.tenantType || "individual",
@@ -121,12 +314,13 @@ export async function saveResult(result) {
     };
 
     await addDoc(collection(db, "quiz_scores"), data);
+    console.log('Result saved successfully to Firestore');
 
     logAnalyticsEvent("quiz_completed", {
-        topic: data.chapter,
+        topic: data.topic,
         score: data.score,
         mode: data.quiz_mode,
-        user_id: user.uid,
+        user_id: uid,
         tenant: data.tenantType
     });
   } catch (err) {
@@ -135,23 +329,30 @@ export async function saveResult(result) {
 }
 
 export async function saveMistakes(questions, userAnswers, topic, classId) {
-    const user = getAuthUser();
-    if (!user) return;
+    const { auth, db } = await getInitializedClients();
+    // Persistence Priority: Auth > Window Profile (fallback)
+    const uid = auth.currentUser?.uid || window.userProfile?.uid;
+
+    if (!uid) {
+        console.error("Save failed: No UID found (User not authenticated)");
+        return;
+    }
 
     try {
-        const { db } = getInitializedClients();
-
         // Filter for wrong answers
         const mistakes = questions.filter(q => userAnswers[q.id] !== q.correct_answer);
 
         if (mistakes.length === 0) return;
 
         const data = {
-            user_id: user.uid,
+            user_id: uid,
             topic: topic,
+            chapter_slug: topic,
             class_id: classId,
             timestamp: serverTimestamp(),
             mistakes: mistakes.map(q => ({
+                user_id: uid,
+                chapter_slug: topic,
                 id: q.id,
                 question: q.text,
                 options: q.options,
@@ -173,7 +374,7 @@ export async function getChapterMastery(userId, topic) {
     if (!userId || !topic) return 0;
 
     try {
-        const { db } = getInitializedClients();
+        const { db } = await getInitializedClients();
         const userSnap = await getDoc(doc(db, "users", userId));
         const userData = userSnap.exists() ? userSnap.data() : {};
 
@@ -186,9 +387,6 @@ export async function getChapterMastery(userId, topic) {
         // STRICT SCOPING
         if (userData.tenantType === 'school' && userData.school_id) {
             constraints.push(where("school_id", "==", userData.school_id));
-        } else if (userData.tenantType === 'individual') {
-            // Optional: limit to individual scores if desired, but user might have legacy data
-            // constraints.push(where("tenantType", "==", "individual"));
         }
 
         const q = query(collection(db, "quiz_scores"), ...constraints);
@@ -213,7 +411,7 @@ export async function fetchQuizAttempts(userId) {
     if (!userId) return [];
 
     try {
-        const { db } = getInitializedClients();
+        const { db } = await getInitializedClients();
         const q = query(
             collection(db, "quiz_scores"),
             where("user_id", "==", userId),
@@ -227,7 +425,7 @@ export async function fetchQuizAttempts(userId) {
                 ...data,
                 date: data.timestamp ? data.timestamp.toDate() : new Date(),
                 // Infer Subject if possible, or use placeholder if chapter name isn't clear
-                subject: inferSubject(data.chapter)
+                subject: inferSubject(data.chapter || data.topic)
             };
         });
     } catch (e) {
@@ -248,7 +446,7 @@ function inferSubject(chapterSlug) {
 // --- GOVERNANCE & LEDGER ---
 
 export async function recordFinancialEvent(schoolId, type, amount, details) {
-    const { db } = getInitializedClients();
+    const { db } = await getInitializedClients();
     if (!schoolId) return;
 
     try {
@@ -267,7 +465,7 @@ export async function recordFinancialEvent(schoolId, type, amount, details) {
 }
 
 export async function fetchB2CUsers() {
-    const { db } = getInitializedClients();
+    const { db } = await getInitializedClients();
     try {
         const q = query(collection(db, "users"), where("tenantType", "==", "individual"));
         const snap = await getDocs(q);
@@ -289,7 +487,7 @@ export async function fetchB2CUsers() {
 }
 
 export async function fetchSchoolAnalytics(schoolId) {
-    const { db } = getInitializedClients();
+    const { db } = await getInitializedClients();
     if (!schoolId) return null;
 
     try {

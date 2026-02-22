@@ -110,7 +110,7 @@
     </div>
 
     <script type="module">
-        import { getInitializedClients, initializeServices } from "./js/config.js";
+        import { getInitializedClients } from "./js/config.js";
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { authenticateWithCredentials, signOut } from "./js/auth-paywall.js";
 
@@ -125,9 +125,17 @@
         }
 
         async function loadSchool() {
-            await initializeServices();
-            const { db } = getInitializedClients();
             try {
+                // Robust Initialization Guard
+                const clients = await getInitializedClients(); // Might return null if failed/not ready but usually async waits
+
+                if (!clients || !clients.db) {
+                    console.error("DB Not Ready");
+                    return;
+                }
+
+                const db = clients.db; // Only access after check
+
                 // Initial Default
                 let data = {
                     name: "DPS Bangalore",
@@ -146,8 +154,8 @@
                 document.getElementById("loading").classList.add("hidden");
                 document.getElementById("app").classList.remove("hidden");
             } catch(e) {
-                console.error(e);
-                alert("Connection Error");
+                console.error("Critical School Load Error:", e);
+                alert("Connection Error: " + e.message);
             }
         }
 

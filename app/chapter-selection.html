@@ -17,32 +17,43 @@
 
         // --- HELPER: Transliterate to Table Name ---
         function buildTableName(chapterTitle, subject, grade) {
+            const skipList = ["as","of","the","a","an","in","on","for","to","ki","ke","ka"];
+
+            // subjectSlug is just the FIRST word of the subject
+            const subjectSlug = subject.toLowerCase().split(' ')[0]; // "science" for "Science", "social" for "Social Science"
+
             // sanitize
             let clean = chapterTitle.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-            const words = clean.split(/\s+/);
+            const words = clean.split(/\s+/).filter(w => !skipList.includes(w));
 
             // Format: subject_firstword_lastword_grade_quiz
-            // e.g. Science, Force and Pressure, 8 -> science_force_pressure_8_quiz
-
-            // Handle edge cases where title is short
             let first = words[0];
             let last = words.length > 1 ? words[words.length-1] : "";
 
-            // Special overrides or robust logic if needed
-            // For now, simple first_last logic
-
-            const subSlug = subject.toLowerCase().replace(/\s+/g, ""); // socialscience
-
-            // If social science, maybe just 'social'? Or keep full.
-            // The prompt example: "science_some_phenomena_8_quiz" for "Some Natural Phenomena"
-            // This implies: subject_first_last_grade_quiz
-
-            let tableID = `${subSlug}_${first}`;
+            let tableID = `${subjectSlug}_${first}`;
             if (last) tableID += `_${last}`;
             tableID += `_${grade}_quiz`;
 
             return tableID;
         }
+
+        let selectedQuiz = null;
+
+        window.startQuiz = (tableId, title, grade) => {
+            selectedQuiz = { tableId, title, grade };
+            document.getElementById('difficulty-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('difficulty-modal').classList.add('hidden');
+            selectedQuiz = null;
+        };
+
+        window.selectDifficulty = (difficulty) => {
+            if (!selectedQuiz) return;
+            const { tableId, title, grade } = selectedQuiz;
+            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}`;
+        };
 
         window.loadSelection = async () => {
             const params = new URLSearchParams(window.location.search);
@@ -132,12 +143,6 @@
             `;
         }
 
-        window.startQuiz = (tableId, title, grade) => {
-            // Direct jump to quiz engine with table param
-            // Assuming quiz-engine.html handles 'table' and 'topic'
-            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}`;
-        };
-
         // Init
         loadSelection();
     </script>
@@ -159,6 +164,51 @@
             <div class="flex items-center justify-center h-64">
                 <div class="animate-pulse font-bold text-slate-300">Fetching Curriculum...</div>
             </div>
+        </div>
+    </div>
+
+    <!-- Difficulty Modal -->
+    <div id="difficulty-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all scale-100">
+            <h3 class="text-2xl font-black text-slate-800 mb-2">Select Difficulty</h3>
+            <p class="text-slate-500 mb-6">Choose your challenge level to begin.</p>
+
+            <div class="space-y-3">
+                <button onclick="selectDifficulty('Simple')" class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-green-500 hover:bg-green-50 flex items-center justify-between group transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold">S</div>
+                        <div class="text-left">
+                            <div class="font-bold text-slate-800 group-hover:text-green-700">Simple</div>
+                            <div class="text-xs text-slate-400">Build confidence</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-right text-slate-300 group-hover:text-green-500"></i>
+                </button>
+
+                <button onclick="selectDifficulty('Medium')" class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 flex items-center justify-between group transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">M</div>
+                        <div class="text-left">
+                            <div class="font-bold text-slate-800 group-hover:text-blue-700">Medium</div>
+                            <div class="text-xs text-slate-400">Standard level</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-right text-slate-300 group-hover:text-blue-500"></i>
+                </button>
+
+                <button onclick="selectDifficulty('Advanced')" class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-purple-500 hover:bg-purple-50 flex items-center justify-between group transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold">A</div>
+                        <div class="text-left">
+                            <div class="font-bold text-slate-800 group-hover:text-purple-700">Advanced</div>
+                            <div class="text-xs text-slate-400">Mastery check</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-lock text-slate-300 group-hover:text-purple-500"></i>
+                </button>
+            </div>
+
+            <button onclick="closeModal()" class="mt-6 w-full py-3 text-slate-400 hover:text-slate-600 font-semibold text-sm">Cancel</button>
         </div>
     </div>
 </body>

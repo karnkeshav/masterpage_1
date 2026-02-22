@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Class Hub — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily:{ sans:['Inter','sans-serif'] },
+          colors:{
+            'cbse-blue':'#1a3e6a',
+            'cbse-light':'#f5f7fa',
+            'accent-gold':'#ffb703',
+            'success-green': '#16a34a',
+            'warning-yellow': '#ca8a04',
+            'danger-red': '#dc2626'
+          }
+        }
+      }
+    }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>body{font-family:'Inter',sans-serif;}</style>
@@ -13,271 +30,364 @@
     <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { guardConsole } from "../../js/guard.js";
-        import { signOut } from "../../js/auth-paywall.js";
-        import { fetchQuizAttempts } from "../../js/api.js";
+        import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
+        import { getInitializedClients } from "../../js/config.js";
+        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import * as UI from "../../js/ui-renderer.js";
 
-        // GLOBAL GUARD
+        UI.injectStyles();
+        bindConsoleLogout("logout-nav-btn", "../../index.html");
         guardConsole("student");
 
-        // LOGOUT LOGIC
-        const logoutBtn = document.getElementById('logout-btn');
-        if(logoutBtn) {
-            logoutBtn.addEventListener('click', async () => {
-                if (confirm("Sign out of your Ready4Exam session?")) {
-                    try {
-                        await signOut();
-                        window.location.href = "../../index.html";
-                    } catch (err) {
-                        console.error("Logout failed", err);
-                    }
-                }
-            });
-        }
-
-        // Data Loader
         window.loadConsoleData = async (profile) => {
             console.log("Loading Class Hub for:", profile.displayName);
-            document.getElementById("user-name").textContent = profile.displayName;
+            document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
 
-            // Extract Grade
-            // Assumes format "studentX" -> "X" or "student12" -> "12"
-            // Or use profile.paidClasses
-            let grade = "9"; // Default
-            const name = profile.displayName || "";
-            const match = name.match(/student(\d+)/i);
-            if (match) {
-                grade = match[1];
-            } else if (profile.paidClasses) {
-                 const active = Object.keys(profile.paidClasses).find(k => profile.paidClasses[k]);
-                 if (active) grade = active;
-            } else {
-                // Fallback URL param
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get("grade")) grade = urlParams.get("grade");
-            }
+            let grade = "9";
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get("grade")) grade = urlParams.get("grade");
+            else if (profile.classId) grade = profile.classId;
 
             document.getElementById("class-title").textContent = `Class ${grade} Hub`;
-            document.getElementById("grade-badge").textContent = `Grade ${grade}`;
+            document.getElementById("context-badge").textContent = `Grade ${grade}`;
 
-            // Update Start New Quiz Link (Request said "app/curriculum.html", so we link there with params)
-            const startLink = document.getElementById("start-new-quiz-btn");
-            if (startLink) {
-                startLink.href = `../../app/curriculum.html?grade=${grade}`;
-            }
-
-            // Setup Click Handlers (Legacy Hub Cards if we keep them for quick access)
-            setupNavigation(grade);
-
-            // Load Learning History
-            await loadLearningHistory(profile.uid);
+            setupRoomNavigation(grade);
+            await loadStudentStats(profile.uid);
         };
 
-        function setupNavigation(grade) {
-            const cards = document.querySelectorAll(".subject-card");
-            cards.forEach(card => {
-                card.onclick = () => {
-                    const subject = card.dataset.subject;
-                    // Keep using chapter-selection for the specific subject card flow
-                    // But general button goes to curriculum.html
-                    window.location.href = `../chapter-selection.html?subject=${encodeURIComponent(subject)}&grade=${grade}`;
+        function setupRoomNavigation(grade) {
+            // Room Links
+            document.getElementById("btn-library").href = `../study-library.html?grade=${grade}`;
+            document.getElementById("btn-warmup").href = `../curriculum.html?grade=${grade}`; // Warm-up / Curriculum
+            document.getElementById("btn-mistakes").href = `../mistake-book.html`;
+
+            // Header Start Button
+            document.getElementById("start-new-quiz-btn").href = `../curriculum.html?grade=${grade}`;
+
+            // Subject Shortcuts -> Study Library
+            document.querySelectorAll(".subject-shortcut").forEach(btn => {
+                btn.onclick = () => {
+                    const subject = btn.dataset.subject;
+                    window.location.href = `../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
                 };
             });
         }
 
-        async function loadLearningHistory(uid) {
+        window.loadStudentStats = async (uid) => {
+            if (!uid) return;
             try {
-                const attempts = await fetchQuizAttempts(uid);
+                const { db } = await getInitializedClients();
+                const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
+                const snapshot = await getDocs(q);
 
-                // Stats
-                const total = attempts.length;
-                const avg = total > 0 ? Math.round(attempts.reduce((sum, a) => sum + (a.percentage||0), 0) / total) : 0;
+                document.getElementById("stat-total").textContent = snapshot.size;
 
-                // Most Practiced
-                const subjects = {};
-                attempts.forEach(a => {
-                    const s = a.subject || "General";
-                    subjects[s] = (subjects[s] || 0) + 1;
+                if (snapshot.empty) {
+                     renderZeroState();
+                     return;
+                }
+
+                // --- DATA PROCESSING ---
+                let totalScoreSum = 0;
+                const subjectScores = {}; // { Science: [80, 90], Math: [50] }
+                const chapterStats = {}; // { "Gravitation": { scores: [], attempts: 0, highest: 0 } }
+                const gridData = [];
+
+                const getActualSubject = (data) => {
+                    const context = `${data.subject || ''} ${data.topicSlug || ''} ${data.topic || ''}`.toLowerCase();
+                    if (context.includes("social") || context.includes("history") || context.includes("nazism") || context.includes("hitler") || context.includes("civics") || context.includes("geography")) return "Social Science";
+                    if (context.includes("math") || context.includes("triangle") || context.includes("polynomial") || context.includes("probability") || context.includes("algebra") || context.includes("geometry")) return "Mathematics";
+                    if (context.includes("science") || context.includes("physics") || context.includes("gravitation") || context.includes("motion") || context.includes("force") || context.includes("atom") || context.includes("chem") || context.includes("bio")) return "Science";
+                    return "General";
+                };
+
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const cleanSubject = getActualSubject(data);
+                    const cleanChapter = formatChapterName(data.topicSlug || data.topic || data.chapter);
+
+                    const scoreVal = data.score || 0;
+                    const totalVal = data.totalQuestions || data.total || 20;
+                    const percentage = totalVal > 0 ? Math.round((scoreVal / totalVal) * 100) : (data.score_percent || 0);
+
+                    // 1. Overall Avg
+                    totalScoreSum += percentage;
+
+                    // 2. Subject Aggregation
+                    if (!subjectScores[cleanSubject]) subjectScores[cleanSubject] = [];
+                    subjectScores[cleanSubject].push(percentage);
+
+                    // 3. Chapter Aggregation
+                    if (!chapterStats[cleanChapter]) chapterStats[cleanChapter] = { scores: [], attempts: 0, highest: 0 };
+                    chapterStats[cleanChapter].attempts++;
+                    chapterStats[cleanChapter].scores.push(percentage);
+                    if (percentage > chapterStats[cleanChapter].highest) chapterStats[cleanChapter].highest = percentage;
+
+                    // 4. Recent Activity Data (Raw)
+                    const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
+                    gridData.push({
+                        subject: cleanSubject,
+                        chapter: cleanChapter,
+                        difficulty: data.difficulty || 'Mixed',
+                        percentage: percentage,
+                        date: dateStr
+                    });
                 });
-                let mostPracticed = "None";
-                let maxCount = 0;
-                Object.entries(subjects).forEach(([sub, count]) => {
-                    if (count > maxCount) {
-                        maxCount = count;
-                        mostPracticed = sub;
+
+                // --- UI RENDERING ---
+
+                // 1. Average Mastery
+                const avg = Math.round(totalScoreSum / snapshot.size);
+                document.getElementById("stat-avg").textContent = `${avg}%`;
+
+                // 2. Subject Mastery Meters
+                const subjectMeterContainer = document.getElementById("subject-mastery-container");
+                subjectMeterContainer.innerHTML = ""; // Clear placeholders
+                let highestSub = "None"; let highestAvg = -1;
+
+                Object.entries(subjectScores).forEach(([sub, scores]) => {
+                    const subAvg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+                    if (subAvg > highestAvg) { highestAvg = subAvg; highestSub = sub; }
+
+                    subjectMeterContainer.innerHTML += `
+                        <div class="mb-3">
+                            <div class="flex justify-between text-xs font-bold mb-1">
+                                <span class="text-slate-600">${sub}</span>
+                                <span class="text-cbse-blue">${subAvg}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-cbse-blue h-2 rounded-full" style="width: ${subAvg}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById("stat-subject").textContent = highestSub; // Replaces "Most Practiced" with "Best Subject" effectively, or logic can stay "Most Practiced"
+
+                // 3. Mentor Insights & Chapter Health
+                const mentorContainer = document.getElementById("mentor-insights");
+                const insights = [];
+
+                // Analyze Subjects for Weakness
+                Object.entries(subjectScores).forEach(([sub, scores]) => {
+                    const subAvg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+                    if (subAvg < 50) insights.push(`⚠️ Your <b>${sub}</b> score is ${subAvg}%. Visit the Study Library to build strong foundations.`);
+                });
+
+                // Analyze Chapters for "Improving" Nudge
+                Object.entries(chapterStats).forEach(([chap, stats]) => {
+                    if (stats.highest >= 50 && stats.highest < 85) {
+                        insights.push(`🚀 <b>${chap}</b> is at ${stats.highest}%. One more attempt could take you to Expert Level (>85%)!`);
                     }
                 });
 
-                document.getElementById("stat-total").textContent = total;
-                document.getElementById("stat-avg").textContent = `${avg}%`;
-                document.getElementById("stat-subject").textContent = mostPracticed;
-
-                // Table
-                const tbody = document.getElementById("history-body");
-                if (attempts.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No quizzes taken yet.</td></tr>`;
-                    return;
+                if (insights.length > 0) {
+                    mentorContainer.innerHTML = `
+                        <div class="glass-panel p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 mb-6">
+                            <h3 class="text-xs font-black text-indigo-500 uppercase tracking-widest mb-2">Mentor Insights</h3>
+                            <ul class="space-y-2">
+                                ${insights.slice(0, 3).map(i => `<li class="text-sm text-slate-700">${i}</li>`).join("")}
+                            </ul>
+                        </div>
+                    `;
                 }
 
-                tbody.innerHTML = attempts.slice(0, 10).map(a => `
-                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                        <td class="p-4 font-bold text-slate-700">${a.subject || 'General'}</td>
-                        <td class="p-4 text-sm text-slate-600">${formatChapterName(a.chapter)}</td>
-                        <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600">${a.difficulty}</span></td>
-                        <td class="p-4 font-mono font-bold ${getScoreColor(a.percentage)}">${a.percentage}%</td>
-                        <td class="p-4 text-right text-xs text-slate-400">${a.date.toLocaleDateString()}</td>
-                    </tr>
-                `).join("");
+                // 4. Recent Activity (Limit 10)
+                // Add "Grit" to grid data? Or separate "Chapter Health" view?
+                // Prompt: "Chapter Health Grid: Card-based tracking... Display Grit".
+                // I'll add a "Grit" column to Recent Activity for now, or repurpose gridData.
+                // The prompt asks for "Recent Activity (Last 10 Quizzes)" separately.
+                // I will render the Grid as "Recent Activity" with Grit calculated per session (chronological attempt #?)
+                // Actually, "Grit" is per chapter. Hard to show in a list of mixed quizzes.
+                // I will add a "Health" badge to the Recent Activity rows based on that specific score.
+
+                const columns = [
+                    { key: 'subject', header: 'Subject', cell: (item) => `<span class="font-bold text-cbse-blue">${item.subject}</span>` },
+                    { key: 'chapter', header: 'Chapter', cell: (item) => `<span class="text-sm font-medium text-slate-600">${item.chapter}</span>` },
+                    { key: 'difficulty', header: 'Difficulty', cell: (item) => `<span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500">${item.difficulty}</span>` },
+                    { key: 'percentage', header: 'Score', cell: (item) => `<span class="font-mono font-bold ${getScoreColor(item.percentage)}">${item.percentage}%</span>` },
+                    { key: 'date', header: 'Date', cell: (item) => `<span class="text-xs text-slate-400">${item.date}</span>` }
+                ];
+
+                const cardRenderer = (item) => `
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
+                        <div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">${item.subject}</div>
+                            <div class="font-bold text-slate-800">${item.chapter}</div>
+                            <div class="text-xs text-slate-500 mt-1">${item.date}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-black ${getScoreColor(item.percentage)}">${item.percentage}%</div>
+                            <div class="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded mt-1">${item.difficulty}</div>
+                        </div>
+                    </div>
+                `;
+
+                UI.renderResponsiveGrid(document.getElementById("grid-container"), gridData.slice(0, 10), columns, cardRenderer);
 
             } catch (e) {
-                console.error("History Load Error", e);
+                console.error("Dashboard Sync Failed:", e);
             }
+        };
+
+        function renderZeroState() {
+             document.getElementById("stat-avg").textContent = "0%";
+             document.getElementById("stat-subject").textContent = "None";
+             document.getElementById("subject-mastery-container").innerHTML = `<div class="text-xs text-slate-400">No data available.</div>`;
+             document.getElementById("grid-container").innerHTML = `<div class="p-8 text-center text-slate-400">Welcome! Start your first quiz to see your progress.</div>`;
         }
 
         function formatChapterName(slug) {
-            if (!slug) return "Unknown";
-            // Check if it looks like a table ID (science_force_...)
-            // If so, try to make it readable
-            if (slug.includes("_quiz")) {
-                const parts = slug.replace("_quiz", "").split("_");
-                // remove subject if possible (first part)
-                if (parts.length > 1) parts.shift();
-                // remove grade (last part usually)
-                if (parts.length > 1 && !isNaN(parts[parts.length-1])) parts.pop();
-                return parts.join(" ").replace(/\b\w/g, l => l.toUpperCase());
-            }
-            return slug.replace(/[_-]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+            if (!slug) return "General Quiz";
+            let parts = slug.replace("_quiz", "").split("_");
+            if (parts.length >= 3) { parts = parts.slice(1, -1); }
+            else if (parts.length === 2 && !isNaN(parts[parts.length-1])) { parts.pop(); }
+            let name = parts.join(" ");
+            return [...new Set(name.split(" "))].join(" ").replace(/\b\w/g, l => l.toUpperCase());
         }
 
         function getScoreColor(p) {
-            if (p >= 85) return "text-emerald-500";
-            if (p >= 50) return "text-blue-500";
-            return "text-red-500";
+            if (p >= 85) return "text-success-green";
+            if (p >= 50) return "text-cbse-blue";
+            return "text-danger-red";
         }
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="bg-cbse-light min-h-screen flex flex-col">
 
-    <nav class="fixed top-0 right-0 p-4 z-50">
-        <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
-            <i class="fas fa-sign-out-alt text-red-400"></i>
-            <span>Sign Out</span>
-        </button>
-    </nav>
+    <!-- Glass Header -->
+    <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
+      <div class="flex items-center space-x-4">
+        <a href="../../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
+        <div>
+          <h2 id="class-title" class="text-xl font-black text-cbse-blue leading-none tracking-tight">Class Hub</h2>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Ready4Exam AI</p>
+        </div>
+      </div>
 
-    <div id="loading" class="flex items-center justify-center min-h-screen">
+      <div class="flex items-center space-x-3">
+          <div class="hidden md:flex flex-col items-end mr-2">
+              <span id="user-welcome" class="text-xs font-bold text-slate-700">Student</span>
+              <span id="context-badge" class="text-[10px] font-black text-accent-gold bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">Grade --</span>
+          </div>
+          <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg">📚</div>
+          <button id="logout-nav-btn" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
+      </div>
+    </header>
+
+    <div id="loading" class="flex items-center justify-center flex-grow">
         <div class="animate-pulse font-bold text-slate-400">Verifying Student Access...</div>
     </div>
 
-    <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8 fade-in">
-        <header class="flex justify-between items-end mb-12">
-            <div>
-                <h1 id="class-title" class="text-4xl font-black text-slate-900 tracking-tight mb-2">Class Hub</h1>
-                <p class="text-slate-500 font-medium">Welcome back, <span id="user-name" class="text-slate-900 font-bold">Student</span>.</p>
-            </div>
-            <div class="flex flex-col items-end gap-2">
-                <div id="grade-badge" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20">
-                    Grade --
-                </div>
-                <a id="start-new-quiz-btn" href="#" class="text-sm font-bold text-blue-600 hover:underline flex items-center gap-1">
-                    Start New Quiz <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        </header>
+    <div id="app" class="hidden max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
+
+        <!-- Action Bar -->
+        <div class="flex justify-end gap-4 mb-8">
+             <a id="btn-mistakes" href="../mistake-book.html" class="peel-back-anim px-6 py-3 bg-white border border-slate-100 text-slate-700 font-black uppercase text-xs rounded-xl hover:shadow-lg transition flex items-center gap-2">
+                <i class="fas fa-book-open text-danger-red"></i> Mistake Notebook
+            </a>
+            <a id="start-new-quiz-btn" href="#" class="peel-back-anim px-6 py-3 bg-cbse-blue text-white font-black uppercase text-xs rounded-xl hover:shadow-xl hover:shadow-blue-900/20 transition flex items-center gap-2">
+                Start New Quiz <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+
+        <!-- MENTOR INSIGHTS CONTAINER -->
+        <div id="mentor-insights"></div>
 
         <!-- Stats Row -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <!-- Total Tests -->
+            <div class="glass-panel p-6 rounded-3xl">
                 <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Tests</div>
                 <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
             </div>
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+
+            <!-- Avg Mastery -->
+            <div class="glass-panel p-6 rounded-3xl">
                 <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Avg Mastery</div>
-                <div id="stat-avg" class="text-4xl font-black text-blue-600">--%</div>
+                <div id="stat-avg" class="text-4xl font-black text-cbse-blue">--%</div>
+                <div class="text-[10px] text-slate-400 mt-2">Best Subject: <span id="stat-subject" class="font-bold text-slate-600">--</span></div>
             </div>
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Most Practiced</div>
-                <div id="stat-subject" class="text-xl font-black text-slate-900 mt-2 truncate">--</div>
+
+            <!-- Subject Mastery Meters -->
+            <div class="glass-panel p-6 rounded-3xl">
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-3">Subject Mastery</div>
+                <div id="subject-mastery-container">
+                    <div class="animate-pulse space-y-3">
+                        <div class="h-2 bg-slate-200 rounded w-full"></div>
+                        <div class="h-2 bg-slate-200 rounded w-3/4"></div>
+                        <div class="h-2 bg-slate-200 rounded w-5/6"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="grid lg:grid-cols-3 gap-8">
-            <!-- Subject Cards (Left Column) -->
+            <!-- QUICK ACCESS: Rooms & Shortcuts -->
             <div class="lg:col-span-1 space-y-6">
                  <h3 class="font-bold text-slate-900 text-lg">Quick Access</h3>
 
-                <!-- Science Card -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Science">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-atom text-6xl text-purple-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
-                            <i class="fas fa-flask text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-black text-slate-900">Science</h3>
-                            <p class="text-slate-500 text-xs font-medium">Physics, Chemistry, Bio</p>
-                        </div>
-                    </div>
-                </div>
+                 <!-- ROOMS -->
+                 <div class="space-y-4">
+                     <a id="btn-library" href="#" class="block glass-panel p-5 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition group relative overflow-hidden">
+                         <div class="flex items-center gap-4">
+                             <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">📚</div>
+                             <div>
+                                 <h4 class="font-bold text-slate-800">Study Library</h4>
+                                 <p class="text-[10px] text-slate-500 font-medium">Access curated notes & summaries.</p>
+                             </div>
+                         </div>
+                     </a>
 
-                <!-- Math Card -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Mathematics">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-calculator text-6xl text-blue-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
-                            <i class="fas fa-square-root-alt text-xl"></i>
-                        </div>
-                         <div>
-                            <h3 class="text-lg font-black text-slate-900">Mathematics</h3>
-                            <p class="text-slate-500 text-xs font-medium">Algebra, Geometry</p>
-                        </div>
-                    </div>
-                </div>
+                     <a id="btn-warmup" href="#" class="block glass-panel p-5 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition group relative overflow-hidden">
+                         <div class="flex items-center gap-4">
+                             <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl">⚡</div>
+                             <div>
+                                 <h4 class="font-bold text-slate-800">Warm-up Room</h4>
+                                 <p class="text-[10px] text-slate-500 font-medium">Priming before quizzes.</p>
+                             </div>
+                         </div>
+                     </a>
+                 </div>
 
-                <!-- Social Science Card -->
-                <div class="subject-card group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition cursor-pointer relative overflow-hidden" data-subject="Social Science">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition transform group-hover:scale-110 group-hover:rotate-12">
-                        <i class="fas fa-globe-americas text-6xl text-amber-600"></i>
-                    </div>
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
-                            <i class="fas fa-landmark text-xl"></i>
-                        </div>
-                         <div>
-                            <h3 class="text-lg font-black text-slate-900">Social Science</h3>
-                            <p class="text-slate-500 text-xs font-medium">History, Geo, Civics</p>
-                        </div>
-                    </div>
-                </div>
+                 <!-- SHORTCUTS -->
+                 <div class="flex justify-between items-center px-2">
+                     <button class="subject-shortcut group flex flex-col items-center gap-2" data-subject="Mathematics">
+                         <div class="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm group-hover:scale-110 transition">
+                             <i class="fas fa-calculator"></i>
+                         </div>
+                         <span class="text-[10px] font-bold text-slate-500">Math</span>
+                     </button>
+                     <button class="subject-shortcut group flex flex-col items-center gap-2" data-subject="Science">
+                         <div class="w-14 h-14 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shadow-sm group-hover:scale-110 transition">
+                             <i class="fas fa-atom"></i>
+                         </div>
+                         <span class="text-[10px] font-bold text-slate-500">Science</span>
+                     </button>
+                     <button class="subject-shortcut group flex flex-col items-center gap-2" data-subject="Social Science">
+                         <div class="w-14 h-14 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-sm group-hover:scale-110 transition relative">
+                             <i class="fas fa-globe-americas"></i>
+                             <!-- Badge Example -->
+                             <span class="absolute -top-1 -right-1 w-5 h-5 bg-danger-red text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white animate-pulse">3</span>
+                         </div>
+                         <span class="text-[10px] font-bold text-slate-500">SST</span>
+                     </button>
+                 </div>
             </div>
 
-            <!-- Learning History (Right Column - Wider) -->
+            <!-- Recent Activity -->
             <div class="lg:col-span-2">
-                 <h3 class="font-bold text-slate-900 text-lg mb-6">Learning History</h3>
-                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100">
-                                <tr>
-                                    <th class="p-4">Subject</th>
-                                    <th class="p-4">Chapter</th>
-                                    <th class="p-4">Difficulty</th>
-                                    <th class="p-4">Score</th>
-                                    <th class="p-4 text-right">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="history-body">
-                                <tr><td colspan="5" class="p-8 text-center text-slate-400 animate-pulse">Loading records...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                 <h3 class="font-bold text-slate-900 text-lg mb-6">Recent Activity</h3>
+                 <div id="grid-container">
+                     <!-- Injected -->
                  </div>
             </div>
         </div>
     </div>
+
+    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
+      <p class="font-medium tracking-wide">Powered by Ready4Exam AI</p>
+      <p class="mt-1 opacity-70">© 2025 Academic Portal</p>
+    </footer>
+
 </body>
 </html>

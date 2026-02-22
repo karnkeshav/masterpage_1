@@ -13,41 +13,59 @@ let firebaseDB = null; //
 let supabase = null;
 let analyticsInstance = null;
 
+// Singleton Promise to prevent race conditions
+let initPromise = null;
+
 /**
  * High-speed initialization.
  * Starts Auth, Firestore (for Admin/Saving), and Supabase.
  */
 export async function initializeServices() {
-  // If already initialized, return existing clients
-  if (firebaseApp && firebaseDB && supabase) {
-    return { auth: firebaseAuth, db: firebaseDB, supabase };
-  }
+  if (initPromise) return initPromise;
 
-  const cfg = window.__firebase_config;
-  if (!cfg?.apiKey) throw new Error("Firebase config missing"); //
+  initPromise = (async () => {
+      try {
+          // If already initialized, return existing clients
+          if (firebaseApp && firebaseDB && supabase) {
+            return { auth: firebaseAuth, db: firebaseDB, supabase };
+          }
 
-  // Initialize Core Firebase (Fast)
-  firebaseApp = initializeApp(cfg); //
-  firebaseAuth = getAuth(firebaseApp); //
+          const cfg = window.__firebase_config;
+          if (!cfg?.apiKey) throw new Error("Firebase config missing"); //
 
-  // Initialize Firestore - Required for Admin Panel and User Access
-  firebaseDB = getFirestore(firebaseApp);
+          // Initialize Core Firebase (Fast)
+          firebaseApp = initializeApp(cfg); //
+          firebaseAuth = getAuth(firebaseApp); //
 
-  // Initialize Supabase (Essential for fetching questions)
-  supabase = createSupabaseClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
-    auth: { persistSession: false }
-  }); //
+          // Initialize Firestore - Required for Admin Panel and User Access
+          firebaseDB = getFirestore(firebaseApp);
 
-  window.supabase = supabase; //
+          // Initialize Supabase (Essential for fetching questions)
+          supabase = createSupabaseClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+            auth: { persistSession: false }
+          }); //
 
-  return { auth: firebaseAuth, db: firebaseDB, supabase }; //
+          window.supabase = supabase; //
+
+          return { auth: firebaseAuth, db: firebaseDB, supabase };
+      } catch (e) {
+          console.error("Critical Initialization Error:", e);
+          // Return null clients instead of crashing destructuring
+          return { auth: null, db: null, supabase: null };
+      }
+  })();
+
+  return initPromise;
 }
 
 /**
- * Returns clients.
+ * Returns clients. If not initialized, attempts to initialize.
  */
-export function getInitializedClients() {
-  if (!firebaseApp) throw new Error("Call initializeServices FIRST"); //
+export async function getInitializedClients() {
+  if (!firebaseApp) {
+      // Auto-initialize if not ready (Robust Client Fetching)
+      return await initializeServices();
+  }
   return { auth: firebaseAuth, db: firebaseDB, supabase }; //
 }
 
