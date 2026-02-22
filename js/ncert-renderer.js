@@ -1,5 +1,4 @@
-
-import { fetchChapterSummary } from "./api.js";
+import { fetchChapterSummary, logQuizStart } from "./api.js";
 import { initializeAuthListener } from "./auth-paywall.js";
 import { bindConsoleLogout } from "./guard.js";
 import * as UI from "./ui-renderer.js";
@@ -22,14 +21,14 @@ export async function initStudyContent() {
             document.getElementById("chapter-title").textContent = chapter;
             document.getElementById("subject-subtitle").textContent = `${subject} • Class ${grade}`;
 
-            await loadContent(grade, subject, chapter);
+            await loadContent(grade, subject, chapter, user);
         } else {
             window.location.href = "../index.html";
         }
     });
 }
 
-async function loadContent(grade, subject, chapter) {
+async function loadContent(grade, subject, chapter, user) {
     const container = document.getElementById("content-container");
     UI.showSkeleton(container);
 
@@ -40,7 +39,7 @@ async function loadContent(grade, subject, chapter) {
         return;
     }
 
-    renderDynamicContent(container, data);
+    renderDynamicContent(container, data, grade, subject, chapter, user);
 
     // Critical: Typeset MathJax
     if (window.MathJax) {
@@ -48,7 +47,7 @@ async function loadContent(grade, subject, chapter) {
     }
 }
 
-function renderDynamicContent(container, data) {
+function renderDynamicContent(container, data, grade, subject, chapter, user) {
     // 1. Build Tips & Tricks HTML (if exists)
     let tipsHtml = '';
     if (data.tipsAndTricks && data.tipsAndTricks.length > 0) {
@@ -144,6 +143,75 @@ function renderDynamicContent(container, data) {
             ${formulaHtml}
         </div>
     `;
+
+    // Inject "Take Test" Button
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "mt-12 text-center";
+    buttonContainer.innerHTML = `
+        <button id="take-test-btn" class="px-8 py-4 bg-accent-gold text-cbse-blue font-black rounded-2xl text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-3 mx-auto">
+            <span>🚀</span> Take Chapter Test
+        </button>
+    `;
+    container.appendChild(buttonContainer);
+
+    document.getElementById("take-test-btn").onclick = () => {
+        createDifficultyModal(grade, subject, chapter, user);
+    };
+}
+
+function createDifficultyModal(grade, subject, chapter, user) {
+    // Remove existing modal if any
+    const existing = document.getElementById("difficulty-modal");
+    if (existing) existing.remove();
+
+    const modal = document.createElement("div");
+    modal.id = "difficulty-modal";
+    modal.className = "fixed inset-0 bg-cbse-blue/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in";
+    modal.innerHTML = `
+        <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative">
+            <button id="close-modal-btn" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-red-50 hover:text-red-500 transition">✕</button>
+            <h3 class="text-2xl font-black text-cbse-blue mb-2 text-center">Select Difficulty</h3>
+            <p class="text-slate-500 text-center mb-8 text-sm font-medium">Choose your challenge level to begin.</p>
+
+            <div class="space-y-4">
+                <button onclick="window.startQuiz('Simple')" class="w-full p-4 bg-green-50 border-2 border-green-100 rounded-2xl hover:bg-green-100 hover:border-green-300 transition group text-left flex items-center gap-4">
+                    <span class="w-10 h-10 rounded-xl bg-green-200 text-green-700 flex items-center justify-center text-xl">🌱</span>
+                    <div>
+                        <div class="font-bold text-green-800">Basic</div>
+                        <div class="text-[10px] text-green-600 font-bold uppercase tracking-wider">Foundation</div>
+                    </div>
+                    <span class="ml-auto text-green-400 group-hover:translate-x-1 transition">➔</span>
+                </button>
+
+                <button onclick="window.startQuiz('Medium')" class="w-full p-4 bg-yellow-50 border-2 border-yellow-100 rounded-2xl hover:bg-yellow-100 hover:border-yellow-300 transition group text-left flex items-center gap-4">
+                    <span class="w-10 h-10 rounded-xl bg-yellow-200 text-yellow-700 flex items-center justify-center text-xl">⚡</span>
+                    <div>
+                        <div class="font-bold text-yellow-800">Intermediate</div>
+                        <div class="text-[10px] text-yellow-600 font-bold uppercase tracking-wider">Standard</div>
+                    </div>
+                    <span class="ml-auto text-yellow-400 group-hover:translate-x-1 transition">➔</span>
+                </button>
+
+                <button onclick="window.startQuiz('Advanced')" class="w-full p-4 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 hover:border-red-300 transition group text-left flex items-center gap-4">
+                    <span class="w-10 h-10 rounded-xl bg-red-200 text-red-700 flex items-center justify-center text-xl">🔥</span>
+                    <div>
+                        <div class="font-bold text-red-800">Expert</div>
+                        <div class="text-[10px] text-red-600 font-bold uppercase tracking-wider">Challenger</div>
+                    </div>
+                    <span class="ml-auto text-red-400 group-hover:translate-x-1 transition">➔</span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById("close-modal-btn").onclick = () => modal.remove();
+
+    window.startQuiz = (difficulty) => {
+        logQuizStart(user.uid, subject, chapter, difficulty);
+        window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(chapter)}&difficulty=${difficulty}`;
+    };
 }
 
 function renderFallback(container, grade) {
