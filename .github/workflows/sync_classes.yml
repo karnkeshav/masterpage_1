@@ -1,44 +1,41 @@
 name: Rebuild and Sync Boards
+
 on:
-  workflow_dispatch: # Manual "One-Click" trigger
+  workflow_dispatch:
 
 jobs:
   rebuild-and-sync:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Masterpage
         uses: actions/checkout@v4
         with:
+          ref: main
           token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0
 
       - name: Clean Existing Folders
         run: |
-          # Remove old class folders and board folders to start fresh
-          rm -rf class-* rm -rf cbse scert icse other-boards
+          rm -rf class-* cbse scert icse other-boards
           echo "Cleanup complete."
 
       - name: Create New Directory Structure
         run: |
-          mkdir -p cbse
-          mkdir -p scert
-          mkdir -p icse
-          mkdir -p other-boards
+          mkdir -p cbse scert icse other-boards
 
       - name: Sync CBSE Repos
         run: |
           CLASSES=("6" "7" "8" "9" "10" "11" "12")
           for cls in "${CLASSES[@]}"; do
-            echo "Cloning CBSE Class $cls..."
             git clone https://github.com/ready4exam/ready4exam-class-$cls.git temp_cbse_$cls
             mkdir -p cbse/class-$cls
-            # Copy contents into the new nested structure
             cp -r temp_cbse_$cls/* cbse/class-$cls/
             rm -rf temp_cbse_$cls
           done
 
       - name: Sync SCERT (Telangana) Repos
         run: |
-          echo "Cloning Telangana Class 9..."
           git clone https://github.com/ready4exam/ready4exam-class-9Telangana.git temp_tg_9
           mkdir -p scert/telangana-9
           cp -r temp_tg_9/* scert/telangana-9/
@@ -46,7 +43,6 @@ jobs:
 
       - name: Maintain Placeholders
         run: |
-          # Ensures empty folders are tracked by Git
           touch icse/.gitkeep
           touch other-boards/.gitkeep
 
@@ -55,6 +51,5 @@ jobs:
           git config --global user.name "Automation Bot"
           git config --global user.email "bot@github.com"
           git add .
-          # Using || true to prevent the script from failing if no files changed
-          git commit -m "Full rebuild: Deleted old folders and synced CBSE/SCERT structure" || true
-          git push
+          git commit -m "Full rebuild: Synced CBSE/SCERT structure" || true
+          git push origin main
