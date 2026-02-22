@@ -1,4 +1,4 @@
-import { initializeServices, getInitializedClients } from "./config.js"; 
+import { initializeServices, getInitializedClients } from "./config.js";
 import { fetchQuestions, saveResult } from "./api.js";
 import * as UI from "./ui-renderer.js";
 import { initializeAuthListener, requireAuth } from "./auth-paywall.js";

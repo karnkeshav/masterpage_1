@@ -14,7 +14,7 @@ let supabase = null;
 let analyticsInstance = null;
 
 /**
- * High-speed initialization. 
+ * High-speed initialization.
  * Starts Auth, Firestore (for Admin/Saving), and Supabase.
  */
 export async function initializeServices() {
@@ -29,7 +29,7 @@ export async function initializeServices() {
   // Initialize Core Firebase (Fast)
   firebaseApp = initializeApp(cfg); //
   firebaseAuth = getAuth(firebaseApp); //
-  
+
   // Initialize Firestore - Required for Admin Panel and User Access
   firebaseDB = getFirestore(firebaseApp);
 
@@ -44,7 +44,7 @@ export async function initializeServices() {
 }
 
 /**
- * Returns clients. 
+ * Returns clients.
  */
 export function getInitializedClients() {
   if (!firebaseApp) throw new Error("Call initializeServices FIRST"); //
