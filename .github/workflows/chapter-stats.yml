@@ -1,4 +1,5 @@
 name: Generate and Segregate Chapter Stats
+
 on:
   workflow_dispatch:
   push:
@@ -10,9 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - name: Checkout Masterpage
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -28,4 +33,4 @@ jobs:
           git config --global user.email "bot@ready4exam.com"
           git add data/
           git commit -m "Auto-update chapter counts for $GITHUB_SHA" || echo "No changes to commit"
-          git push
+          git push origin HEAD:${{ github.ref_name }}
