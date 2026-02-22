@@ -55,7 +55,7 @@ function normalizeQuestionData(q) {
 // FETCH QUESTIONS — OPTIMIZED FOR MOBILE SPEED
 // =============================================================
 export async function fetchQuestions(topic, difficulty) {
-  const { supabase } = await getInitializedClients();
+  const { supabase } = getInitializedClients();
   const table = getTableName(topic);
   
   // Use exact match for difficulty to leverage DB indexing (faster than ilike)
@@ -104,7 +104,7 @@ export async function saveResult(result) {
       collection, addDoc, serverTimestamp 
     } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
     
-    const { db } = await getInitializedClients();
+    const { db } = getInitializedClients();
 
     await addDoc(collection(db, "quiz_scores"), {
       user_id: user.uid,

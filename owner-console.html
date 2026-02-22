@@ -211,7 +211,7 @@
             btn.textContent = "Provisioning...";
 
             try {
-                const { db } = await getInitializedClients();
+                const { db } = getInitializedClients();
                 const schoolData = {
                     name: document.getElementById("s-name").value,
                     logo_url: document.getElementById("s-logo").value,
@@ -245,7 +245,7 @@
         window.loadSchools = async () => {
             const list = document.getElementById("school-list");
             try {
-                const { db } = await getInitializedClients();
+                const { db } = getInitializedClients();
                 const q = query(collection(db, "schools"), orderBy("created_at", "desc"));
                 const snap = await getDocs(q);
 

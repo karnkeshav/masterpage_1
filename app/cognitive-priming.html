@@ -4,141 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognitive Priming — Ready4Exam</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
     tailwind.config = {
-      theme:{
-        extend:{
-          fontFamily:{sans:['Inter','sans-serif']},
-          colors:{'cbse-blue':'#1a3e6a','accent-gold':'#ffb703'}
+      theme: {
+        extend: {
+          fontFamily:{ sans:['Inter','sans-serif'] },
+          colors:{
+            'cbse-blue':'#1a3e6a',
+            'cbse-light':'#f5f7fa',
+            'accent-gold':'#ffb703',
+            'success-green': '#16a34a',
+            'warning-yellow': '#ca8a04',
+            'danger-red': '#dc2626'
+          }
         }
       }
     }
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>body{font-family:'Inter',sans-serif;}</style>
 
     <script src="../js/firebase-master-config.js"></script>
-<script src="../js/config.js" type="module"></script>
-</head>
-<body class="bg-slate-100 min-h-screen flex flex-col items-center justify-center py-10 px-4">
+    <script src="../js/config.js" type="module"></script>
 
-    <div class="max-w-3xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
-        <div class="bg-cbse-blue p-8 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-cbse-blue to-blue-900 opacity-90"></div>
+    <script type="module">
+        import { requireAuth, initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
+        import { fetchChapterSummary } from "../js/api.js";
+        import * as UI from "../js/ui-renderer.js";
+
+        UI.injectStyles();
+
+        // Guard
+        initializeAuthListener(async (user) => {
+            if (!user) { window.location.href = "../index.html"; return; }
+            const profile = await ensureUserInFirestore(user);
+            if (!profile) { window.location.href = "../index.html"; return; }
+
+            await loadPrimingData();
+        });
+
+        const params = new URLSearchParams(location.search);
+        const chapterList = (params.get("chapter_names") || "").split(",").filter(Boolean);
+        // We take the first chapter for deep content fetch, or general logic
+        const primaryChapter = chapterList[0] || "General";
+        const subject = params.get("subject") || "General";
+        const grade = params.get("grade") || "9";
+
+        async function loadPrimingData() {
+            const container = document.getElementById("content-area");
+            UI.showSkeleton(container);
+
+            // Fetch dynamic data
+            // Use the API helper which handles slug construction
+            const data = await fetchChapterSummary(grade, subject, primaryChapter);
+
+            renderPrimingContent(container, data || {});
+        }
+
+        function renderPrimingContent(container, data) {
+            // Fallback content if data is missing or partial
+            const defs = (data.oneLineDefinitions && data.oneLineDefinitions.length > 0)
+                ? data.oneLineDefinitions.slice(0, 2).join(" ")
+                : "Recall the key definitions and core concepts from your textbook.";
+
+            const formulas = (data.formulaVault && data.formulaVault.length > 0)
+                ? data.formulaVault.slice(0, 2).map(f => f.tex || f.content).join(" | ")
+                : "Review important formulas, equations, and dates.";
+
+            const takeaways = (data.majorPoints && data.majorPoints.length > 0)
+                ? data.majorPoints.slice(0, 2).join(" ")
+                : "Focus on the fundamental principles and cause-effect relationships.";
+
+            container.innerHTML = `
+                <!-- Chapters List -->
+                <div class="mb-8 text-center">
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Targeted Chapters</h3>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        ${chapterList.length > 0 ? chapterList.map(c => `<span class="bg-blue-50 text-cbse-blue px-4 py-1.5 rounded-full text-xs font-bold border border-blue-100 shadow-sm">${c}</span>`).join("") : "<span class='text-slate-400 italic'>All Chapters</span>"}
+                    </div>
+                </div>
+
+                <!-- Cards -->
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="bg-amber-50 p-6 rounded-3xl border border-amber-100 shadow-sm relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                        <div class="absolute -right-6 -top-6 bg-amber-100 w-24 h-24 rounded-full opacity-50 group-hover:scale-150 transition"></div>
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg mb-4 relative z-10">💡</div>
+                        <div class="text-amber-600 font-black text-[10px] uppercase tracking-widest mb-2 relative z-10">Concept Clarity</div>
+                        <p class="text-sm font-medium text-slate-700 relative z-10 leading-relaxed">${defs}</p>
+                    </div>
+
+                    <div class="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 shadow-sm relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                        <div class="absolute -right-6 -top-6 bg-indigo-100 w-24 h-24 rounded-full opacity-50 group-hover:scale-150 transition"></div>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg mb-4 relative z-10">📐</div>
+                        <div class="text-indigo-600 font-black text-[10px] uppercase tracking-widest mb-2 relative z-10">Formula Bank</div>
+                        <p class="text-sm font-bold text-slate-800 font-mono relative z-10">${formulas}</p>
+                    </div>
+
+                    <div class="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 shadow-sm relative overflow-hidden group hover:-translate-y-1 transition duration-300">
+                        <div class="absolute -right-6 -top-6 bg-emerald-100 w-24 h-24 rounded-full opacity-50 group-hover:scale-150 transition"></div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg mb-4 relative z-10">🚀</div>
+                        <div class="text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-2 relative z-10">Shortcuts & Tips</div>
+                        <p class="text-sm font-medium text-slate-700 relative z-10 leading-relaxed">${takeaways}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById("start-btn").onclick = async () => {
+            // Check auth again or just proceed (since we guarded onload)
+            // Ideally trigger peel-back then nav
+            UI.triggerPeelBack("app-container");
+            setTimeout(() => {
+                location.href = `quiz-engine.html?${params.toString()}`;
+            }, 400);
+        };
+    </script>
+</head>
+<body class="bg-cbse-light min-h-screen flex flex-col items-center justify-center py-10 px-4">
+
+    <div id="app-container" class="max-w-4xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+        <div class="bg-cbse-blue p-10 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
             <div class="relative z-10">
-                <h1 class="text-2xl md:text-3xl font-black text-accent-gold uppercase tracking-widest mb-2">Cognitive Priming</h1>
+                <h1 class="text-3xl md:text-4xl font-black text-accent-gold uppercase tracking-widest mb-2">Cognitive Priming</h1>
                 <p class="text-white/80 text-sm md:text-base font-medium">Activate your memory before the challenge begins.</p>
             </div>
         </div>
 
-        <div id="content-area" class="p-8 space-y-8">
+        <div id="content-area" class="p-8 md:p-10 space-y-8 min-h-[300px]">
             <!-- Dynamic Content -->
-            <div class="animate-pulse flex space-x-4">
-                <div class="flex-1 space-y-4 py-1">
-                    <div class="h-4 bg-slate-200 rounded w-3/4"></div>
-                    <div class="space-y-2">
-                        <div class="h-4 bg-slate-200 rounded"></div>
-                        <div class="h-4 bg-slate-200 rounded w-5/6"></div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="bg-slate-50 p-8 border-t border-slate-100 flex flex-col items-center">
             <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Are you ready to test your mastery?</p>
-            <button id="start-btn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-12 rounded-xl text-lg shadow-lg shadow-green-900/20 transition transform hover:scale-105">
-                Start Term Prep Exam &rarr;
+            <button id="start-btn" class="peel-back-anim w-full md:w-auto bg-success-green hover:bg-green-700 text-white font-black py-4 px-12 rounded-2xl text-lg shadow-lg shadow-green-900/20 transition transform hover:-translate-y-1">
+                START QUIZ
             </button>
         </div>
     </div>
 
-<script type="module">
-    import { requireAuth, initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
-
-    // Guard
-    initializeAuthListener(async (user) => {
-        if (!user) { window.location.href = "../index.html"; return; }
-        const profile = await ensureUserInFirestore(user);
-        if (!profile) { window.location.href = "../index.html"; return; }
-    });
-
-    const params = new URLSearchParams(location.search);
-    const chapters = (params.get("chapter_names") || "").split(",").filter(Boolean);
-    const subject = params.get("subject") || "General";
-    const container = document.getElementById("content-area");
-
-    // Mock Data Store (In a real app, this would come from a DB)
-    const primingData = {
-        "Science": {
-            def: "Recall definitions of Force, Energy, Matter, and Cell Structure.",
-            formula: "F = ma | KE = ½mv² | n = m/M",
-            theorem: "Law of Conservation of Mass & Energy."
-        },
-        "Mathematics": {
-            def: "Polynomials, Linear Equations, and Geometric figures.",
-            formula: "(a+b)² = a² + 2ab + b² | Area = ½bh",
-            theorem: "Pythagoras Theorem & SAS/SSS Congruence."
-        },
-        "Social Science": {
-            def: "Democracy, Constitution, Socialism, Nazism.",
-            formula: "Key Dates: 1789 (French Rev), 1917 (Russian Rev)",
-            theorem: "Understand the cause and effect of historical events."
-        }
-    };
-
-    // Simple subject mapping
-    let key = "Science";
-    if (subject.includes("Math")) key = "Mathematics";
-    if (subject.includes("Social") || subject.includes("History") || subject.includes("Geo") || subject.includes("Eco")) key = "Social Science";
-
-    const data = primingData[key] || {
-        def: "Review the key definitions from your textbook.",
-        formula: "Recall important formulas and equations.",
-        theorem: "Remember the fundamental principles and theorems."
-    };
-
-    // Render Chapters List
-    let html = `
-        <div class="mb-8 text-center">
-            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Targeted Chapters</h3>
-            <div class="flex flex-wrap justify-center gap-2">
-                ${chapters.length > 0 ? chapters.map(c => `<span class="bg-blue-50 text-cbse-blue px-4 py-1.5 rounded-full text-xs font-bold border border-blue-100 shadow-sm">${c}</span>`).join("") : "<span class='text-slate-400 italic'>All Chapters</span>"}
-            </div>
-        </div>
-    `;
-
-    // Render Priming Cards
-    html += `
-        <div class="grid md:grid-cols-3 gap-6">
-            <div class="bg-amber-50 p-5 rounded-2xl border border-amber-100 shadow-sm relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 bg-amber-100 w-16 h-16 rounded-full opacity-50 group-hover:scale-150 transition"></div>
-                <div class="text-amber-600 font-black text-[10px] uppercase tracking-widest mb-3 relative z-10">Concept Clarity</div>
-                <p class="text-sm font-medium text-slate-700 relative z-10 leading-relaxed">${data.def}</p>
-            </div>
-            <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 bg-indigo-100 w-16 h-16 rounded-full opacity-50 group-hover:scale-150 transition"></div>
-                <div class="text-indigo-600 font-black text-[10px] uppercase tracking-widest mb-3 relative z-10">Formula Bank</div>
-                <p class="text-sm font-bold text-slate-800 font-mono relative z-10">${data.formula}</p>
-            </div>
-            <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-100 shadow-sm relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 bg-emerald-100 w-16 h-16 rounded-full opacity-50 group-hover:scale-150 transition"></div>
-                <div class="text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-3 relative z-10">Theorems & Laws</div>
-                <p class="text-sm font-medium text-slate-700 relative z-10 leading-relaxed">${data.theorem}</p>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = html;
-
-    document.getElementById("start-btn").onclick = async () => {
-        try {
-            await requireAuth();
-            const qParams = new URLSearchParams(location.search);
-            location.href = `quiz-engine.html?${qParams.toString()}`;
-        } catch (e) {
-            console.error("Auth failed:", e);
-        }
-    };
-</script>
 </body>
 </html>

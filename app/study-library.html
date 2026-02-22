@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Library — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily:{ sans:['Inter','sans-serif'] },
+          colors:{
+            'cbse-blue':'#1a3e6a',
+            'cbse-light':'#f5f7fa',
+            'accent-gold':'#ffb703',
+            'success-green': '#16a34a',
+            'warning-yellow': '#ca8a04',
+            'danger-red': '#dc2626'
+          }
+        }
+      }
+    }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>body{font-family:'Inter',sans-serif;}</style>
@@ -13,161 +30,123 @@
     <script src="../js/config.js" type="module"></script>
 
     <script type="module">
-        import { loadCurriculum } from "../js/curriculum/loader.js";
-        import { getInitializedClients } from "../js/api.js";
-        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { formatChapterName } from "../js/utils.js";
-        import { initializeAuthListener } from "../js/auth-paywall.js";
+        import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
+        import { bindConsoleLogout } from "../js/guard.js";
+        import * as UI from "../js/ui-renderer.js";
 
-        // --- HELPER: Transliterate to Table Name (Copied/Shared logic) ---
-        function buildTableName(chapterTitle, subject, grade) {
-            const skipList = ["as","of","the","a","an","in","on","for","to","ki","ke","ka"];
-            let clean = chapterTitle.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-            let words = clean.split(/\s+/);
-            words = words.filter(w => !skipList.includes(w));
-            if (words.length === 0) words = ["chapter"];
-            const first = words[0];
-            const last = words.length > 1 ? words[words.length - 1] : first;
-            const subjectSlug = subject.trim().split(" ")[0].toLowerCase();
-            return `${subjectSlug}_${first}_${last}_${grade}_quiz`;
-        }
+        UI.injectStyles();
+        bindConsoleLogout("logout-nav-btn", "../index.html");
 
-        window.loadSelection = async (user) => {
-            const params = new URLSearchParams(window.location.search);
-            const grade = params.get("grade") || "9";
-            const subject = params.get("subject") || "Science";
-
-            document.getElementById("page-title").textContent = `${subject} Library`;
-            document.getElementById("back-link").href = `consoles/student.html?grade=${grade}`;
-
-            try {
-                // 1. Load Curriculum
-                const curriculum = await loadCurriculum(grade);
-                const data = curriculum[subject];
-
-                if (!data) {
-                    document.getElementById("content-area").innerHTML = `<div class="text-center text-slate-400">No content found for ${subject}.</div>`;
-                    return;
-                }
-
-                // 2. Load Mistakes to Identify Weak Areas
-                const mistakeMap = new Set();
-                if (user) {
-                    const { db } = await getInitializedClients();
-                    const q = query(collection(db, "mistake_notebook"), where("user_id", "==", user.uid));
-                    const snapshot = await getDocs(q);
-                    snapshot.forEach(doc => {
-                        const d = doc.data();
-                        const ch = formatChapterName(d.topic || d.chapter_slug);
-                        mistakeMap.add(ch);
-                    });
-                }
-
-                renderCurriculum(data, subject, grade, mistakeMap);
-            } catch (e) {
-                console.error(e);
-                document.getElementById("content-area").innerHTML = `<div class="text-center text-red-400">Failed to load library.</div>`;
-            }
+        // Mock Curriculum Data (In production, fetch from Firestore curriculum collection)
+        const CURRICULUM = {
+            "Mathematics": ["Number Systems", "Polynomials", "Coordinate Geometry", "Linear Equations", "Euclid Geometry", "Lines and Angles", "Triangles", "Quadrilaterals", "Circles", "Heron Formula", "Surface Areas", "Statistics", "Probability"],
+            "Science": ["Matter in Our Surroundings", "Is Matter Around Us Pure", "Atoms and Molecules", "Structure of the Atom", "The Fundamental Unit of Life", "Tissues", "Motion", "Force and Laws of Motion", "Gravitation", "Work and Energy", "Sound", "Improvement in Food Resources"],
+            "Social Science": ["The French Revolution", "Socialism in Europe", "Nazism and the Rise of Hitler", "Forest Society and Colonialism", "India - Size and Location", "Physical Features of India", "Drainage", "Climate", "Natural Vegetation", "Population", "What is Democracy", "Constitutional Design", "Electoral Politics", "Working of Institutions", "Democratic Rights", "The Story of Village Palampur", "People as Resource", "Poverty as a Challenge", "Food Security in India"]
         };
 
-        function renderCurriculum(data, subject, grade, mistakeMap) {
-            const container = document.getElementById("content-area");
-            let html = "";
-
-            if (Array.isArray(data)) {
-                html += renderSection("General", data, subject, grade, mistakeMap);
-            } else {
-                Object.keys(data).forEach(category => {
-                    html += renderSection(category, data[category], subject, grade, mistakeMap);
-                });
-            }
-
-            container.innerHTML = html;
-        }
-
-        function renderSection(category, chapters, subject, grade, mistakeMap) {
-            if (!chapters || !chapters.length) return "";
-
-            const grid = chapters.map(ch => {
-                const title = ch.chapter_title || ch.title || ch;
-                const tableId = ch.table_id || ch.table_name || buildTableName(title, subject, grade);
-                const formattedName = formatChapterName(tableId);
-
-                // Check if this chapter has mistakes
-                // We compare formatted names or raw slugs. formatChapterName is safest normalization.
-                const hasMistakes = mistakeMap.has(formattedName);
-
-                const borderClass = hasMistakes ? "border-red-300 shadow-red-100" : "border-slate-100";
-                const iconClass = hasMistakes ? "bg-red-50 text-red-500" : "bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600";
-                const badge = hasMistakes ? `<span class="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">Review Needed</span>` : "";
-
-                return `
-                    <div onclick="openStudyContent('${tableId}', '${title}', '${grade}', '${subject}')"
-                         class="relative group bg-white p-5 rounded-2xl border ${borderClass} shadow-sm hover:shadow-md transition cursor-pointer flex items-center justify-between">
-                        ${badge}
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-full ${iconClass} flex items-center justify-center transition">
-                                <i class="fas fa-book-open text-xs"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-slate-800 text-sm group-hover:text-blue-700 transition">${title}</h4>
-                                <div class="text-xs text-slate-400 font-mono mt-1 opacity-50">Study Mode</div>
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-right text-slate-300 group-hover:text-blue-500 transition"></i>
-                    </div>
-                `;
-            }).join("");
-
-            return `
-                <div class="mb-8">
-                    <h3 class="text-lg font-black text-slate-900 mb-4 px-2 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                        ${category}
-                    </h3>
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        ${grid}
-                    </div>
-                </div>
-            `;
-        }
-
-        window.openStudyContent = (tableId, title, grade, subject) => {
-            // Navigate to Study Content
-            const url = `study-content.html?chapter=${encodeURIComponent(title)}&subject=${encodeURIComponent(subject)}&grade=${grade}`;
-            window.location.href = url;
-        };
+        const params = new URLSearchParams(window.location.search);
+        const grade = params.get("grade") || "9";
+        const preSelectedSubject = params.get("subject");
 
         // Init
-        console.log("Initializing Auth Listener for Library...");
-        initializeAuthListener((user) => {
-            console.log("Auth State Changed in Library:", user ? user.uid : "No User");
+        initializeAuthListener(async (user) => {
             if (user) {
-                loadSelection(user);
+                document.getElementById("user-welcome").textContent = user.displayName || "Scholar";
+                document.getElementById("context-badge").textContent = `Grade ${grade}`;
+                renderLibrary();
             } else {
-                 window.location.href = "../index.html";
+                window.location.href = "../index.html";
             }
         });
+
+        function renderLibrary() {
+            const container = document.getElementById("library-container");
+            container.innerHTML = "";
+
+            Object.entries(CURRICULUM).forEach(([subject, chapters]) => {
+                // If a subject is pre-selected via URL, skip others
+                if (preSelectedSubject && subject !== preSelectedSubject) return;
+
+                const section = document.createElement("div");
+                section.className = "mb-12 fade-in";
+
+                const gridId = `grid-${subject.replace(/\s+/g,'-')}`;
+
+                section.innerHTML = `
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-lg shadow-sm">
+                            ${getSubjectIcon(subject)}
+                        </div>
+                        <h3 class="text-xl font-black text-slate-800 tracking-tight">${subject}</h3>
+                    </div>
+                    <div id="${gridId}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                `;
+
+                container.appendChild(section);
+
+                const grid = document.getElementById(gridId);
+                chapters.forEach(chapter => {
+                    const card = document.createElement("a");
+                    // Link to the Dynamic Content Page
+                    card.href = `study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;
+                    card.className = "group block bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden";
+                    card.innerHTML = `
+                        <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity text-cbse-blue">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-700 group-hover:text-cbse-blue transition-colors pr-6">${chapter}</h4>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-2">Study Summary</p>
+                    `;
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        function getSubjectIcon(subject) {
+            if (subject.includes("Math")) return "📐";
+            if (subject.includes("Science")) return "🔬";
+            if (subject.includes("Social")) return "🌍";
+            return "📚";
+        }
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
-    <div class="max-w-5xl mx-auto fade-in">
-        <header class="flex items-center gap-4 mb-8">
-            <a id="back-link" href="#" class="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-400 transition">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <div>
-                <h1 id="page-title" class="text-2xl font-black text-slate-900 tracking-tight">Library</h1>
-                <p class="text-slate-500 text-sm font-medium">Select a chapter to review concepts.</p>
-            </div>
-        </header>
+<body class="bg-cbse-light min-h-screen flex flex-col">
 
-        <div id="content-area">
+    <!-- Glass Header -->
+    <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
+      <div class="flex items-center space-x-4">
+        <a href="../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
+        <div>
+          <h2 class="text-xl font-black text-cbse-blue leading-none tracking-tight">Study<span class="text-accent-gold">Library</span></h2>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Curated Notes & Insights</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+          <div class="hidden md:flex flex-col items-end mr-2">
+              <span id="user-welcome" class="text-xs font-bold text-slate-700">Student</span>
+              <span id="context-badge" class="text-[10px] font-black text-white bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">Grade --</span>
+          </div>
+          <button id="logout-nav-btn" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
+      </div>
+    </header>
+
+    <div class="flex-grow max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
+        <div class="mb-8">
+             <a href="consoles/student.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
+                <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back to Hub
+            </a>
+        </div>
+
+        <div id="library-container">
             <!-- Dynamic Content -->
-            <div class="flex items-center justify-center h-64">
-                <div class="animate-pulse font-bold text-slate-300">Fetching Library...</div>
-            </div>
         </div>
     </div>
+
+    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
+      <p class="font-medium tracking-wide">Powered by Ready4Exam AI</p>
+      <p class="mt-1 opacity-70">© 2025 Academic Portal</p>
+    </footer>
+
 </body>
 </html>

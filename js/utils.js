@@ -38,6 +38,7 @@ export function capitalizeFirstLetter(s) {
     if (typeof s !== 'string' || s.length === 0) return s;
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
+<<<<<<< HEAD
 
 /**
  * Normalizes subject names from various inputs (data object or string).
@@ -101,3 +102,5 @@ export function formatChapterName(slug) {
     let name = parts.join(" ");
     return [...new Set(name.split(" "))].join(" ").replace(/\b\w/g, l => l.toUpperCase());
 }
+=======
+>>>>>>> origin/main

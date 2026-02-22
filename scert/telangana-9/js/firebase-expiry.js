@@ -1,9 +1,10 @@
-import { getInitializedClients } from "./config.js";
+import { initializeServices, getInitializedClients } from "./config.js";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Helper: Creates a user profile if one doesn't exist
 export async function ensureUserDocExists() {
-  const { auth, db } = await getInitializedClients();
+  await initializeServices();
+  const { auth, db } = getInitializedClients();
   const user = auth.currentUser;
   if (!user) return;
   const ref = doc(db, "users", user.uid);
@@ -26,7 +27,8 @@ export function showExpiredPopup(message = "Access Restricted") {
 
 // MAIN LOGIC: The "Gatekeeper"
 export async function checkClassAccess(classId, stream) {
-  const { auth, db } = await getInitializedClients();
+  await initializeServices();
+  const { auth, db } = getInitializedClients();
   const user = auth.currentUser;
   
   if (!user) return { allowed: false, reason: "Please sign in with Google." };

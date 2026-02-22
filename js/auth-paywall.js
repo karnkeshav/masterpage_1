@@ -61,7 +61,11 @@ export async function authenticateWithCredentials(username, password) {
     const email = `${username}@ready4exam.internal`;
 
     try {
-        await setPersistence(auth, browserSessionPersistence);
+        try {
+            await setPersistence(auth, browserSessionPersistence);
+        } catch (pe) {
+            console.warn("Persistence not available:", pe);
+        }
 
         let userCredential;
         try {
@@ -161,11 +165,16 @@ export async function routeUser(user) {
  */
 export async function initializeAuthListener(onReady) {
   const { auth } = await getInitializedClients();
-  if (!auth) return;
+  if (!auth) {
+      console.error(LOG, "Auth instance missing");
+      return;
+  }
 
   // Set persistence to session so auth is not remembered across browser restarts
-  if (auth) {
-      await setPersistence(auth, browserSessionPersistence).catch(() => {});
+  try {
+      await setPersistence(auth, browserSessionPersistence);
+  } catch (e) {
+      console.warn("Auth persistence failed:", e);
   }
 
   onAuthStateChanged(auth, async (user) => {
