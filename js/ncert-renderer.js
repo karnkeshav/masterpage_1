@@ -59,28 +59,47 @@ export async function initStudyContent() {
     });
 }
 
-async function loadContent(grade, subject, chapter, user) {
+async function loadContent(initialGrade, initialSubject, initialChapter, user) {
     const container = document.getElementById("content-container");
     UI.showSkeleton(container);
 
-    const data = await fetchChapterSummary(grade, subject, chapter);
+    // Use initial params for fetching summary
+    const data = await fetchChapterSummary(initialGrade, initialSubject, initialChapter);
 
     if (!data) {
-        renderFallback(container, grade);
+        renderFallback(container, initialGrade);
         return;
     }
 
-    renderDynamicContent(container, data, subject);
+    renderDynamicContent(container, data, initialSubject);
 
     // Critical: Typeset MathJax
-    if (window.MathJax) {
+    if (window.MathJax && (window.MathJax.typeset || window.MathJax.typesetPromise)) {
         window.MathJax.typesetPromise ? window.MathJax.typesetPromise() : window.MathJax.typeset();
     }
+
+    // Inject "Take Test" Button
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "mt-12 text-center";
+    buttonContainer.innerHTML = `
+        <button id="take-test-btn" class="px-8 py-4 bg-accent-gold text-cbse-blue font-black rounded-2xl text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-3 mx-auto">
+            <span>🚀</span> Take Chapter Test
+        </button>
+    `;
+    container.appendChild(buttonContainer);
+
+    // Fix ReferenceError: Use params from URL at click time
+    document.getElementById("take-test-btn").onclick = () => {
+        const p = new URLSearchParams(window.location.search);
+        const g = p.get("grade") || "9";
+        const s = p.get("subject") || "Mathematics";
+        const c = p.get("chapter") || "Polynomials";
+        createDifficultyModal(g, s, c, user);
+    };
 }
 
 function renderDynamicContent(container, data, subject) {
     const isMathScience = subject.includes("Math") || subject.includes("Science") && !subject.includes("Social");
-    const isSocial = subject.includes("Social") || subject.includes("History") || subject.includes("Civics") || subject.includes("Geography");
 
     // 1. Build Tips & Tricks HTML (Common)
     let tipsHtml = '';
@@ -172,19 +191,6 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 5. Special Social Science Data (History/Civics etc.) - if standardized fields used
-    // Prompt says "Display only their respective subject data (e.g., historyData)".
-    // Assuming schema might have 'historyData' or similar if distinct from majorPoints.
-    // For now, if majorPoints is populated, it handles it.
-    // If there are extra fields like 'timeline' or 'events', we could add here.
-    // Given the prompt instruction: "Display only their respective subject data... Hide formulaVault"
-    // We already hid formulaVault via isMathScience check.
-    // We display majorPoints/glossary/tips for everyone.
-
-    // Layout Assembly
-    // If no main grid items, don't render grid wrapper to save space?
-    // Tailwind classes: hidden vs block logic handled by empty string check.
-
     container.innerHTML = `
         ${tipsHtml}
         <div class="grid md:grid-cols-2 gap-8 ${(!majorPointsHtml && !glossaryHtml && !formulaHtml) ? 'hidden' : ''}">
@@ -193,20 +199,6 @@ function renderDynamicContent(container, data, subject) {
             ${formulaHtml}
         </div>
     `;
-
-    // Inject "Take Test" Button
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = "mt-12 text-center";
-    buttonContainer.innerHTML = `
-        <button id="take-test-btn" class="px-8 py-4 bg-accent-gold text-cbse-blue font-black rounded-2xl text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-3 mx-auto">
-            <span>🚀</span> Take Chapter Test
-        </button>
-    `;
-    container.appendChild(buttonContainer);
-
-    document.getElementById("take-test-btn").onclick = () => {
-        createDifficultyModal(grade, subject, chapter, user);
-    };
 }
 
 function createDifficultyModal(grade, subject, chapter, user) {
@@ -260,7 +252,7 @@ function createDifficultyModal(grade, subject, chapter, user) {
 
     window.startQuiz = (difficulty) => {
         logQuizStart(user.uid, subject, chapter, difficulty);
-        window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(chapter)}&difficulty=${difficulty}`;
+        window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}&difficulty=${difficulty}`;
     };
 }
 
