@@ -521,3 +521,21 @@ export async function fetchSchoolAnalytics(schoolId) {
         return null;
     }
 }
+
+export async function logQuizStart(userId, subject, topic, difficulty) {
+    if (!userId) return;
+    try {
+        const { db } = await getInitializedClients();
+        await addDoc(collection(db, "activity_logs"), {
+            user_id: userId,
+            subject: subject,
+            topic: topic,
+            difficulty: difficulty,
+            event: "quiz_started",
+            timestamp: serverTimestamp()
+        });
+        console.log("Quiz Start Logged");
+    } catch (e) {
+        console.error("Failed to log quiz start", e);
+    }
+}
