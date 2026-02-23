@@ -21,7 +21,8 @@ export function isSignupExpired(userData) {
  */
 export async function ensureUserDocExists() {
   await initializeServices();
-  const { auth, db } = getInitializedClients();
+  const { auth, db } = await getInitializedClients();
+
   const user = auth.currentUser;
   if (!user) return;
 
