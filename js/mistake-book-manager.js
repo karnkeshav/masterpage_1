@@ -3,7 +3,7 @@ import { getInitializedClients } from "./api.js";
 import { initializeAuthListener, ensureUserInFirestore } from "./auth-paywall.js";
 import { bindConsoleLogout } from "./guard.js";
 import * as UI from "./ui-renderer.js";
-import { collection, query, where, getDocs, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- UI SETUP ---
 UI.injectStyles();
@@ -39,12 +39,43 @@ function cleanText(text) {
     return cleaned.trim();
 }
 
-function inferSubject(topicSlug) {
+function inferHierarchy(topicSlug) {
     const s = (topicSlug || "").toLowerCase();
-    if (s.includes("science") || s.includes("physics") || s.includes("chem") || s.includes("bio") || s.includes("motion") || s.includes("force") || s.includes("atom") || s.includes("matter")) return "Science";
-    if (s.includes("math") || s.includes("algebra") || s.includes("geo") || s.includes("poly") || s.includes("number") || s.includes("linear") || s.includes("surface") || s.includes("volume") || s.includes("stat")) return "Mathematics";
-    if (s.includes("social") || s.includes("history") || s.includes("civics") || s.includes("demo") || s.includes("french") || s.includes("nazism") || s.includes("india")) return "Social Science";
-    return "General";
+
+    // SCIENCE
+    if (s.includes("motion") || s.includes("force") || s.includes("gravitation") || s.includes("work") || s.includes("energy") || s.includes("sound") || s.includes("light") || s.includes("human eye") || s.includes("electricity") || s.includes("magnetic") || s.includes("physics"))
+        return { subject: "Science", sub: "Physics" };
+    if (s.includes("matter") || s.includes("atom") || s.includes("molecule") || s.includes("structure") || s.includes("reaction") || s.includes("acid") || s.includes("base") || s.includes("metal") || s.includes("carbon") || s.includes("periodic") || s.includes("chem"))
+        return { subject: "Science", sub: "Chemistry" };
+    if (s.includes("cell") || s.includes("tissue") || s.includes("diversity") || s.includes("illness") || s.includes("resource") || s.includes("environment") || s.includes("life") || s.includes("control") || s.includes("reproduction") || s.includes("heredity") || s.includes("bio"))
+        return { subject: "Science", sub: "Biology" };
+    if (s.includes("science")) return { subject: "Science", sub: "General" };
+
+    // MATH
+    if (s.includes("number") || s.includes("real") || s.includes("arithmetic"))
+        return { subject: "Mathematics", sub: "Number Systems" };
+    if (s.includes("poly") || s.includes("linear") || s.includes("quad") || s.includes("algebra"))
+        return { subject: "Mathematics", sub: "Algebra" };
+    if (s.includes("geo") || s.includes("euclid") || s.includes("line") || s.includes("angle") || s.includes("triangle") || s.includes("quadrilateral") || s.includes("circle") || s.includes("construction") || s.includes("coord"))
+        return { subject: "Mathematics", sub: "Geometry" };
+    if (s.includes("area") || s.includes("volume") || s.includes("surface") || s.includes("heron") || s.includes("mensuration"))
+        return { subject: "Mathematics", sub: "Mensuration" };
+    if (s.includes("stat") || s.includes("prob"))
+        return { subject: "Mathematics", sub: "Statistics & Probability" };
+    if (s.includes("math")) return { subject: "Mathematics", sub: "General" };
+
+    // SOCIAL SCIENCE
+    if (s.includes("french") || s.includes("socialism") || s.includes("nazism") || s.includes("forest") || s.includes("pastoral") || s.includes("peasant") || s.includes("nationalism") || s.includes("indo-china") || s.includes("work life") || s.includes("print") || s.includes("history"))
+        return { subject: "Social Science", sub: "History" };
+    if (s.includes("democracy") || s.includes("constitution") || s.includes("electoral") || s.includes("institution") || s.includes("rights") || s.includes("power") || s.includes("federalism") || s.includes("gender") || s.includes("party") || s.includes("outcome") || s.includes("civics") || s.includes("political"))
+        return { subject: "Social Science", sub: "Civics" };
+    if (s.includes("india") || s.includes("physical") || s.includes("drainage") || s.includes("climate") || s.includes("vegetation") || s.includes("population") || s.includes("resource") || s.includes("agriculture") || s.includes("mineral") || s.includes("manufacturing") || s.includes("lifeline") || s.includes("geography"))
+        return { subject: "Social Science", sub: "Geography" };
+    if (s.includes("palampur") || s.includes("people") || s.includes("poverty") || s.includes("food") || s.includes("development") || s.includes("sector") || s.includes("money") || s.includes("global") || s.includes("consumer") || s.includes("economics"))
+        return { subject: "Social Science", sub: "Economics" };
+    if (s.includes("social")) return { subject: "Social Science", sub: "General" };
+
+    return { subject: "General", sub: "General Knowledge" };
 }
 
 function formatChapterName(slug) {
@@ -56,16 +87,24 @@ function formatChapterName(slug) {
     return unique.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
-function generateNCERTId(grade, subject, topicSlug) {
-    const s = subject.toLowerCase().replace(/\s+/g, '_');
-    let t = topicSlug.toLowerCase();
-    t = t.replace(new RegExp(`^${grade}_`), "");
-    t = t.replace(new RegExp(`^${s}_`), "");
-    t = t.replace(/_quiz$/, "");
-    return `${grade}_${s}_${t}`;
+function getMasteryColor(diff, percent) {
+    if (percent < 85) return "red";
+    if (diff === "Advanced") return "green";
+    if (diff === "Medium") return "yellow";
+    return "orange"; // Simple
 }
 
-// --- CORE LOGIC ---
+function getRingClass(color) {
+    const map = {
+        green: "border-green-500 text-green-600 bg-green-50",
+        yellow: "border-yellow-500 text-yellow-600 bg-yellow-50",
+        orange: "border-orange-500 text-orange-600 bg-orange-50",
+        red: "border-red-500 text-red-600 bg-red-50"
+    };
+    return map[color] || map.red;
+}
+
+// --- DATA FETCHING ---
 
 async function fetchMistakes(user) {
     const { db } = await getInitializedClients();
@@ -74,58 +113,95 @@ async function fetchMistakes(user) {
         where("user_id", "==", user.uid),
         orderBy("timestamp", "desc")
     );
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+}
 
-    const snapshot = await getDocs(q);
-    const sessions = [];
+async function fetchQuizScores(user) {
+    const { db } = await getInitializedClients();
+    const q = query(
+        collection(db, "quiz_scores"),
+        where("user_id", "==", user.uid),
+        orderBy("timestamp", "desc")
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+}
 
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        sessions.push({
-            id: doc.id,
-            timestamp: data.timestamp,
-            mistakes: data.mistakes || [],
-            topic: data.topic || data.chapter_slug || "unknown",
-            class_id: data.class_id || "9"
+// --- PROCESSING ---
+
+function processData(mistakes, scores) {
+    const hierarchy = {};
+
+    // 1. Link Mistakes to Scores (Difficulty)
+    // Heuristic: Match Topic and Timestamp (within 10s)
+    mistakes.forEach(m => {
+        const mTime = m.timestamp ? m.timestamp.toDate().getTime() : 0;
+        // Find closest score
+        const match = scores.find(s => {
+            const sTime = s.timestamp ? s.timestamp.toDate().getTime() : 0;
+            return s.topic === m.topic && Math.abs(sTime - mTime) < 10000;
+        });
+        m.difficulty = match ? match.difficulty : "Unknown";
+    });
+
+    // 2. Build Hierarchy
+    mistakes.forEach(m => {
+        const h = inferHierarchy(m.topic || m.chapter_slug);
+        const chapterName = formatChapterName(m.topic || m.chapter_slug);
+
+        if (!hierarchy[h.subject]) hierarchy[h.subject] = {};
+        if (!hierarchy[h.subject][h.sub]) hierarchy[h.subject][h.sub] = {};
+        if (!hierarchy[h.subject][h.sub][chapterName]) {
+            hierarchy[h.subject][h.sub][chapterName] = {
+                slug: m.topic || m.chapter_slug,
+                sessions: [],
+                classIds: new Set(),
+                mastery: "red"
+            };
+        }
+
+        const entry = hierarchy[h.subject][h.sub][chapterName];
+        entry.sessions.push(m);
+        if (m.class_id) entry.classIds.add(m.class_id);
+    });
+
+    // 3. Compute Mastery & Trends
+    Object.values(hierarchy).forEach(subs => {
+        Object.values(subs).forEach(chapters => {
+            Object.values(chapters).forEach(ch => {
+                // Mastery: Check scores for this slug
+                const chScores = scores.filter(s => (s.topic === ch.slug || s.topicSlug === ch.slug));
+                let maxDiff = "None";
+                let maxPercent = 0;
+
+                // Priority: Advanced > Medium > Simple
+                const advanced = chScores.filter(s => s.difficulty === "Advanced" && (s.percentage || s.score_percent) >= 85);
+                const medium = chScores.filter(s => s.difficulty === "Medium" && (s.percentage || s.score_percent) >= 85);
+                const simple = chScores.filter(s => s.difficulty === "Simple" && (s.percentage || s.score_percent) >= 85);
+
+                if (advanced.length) maxDiff = "Advanced";
+                else if (medium.length) maxDiff = "Medium";
+                else if (simple.length) maxDiff = "Simple";
+
+                if (maxDiff !== "None") ch.mastery = getMasteryColor(maxDiff, 90);
+                else ch.mastery = "red"; // Default fail
+            });
         });
     });
 
-    return sessions;
+    return hierarchy;
 }
 
-function groupSessionsByChapter(sessions) {
-    const groups = {};
+// --- RENDERING ---
 
-    sessions.forEach(session => {
-        const topicSlug = session.topic;
-        const subject = inferSubject(topicSlug);
-        const chapterKey = formatChapterName(topicSlug);
-
-        if (!groups[subject]) groups[subject] = {};
-        if (!groups[subject][chapterKey]) {
-            groups[subject][chapterKey] = {
-                slug: topicSlug,
-                display: chapterKey,
-                sessions: []
-            };
-        }
-        groups[subject][chapterKey].sessions.push(session);
-    });
-
-    return groups;
-}
-
-async function fetchNCERTSummary(docId) {
-    const { db } = await getInitializedClients();
-    try {
-        const snap = await getDoc(doc(db, "ncert_summaries", docId));
-        return snap.exists() ? snap.data() : null;
-    } catch (e) {
-        console.warn("NCERT Fetch Failed:", e);
-        return null;
-    }
-}
-
-async function renderMistakeBook(user) {
+async function renderDiagnosticEngine(user) {
     const container = document.getElementById("mistake-container");
     if (!container) return;
 
@@ -138,8 +214,12 @@ async function renderMistakeBook(user) {
     `;
 
     try {
-        const sessions = await fetchMistakes(user);
-        if (sessions.length === 0) {
+        const [mistakes, scores] = await Promise.all([
+            fetchMistakes(user),
+            fetchQuizScores(user)
+        ]);
+
+        if (mistakes.length === 0) {
             container.innerHTML = `
                 <div class="glass-panel p-12 rounded-3xl text-center border border-white/40">
                     <div class="text-6xl mb-6">🎉</div>
@@ -149,198 +229,165 @@ async function renderMistakeBook(user) {
             return;
         }
 
-        const grouped = groupSessionsByChapter(sessions);
+        const data = processData(mistakes, scores);
         let html = "";
 
-        for (const [subject, chapters] of Object.entries(grouped)) {
+        // Level 1: Subject
+        for (const [subject, subs] of Object.entries(data)) {
             html += `
                 <div class="mb-12">
                     <h2 class="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
                         <span class="w-2 h-8 bg-cbse-blue rounded-full"></span>
                         ${subject}
                     </h2>
-                    <div class="grid gap-6">
+                    <div class="space-y-8">
             `;
 
-            for (const [chapterKey, data] of Object.entries(chapters)) {
-                // Sorting sessions desc
-                data.sessions.sort((a, b) => b.timestamp - a.timestamp);
-
-                const totalAttempts = data.sessions.length;
-                const lastAttempt = data.sessions[0].timestamp ? data.sessions[0].timestamp.toDate().toLocaleDateString() : "N/A";
-
-                // Trend Logic: Last 3 attempts (e.g., "12 → 10 → 8")
-                // data.sessions is sorted DESC (latest first). So we want sessions[2] -> sessions[1] -> sessions[0]
-                const recentSessions = data.sessions.slice(0, 3).reverse(); // chronological order of last 3
-                const trendString = recentSessions.map(s => s.mistakes.length).join(" → ");
-
-                // Unique Mistakes & Persistence Check
-                const uniqueMistakes = new Map();
-                data.sessions.forEach(session => {
-                    session.mistakes.forEach(m => {
-                        const key = m.id || m.question;
-                        if (!uniqueMistakes.has(key)) {
-                            uniqueMistakes.set(key, {
-                                ...m,
-                                count: 0,
-                                sessions: []
-                            });
-                        }
-                        const entry = uniqueMistakes.get(key);
-                        entry.count++;
-                        entry.sessions.push(session.timestamp);
-                    });
-                });
-
-                const grade = data.sessions[0].class_id || "9";
-                const ncertId = generateNCERTId(grade, subject, data.slug);
-                const ncertData = await fetchNCERTSummary(ncertId);
-
-                const mistakesList = Array.from(uniqueMistakes.values());
-
+            // Level 2: Sub-Discipline
+            for (const [subName, chapters] of Object.entries(subs)) {
                 html += `
-                    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden group hover:shadow-md transition">
-                        <!-- Chapter Header -->
-                        <div class="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center cursor-pointer" onclick="this.nextElementSibling.classList.toggle('hidden');">
-                            <div>
-                                <h3 class="text-lg font-bold text-slate-900">${chapterKey}</h3>
-                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                                    ${mistakesList.length} Mistakes to Review
-                                </p>
-                            </div>
-                            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center transition group-hover:bg-cbse-blue group-hover:text-white">
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                        </div>
-
-                        <!-- Content Body -->
-                        <div class="hidden p-6 bg-white space-y-8">
-
-                            <!-- Analytical Metadata Row -->
-                            <div class="flex flex-wrap gap-4 mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-black text-slate-400 uppercase">Trend:</span>
-                                    <span class="font-mono font-bold text-slate-700 bg-white px-2 py-1 rounded border border-slate-200">${trendString || "No Data"}</span>
-                                </div>
-                                <div class="w-px h-4 bg-slate-200"></div>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-black text-slate-400 uppercase">Last Active:</span>
-                                    <span class="font-bold text-slate-700">${lastAttempt}</span>
-                                </div>
-                            </div>
-
-                            <!-- Mistakes List -->
-                            <div class="space-y-6">
+                    <div class="pl-4 border-l-2 border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-500 uppercase tracking-wider mb-4">${subName}</h3>
+                        <div class="grid gap-6">
                 `;
 
-                mistakesList.forEach((m, idx) => {
-                    const isRepeated = m.count > 1;
+                // Level 3: Chapter
+                for (const [chapterName, chData] of Object.entries(chapters)) {
+                    // Trend
+                    chData.sessions.sort((a, b) => (b.timestamp?.toDate().getTime() || 0) - (a.timestamp?.toDate().getTime() || 0));
+                    const recent = chData.sessions.slice(0, 3).reverse();
+                    const trend = recent.map(s => (s.mistakes || []).length).join(" → ");
 
-                    // Hint Logic
-                    let hintHtml = "";
-                    let hintLabel = "";
+                    // Legacy Check
+                    // If multiple classIds exist, or if older class exists
+                    // Assuming current class is 10 (or user profile class). Let's just flag if size > 1.
+                    const isLegacy = chData.classIds.size > 1;
+                    const legacyHtml = isLegacy ?
+                        `<span class="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-black uppercase rounded border border-red-200 ml-2">Legacy Weakness</span>` : "";
 
-                    if (ncertData) {
-                        const qText = (m.question || "").toLowerCase();
-                        let match = null;
-
-                        // Prioritize Formula for Math/Physics
-                        const isMathPhys = subject === "Mathematics" || (subject === "Science" && (qText.includes("motion") || qText.includes("force") || qText.includes("work") || qText.includes("gravitation")));
-
-                        // 1. Formula Search
-                        if (isMathPhys && ncertData.formulaVault) {
-                            const vault = Array.isArray(ncertData.formulaVault) ? ncertData.formulaVault : Object.values(ncertData.formulaVault);
-                            match = vault.find(f => {
-                                const label = (f.label || f.name || "").toLowerCase();
-                                return label && qText.includes(label);
-                            });
-                        }
-
-                        // 2. Definition/Major Point Search (if no formula or not math/phys)
-                        if (!match) {
-                            const defs = ncertData.oneLineDefinitions ? (Array.isArray(ncertData.oneLineDefinitions) ? ncertData.oneLineDefinitions : Object.values(ncertData.oneLineDefinitions)) : [];
-                            const points = ncertData.majorPoints ? (Array.isArray(ncertData.majorPoints) ? ncertData.majorPoints : Object.values(ncertData.majorPoints)) : [];
-                            const pool = [...defs, ...points];
-
-                            const defMatch = pool.find(d => {
-                                const text = (typeof d === 'string' ? d : (d.term || d.definition || d.text || "")).toLowerCase();
-                                return text && qText.includes(text.split(':')[0]);
-                            });
-
-                            if (defMatch) {
-                                match = {
-                                    label: "Key Concept",
-                                    content: typeof defMatch === 'string' ? defMatch : (defMatch.definition || defMatch.text || defMatch.term)
-                                };
-                            }
-                        }
-
-                        if (match) {
-                            hintLabel = match.label || match.name || "Concept Hint";
-                            const rawContent = match.tex || match.content || match.value || "";
-                            const content = cleanText(rawContent); // Markdown strip
-                            hintHtml = `
-                                <div class="mt-4 p-4 bg-indigo-50 rounded-xl border-l-4 border-indigo-500 relative">
-                                    <div class="text-[10px] font-black text-indigo-600 uppercase tracking-wide mb-2 flex items-center gap-2">
-                                        <i class="fas fa-lightbulb"></i> NCERT Hint: ${hintLabel}
-                                    </div>
-                                    <div class="text-indigo-900 font-medium text-sm leading-relaxed">
-                                        $$${content}$$
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    }
-
-                    // Fallback if no hint found
-                    if (!hintHtml) {
-                        hintHtml = `
-                            <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100 text-center">
-                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Revision Needed</p>
-                                <a href="study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(data.slug)}" class="text-sm font-bold text-cbse-blue hover:underline">
-                                    Review Chapter: ${chapterKey} <i class="fas fa-arrow-right ml-1"></i>
-                                </a>
-                            </div>
-                        `;
-                    }
+                    const ringClass = getRingClass(chData.mastery);
 
                     html += `
-                        <div class="relative pl-6 border-l-2 ${isRepeated ? 'border-danger-red' : 'border-slate-200'}">
-                            <span class="absolute -left-[9px] top-0 w-4 h-4 rounded-full ${isRepeated ? 'bg-danger-red ring-4 ring-red-100' : 'bg-slate-200'} border-2 border-white"></span>
-
-                            <div class="mb-4">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-black ${isRepeated ? 'bg-red-50 text-danger-red' : 'bg-slate-100 text-slate-500'} uppercase tracking-wider">
-                                    ${isRepeated ? 'Persistent Mistake' : 'Question ' + (idx + 1)}
-                                </span>
-                                <p class="text-slate-900 font-bold mt-3 text-lg leading-relaxed">${cleanText(m.question)}</p>
+                        <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden group hover:shadow-md transition">
+                            <div class="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-full border-4 flex items-center justify-center text-lg font-black ${ringClass}">
+                                        ${chData.mastery === 'green' ? '★' : chData.mastery === 'yellow' ? '●' : chData.mastery === 'orange' ? '○' : '!'}
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-bold text-slate-900 flex items-center">
+                                            ${chapterName}
+                                            ${legacyHtml}
+                                        </h4>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Trend:</span>
+                                            <span class="text-xs font-mono font-bold text-slate-600 bg-white px-1 rounded border border-slate-200">${trend}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-cbse-blue hover:text-white transition shadow-sm"
+                                    onclick="document.getElementById('details-${chapterName.replace(/\s/g, '')}').classList.toggle('hidden')">
+                                    Detailed Performance
+                                </button>
                             </div>
 
-                            <!-- Answer Removed - Only Hint Shown -->
-                            ${hintHtml}
+                            <!-- Level 4: Drill Down -->
+                            <div id="details-${chapterName.replace(/\s/g, '')}" class="hidden p-6 bg-white">
+                                <!-- Selection Gate -->
+                                <div class="flex gap-2 mb-6" id="gate-${chapterName.replace(/\s/g, '')}">
+                                    <button onclick="filterMistakes(this, 'Simple')" class="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition">Simple</button>
+                                    <button onclick="filterMistakes(this, 'Medium')" class="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-500 hover:bg-yellow-50 hover:text-yellow-600 hover:border-yellow-200 transition">Medium</button>
+                                    <button onclick="filterMistakes(this, 'Advanced')" class="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-500 hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition">Advanced</button>
+                                    <button onclick="filterMistakes(this, 'All')" class="flex-1 py-2 bg-cbse-blue text-white rounded-lg text-xs font-bold transition shadow-sm">Show All</button>
+                                </div>
+
+                                <div class="space-y-4 mistake-list">
+                    `;
+
+                    // Consolidated Mistakes List
+                    const allMistakes = [];
+                    chData.sessions.forEach(s => {
+                        const sDiff = s.difficulty || "Unknown";
+                        (s.mistakes || []).forEach(m => {
+                            allMistakes.push({ ...m, sessionDiff: sDiff, sessionId: s.id });
+                        });
+                    });
+
+                    // Unique & Count
+                    const uniqueMap = new Map();
+                    allMistakes.forEach(m => {
+                        const k = m.id || m.question;
+                        if (!uniqueMap.has(k)) uniqueMap.set(k, { ...m, count: 0, diffs: new Set() });
+                        const e = uniqueMap.get(k);
+                        e.count++;
+                        e.diffs.add(m.sessionDiff);
+                    });
+
+                    Array.from(uniqueMap.values()).forEach(m => {
+                        const isHighFreq = m.count > 1;
+                        // Use difficulty classes for filtering
+                        const diffClasses = Array.from(m.diffs).map(d => `diff-${d}`).join(" ");
+
+                        html += `
+                            <div class="mistake-item ${diffClasses} diff-All pl-4 border-l-2 ${isHighFreq ? 'border-danger-red' : 'border-slate-200'}">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-2 h-2 rounded-full ${isHighFreq ? 'bg-danger-red' : 'bg-slate-300'}"></span>
+                                    <span class="text-[10px] font-black ${isHighFreq ? 'text-danger-red' : 'text-slate-400'} uppercase tracking-wider">
+                                        ${isHighFreq ? 'High Frequency Error' : 'Missed Question'}
+                                    </span>
+                                </div>
+                                <!-- Active Recall: Text Only -->
+                                <p class="text-slate-800 font-medium text-sm leading-relaxed">${cleanText(m.question)}</p>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                                </div>
+                            </div>
                         </div>
                     `;
-                });
-
-                html += `
-                        </div>
-                    </div>
-                </div>
-                `;
+                }
+                html += `</div></div>`;
             }
             html += `</div></div>`;
         }
 
         container.innerHTML = html;
-
         if (window.MathJax && (window.MathJax.typeset || window.MathJax.typesetPromise)) {
             window.MathJax.typesetPromise ? window.MathJax.typesetPromise() : window.MathJax.typeset();
         }
 
     } catch (e) {
-        console.error("Mistake Book Render Error:", e);
-        container.innerHTML = `<div class="text-center text-red-500 font-bold p-8">Unable to load data.</div>`;
+        console.error("Diagnostic Engine Error:", e);
+        container.innerHTML = `<div class="text-center text-red-500 font-bold p-8">Unable to load diagnostics.</div>`;
     }
 }
+
+// Global Filter Function
+window.filterMistakes = function(btn, diff) {
+    const parent = btn.closest('.p-6');
+    // Reset buttons
+    parent.querySelectorAll('button').forEach(b => {
+        if (b === btn) {
+            b.classList.remove('bg-slate-50', 'text-slate-500', 'border-slate-200');
+            b.classList.add('bg-cbse-blue', 'text-white', 'border-cbse-blue');
+        } else {
+            b.classList.add('bg-slate-50', 'text-slate-500', 'border-slate-200');
+            b.classList.remove('bg-cbse-blue', 'text-white', 'border-cbse-blue');
+        }
+    });
+
+    // Filter Items
+    const list = parent.querySelector('.mistake-list');
+    list.querySelectorAll('.mistake-item').forEach(item => {
+        if (diff === 'All' || item.classList.contains(`diff-${diff}`)) {
+            item.classList.remove('hidden');
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+};
 
 // --- INIT ---
 
@@ -360,7 +407,7 @@ initializeAuthListener(async (user) => {
             else badgeEl.style.display = "none";
         }
 
-        await renderMistakeBook(user);
+        await renderDiagnosticEngine(user);
     } else {
         window.location.href = "../index.html";
     }
