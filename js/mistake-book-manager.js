@@ -34,10 +34,8 @@ function injectMathJax() {
 
 function cleanText(text) {
     if (!text) return "";
-    // Remove Markdown bold markers
-    let cleaned = text.replace(/\*\*/g, "");
-    // Remove Katex markers if present (reusing simple logic)
-    cleaned = cleaned.replace(/\$\$/g, "").replace(/\$/g, "");
+    let cleaned = text.replace(/\*\*/g, ""); // Strip Markdown bold
+    cleaned = cleaned.replace(/\$\$/g, "").replace(/\$/g, ""); // Strip Katex
     return cleaned.trim();
 }
 
@@ -51,38 +49,19 @@ function inferSubject(topicSlug) {
 
 function formatChapterName(slug) {
     if (!slug) return "General Quiz";
-    // Clean up slug: remove _quiz, digits, subject names
     let clean = slug.toLowerCase().replace(/_quiz/g, "").replace(/\d+/g, "");
     clean = clean.replace(/mathematics|science|social_science|social/g, "");
-
-    // Split by non-alphanumeric (underscore, space)
-    const parts = clean.split(/[^a-zA-Z]/).filter(p => p.length > 2); // Filter short words like "of", "and" if desired, but maybe keep them? Prompt implies deduplication.
-
-    // Deduplicate words (e.g., "polynomials polynomials" -> "polynomials")
+    const parts = clean.split(/[^a-zA-Z]/).filter(p => p.length > 2);
     const unique = [...new Set(parts)];
-
-    // Capitalize
     return unique.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
-// NCERT ID Generation: ${grade}_${subject}_${chapter}
-// e.g., 9_social_science_nazism_and_the_rise_of_hitler
 function generateNCERTId(grade, subject, topicSlug) {
     const s = subject.toLowerCase().replace(/\s+/g, '_');
-    // topicSlug usually comes as "math_polynomials_quiz" or similar
-    // We need to extract the core topic part.
-    // If the topicSlug is already "nazism_and_the_rise_of_hitler", great.
-    // If it's "9_social_science_nazism...", we need to parse it.
-    // Let's assume topicSlug is relatively clean or needs processing.
-    // The prompt says: "match the IDs seen in the logs (e.g., 9_social_science_nazism...)"
-    // If topicSlug is "nazism_and_the_rise_of_hitler", and we prepend grade_subject...
-
-    // Clean topicSlug: remove grade, subject if present
     let t = topicSlug.toLowerCase();
     t = t.replace(new RegExp(`^${grade}_`), "");
     t = t.replace(new RegExp(`^${s}_`), "");
     t = t.replace(/_quiz$/, "");
-
     return `${grade}_${s}_${t}`;
 }
 
@@ -119,7 +98,7 @@ function groupSessionsByChapter(sessions) {
     sessions.forEach(session => {
         const topicSlug = session.topic;
         const subject = inferSubject(topicSlug);
-        const chapterKey = formatChapterName(topicSlug); // Display Name
+        const chapterKey = formatChapterName(topicSlug);
 
         if (!groups[subject]) groups[subject] = {};
         if (!groups[subject][chapterKey]) {
@@ -184,26 +163,21 @@ async function renderMistakeBook(user) {
             `;
 
             for (const [chapterKey, data] of Object.entries(chapters)) {
-                // Sorting sessions desc (already done by query, but ensure)
+                // Sorting sessions desc
                 data.sessions.sort((a, b) => b.timestamp - a.timestamp);
 
                 const totalAttempts = data.sessions.length;
                 const lastAttempt = data.sessions[0].timestamp ? data.sessions[0].timestamp.toDate().toLocaleDateString() : "N/A";
 
-                // Trend: Look at last 3 sessions
-                let trend = "stable";
-                if (totalAttempts >= 2) {
-                    const latest = data.sessions[0].mistakes.length;
-                    const prev = data.sessions[1].mistakes.length;
-                    if (latest < prev) trend = "improving";
-                    else if (latest > prev) trend = "declining";
-                }
+                // Trend Logic: Last 3 attempts (e.g., "12 → 10 → 8")
+                // data.sessions is sorted DESC (latest first). So we want sessions[2] -> sessions[1] -> sessions[0]
+                const recentSessions = data.sessions.slice(0, 3).reverse(); // chronological order of last 3
+                const trendString = recentSessions.map(s => s.mistakes.length).join(" → ");
 
-                // Unique Mistakes Processing
+                // Unique Mistakes & Persistence Check
                 const uniqueMistakes = new Map();
                 data.sessions.forEach(session => {
                     session.mistakes.forEach(m => {
-                        // Use question ID or text as key
                         const key = m.id || m.question;
                         if (!uniqueMistakes.has(key)) {
                             uniqueMistakes.set(key, {
@@ -218,12 +192,10 @@ async function renderMistakeBook(user) {
                     });
                 });
 
-                // Fetch NCERT Data
                 const grade = data.sessions[0].class_id || "9";
                 const ncertId = generateNCERTId(grade, subject, data.slug);
                 const ncertData = await fetchNCERTSummary(ncertId);
 
-                // Prepare Hints
                 const mistakesList = Array.from(uniqueMistakes.values());
 
                 html += `
@@ -233,7 +205,7 @@ async function renderMistakeBook(user) {
                             <div>
                                 <h3 class="text-lg font-bold text-slate-900">${chapterKey}</h3>
                                 <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                                    ${mistakesList.length} Unique Mistakes
+                                    ${mistakesList.length} Mistakes to Review
                                 </p>
                             </div>
                             <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center transition group-hover:bg-cbse-blue group-hover:text-white">
@@ -247,20 +219,13 @@ async function renderMistakeBook(user) {
                             <!-- Analytical Metadata Row -->
                             <div class="flex flex-wrap gap-4 mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs">
                                 <div class="flex items-center gap-2">
-                                    <span class="font-black text-slate-400 uppercase">Attempts:</span>
-                                    <span class="font-bold text-slate-700">${totalAttempts}</span>
+                                    <span class="font-black text-slate-400 uppercase">Trend:</span>
+                                    <span class="font-mono font-bold text-slate-700 bg-white px-2 py-1 rounded border border-slate-200">${trendString || "No Data"}</span>
                                 </div>
                                 <div class="w-px h-4 bg-slate-200"></div>
                                 <div class="flex items-center gap-2">
                                     <span class="font-black text-slate-400 uppercase">Last Active:</span>
                                     <span class="font-bold text-slate-700">${lastAttempt}</span>
-                                </div>
-                                <div class="w-px h-4 bg-slate-200"></div>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-black text-slate-400 uppercase">Trend:</span>
-                                    ${trend === 'improving' ? '<span class="text-success-green font-bold flex items-center gap-1"><i class="fas fa-arrow-down"></i> Improving</span>' :
-                                      trend === 'declining' ? '<span class="text-danger-red font-bold flex items-center gap-1"><i class="fas fa-arrow-up"></i> Issues Rising</span>' :
-                                      '<span class="text-slate-500 font-bold">Stable</span>'}
                                 </div>
                             </div>
 
@@ -273,12 +238,17 @@ async function renderMistakeBook(user) {
 
                     // Hint Logic
                     let hintHtml = "";
+                    let hintLabel = "";
+
                     if (ncertData) {
                         const qText = (m.question || "").toLowerCase();
-
-                        // 1. Search Formula Vault
                         let match = null;
-                        if (ncertData.formulaVault) {
+
+                        // Prioritize Formula for Math/Physics
+                        const isMathPhys = subject === "Mathematics" || (subject === "Science" && (qText.includes("motion") || qText.includes("force") || qText.includes("work") || qText.includes("gravitation")));
+
+                        // 1. Formula Search
+                        if (isMathPhys && ncertData.formulaVault) {
                             const vault = Array.isArray(ncertData.formulaVault) ? ncertData.formulaVault : Object.values(ncertData.formulaVault);
                             match = vault.find(f => {
                                 const label = (f.label || f.name || "").toLowerCase();
@@ -286,35 +256,35 @@ async function renderMistakeBook(user) {
                             });
                         }
 
-                        // 2. Search Definitions (if no formula match)
-                        if (!match && ncertData.oneLineDefinitions) {
-                            const defs = Array.isArray(ncertData.oneLineDefinitions) ? ncertData.oneLineDefinitions : Object.values(ncertData.oneLineDefinitions);
-                            // definition might be string or object
-                            const defMatch = defs.find(d => {
-                                const text = (typeof d === 'string' ? d : (d.term || d.text || "")).toLowerCase();
-                                // Simple keyword match? Or just show a random one?
-                                // Prompt says: "linked to a specific concept".
-                                // Let's try matching known concepts if possible.
-                                // If d is object {term: "...", def: "..."}
+                        // 2. Definition/Major Point Search (if no formula or not math/phys)
+                        if (!match) {
+                            const defs = ncertData.oneLineDefinitions ? (Array.isArray(ncertData.oneLineDefinitions) ? ncertData.oneLineDefinitions : Object.values(ncertData.oneLineDefinitions)) : [];
+                            const points = ncertData.majorPoints ? (Array.isArray(ncertData.majorPoints) ? ncertData.majorPoints : Object.values(ncertData.majorPoints)) : [];
+                            const pool = [...defs, ...points];
+
+                            const defMatch = pool.find(d => {
+                                const text = (typeof d === 'string' ? d : (d.term || d.definition || d.text || "")).toLowerCase();
                                 return text && qText.includes(text.split(':')[0]);
                             });
+
                             if (defMatch) {
                                 match = {
-                                    label: "Key Definition",
-                                    content: typeof defMatch === 'string' ? defMatch : (defMatch.definition || defMatch.text)
+                                    label: "Key Concept",
+                                    content: typeof defMatch === 'string' ? defMatch : (defMatch.definition || defMatch.text || defMatch.term)
                                 };
                             }
                         }
 
                         if (match) {
-                            const label = match.label || match.name || "Concept Hint";
-                            const content = match.tex || match.content || match.value || "";
+                            hintLabel = match.label || match.name || "Concept Hint";
+                            const rawContent = match.tex || match.content || match.value || "";
+                            const content = cleanText(rawContent); // Markdown strip
                             hintHtml = `
                                 <div class="mt-4 p-4 bg-indigo-50 rounded-xl border-l-4 border-indigo-500 relative">
                                     <div class="text-[10px] font-black text-indigo-600 uppercase tracking-wide mb-2 flex items-center gap-2">
-                                        <i class="fas fa-book-open"></i> Study This First: ${label}
+                                        <i class="fas fa-lightbulb"></i> NCERT Hint: ${hintLabel}
                                     </div>
-                                    <div class="text-indigo-900 font-medium text-sm">
+                                    <div class="text-indigo-900 font-medium text-sm leading-relaxed">
                                         $$${content}$$
                                     </div>
                                 </div>
@@ -322,27 +292,30 @@ async function renderMistakeBook(user) {
                         }
                     }
 
+                    // Fallback if no hint found
+                    if (!hintHtml) {
+                        hintHtml = `
+                            <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Revision Needed</p>
+                                <a href="study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(data.slug)}" class="text-sm font-bold text-cbse-blue hover:underline">
+                                    Review Chapter: ${chapterKey} <i class="fas fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                        `;
+                    }
+
                     html += `
                         <div class="relative pl-6 border-l-2 ${isRepeated ? 'border-danger-red' : 'border-slate-200'}">
                             <span class="absolute -left-[9px] top-0 w-4 h-4 rounded-full ${isRepeated ? 'bg-danger-red ring-4 ring-red-100' : 'bg-slate-200'} border-2 border-white"></span>
 
-                            <div class="mb-2">
-                                <span class="text-[10px] font-black ${isRepeated ? 'text-danger-red' : 'text-slate-400'} uppercase tracking-wider">
-                                    ${isRepeated ? 'Repeated Error (' + m.count + 'x)' : 'Question ' + (idx + 1)}
+                            <div class="mb-4">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black ${isRepeated ? 'bg-red-50 text-danger-red' : 'bg-slate-100 text-slate-500'} uppercase tracking-wider">
+                                    ${isRepeated ? 'Persistent Mistake' : 'Question ' + (idx + 1)}
                                 </span>
-                                <p class="text-slate-900 font-bold mt-2 text-lg leading-relaxed">${cleanText(m.question)}</p>
+                                <p class="text-slate-900 font-bold mt-3 text-lg leading-relaxed">${cleanText(m.question)}</p>
                             </div>
 
-                            <!-- Answer Hidden for Unbiased Re-attempt -->
-                            <div class="flex gap-2 mt-4">
-                                <button class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-cbse-blue hover:text-white transition" onclick="this.nextElementSibling.classList.toggle('hidden'); this.remove();">
-                                    Reveal Answer
-                                </button>
-                                <div class="hidden p-3 bg-green-50 text-green-800 rounded-lg text-sm font-medium border border-green-100">
-                                    Correct: ${cleanText(m.correct)}
-                                </div>
-                            </div>
-
+                            <!-- Answer Removed - Only Hint Shown -->
                             ${hintHtml}
                         </div>
                     `;
