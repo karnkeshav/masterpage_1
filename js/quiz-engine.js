@@ -10,7 +10,8 @@ import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.
 ----------------------------------- */
 export async function checkClassAccess(classId, subject) {
     try {
-        const { auth, db } = getInitializedClients();
+        const { auth, db } = await getInitializedClients();
+
 
         const user = auth.currentUser;
         if (!user) return { allowed: false, reason: "no_user" };
