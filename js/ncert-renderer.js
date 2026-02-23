@@ -1,5 +1,4 @@
 import { fetchChapterSummary, logQuizStart } from "./api.js";
-import { loadCurriculum } from "./curriculum/loader.js";
 import { initializeAuthListener } from "./auth-paywall.js";
 import { bindConsoleLogout } from "./guard.js";
 import * as UI from "./ui-renderer.js";
@@ -7,25 +6,22 @@ import * as UI from "./ui-renderer.js";
 // --- HELPERS ---
 
 function sanitize(text) {
-    if (typeof text !== 'string') return text || "";
+    if (typeof text !== 'string') return text;
     return text.replace(/\*\*/g, "").trim();
 }
 
 function getArray(data) {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    // Universal Data Parser: Handle Map-like objects by converting to values list
-    if (typeof data === 'object') return Object.values(data);
+    if (typeof data === 'object') return Object.entries(data).map(([k, v]) => ({ key: k, value: v }));
     return [];
 }
 
 function getCleanText(item) {
     if (typeof item === 'string') return sanitize(item);
     if (item && typeof item === 'object') {
-        // Fix "Undefined" errors by checking multiple field names (tex, content, value, formula, definition)
-        // Fix [object Object] by ensuring we extract a string property
-        const raw = item.tex || item.content || item.value || item.formula || item.definition || item.text || "";
-        return sanitize(raw);
+        // Extract text property if exists, or values
+        return sanitize(item.text || item.value || item.content || item.definition || JSON.stringify(item));
     }
     return "";
 }
@@ -127,24 +123,24 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 2. Build Formula/Equation Vault HTML
+    // 2. Build Formula Vault HTML (Maths & Science Only)
     let formulaHtml = '';
-    const formulaData = getArray(data.formulaVault || data.equationVault); // Support equationVault field too
-    if (showFormula && formulaData.length > 0) {
+    const formulaData = getArray(data.formulaVault);
+    if (isMathScience && formulaData.length > 0) {
         formulaHtml = `
-            <div class="md:col-span-2 glass-panel p-6 rounded-3xl bg-white border border-slate-200 relative overflow-hidden mt-8 shadow-sm">
-                <div class="absolute top-0 right-0 p-8 opacity-5 text-9xl text-slate-900">∑</div>
-                <h3 class="text-lg font-black text-slate-900 mb-4 flex items-center gap-2 relative z-10">
-                    <span class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 text-sm">${formulaIcon}</span>
-                    ${formulaTitle}
+            <div class="md:col-span-2 glass-panel p-6 rounded-3xl bg-slate-900 text-white relative overflow-hidden mt-8">
+                <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">∑</div>
+                <h3 class="text-lg font-black text-accent-gold mb-4 flex items-center gap-2 relative z-10">
+                    <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white text-sm">∫</span>
+                    Formula Vault
                 </h3>
                 <div class="grid md:grid-cols-2 gap-4 relative z-10">
                     ${formulaData.map(item => {
                         const f = getFormulaContent(item);
                         return `
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">${sanitize(f.label)}</div>
-                            <div class="font-mono text-lg font-bold text-slate-900">${f.content}</div>
+                        <div class="bg-white/10 p-4 rounded-xl border border-white/10">
+                            <div class="text-xs text-white/50 uppercase font-bold tracking-widest mb-1">${sanitize(f.label)}</div>
+                            <div class="font-mono text-lg font-bold">${f.content}</div>
                         </div>
                     `}).join("")}
                 </div>
@@ -153,13 +149,8 @@ function renderDynamicContent(container, data, subject) {
     }
 
     // 3. Build Major Points (Core Takeaways)
-    // "Biology/Civics/Economics: ... prioritize Core Takeaways"
-    // So we show majorPoints for everyone EXCEPT History (which uses Timeline) or maybe History also shows it?
-    // Prompt: "History: Replace the vault with a new container for Chronology/Timeline Data."
-    // Prompt: "Biology/Civics/Economics: ... prioritize Core Takeaways and Glossaries."
-    // So Biology/Civics/Econ SHOW Core Takeaways.
     let majorPointsHtml = '';
-    const majorData = getArray(data.majorPoints || data.coreTakeaways);
+    const majorData = getArray(data.majorPoints);
     if (majorData.length > 0) {
         majorPointsHtml = `
             <div class="glass-panel p-6 rounded-3xl">
@@ -179,56 +170,7 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 4. Build Subject-Specific Data (Social Science / History Timeline)
-    let socialDataHtml = '';
-    if (isSocial) {
-        let specificData = [];
-        let label = "Key Insights";
-        let icon = "📜";
-
-        // History: Chronology/Timeline Data
-        if (isHistory && (data.timeline || data.historyData)) {
-            specificData = getArray(data.timeline || data.historyData);
-            label = "Chronology & Timeline";
-            icon = "⏳";
-        }
-        else if (data.civicsData) {
-            specificData = getArray(data.civicsData);
-            label = "Civic Concepts";
-            icon = "⚖️";
-        } else if (data.geographyData) {
-            specificData = getArray(data.geographyData);
-            label = "Geographic Facts";
-            icon = "🌍";
-        } else if (data.economicsData) {
-            specificData = getArray(data.economicsData);
-            label = "Economic Principles";
-            icon = "💰";
-        } else if (data.socialScienceData) {
-             specificData = getArray(data.socialScienceData);
-        }
-
-        if (specificData.length > 0) {
-             socialDataHtml = `
-            <div class="glass-panel p-6 rounded-3xl">
-                <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 text-sm">${icon}</span>
-                    ${label}
-                </h3>
-                <ul class="space-y-3">
-                    ${specificData.map(p => `
-                        <li class="flex items-start gap-3 text-sm text-slate-600 leading-relaxed">
-                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0"></span>
-                            <span>${getCleanText(p)}</span>
-                        </li>
-                    `).join("")}
-                </ul>
-            </div>
-        `;
-        }
-    }
-
-    // 5. Build Glossary (Definitions - Common)
+    // 4. Build Glossary (Definitions)
     let glossaryHtml = '';
     const glossaryData = getArray(data.oneLineDefinitions);
     if (glossaryData.length > 0) {
@@ -251,9 +193,8 @@ function renderDynamicContent(container, data, subject) {
 
     container.innerHTML = `
         ${tipsHtml}
-        <div class="grid md:grid-cols-2 gap-8 ${(!majorPointsHtml && !glossaryHtml && !formulaHtml && !socialDataHtml) ? 'hidden' : ''}">
+        <div class="grid md:grid-cols-2 gap-8 ${(!majorPointsHtml && !glossaryHtml && !formulaHtml) ? 'hidden' : ''}">
             ${majorPointsHtml}
-            ${socialDataHtml}
             ${glossaryHtml}
             ${formulaHtml}
         </div>
