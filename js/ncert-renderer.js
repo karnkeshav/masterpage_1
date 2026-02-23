@@ -63,83 +63,47 @@ export async function initStudyContent() {
     });
 }
 
-async function getCurriculumSubDiscipline(grade, subject, chapter) {
-    try {
-        const curriculum = await loadCurriculum(grade);
-        const subjectData = curriculum[subject] || curriculum[Object.keys(curriculum).find(k => k.toLowerCase() === subject.toLowerCase())];
-
-        if (!subjectData) return null;
-
-        // Iterate sub-disciplines (History, Geography, Physics, etc.)
-        for (const [sub, chapters] of Object.entries(subjectData)) {
-            // Check if chapter exists in list (loose matching)
-            const match = chapters.find(c => c.chapter_title.toLowerCase().includes(chapter.toLowerCase()) || chapter.toLowerCase().includes(c.chapter_title.toLowerCase()));
-            if (match) return sub;
-        }
-    } catch (e) {
-        console.warn("Curriculum load failed:", e);
-    }
-    return null;
-}
-
-async function loadContent(grade, subject, chapter, user) {
+async function loadContent(initialGrade, initialSubject, initialChapter, user) {
     const container = document.getElementById("content-container");
     UI.showSkeleton(container);
 
-    let data = null;
-
-    // 1. Try Curriculum-Aware Fetch (e.g. Social Science -> Geography)
-    const subDiscipline = await getCurriculumSubDiscipline(grade, subject, chapter);
-    if (subDiscipline) {
-        const specificId = subDiscipline.toLowerCase().replace(/ /g, '_');
-        console.log(`[NCERT] Trying specific fetch: ${specificId}`);
-        data = await fetchChapterSummary(grade, specificId, chapter);
-    }
-
-    // 2. Fallback: Generic Subject Fetch (e.g. Social Science -> social_science)
-    if (!data) {
-        const genericId = subject.toLowerCase().replace(/ /g, '_');
-        console.log(`[NCERT] Fallback to generic fetch: ${genericId}`);
-        data = await fetchChapterSummary(grade, genericId, chapter);
-    }
+    // Use initial params for fetching summary
+    const data = await fetchChapterSummary(initialGrade, initialSubject, initialChapter);
 
     if (!data) {
-        renderFallback(container, grade);
+        renderFallback(container, initialGrade);
         return;
     }
 
-    // Inject discovered discipline if missing
-    if (subDiscipline && !data.discipline) data.discipline = subDiscipline;
-
-    renderDynamicContent(container, data, subject);
+    renderDynamicContent(container, data, initialSubject);
 
     // Critical: Typeset MathJax
-    if (window.MathJax) {
+    if (window.MathJax && (window.MathJax.typeset || window.MathJax.typesetPromise)) {
         window.MathJax.typesetPromise ? window.MathJax.typesetPromise() : window.MathJax.typeset();
     }
+
+    // Inject "Take Test" Button
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "mt-12 text-center";
+    buttonContainer.innerHTML = `
+        <button id="take-test-btn" class="px-8 py-4 bg-accent-gold text-cbse-blue font-black rounded-2xl text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-3 mx-auto">
+            <span>🚀</span> Take Chapter Test
+        </button>
+    `;
+    container.appendChild(buttonContainer);
+
+    // Fix ReferenceError: Use params from URL at click time
+    document.getElementById("take-test-btn").onclick = () => {
+        const p = new URLSearchParams(window.location.search);
+        const g = p.get("grade") || "9";
+        const s = p.get("subject") || "Mathematics";
+        const c = p.get("chapter") || "Polynomials";
+        createDifficultyModal(g, s, c, user);
+    };
 }
 
 function renderDynamicContent(container, data, subject) {
-    // Robust Subject Check (Case Insensitive)
-    const lowerSub = subject.toLowerCase();
-
-    // Determine Discipline from Data or Fallback
-    const discipline = (data.discipline || data.book || subject).toLowerCase();
-
-    const isChemistry = discipline.includes("chemistry");
-    const isBiology = discipline.includes("biology");
-    const isPhysics = discipline.includes("physics");
-    const isMath = lowerSub.includes("math") || discipline.includes("math");
-    const isHistory = discipline.includes("history");
-    const isSocial = lowerSub.includes("social") || isHistory || discipline.includes("civics") || discipline.includes("geography") || discipline.includes("economics");
-
-    // Visibility Rules
-    // Physics/Math/Chemistry: Show Formula Vault
-    // Biology/Civics/Economics/History: Hide Formula Vault
-    const showFormula = (isMath || isPhysics || isChemistry) && !isBiology && !isSocial;
-
-    const formulaTitle = isChemistry ? "Equation Vault" : "Formula Vault";
-    const formulaIcon = isChemistry ? "⚗️" : "∫";
+    const isMathScience = subject.includes("Math") || subject.includes("Science") && !subject.includes("Social");
 
     // 1. Build Tips & Tricks HTML (Common)
     let tipsHtml = '';
@@ -285,7 +249,6 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // Layout Assembly
     container.innerHTML = `
         ${tipsHtml}
         <div class="grid md:grid-cols-2 gap-8 ${(!majorPointsHtml && !glossaryHtml && !formulaHtml && !socialDataHtml) ? 'hidden' : ''}">
@@ -295,20 +258,6 @@ function renderDynamicContent(container, data, subject) {
             ${formulaHtml}
         </div>
     `;
-
-    // Inject "Take Test" Button
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = "mt-12 text-center";
-    buttonContainer.innerHTML = `
-        <button id="take-test-btn" class="px-8 py-4 bg-accent-gold text-cbse-blue font-black rounded-2xl text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-3 mx-auto">
-            <span>🚀</span> Take Chapter Test
-        </button>
-    `;
-    container.appendChild(buttonContainer);
-
-    document.getElementById("take-test-btn").onclick = () => {
-        createDifficultyModal(grade, subject, chapter, user);
-    };
 }
 
 function createDifficultyModal(grade, subject, chapter, user) {
@@ -362,7 +311,7 @@ function createDifficultyModal(grade, subject, chapter, user) {
 
     window.startQuiz = (difficulty) => {
         logQuizStart(user.uid, subject, chapter, difficulty);
-        window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(chapter)}&difficulty=${difficulty}`;
+        window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}&difficulty=${difficulty}`;
     };
 }
 
