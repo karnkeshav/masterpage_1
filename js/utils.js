@@ -62,7 +62,7 @@ export function normalizeSubject(input) {
 
     // Fallback: Check topicSlug if provided
     if (slug) {
-        if (slug.includes("triangle") || slug.includes("polynomial") || slug.includes("probability") || slug.includes("math") || slug.includes("algebra") || slug.includes("geo")) return "Mathematics";
+        if (slug.includes("triangle") || slug.includes("polynomial") || slug.includes("probability") || slug.includes("math") || slug.includes("algebra") || slug.includes("geometry")) return "Mathematics";
         if (slug.includes("motion") || slug.includes("gravitation") || slug.includes("force") || slug.includes("atom") || slug.includes("science") || slug.includes("physics") || slug.includes("chem") || slug.includes("bio")) return "Science";
         if (slug.includes("history") || slug.includes("civics") || slug.includes("social") || slug.includes("geography") || slug.includes("economics")) return "Social Science";
     }
