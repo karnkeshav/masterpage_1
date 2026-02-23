@@ -13,17 +13,17 @@ function sanitize(text) {
 function getArray(data) {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    // Handle Map-like objects by converting to entries
-    if (typeof data === 'object') return Object.entries(data).map(([k, v]) => ({ key: k, value: v }));
+    // Universal Data Parser: Handle Map-like objects by converting to values list
+    if (typeof data === 'object') return Object.values(data);
     return [];
 }
 
 function getCleanText(item) {
     if (typeof item === 'string') return sanitize(item);
     if (item && typeof item === 'object') {
-        // Fix "Undefined" errors by checking multiple field names
+        // Fix "Undefined" errors by checking multiple field names (tex, content, value, formula, definition)
         // Fix [object Object] by ensuring we extract a string property
-        const raw = item.text || item.value || item.content || item.definition || item.formula || item.tex || "";
+        const raw = item.tex || item.content || item.value || item.formula || item.definition || item.text || "";
         return sanitize(raw);
     }
     return "";
