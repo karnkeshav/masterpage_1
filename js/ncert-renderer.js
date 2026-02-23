@@ -6,13 +6,14 @@ import * as UI from "./ui-renderer.js";
 // --- HELPERS ---
 
 function sanitize(text) {
-    if (typeof text !== 'string') return text;
+    if (typeof text !== 'string') return text || "";
     return text.replace(/\*\*/g, "").trim();
 }
 
 function getArray(data) {
     if (!data) return [];
     if (Array.isArray(data)) return data;
+    // Handle Map-like objects by converting to entries
     if (typeof data === 'object') return Object.entries(data).map(([k, v]) => ({ key: k, value: v }));
     return [];
 }
@@ -20,8 +21,10 @@ function getArray(data) {
 function getCleanText(item) {
     if (typeof item === 'string') return sanitize(item);
     if (item && typeof item === 'object') {
-        // Extract text property if exists, or values
-        return sanitize(item.text || item.value || item.content || item.definition || JSON.stringify(item));
+        // Fix "Undefined" errors by checking multiple field names
+        // Fix [object Object] by ensuring we extract a string property
+        const raw = item.text || item.value || item.content || item.definition || item.formula || item.tex || "";
+        return sanitize(raw);
     }
     return "";
 }
@@ -63,7 +66,8 @@ async function loadContent(grade, subject, chapter, user) {
     const container = document.getElementById("content-container");
     UI.showSkeleton(container);
 
-    const data = await fetchChapterSummary(grade, subject, chapter);
+    // Ensure slug generation is robust (e.g. Social Science -> social_science)
+    const data = await fetchChapterSummary(grade, subject.toLowerCase().replace(/ /g, '_'), chapter);
 
     if (!data) {
         renderFallback(container, grade);
@@ -80,7 +84,7 @@ async function loadContent(grade, subject, chapter, user) {
 
 function renderDynamicContent(container, data, subject) {
     const isMathScience = subject.includes("Math") || subject.includes("Science") && !subject.includes("Social");
-    const isSocial = subject.includes("Social") || subject.includes("History") || subject.includes("Civics") || subject.includes("Geography");
+    const isSocial = subject.includes("Social") || subject.includes("History") || subject.includes("Civics") || subject.includes("Geography") || subject.includes("Economics");
 
     // 1. Build Tips & Tricks HTML (Common)
     let tipsHtml = '';
@@ -129,10 +133,10 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 3. Build Major Points (Core Takeaways)
+    // 3. Build Major Points (Core Takeaways - Math/Science Only)
     let majorPointsHtml = '';
     const majorData = getArray(data.majorPoints);
-    if (majorData.length > 0) {
+    if (isMathScience && majorData.length > 0) {
         majorPointsHtml = `
             <div class="glass-panel p-6 rounded-3xl">
                 <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
@@ -151,7 +155,54 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 4. Build Glossary (Definitions)
+    // 4. Build Subject-Specific Data (Social Science Only)
+    let socialDataHtml = '';
+    if (isSocial) {
+        let specificData = [];
+        let label = "Key Insights";
+        let icon = "📜";
+
+        if (data.historyData) {
+            specificData = getArray(data.historyData);
+            label = "Historical Events";
+            icon = "🏰";
+        } else if (data.civicsData) {
+            specificData = getArray(data.civicsData);
+            label = "Civic Concepts";
+            icon = "⚖️";
+        } else if (data.geographyData) {
+            specificData = getArray(data.geographyData);
+            label = "Geographic Facts";
+            icon = "🌍";
+        } else if (data.economicsData) {
+            specificData = getArray(data.economicsData);
+            label = "Economic Principles";
+            icon = "💰";
+        } else if (data.socialScienceData) {
+             specificData = getArray(data.socialScienceData);
+        }
+
+        if (specificData.length > 0) {
+             socialDataHtml = `
+            <div class="glass-panel p-6 rounded-3xl">
+                <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 text-sm">${icon}</span>
+                    ${label}
+                </h3>
+                <ul class="space-y-3">
+                    ${specificData.map(p => `
+                        <li class="flex items-start gap-3 text-sm text-slate-600 leading-relaxed">
+                            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0"></span>
+                            <span>${getCleanText(p)}</span>
+                        </li>
+                    `).join("")}
+                </ul>
+            </div>
+        `;
+        }
+    }
+
+    // 5. Build Glossary (Definitions - Common)
     let glossaryHtml = '';
     const glossaryData = getArray(data.oneLineDefinitions);
     if (glossaryData.length > 0) {
@@ -172,23 +223,12 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 5. Special Social Science Data (History/Civics etc.) - if standardized fields used
-    // Prompt says "Display only their respective subject data (e.g., historyData)".
-    // Assuming schema might have 'historyData' or similar if distinct from majorPoints.
-    // For now, if majorPoints is populated, it handles it.
-    // If there are extra fields like 'timeline' or 'events', we could add here.
-    // Given the prompt instruction: "Display only their respective subject data... Hide formulaVault"
-    // We already hid formulaVault via isMathScience check.
-    // We display majorPoints/glossary/tips for everyone.
-
     // Layout Assembly
-    // If no main grid items, don't render grid wrapper to save space?
-    // Tailwind classes: hidden vs block logic handled by empty string check.
-
     container.innerHTML = `
         ${tipsHtml}
-        <div class="grid md:grid-cols-2 gap-8 ${(!majorPointsHtml && !glossaryHtml && !formulaHtml) ? 'hidden' : ''}">
+        <div class="grid md:grid-cols-2 gap-8 ${(!majorPointsHtml && !glossaryHtml && !formulaHtml && !socialDataHtml) ? 'hidden' : ''}">
             ${majorPointsHtml}
+            ${socialDataHtml}
             ${glossaryHtml}
             ${formulaHtml}
         </div>
