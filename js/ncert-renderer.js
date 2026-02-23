@@ -83,8 +83,21 @@ async function loadContent(grade, subject, chapter, user) {
 }
 
 function renderDynamicContent(container, data, subject) {
-    const isMathScience = subject.includes("Math") || subject.includes("Science") && !subject.includes("Social");
-    const isSocial = subject.includes("Social") || subject.includes("History") || subject.includes("Civics") || subject.includes("Geography") || subject.includes("Economics");
+    // Robust Subject Check (Case Insensitive)
+    const lowerSub = subject.toLowerCase();
+    const isSocial = lowerSub.includes("social") || lowerSub.includes("history") || lowerSub.includes("civics") || lowerSub.includes("geography") || lowerSub.includes("economics");
+
+    // Determine Discipline and Formula Logic
+    const discipline = (data.discipline || data.book || subject).toLowerCase();
+    const isChemistry = discipline.includes("chemistry");
+    const isBiology = discipline.includes("biology");
+    const isPhysics = discipline.includes("physics");
+    const isMath = subject.includes("Math") || discipline.includes("math");
+
+    // Show Formula Vault for Math, Physics, Chemistry (but not Biology or Social Science)
+    const showFormula = (isMath || isPhysics || isChemistry) && !isBiology && !isSocial;
+    const formulaTitle = isChemistry ? "Equation Vault" : "Formula Vault";
+    const formulaIcon = isChemistry ? "⚗️" : "∫";
 
     // 1. Build Tips & Tricks HTML (Common)
     let tipsHtml = '';
@@ -108,24 +121,24 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 2. Build Formula Vault HTML (Maths & Science Only)
+    // 2. Build Formula/Equation Vault HTML
     let formulaHtml = '';
-    const formulaData = getArray(data.formulaVault);
-    if (isMathScience && formulaData.length > 0) {
+    const formulaData = getArray(data.formulaVault || data.equationVault); // Support equationVault field too
+    if (showFormula && formulaData.length > 0) {
         formulaHtml = `
-            <div class="md:col-span-2 glass-panel p-6 rounded-3xl bg-slate-900 text-white relative overflow-hidden mt-8">
-                <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">∑</div>
-                <h3 class="text-lg font-black text-accent-gold mb-4 flex items-center gap-2 relative z-10">
-                    <span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white text-sm">∫</span>
-                    Formula Vault
+            <div class="md:col-span-2 glass-panel p-6 rounded-3xl bg-white border border-slate-200 relative overflow-hidden mt-8 shadow-sm">
+                <div class="absolute top-0 right-0 p-8 opacity-5 text-9xl text-slate-900">∑</div>
+                <h3 class="text-lg font-black text-slate-900 mb-4 flex items-center gap-2 relative z-10">
+                    <span class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 text-sm">${formulaIcon}</span>
+                    ${formulaTitle}
                 </h3>
                 <div class="grid md:grid-cols-2 gap-4 relative z-10">
                     ${formulaData.map(item => {
                         const f = getFormulaContent(item);
                         return `
-                        <div class="bg-white/10 p-4 rounded-xl border border-white/10">
-                            <div class="text-xs text-white/50 uppercase font-bold tracking-widest mb-1">${sanitize(f.label)}</div>
-                            <div class="font-mono text-lg font-bold">${f.content}</div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">${sanitize(f.label)}</div>
+                            <div class="font-mono text-lg font-bold text-slate-900">${f.content}</div>
                         </div>
                     `}).join("")}
                 </div>
@@ -133,10 +146,16 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 3. Build Major Points (Core Takeaways - Math/Science Only)
+    // 3. Build Major Points (Core Takeaways - Math/Science/Biology Only)
+    // Note: Social Science usually has specific data handled below, but if majorPoints exist for Biology/Physics/Chem, show them.
     let majorPointsHtml = '';
-    const majorData = getArray(data.majorPoints);
-    if (isMathScience && majorData.length > 0) {
+    const majorData = getArray(data.majorPoints || data.coreTakeaways);
+    // Show for Math/Science (including Biology) but generally not for Social unless forced?
+    // Current logic was: if (isMathScience && majorData.length > 0)
+    // Updated logic: Show for everyone EXCEPT Social Science (unless specific social data is missing, but usually Social has its own block)
+    // Actually, prompt says: "Biology: Show only coreTakeaways..."
+    // So for Biology/Physics/Chem/Math we show majorPoints.
+    if (!isSocial && majorData.length > 0) {
         majorPointsHtml = `
             <div class="glass-panel p-6 rounded-3xl">
                 <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
