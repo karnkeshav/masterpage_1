@@ -211,7 +211,8 @@
             btn.textContent = "Provisioning...";
 
             try {
-                const { db } = getInitializedClients();
+                const { db } = await getInitializedClients();
+
                 const schoolData = {
                     name: document.getElementById("s-name").value,
                     logo_url: document.getElementById("s-logo").value,
