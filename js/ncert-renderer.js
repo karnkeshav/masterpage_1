@@ -1,4 +1,5 @@
 import { fetchChapterSummary, logQuizStart } from "./api.js";
+import { loadCurriculum } from "./curriculum/loader.js";
 import { initializeAuthListener } from "./auth-paywall.js";
 import { bindConsoleLogout } from "./guard.js";
 import * as UI from "./ui-renderer.js";
@@ -62,17 +63,53 @@ export async function initStudyContent() {
     });
 }
 
+async function getCurriculumSubDiscipline(grade, subject, chapter) {
+    try {
+        const curriculum = await loadCurriculum(grade);
+        const subjectData = curriculum[subject] || curriculum[Object.keys(curriculum).find(k => k.toLowerCase() === subject.toLowerCase())];
+
+        if (!subjectData) return null;
+
+        // Iterate sub-disciplines (History, Geography, Physics, etc.)
+        for (const [sub, chapters] of Object.entries(subjectData)) {
+            // Check if chapter exists in list (loose matching)
+            const match = chapters.find(c => c.chapter_title.toLowerCase().includes(chapter.toLowerCase()) || chapter.toLowerCase().includes(c.chapter_title.toLowerCase()));
+            if (match) return sub;
+        }
+    } catch (e) {
+        console.warn("Curriculum load failed:", e);
+    }
+    return null;
+}
+
 async function loadContent(grade, subject, chapter, user) {
     const container = document.getElementById("content-container");
     UI.showSkeleton(container);
 
-    // Ensure slug generation is robust (e.g. Social Science -> social_science)
-    const data = await fetchChapterSummary(grade, subject.toLowerCase().replace(/ /g, '_'), chapter);
+    let data = null;
+
+    // 1. Try Curriculum-Aware Fetch (e.g. Social Science -> Geography)
+    const subDiscipline = await getCurriculumSubDiscipline(grade, subject, chapter);
+    if (subDiscipline) {
+        const specificId = subDiscipline.toLowerCase().replace(/ /g, '_');
+        console.log(`[NCERT] Trying specific fetch: ${specificId}`);
+        data = await fetchChapterSummary(grade, specificId, chapter);
+    }
+
+    // 2. Fallback: Generic Subject Fetch (e.g. Social Science -> social_science)
+    if (!data) {
+        const genericId = subject.toLowerCase().replace(/ /g, '_');
+        console.log(`[NCERT] Fallback to generic fetch: ${genericId}`);
+        data = await fetchChapterSummary(grade, genericId, chapter);
+    }
 
     if (!data) {
         renderFallback(container, grade);
         return;
     }
+
+    // Inject discovered discipline if missing
+    if (subDiscipline && !data.discipline) data.discipline = subDiscipline;
 
     renderDynamicContent(container, data, subject);
 
@@ -85,17 +122,22 @@ async function loadContent(grade, subject, chapter, user) {
 function renderDynamicContent(container, data, subject) {
     // Robust Subject Check (Case Insensitive)
     const lowerSub = subject.toLowerCase();
-    const isSocial = lowerSub.includes("social") || lowerSub.includes("history") || lowerSub.includes("civics") || lowerSub.includes("geography") || lowerSub.includes("economics");
 
-    // Determine Discipline and Formula Logic
+    // Determine Discipline from Data or Fallback
     const discipline = (data.discipline || data.book || subject).toLowerCase();
+
     const isChemistry = discipline.includes("chemistry");
     const isBiology = discipline.includes("biology");
     const isPhysics = discipline.includes("physics");
-    const isMath = subject.includes("Math") || discipline.includes("math");
+    const isMath = lowerSub.includes("math") || discipline.includes("math");
+    const isHistory = discipline.includes("history");
+    const isSocial = lowerSub.includes("social") || isHistory || discipline.includes("civics") || discipline.includes("geography") || discipline.includes("economics");
 
-    // Show Formula Vault for Math, Physics, Chemistry (but not Biology or Social Science)
+    // Visibility Rules
+    // Physics/Math/Chemistry: Show Formula Vault
+    // Biology/Civics/Economics/History: Hide Formula Vault
     const showFormula = (isMath || isPhysics || isChemistry) && !isBiology && !isSocial;
+
     const formulaTitle = isChemistry ? "Equation Vault" : "Formula Vault";
     const formulaIcon = isChemistry ? "⚗️" : "∫";
 
@@ -146,16 +188,15 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 3. Build Major Points (Core Takeaways - Math/Science/Biology Only)
-    // Note: Social Science usually has specific data handled below, but if majorPoints exist for Biology/Physics/Chem, show them.
+    // 3. Build Major Points (Core Takeaways)
+    // "Biology/Civics/Economics: ... prioritize Core Takeaways"
+    // So we show majorPoints for everyone EXCEPT History (which uses Timeline) or maybe History also shows it?
+    // Prompt: "History: Replace the vault with a new container for Chronology/Timeline Data."
+    // Prompt: "Biology/Civics/Economics: ... prioritize Core Takeaways and Glossaries."
+    // So Biology/Civics/Econ SHOW Core Takeaways.
     let majorPointsHtml = '';
     const majorData = getArray(data.majorPoints || data.coreTakeaways);
-    // Show for Math/Science (including Biology) but generally not for Social unless forced?
-    // Current logic was: if (isMathScience && majorData.length > 0)
-    // Updated logic: Show for everyone EXCEPT Social Science (unless specific social data is missing, but usually Social has its own block)
-    // Actually, prompt says: "Biology: Show only coreTakeaways..."
-    // So for Biology/Physics/Chem/Math we show majorPoints.
-    if (!isSocial && majorData.length > 0) {
+    if (majorData.length > 0) {
         majorPointsHtml = `
             <div class="glass-panel p-6 rounded-3xl">
                 <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
@@ -174,18 +215,20 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 4. Build Subject-Specific Data (Social Science Only)
+    // 4. Build Subject-Specific Data (Social Science / History Timeline)
     let socialDataHtml = '';
     if (isSocial) {
         let specificData = [];
         let label = "Key Insights";
         let icon = "📜";
 
-        if (data.historyData) {
-            specificData = getArray(data.historyData);
-            label = "Historical Events";
-            icon = "🏰";
-        } else if (data.civicsData) {
+        // History: Chronology/Timeline Data
+        if (isHistory && (data.timeline || data.historyData)) {
+            specificData = getArray(data.timeline || data.historyData);
+            label = "Chronology & Timeline";
+            icon = "⏳";
+        }
+        else if (data.civicsData) {
             specificData = getArray(data.civicsData);
             label = "Civic Concepts";
             icon = "⚖️";
