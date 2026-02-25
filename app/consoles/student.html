@@ -34,6 +34,7 @@
         import { getInitializedClients } from "../../js/config.js";
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
+        import { loadCurriculum } from "../../js/curriculum/loader.js";
 
         UI.injectStyles();
         bindConsoleLogout("logout-nav-btn", "../../index.html");
@@ -52,7 +53,7 @@
             document.getElementById("context-badge").textContent = `Grade ${grade}`;
 
             setupRoomNavigation(grade);
-            await loadStudentStats(profile.uid);
+            await loadStudentStats(profile.uid, grade);
         };
 
         function setupRoomNavigation(grade) {
@@ -66,15 +67,24 @@
             window.location.href = `../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
         };
 
-        window.loadStudentStats = async (uid) => {
+        window.loadStudentStats = async (uid, grade) => {
             if (!uid) return;
             document.getElementById("hub-sync-status").classList.remove("hidden"); // Syncing Hub Pulse
 
             try {
+                // Parallel Fetch: Stats & Curriculum
                 const { db } = await getInitializedClients();
                 const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
-                const snapshot = await getDocs(q);
 
+                const [snapshot, curriculum] = await Promise.all([
+                    getDocs(q),
+                    loadCurriculum(grade).catch(e => {
+                        console.error("Curriculum load failed:", e);
+                        return {};
+                    })
+                ]);
+
+                // Update Total Attempts
                 document.getElementById("stat-total").textContent = snapshot.size;
 
                 if (snapshot.empty) {
@@ -98,9 +108,47 @@
                     return "General";
                 };
 
+                // --- METRIC: Curriculum Totals ---
+                const curriculumCounts = { "Mathematics": 0, "Science": 0, "Social Science": 0 };
+
+                // Traverse curriculum to count total chapters
+                if (curriculum) {
+                    for (const subject in curriculum) {
+                        // Normalize subject key from curriculum to our buckets
+                        let bucket = subject;
+                        if (subject === "Maths" || subject === "Mathematics") bucket = "Mathematics";
+                        // If curriculum has "Social Science" or "Science", it matches our keys.
+
+                        if (curriculumCounts.hasOwnProperty(bucket)) {
+                            const sections = curriculum[subject];
+                             // sections is { "Physics": [...], ... }
+                             for (const sectionKey in sections) {
+                                 const chapters = sections[sectionKey];
+                                 if (Array.isArray(chapters)) {
+                                     curriculumCounts[bucket] += chapters.length;
+                                 }
+                             }
+                        }
+                    }
+                }
+
+                // Fallback for safety if curriculum fails or is empty
+                if (curriculumCounts["Mathematics"] === 0) curriculumCounts["Mathematics"] = 13;
+                if (curriculumCounts["Science"] === 0) curriculumCounts["Science"] = 14;
+                if (curriculumCounts["Social Science"] === 0) curriculumCounts["Social Science"] = 12;
+
+                const totalChapters = curriculumCounts["Mathematics"] + curriculumCounts["Science"] + curriculumCounts["Social Science"];
+                const totalMasteryPoints = totalChapters * 3;
+
+                // --- METRIC: User Progress ---
+                const uniqueTouchedChapters = new Set();
+                const subjectTouchedCounts = { "Mathematics": new Set(), "Science": new Set(), "Social Science": new Set() };
+                const masteredTiers = { "Simple": 0, "Medium": 0, "Advanced": 0 };
+                const masteredUniqueMap = new Set(); // Track unique chapter+difficulty mastered
+
                 let latestQuiz = null;
 
-                snapshot.forEach((docSnap, index) => {
+                snapshot.docs.forEach((docSnap, index) => {
                     const data = docSnap.data();
                     const cleanSubject = getActualSubject(data);
                     const cleanChapter = formatChapterName(data.topicSlug || data.topic || data.chapter);
@@ -109,7 +157,7 @@
                     const totalVal = data.totalQuestions || data.total || 20;
                     const percentage = totalVal > 0 ? Math.round((scoreVal / totalVal) * 100) : (data.score_percent || 0);
 
-                    // 0. Capture Latest Quiz (First Item due to desc sort)
+                    // 0. Capture Latest Quiz
                     if (index === 0) {
                         latestQuiz = { chapter: cleanChapter, percentage: percentage };
                     }
@@ -127,7 +175,29 @@
                     chapterStats[cleanChapter].scores.push(percentage);
                     if (percentage > chapterStats[cleanChapter].highest) chapterStats[cleanChapter].highest = percentage;
 
-                    // 4. Recent Activity List Data
+                    // 4. Volume Metrics
+                    if (cleanSubject !== "General") {
+                        uniqueTouchedChapters.add(cleanChapter);
+                        if (subjectTouchedCounts[cleanSubject]) {
+                            subjectTouchedCounts[cleanSubject].add(cleanChapter);
+                        }
+
+                        // Mastery Funnel
+                        if (percentage >= 95) {
+                            const difficulty = data.difficulty || "Simple"; // Default to Simple if missing
+                            const diffKey = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
+
+                            if (["Simple", "Medium", "Advanced"].includes(diffKey)) {
+                                const uniqueKey = `${cleanChapter}_${diffKey}`;
+                                if (!masteredUniqueMap.has(uniqueKey)) {
+                                    masteredUniqueMap.add(uniqueKey);
+                                    masteredTiers[diffKey]++;
+                                }
+                            }
+                        }
+                    }
+
+                    // 5. Recent Activity List Data
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
                     gridData.push({
                         subject: cleanSubject,
@@ -140,18 +210,40 @@
 
                 // --- UI RENDERING ---
 
-                // 1. Latest Achievement (Replaces "Total Tests" or adds to it?)
-                // Strategy: Use the "Best Subject" slot in Avg Mastery card for "Latest: [Chapter] - [Score]"
+                // 1. Volume Dashboard
+                document.getElementById("stat-coverage").textContent = `${uniqueTouchedChapters.size} / ${totalChapters} Touched`;
+
+                // Funnel Bars
+                const wSimple = (masteredTiers["Simple"] / totalMasteryPoints) * 100;
+                const wMedium = (masteredTiers["Medium"] / totalMasteryPoints) * 100;
+                const wAdvanced = (masteredTiers["Advanced"] / totalMasteryPoints) * 100;
+
+                document.getElementById("funnel-simple").style.width = `${wSimple}%`;
+                document.getElementById("funnel-medium").style.width = `${wMedium}%`;
+                document.getElementById("funnel-advanced").style.width = `${wAdvanced}%`;
+
+                // Tooltip
+                const toolMath = `${subjectTouchedCounts["Mathematics"].size}/${curriculumCounts["Mathematics"]}`;
+                const toolSci = `${subjectTouchedCounts["Science"].size}/${curriculumCounts["Science"]}`;
+                const toolSoc = `${subjectTouchedCounts["Social Science"].size}/${curriculumCounts["Social Science"]}`;
+                document.getElementById("tooltip-breakdown").textContent = `Math: ${toolMath} | Sci: ${toolSci} | Soc: ${toolSoc}`;
+
+                const currentMasteryPoints = masteredUniqueMap.size;
+                document.getElementById("tooltip-mastery-points").textContent = currentMasteryPoints;
+                document.getElementById("tooltip-total-points").textContent = totalMasteryPoints;
+
+
+                // 2. Latest Achievement
                 if (latestQuiz) {
                     document.getElementById("stat-subject").innerHTML = `${latestQuiz.chapter} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
                     document.getElementById("stat-subject-label").textContent = "Latest Achievement:";
                 }
 
-                // 2. Average Mastery
+                // 3. Average Mastery
                 const avg = Math.round(totalScoreSum / snapshot.size);
                 document.getElementById("stat-avg").textContent = `${avg}%`;
 
-                // 3. Subject Mastery Meters
+                // 4. Subject Mastery Meters
                 const subjectMeterContainer = document.getElementById("subject-mastery-container");
                 subjectMeterContainer.innerHTML = "";
 
@@ -171,7 +263,7 @@
                     `;
                 });
 
-                // 4. Chapter Health Grid (New Section)
+                // 5. Chapter Health Grid
                 const healthContainer = document.getElementById("chapter-health-grid");
                 if (healthContainer) {
                     healthContainer.innerHTML = Object.entries(chapterStats).map(([chap, stats]) => {
@@ -192,7 +284,7 @@
                     }).join("");
                 }
 
-                // 5. Recent Activity List
+                // 6. Recent Activity List
                 const columns = [
                     { key: 'subject', header: 'Subject', cell: (item) => `<span class="font-bold text-cbse-blue">${item.subject}</span>` },
                     { key: 'chapter', header: 'Chapter', cell: (item) => `<span class="text-sm font-medium text-slate-600">${item.chapter}</span>` },
@@ -295,10 +387,28 @@
 
         <!-- Stats Row -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <!-- Total Tests -->
-            <div class="glass-panel p-6 rounded-3xl">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Tests</div>
-                <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
+            <!-- Total Volume -->
+            <div class="glass-panel p-6 rounded-3xl relative group">
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Attempts</div>
+                <div class="flex items-baseline gap-2">
+                    <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
+                    <div id="stat-coverage" class="text-xs font-bold text-slate-500">-- / -- Touched</div>
+                </div>
+
+                <!-- Mastery Funnel Progress Bar -->
+                <div class="mt-4 flex h-2 w-full rounded-full overflow-hidden bg-slate-100">
+                    <div id="funnel-simple" class="bg-blue-400 h-full transition-all duration-500" style="width: 0%"></div>
+                    <div id="funnel-medium" class="bg-blue-600 h-full transition-all duration-500" style="width: 0%"></div>
+                    <div id="funnel-advanced" class="bg-indigo-800 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+
+                <!-- Tooltip (Hover Interaction) -->
+                <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-slate-800 text-white text-xs rounded-xl p-3 opacity-0 group-hover:opacity-100 transition pointer-events-none z-10 shadow-xl">
+                    <div id="tooltip-breakdown" class="mb-2 font-mono text-center text-[10px]">Math: 0/0 | Sci: 0/0 | Soc: 0/0</div>
+                    <div class="border-t border-slate-600 pt-2 text-center text-slate-400 text-[10px]">
+                        Total Mastery Points: <span id="tooltip-mastery-points" class="text-white font-bold">0</span> / <span id="tooltip-total-points">0</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Avg Mastery -->
