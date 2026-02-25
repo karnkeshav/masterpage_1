@@ -239,7 +239,7 @@
 
 
                 // 2. Latest Achievement
-                if (latestQuiz) {
+                if (latestQuiz && document.getElementById("stat-subject")) {
                     document.getElementById("stat-subject").innerHTML = `${latestQuiz.chapter} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
                     document.getElementById("stat-subject-label").textContent = "Latest Achievement:";
                 }
