@@ -17,3 +17,12 @@
 127.0.0.1 - - [25/Feb/2026 18:16:55] "GET /js/utils.js HTTP/1.1" 200 -
 127.0.0.1 - - [25/Feb/2026 18:16:55] "GET /js/auth-paywall.js HTTP/1.1" 200 -
 127.0.0.1 - - [25/Feb/2026 18:16:55] "GET /js/api.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /app/consoles/student_verify.html HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /js/config.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /js/firebase-master-config.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /js/guard.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /js/curriculum/loader.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /js/ui-renderer.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /js/auth-paywall.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /js/utils.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Feb/2026 18:28:54] "GET /js/api.js HTTP/1.1" 200 -
