@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Start Quiz — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily:{ sans:['Inter','sans-serif'] },
+          colors:{
+            'cbse-blue':'#1a3e6a',
+            'cbse-light':'#f5f7fa',
+            'accent-gold':'#ffb703',
+            'success-green': '#16a34a',
+            'warning-yellow': '#ca8a04',
+            'danger-red': '#dc2626'
+          }
+        }
+      }
+    }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>body{font-family:'Inter',sans-serif;}</style>
@@ -14,6 +31,13 @@
 
     <script type="module">
         import { loadCurriculum } from "../js/curriculum/loader.js";
+        import { initializeAuthListener } from "../js/auth-paywall.js";
+        import { injectStyles } from "../js/ui-renderer.js";
+        import { getInitializedClients } from "../js/config.js";
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Inject shared styles (glass-panel, etc.)
+        injectStyles();
 
         window.loadSubjects = async () => {
             const params = new URLSearchParams(window.location.search);
@@ -49,8 +73,143 @@
             window.location.href = `chapter-selection.html?subject=${encodeURIComponent(subject)}&grade=${grade}`;
         };
 
+        // Milestone Dashboard Logic
+        async function renderMilestones(user, grade) {
+            const container = document.getElementById("milestone-dashboard");
+            if (!container || !user) return;
+
+            try {
+                const { db } = await getInitializedClients();
+                // Fetch scores for user and grade
+                const q = query(
+                    collection(db, "quiz_scores"),
+                    where("user_id", "==", user.uid),
+                    where("class_id", "==", grade)
+                );
+
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    renderEmptyMilestones(container);
+                    return;
+                }
+
+                const uniqueChapters = new Map();
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const score = data.score_percent || 0;
+
+                    // Filter for Mastery (>= 95%)
+                    if (score >= 95) {
+                        // Use topicSlug for uniqueness, fallback to topic
+                        const key = (data.topicSlug || data.topic || "").trim();
+                        if (!key) return;
+
+                        // Keep highest score if duplicates
+                        if (!uniqueChapters.has(key) || uniqueChapters.get(key).score < score) {
+                            uniqueChapters.set(key, {
+                                slug: key,
+                                title: data.topic || key,
+                                score: score,
+                                subject: data.subject || "General"
+                            });
+                        }
+                    }
+                });
+
+                if (uniqueChapters.size === 0) {
+                    renderEmptyMilestones(container);
+                    return;
+                }
+
+                renderBadgeRow(container, Array.from(uniqueChapters.values()));
+
+            } catch (error) {
+                console.error("Error fetching milestones:", error);
+                renderEmptyMilestones(container);
+            }
+        }
+
+        function renderEmptyMilestones(container) {
+            container.innerHTML = `
+                <div class="glass-panel p-6 rounded-3xl text-center border-2 border-dashed border-slate-200">
+                    <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300 text-xl">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3 class="text-slate-900 font-bold text-sm mb-1">The Road to 100%</h3>
+                    <p class="text-xs text-slate-500 font-medium max-w-xs mx-auto">
+                        Complete quizzes with 95%+ to earn your Mastery Badges here.
+                    </p>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return String(text).replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;")
+                       .replace(/"/g, "&quot;")
+                       .replace(/'/g, "&#039;");
+        }
+
+        function renderBadgeRow(container, badges) {
+            const badgeHtml = badges.map(badge => {
+                const icon = getSubjectIcon(badge.subject);
+                const title = escapeHtml(formatChapterName(badge.title));
+                const subject = escapeHtml(badge.subject);
+
+                return `
+                    <div class="flex-shrink-0 bg-white/40 backdrop-blur-md border border-white/50 shadow-sm p-4 rounded-2xl flex items-center gap-4 min-w-[200px] hover:scale-105 transition-transform duration-300">
+                        <div class="relative w-12 h-12 flex items-center justify-center">
+                             <!-- Golden Ring -->
+                             <svg class="absolute inset-0 w-full h-full text-accent-gold transform -rotate-90" viewBox="0 0 36 36">
+                                <path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3" />
+                                <path class="text-accent-gold drop-shadow-sm" stroke-dasharray="${badge.score}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3" />
+                             </svg>
+                             <span class="text-[10px] font-black text-slate-900 z-10">${badge.score}%</span>
+                        </div>
+                        <div>
+                            <div class="text-[10px] uppercase font-bold text-slate-400 mb-0.5 flex items-center gap-1">
+                                <i class="fas ${icon} text-slate-400"></i> ${subject}
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm leading-tight line-clamp-2" title="${title}">${title}</h4>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            container.innerHTML = `
+                <div class="flex items-center gap-2 mb-4">
+                     <span class="w-1.5 h-6 bg-accent-gold rounded-full"></span>
+                     <h3 class="font-bold text-slate-900 text-lg">Mastery Milestones</h3>
+                </div>
+                <div class="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
+                    ${badgeHtml}
+                </div>
+            `;
+        }
+
+        function formatChapterName(name) {
+             if (!name) return "Unknown Chapter";
+             if (name.includes(" ")) return name;
+             return name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+        }
+
         // Init
-        loadSubjects();
+        initializeAuthListener((user) => {
+            // 1. Render Subject Grid (Public)
+            loadSubjects();
+
+            // 2. Render Mastery Milestones (Private)
+            if (user) {
+                const params = new URLSearchParams(window.location.search);
+                const grade = params.get("grade") || "9";
+                renderMilestones(user, grade);
+            }
+        });
+
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center justify-center p-4">
@@ -61,6 +220,8 @@
             <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-4">Start a New Quiz</h1>
             <p class="text-slate-500 font-medium text-lg">Choose a subject to begin your mastery journey.</p>
         </div>
+
+        <div id="milestone-dashboard" class="mb-12"></div>
 
         <div id="subject-grid" class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 fade-in">
             <!-- Injected -->
