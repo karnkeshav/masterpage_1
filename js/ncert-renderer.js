@@ -14,7 +14,6 @@ function sanitize(text) {
 function getArray(data) {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    // Universal Data Parser: Handle Map-like objects by converting to values list
     if (typeof data === 'object') return Object.values(data);
     return [];
 }
@@ -22,8 +21,6 @@ function getArray(data) {
 function getCleanText(item) {
     if (typeof item === 'string') return sanitize(item);
     if (item && typeof item === 'object') {
-        // Fix "Undefined" errors by checking multiple field names (tex, content, value, formula, definition)
-        // Fix [object Object] by ensuring we extract a string property
         const raw = item.tex || item.content || item.value || item.formula || item.definition || item.text || "";
         return sanitize(raw);
     }
@@ -63,85 +60,57 @@ export async function initStudyContent() {
     });
 }
 
-async function getCurriculumSubDiscipline(grade, subject, chapter) {
-    try {
-        const curriculum = await loadCurriculum(grade);
-        const subjectData = curriculum[subject] || curriculum[Object.keys(curriculum).find(k => k.toLowerCase() === subject.toLowerCase())];
-
-        if (!subjectData) return null;
-
-        // Iterate sub-disciplines (History, Geography, Physics, etc.)
-        for (const [sub, chapters] of Object.entries(subjectData)) {
-            // Check if chapter exists in list (loose matching)
-            const match = chapters.find(c => c.chapter_title.toLowerCase().includes(chapter.toLowerCase()) || chapter.toLowerCase().includes(c.chapter_title.toLowerCase()));
-            if (match) return sub;
-        }
-    } catch (e) {
-        console.warn("Curriculum load failed:", e);
-    }
-    return null;
-}
-
-async function loadContent(grade, subject, chapter, user) {
+async function loadContent(initialGrade, initialSubject, initialChapter, user) {
     const container = document.getElementById("content-container");
     UI.showSkeleton(container);
 
-    let data = null;
-
-    // 1. Try Curriculum-Aware Fetch (e.g. Social Science -> Geography)
-    const subDiscipline = await getCurriculumSubDiscipline(grade, subject, chapter);
-    if (subDiscipline) {
-        const specificId = subDiscipline.toLowerCase().replace(/ /g, '_');
-        console.log(`[NCERT] Trying specific fetch: ${specificId}`);
-        data = await fetchChapterSummary(grade, specificId, chapter);
-    }
-
-    // 2. Fallback: Generic Subject Fetch (e.g. Social Science -> social_science)
-    if (!data) {
-        const genericId = subject.toLowerCase().replace(/ /g, '_');
-        console.log(`[NCERT] Fallback to generic fetch: ${genericId}`);
-        data = await fetchChapterSummary(grade, genericId, chapter);
-    }
+    const data = await fetchChapterSummary(initialGrade, initialSubject, initialChapter);
 
     if (!data) {
-        renderFallback(container, grade);
+        renderFallback(container, initialGrade);
         return;
     }
 
-    // Inject discovered discipline if missing
-    if (subDiscipline && !data.discipline) data.discipline = subDiscipline;
+    renderDynamicContent(container, data, initialSubject);
 
-    renderDynamicContent(container, data, subject);
-
-    // Critical: Typeset MathJax
-    if (window.MathJax) {
+    if (window.MathJax && (window.MathJax.typeset || window.MathJax.typesetPromise)) {
         window.MathJax.typesetPromise ? window.MathJax.typesetPromise() : window.MathJax.typeset();
     }
+
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "mt-12 text-center";
+    buttonContainer.innerHTML = `
+        <button id="take-test-btn" class="px-8 py-4 bg-accent-gold text-cbse-blue font-black rounded-2xl text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-3 mx-auto">
+            <span>🚀</span> Take Chapter Test
+        </button>
+    `;
+    container.appendChild(buttonContainer);
+
+    document.getElementById("take-test-btn").onclick = () => {
+        const p = new URLSearchParams(window.location.search);
+        const g = p.get("grade") || "9";
+        const s = p.get("subject") || "Mathematics";
+        const c = p.get("chapter") || "Polynomials";
+        createDifficultyModal(g, s, c, user);
+    };
 }
 
 function renderDynamicContent(container, data, subject) {
-    // Robust Subject Check (Case Insensitive)
-    const lowerSub = subject.toLowerCase();
+    // --- FIX: DEFINE SUBJECT FLAGS TO PREVENT REFERENCE ERRORS ---
+    const isMath = subject.toLowerCase().includes("math");
+    const isScience = subject.toLowerCase().includes("science") && !subject.toLowerCase().includes("social");
+    const isSocial = subject.toLowerCase().includes("social") || 
+                     subject.toLowerCase().includes("history") || 
+                     subject.toLowerCase().includes("civics") || 
+                     subject.toLowerCase().includes("geography") || 
+                     subject.toLowerCase().includes("economics");
+    const isHistory = subject.toLowerCase().includes("history");
 
-    // Determine Discipline from Data or Fallback
-    const discipline = (data.discipline || data.book || subject).toLowerCase();
+    const showFormula = isMath || isScience;
+    const formulaTitle = isMath ? "Formula Vault" : "Equation Vault";
+    const formulaIcon = isMath ? "∑" : "🧪";
 
-    const isChemistry = discipline.includes("chemistry");
-    const isBiology = discipline.includes("biology");
-    const isPhysics = discipline.includes("physics");
-    const isMath = lowerSub.includes("math") || discipline.includes("math");
-    const isHistory = discipline.includes("history");
-    const isSocial = lowerSub.includes("social") || isHistory || discipline.includes("civics") || discipline.includes("geography") || discipline.includes("economics");
-
-    // Visibility Rules
-    // Physics/Math/Chemistry: Show Formula Vault
-    // Biology/Civics/Economics/History: Hide Formula Vault
-    const showFormula = (isMath || isPhysics || isChemistry) && !isBiology && !isSocial;
-
-    const formulaTitle = isChemistry ? "Equation Vault" : "Formula Vault";
-    const formulaIcon = isChemistry ? "⚗️" : "∫";
-
-    // 1. Build Tips & Tricks HTML (Common)
+    // 1. Tips & Tricks
     let tipsHtml = '';
     const tipsData = getArray(data.tipsAndTricks);
     if (tipsData.length > 0) {
@@ -163,13 +132,13 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 2. Build Formula/Equation Vault HTML
+    // 2. Formula/Equation Vault
     let formulaHtml = '';
-    const formulaData = getArray(data.formulaVault || data.equationVault); // Support equationVault field too
+    const formulaData = getArray(data.formulaVault || data.equationVault); 
     if (showFormula && formulaData.length > 0) {
         formulaHtml = `
             <div class="md:col-span-2 glass-panel p-6 rounded-3xl bg-white border border-slate-200 relative overflow-hidden mt-8 shadow-sm">
-                <div class="absolute top-0 right-0 p-8 opacity-5 text-9xl text-slate-900">∑</div>
+                <div class="absolute top-0 right-0 p-8 opacity-5 text-9xl text-slate-900">${formulaIcon}</div>
                 <h3 class="text-lg font-black text-slate-900 mb-4 flex items-center gap-2 relative z-10">
                     <span class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 text-sm">${formulaIcon}</span>
                     ${formulaTitle}
@@ -188,12 +157,7 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 3. Build Major Points (Core Takeaways)
-    // "Biology/Civics/Economics: ... prioritize Core Takeaways"
-    // So we show majorPoints for everyone EXCEPT History (which uses Timeline) or maybe History also shows it?
-    // Prompt: "History: Replace the vault with a new container for Chronology/Timeline Data."
-    // Prompt: "Biology/Civics/Economics: ... prioritize Core Takeaways and Glossaries."
-    // So Biology/Civics/Econ SHOW Core Takeaways.
+    // 3. Core Takeaways
     let majorPointsHtml = '';
     const majorData = getArray(data.majorPoints || data.coreTakeaways);
     if (majorData.length > 0) {
@@ -215,20 +179,18 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // 4. Build Subject-Specific Data (Social Science / History Timeline)
+    // 4. Social Science Specifics
     let socialDataHtml = '';
     if (isSocial) {
         let specificData = [];
         let label = "Key Insights";
         let icon = "📜";
 
-        // History: Chronology/Timeline Data
         if (isHistory && (data.timeline || data.historyData)) {
             specificData = getArray(data.timeline || data.historyData);
             label = "Chronology & Timeline";
             icon = "⏳";
-        }
-        else if (data.civicsData) {
+        } else if (data.civicsData) {
             specificData = getArray(data.civicsData);
             label = "Civic Concepts";
             icon = "⚖️";
@@ -264,7 +226,7 @@ function renderDynamicContent(container, data, subject) {
         }
     }
 
-    // 5. Build Glossary (Definitions - Common)
+    // 5. Glossary
     let glossaryHtml = '';
     const glossaryData = getArray(data.oneLineDefinitions);
     if (glossaryData.length > 0) {
@@ -285,10 +247,9 @@ function renderDynamicContent(container, data, subject) {
         `;
     }
 
-    // Layout Assembly
     container.innerHTML = `
         ${tipsHtml}
-        <div class="grid md:grid-cols-2 gap-8 ${(!majorPointsHtml && !glossaryHtml && !formulaHtml && !socialDataHtml) ? 'hidden' : ''}">
+        <div class="grid md:grid-cols-2 gap-8">
             ${majorPointsHtml}
             ${socialDataHtml}
             ${glossaryHtml}
@@ -315,6 +276,9 @@ function renderDynamicContent(container, data, subject) {
 
 function launchTargetedQuiz(grade, subject, chapter, user) {
     // Remove existing modal if any
+}
+
+function createDifficultyModal(grade, subject, chapter, user) {
     const existing = document.getElementById("difficulty-modal");
     if (existing) existing.remove();
 
@@ -359,7 +323,6 @@ function launchTargetedQuiz(grade, subject, chapter, user) {
     `;
 
     document.body.appendChild(modal);
-
     document.getElementById("close-modal-btn").onclick = () => modal.remove();
 
     window.startTargetedQuiz = (difficulty) => {
@@ -370,6 +333,7 @@ function launchTargetedQuiz(grade, subject, chapter, user) {
 
         // Step 3: Direct Redirect
         window.location.href = `quiz-engine.html?topic=${encodeURIComponent(topicSlug)}&difficulty=${difficulty}&grade=${grade}&subject=${encodeURIComponent(subject)}`;
+        window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}&difficulty=${difficulty}`;
     };
 }
 
@@ -378,13 +342,12 @@ function renderFallback(container, grade) {
         <div class="text-center py-12">
             <div class="text-6xl mb-4">🚧</div>
             <h3 class="text-xl font-black text-slate-700 mb-2">Content Under Construction</h3>
-            <p class="text-slate-500 max-w-md mx-auto">We are currently digitizing the summary for this chapter. Please check back later or visit the Warm-up Room.</p>
-            <a href="curriculum.html?grade=${grade}" class="inline-block mt-6 px-6 py-3 bg-cbse-blue text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition">Go to Warm-up Room</a>
+            <p class="text-slate-500 max-w-md mx-auto">We are currently digitizing the summary for this chapter. Please check back later.</p>
+            <a href="curriculum.html?grade=${grade}" class="inline-block mt-6 px-6 py-3 bg-cbse-blue text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition">Go Back</a>
         </div>
     `;
 }
 
-// Auto-init if running in browser context
 if (typeof window !== 'undefined') {
     initStudyContent();
 }
