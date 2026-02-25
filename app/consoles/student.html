@@ -53,7 +53,7 @@
             document.getElementById("context-badge").textContent = `Grade ${grade}`;
 
             setupRoomNavigation(grade);
-            await loadStudentStats(profile.uid);
+            await loadStudentStats(profile.uid, grade);
         };
 
         function setupRoomNavigation(grade) {
@@ -67,15 +67,11 @@
             window.location.href = `../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
         };
 
-        window.loadStudentStats = async (uid) => {
+        window.loadStudentStats = async (uid, grade) => {
             if (!uid) return;
             document.getElementById("hub-sync-status").classList.remove("hidden"); // Syncing Hub Pulse
 
             try {
-                // Determine Grade for Curriculum
-                const urlParams = new URLSearchParams(window.location.search);
-                const grade = urlParams.get("grade") || "9";
-
                 // Parallel Fetch: Stats & Curriculum
                 const { db } = await getInitializedClients();
                 const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
@@ -152,7 +148,7 @@
 
                 let latestQuiz = null;
 
-                snapshot.forEach((docSnap, index) => {
+                snapshot.docs.forEach((docSnap, index) => {
                     const data = docSnap.data();
                     const cleanSubject = getActualSubject(data);
                     const cleanChapter = formatChapterName(data.topicSlug || data.topic || data.chapter);
