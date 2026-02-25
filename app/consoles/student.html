@@ -84,30 +84,6 @@
                     })
                 ]);
 
-                // Update Total Attempts
-                document.getElementById("stat-total").textContent = snapshot.size;
-
-                if (snapshot.empty) {
-                     renderZeroState();
-                     document.getElementById("hub-sync-status").classList.add("hidden");
-                     return;
-                }
-
-                // --- DATA PROCESSING ---
-                let totalScoreSum = 0;
-                const subjectScores = {};
-                const chapterStats = {};
-                const gridData = [];
-
-                // Helper to normalize subject names
-                const getActualSubject = (data) => {
-                    const context = `${data.subject || ''} ${data.topicSlug || ''} ${data.topic || ''}`.toLowerCase();
-                    if (context.includes("social") || context.includes("history") || context.includes("nazism") || context.includes("hitler") || context.includes("civics") || context.includes("geography")) return "Social Science";
-                    if (context.includes("math") || context.includes("triangle") || context.includes("polynomial") || context.includes("probability") || context.includes("algebra") || context.includes("geometry")) return "Mathematics";
-                    if (context.includes("science") || context.includes("physics") || context.includes("gravitation") || context.includes("motion") || context.includes("force") || context.includes("atom") || context.includes("chem") || context.includes("bio")) return "Science";
-                    return "General";
-                };
-
                 // --- METRIC: Curriculum Totals ---
                 const curriculumCounts = { "Mathematics": 0, "Science": 0, "Social Science": 0 };
 
@@ -139,6 +115,30 @@
 
                 const totalChapters = curriculumCounts["Mathematics"] + curriculumCounts["Science"] + curriculumCounts["Social Science"];
                 const totalMasteryPoints = totalChapters * 3;
+
+                // Update Total Attempts
+                document.getElementById("stat-total").textContent = snapshot.size;
+
+                if (snapshot.empty) {
+                     renderZeroState(curriculumCounts, totalChapters);
+                     document.getElementById("hub-sync-status").classList.add("hidden");
+                     return;
+                }
+
+                // --- DATA PROCESSING ---
+                let totalScoreSum = 0;
+                const subjectScores = {};
+                const chapterStats = {};
+                const gridData = [];
+
+                // Helper to normalize subject names
+                const getActualSubject = (data) => {
+                    const context = `${data.subject || ''} ${data.topicSlug || ''} ${data.topic || ''}`.toLowerCase();
+                    if (context.includes("social") || context.includes("history") || context.includes("nazism") || context.includes("hitler") || context.includes("civics") || context.includes("geography")) return "Social Science";
+                    if (context.includes("math") || context.includes("triangle") || context.includes("polynomial") || context.includes("probability") || context.includes("algebra") || context.includes("geometry")) return "Mathematics";
+                    if (context.includes("science") || context.includes("physics") || context.includes("gravitation") || context.includes("motion") || context.includes("force") || context.includes("atom") || context.includes("chem") || context.includes("bio")) return "Science";
+                    return "General";
+                };
 
                 // --- METRIC: User Progress ---
                 const uniqueTouchedChapters = new Set();
@@ -213,24 +213,29 @@
                 // 1. Volume Dashboard
                 document.getElementById("stat-coverage").textContent = `${uniqueTouchedChapters.size} / ${totalChapters} Touched`;
 
-                // Funnel Bars
-                const wSimple = (masteredTiers["Simple"] / totalMasteryPoints) * 100;
-                const wMedium = (masteredTiers["Medium"] / totalMasteryPoints) * 100;
-                const wAdvanced = (masteredTiers["Advanced"] / totalMasteryPoints) * 100;
+                // Coverage Grid (Persistent)
+                const covMath = `${subjectTouchedCounts["Mathematics"].size}/${curriculumCounts["Mathematics"]}`;
+                const covSci = `${subjectTouchedCounts["Science"].size}/${curriculumCounts["Science"]}`;
+                const covSoc = `${subjectTouchedCounts["Social Science"].size}/${curriculumCounts["Social Science"]}`;
 
-                document.getElementById("funnel-simple").style.width = `${wSimple}%`;
-                document.getElementById("funnel-medium").style.width = `${wMedium}%`;
-                document.getElementById("funnel-advanced").style.width = `${wAdvanced}%`;
+                document.getElementById("coverage-math").textContent = `M: ${covMath}`;
+                document.getElementById("coverage-sci").textContent = `S: ${covSci}`;
+                document.getElementById("coverage-sst").textContent = `SS: ${covSoc}`;
 
-                // Tooltip
-                const toolMath = `${subjectTouchedCounts["Mathematics"].size}/${curriculumCounts["Mathematics"]}`;
-                const toolSci = `${subjectTouchedCounts["Science"].size}/${curriculumCounts["Science"]}`;
-                const toolSoc = `${subjectTouchedCounts["Social Science"].size}/${curriculumCounts["Social Science"]}`;
-                document.getElementById("tooltip-breakdown").textContent = `Math: ${toolMath} | Sci: ${toolSci} | Soc: ${toolSoc}`;
+                // Mastery Funnel (Persistent Mini-Bars)
+                // Scaling: Each tier can have at most 'totalChapters' masteries (since each chapter has 1 S, 1 M, 1 A)
+                // So max width is based on totalChapters, not totalMasteryPoints (which is totalChapters * 3)
+                // Wait, request says "Scaling: Ensure the bars reflect the total potential masteries (e.g., total chapters × 3)."
+                // But a single bar (e.g. Simple) can only reach totalChapters max.
+                // Using totalChapters as the denominator makes the bar full when all Simple are done.
 
-                const currentMasteryPoints = masteredUniqueMap.size;
-                document.getElementById("tooltip-mastery-points").textContent = currentMasteryPoints;
-                document.getElementById("tooltip-total-points").textContent = totalMasteryPoints;
+                const wSimple = (masteredTiers["Simple"] / totalChapters) * 100;
+                const wMedium = (masteredTiers["Medium"] / totalChapters) * 100;
+                const wAdvanced = (masteredTiers["Advanced"] / totalChapters) * 100;
+
+                document.getElementById("funnel-simple").style.width = `${Math.min(wSimple, 100)}%`;
+                document.getElementById("funnel-medium").style.width = `${Math.min(wMedium, 100)}%`;
+                document.getElementById("funnel-advanced").style.width = `${Math.min(wAdvanced, 100)}%`;
 
 
                 // 2. Latest Achievement
@@ -316,7 +321,20 @@
             }
         };
 
-        function renderZeroState() {
+        function renderZeroState(curriculumCounts, totalChapters) {
+             // Update Volume Dashboard for Zero State
+             if (curriculumCounts && totalChapters) {
+                 document.getElementById("stat-coverage").textContent = `0 / ${totalChapters} Touched`;
+
+                 document.getElementById("coverage-math").textContent = `M: 0/${curriculumCounts["Mathematics"]}`;
+                 document.getElementById("coverage-sci").textContent = `S: 0/${curriculumCounts["Science"]}`;
+                 document.getElementById("coverage-sst").textContent = `SS: 0/${curriculumCounts["Social Science"]}`;
+
+                 document.getElementById("funnel-simple").style.width = "0%";
+                 document.getElementById("funnel-medium").style.width = "0%";
+                 document.getElementById("funnel-advanced").style.width = "0%";
+             }
+
              document.getElementById("stat-avg").textContent = "0%";
              document.getElementById("stat-subject").textContent = "None";
              document.getElementById("subject-mastery-container").innerHTML = `
@@ -388,25 +406,39 @@
         <!-- Stats Row -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <!-- Total Volume -->
-            <div class="glass-panel p-6 rounded-3xl relative group">
+            <div class="glass-panel p-6 rounded-3xl relative">
                 <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Attempts</div>
-                <div class="flex items-baseline gap-2">
+                <div class="flex items-baseline gap-2 mb-3">
                     <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
                     <div id="stat-coverage" class="text-xs font-bold text-slate-500">-- / -- Touched</div>
                 </div>
 
-                <!-- Mastery Funnel Progress Bar -->
-                <div class="mt-4 flex h-2 w-full rounded-full overflow-hidden bg-slate-100">
-                    <div id="funnel-simple" class="bg-blue-400 h-full transition-all duration-500" style="width: 0%"></div>
-                    <div id="funnel-medium" class="bg-blue-600 h-full transition-all duration-500" style="width: 0%"></div>
-                    <div id="funnel-advanced" class="bg-indigo-800 h-full transition-all duration-500" style="width: 0%"></div>
+                <!-- Coverage Grid -->
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-bold text-center border border-blue-100" id="coverage-math">M: 0/0</div>
+                    <div class="bg-purple-50 text-purple-700 px-2 py-1 rounded text-[10px] font-bold text-center border border-purple-100" id="coverage-sci">S: 0/0</div>
+                    <div class="bg-amber-50 text-amber-700 px-2 py-1 rounded text-[10px] font-bold text-center border border-amber-100" id="coverage-sst">SS: 0/0</div>
                 </div>
 
-                <!-- Tooltip (Hover Interaction) -->
-                <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-slate-800 text-white text-xs rounded-xl p-3 opacity-0 group-hover:opacity-100 transition pointer-events-none z-10 shadow-xl">
-                    <div id="tooltip-breakdown" class="mb-2 font-mono text-center text-[10px]">Math: 0/0 | Sci: 0/0 | Soc: 0/0</div>
-                    <div class="border-t border-slate-600 pt-2 text-center text-slate-400 text-[10px]">
-                        Total Mastery Points: <span id="tooltip-mastery-points" class="text-white font-bold">0</span> / <span id="tooltip-total-points">0</span>
+                <!-- Persistent Mastery Funnel (Mini-Bars) -->
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 text-[10px] font-bold text-slate-400">S</span>
+                        <div class="flex-grow h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="funnel-simple" class="h-full bg-success-green rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 text-[10px] font-bold text-slate-400">M</span>
+                        <div class="flex-grow h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="funnel-medium" class="h-full bg-cbse-blue rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 text-[10px] font-bold text-slate-400">A</span>
+                        <div class="flex-grow h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="funnel-advanced" class="h-full bg-accent-gold rounded-full" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
             </div>
