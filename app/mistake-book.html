@@ -36,6 +36,7 @@
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { cleanKatexMarkers } from "../js/utils.js";
         import * as UI from "../js/ui-renderer.js";
+        import { RemediationEngine } from "./js/remediation-engine.js";
 
         UI.injectStyles();
         bindConsoleLogout("logout-nav-btn", "../index.html");
@@ -70,13 +71,18 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
+                    const slugData = RemediationEngine.decodeSlug(data.topicSlug || 'unknown');
+                    const reviewUrl = RemediationEngine.getStudyURL(data.topicSlug || 'unknown').replace(/^\.\.\//, '');
 
                     data.mistakes.forEach(m => {
                         html += `
                             <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6 hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
                                 <div class="absolute top-0 left-0 w-1 h-full bg-danger-red group-hover:w-2 transition-all"></div>
                                 <div class="flex justify-between items-start mb-4 pl-3">
-                                    <span class="px-3 py-1 bg-red-50 text-danger-red text-[10px] font-black uppercase rounded-lg tracking-wide border border-red-100">Mistake</span>
+                                    <div>
+                                        <span class="px-3 py-1 bg-red-50 text-danger-red text-[10px] font-black uppercase rounded-lg tracking-wide border border-red-100">Mistake</span>
+                                        <span class="ml-2 text-[10px] font-bold text-cbse-blue bg-blue-50 px-2 py-1 rounded border border-blue-100 uppercase tracking-wide">${slugData.subject} &gt; ${slugData.chapter}</span>
+                                    </div>
                                     <span class="text-xs text-slate-400 font-bold">${dateStr}</span>
                                 </div>
 
@@ -99,6 +105,12 @@
                                         ${cleanKatexMarkers(m.explanation)}
                                     </div>
                                 ` : ''}
+
+                                <div class="mt-4 pl-3">
+                                    <a href="${reviewUrl}" class="inline-flex items-center gap-2 bg-cbse-blue text-white px-4 py-2 rounded-xl text-xs font-bold hover:shadow-lg hover:scale-105 transition">
+                                        <i class="fas fa-book-reader"></i> Review Concept
+                                    </a>
+                                </div>
                             </div>
                         `;
                     });
