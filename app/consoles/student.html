@@ -248,6 +248,92 @@
                 const avg = Math.round(totalScoreSum / snapshot.size);
                 document.getElementById("stat-avg").textContent = `${avg}%`;
 
+                // --- NEW: Subject-Based Tier Logic ---
+                const masteryCounts = {
+                    "Mathematics": { "Advanced": new Set(), "Medium": new Set() },
+                    "Science": { "Advanced": new Set(), "Medium": new Set() },
+                    "Social Science": { "Advanced": new Set(), "Medium": new Set() }
+                };
+
+                // Populate Mastery Sets
+                snapshot.docs.forEach(doc => {
+                     const d = doc.data();
+                     const totalQ = d.totalQuestions || d.total || 20;
+                     const p = totalQ > 0 ? Math.round(((d.score || 0) / totalQ) * 100) : (d.score_percent || 0);
+
+                     if (p >= 95) {
+                         const sub = getActualSubject(d);
+                         const chap = formatChapterName(d.topicSlug || d.topic || d.chapter);
+                         const diffRaw = d.difficulty || "Simple";
+                         const diff = diffRaw.charAt(0).toUpperCase() + diffRaw.slice(1).toLowerCase();
+
+                         if (masteryCounts[sub]) {
+                             if (diff === "Advanced") masteryCounts[sub]["Advanced"].add(chap);
+                             if (diff === "Medium") masteryCounts[sub]["Medium"].add(chap);
+                         }
+                     }
+                });
+
+                let challengerCount = 0;
+                let standardCount = 0;
+
+                const tierConfig = [
+                    { key: "Mathematics", label: "M" },
+                    { key: "Science", label: "S" },
+                    { key: "Social Science", label: "SS" }
+                ];
+
+                const tiersHtml = tierConfig.map(config => {
+                    const sub = config.key;
+                    const total = curriculumCounts[sub] || 1;
+                    const advCount = masteryCounts[sub]["Advanced"].size;
+                    const medCount = masteryCounts[sub]["Medium"].size;
+
+                    let tier = "Foundational";
+                    let tierClass = "text-slate-400 bg-slate-50 border-slate-100";
+                    let shortTier = "F";
+
+                    if (advCount > (0.30 * total)) {
+                        tier = "Challenger";
+                        tierClass = "text-amber-600 bg-amber-50 border-amber-100";
+                        shortTier = "C";
+                        challengerCount++;
+                    } else if (medCount > (0.40 * total)) {
+                        tier = "Standard";
+                        tierClass = "text-blue-600 bg-blue-50 border-blue-100";
+                        shortTier = "S";
+                        standardCount++;
+                    }
+
+                    return `
+                        <div class="flex items-center gap-1 px-2 py-1 rounded border ${tierClass}" title="${sub}: ${tier}">
+                            <span class="text-[10px] font-bold opacity-60">${config.label}:</span>
+                            <span class="text-[10px] font-black">${shortTier}</span>
+                        </div>
+                    `;
+                }).join("");
+
+                const tiersContainer = document.getElementById("subject-tiers-container");
+                if (tiersContainer) tiersContainer.innerHTML = tiersHtml;
+
+                // Determine Global Badge
+                let globalBadgeText = "Foundational Scholar";
+                let globalBadgeClass = "bg-slate-100 text-slate-500 border-slate-200";
+
+                if (challengerCount >= 2) {
+                    globalBadgeText = "Challenger Scholar";
+                    globalBadgeClass = "bg-amber-100 text-amber-700 border-amber-200";
+                } else if ((challengerCount + standardCount) >= 2) {
+                    globalBadgeText = "Standard Scholar";
+                    globalBadgeClass = "bg-blue-100 text-blue-700 border-blue-200";
+                }
+
+                const badgeEl = document.getElementById("global-badge");
+                if (badgeEl) {
+                    badgeEl.textContent = globalBadgeText;
+                    badgeEl.className = `px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${globalBadgeClass}`;
+                }
+
                 // 4. Subject Mastery Meters
                 const subjectMeterContainer = document.getElementById("subject-mastery-container");
                 subjectMeterContainer.innerHTML = "";
@@ -449,9 +535,20 @@
                     <span class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
                     <span class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Syncing Hub...</span>
                 </div>
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Avg Mastery</div>
-                <div id="stat-avg" class="text-4xl font-black text-cbse-blue">--%</div>
-                <div class="text-[10px] text-slate-400 mt-2"><span id="stat-subject-label">Best Subject:</span> <span id="stat-subject" class="font-bold text-slate-600">--</span></div>
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Average Mastery</div>
+                <div id="stat-avg" class="text-4xl font-black text-cbse-blue mb-2">--%</div>
+
+                <!-- Global Badge -->
+                <div id="global-badge-container" class="mb-3">
+                    <span id="global-badge" class="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border border-slate-200">
+                        Foundational
+                    </span>
+                </div>
+
+                <!-- Subject Tiers -->
+                <div id="subject-tiers-container" class="flex flex-wrap gap-2">
+                    <!-- Injected via JS -->
+                </div>
             </div>
 
             <!-- Subject Mastery Meters -->
