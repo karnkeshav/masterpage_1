@@ -296,22 +296,24 @@ function renderDynamicContent(container, data, subject) {
         </div>
     `;
 
-    // Inject "Take Test" Button
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = "mt-12 text-center";
-    buttonContainer.innerHTML = `
-        <button id="take-test-btn" class="px-8 py-4 bg-accent-gold text-cbse-blue font-black rounded-2xl text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-3 mx-auto">
-            <span>🚀</span> Take Chapter Test
+    // Inject "Take Chapter Test" Action Section
+    const actionSection = document.createElement("div");
+    actionSection.className = "mt-12 pt-8 border-t border-slate-200 text-center";
+    actionSection.innerHTML = `
+        <button id="btn-target-test" class="px-10 py-4 bg-cbse-blue text-white font-black rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 mx-auto">
+            <span>Take Chapter Test</span>
+            <i class="fas fa-chevron-right"></i>
         </button>
+        <p class="mt-4 text-xs text-slate-400 font-bold uppercase tracking-widest">Mastery Level: Recommended 85%+</p>
     `;
-    container.appendChild(buttonContainer);
+    container.appendChild(actionSection);
 
-    document.getElementById("take-test-btn").onclick = () => {
-        createDifficultyModal(grade, subject, chapter, user);
+    document.getElementById("btn-target-test").onclick = () => {
+        launchTargetedQuiz(grade, subject, chapter, user);
     };
 }
 
-function createDifficultyModal(grade, subject, chapter, user) {
+function launchTargetedQuiz(grade, subject, chapter, user) {
     // Remove existing modal if any
     const existing = document.getElementById("difficulty-modal");
     if (existing) existing.remove();
@@ -323,10 +325,10 @@ function createDifficultyModal(grade, subject, chapter, user) {
         <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative">
             <button id="close-modal-btn" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-red-50 hover:text-red-500 transition">✕</button>
             <h3 class="text-2xl font-black text-cbse-blue mb-2 text-center">Select Difficulty</h3>
-            <p class="text-slate-500 text-center mb-8 text-sm font-medium">Choose your challenge level to begin.</p>
+            <p class="text-slate-500 text-center mb-8 text-sm font-medium">Select Difficulty: Simple, Medium, or Advanced</p>
 
             <div class="space-y-4">
-                <button onclick="window.startQuiz('Simple')" class="w-full p-4 bg-green-50 border-2 border-green-100 rounded-2xl hover:bg-green-100 hover:border-green-300 transition group text-left flex items-center gap-4">
+                <button onclick="window.startTargetedQuiz('Simple')" class="w-full p-4 bg-green-50 border-2 border-green-100 rounded-2xl hover:bg-green-100 hover:border-green-300 transition group text-left flex items-center gap-4">
                     <span class="w-10 h-10 rounded-xl bg-green-200 text-green-700 flex items-center justify-center text-xl">🌱</span>
                     <div>
                         <div class="font-bold text-green-800">Simple</div>
@@ -335,7 +337,7 @@ function createDifficultyModal(grade, subject, chapter, user) {
                     <span class="ml-auto text-green-400 group-hover:translate-x-1 transition">➔</span>
                 </button>
 
-                <button onclick="window.startQuiz('Medium')" class="w-full p-4 bg-yellow-50 border-2 border-yellow-100 rounded-2xl hover:bg-yellow-100 hover:border-yellow-300 transition group text-left flex items-center gap-4">
+                <button onclick="window.startTargetedQuiz('Medium')" class="w-full p-4 bg-yellow-50 border-2 border-yellow-100 rounded-2xl hover:bg-yellow-100 hover:border-yellow-300 transition group text-left flex items-center gap-4">
                     <span class="w-10 h-10 rounded-xl bg-yellow-200 text-yellow-700 flex items-center justify-center text-xl">⚡</span>
                     <div>
                         <div class="font-bold text-yellow-800">Medium</div>
@@ -344,7 +346,7 @@ function createDifficultyModal(grade, subject, chapter, user) {
                     <span class="ml-auto text-yellow-400 group-hover:translate-x-1 transition">➔</span>
                 </button>
 
-                <button onclick="window.startQuiz('Advanced')" class="w-full p-4 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 hover:border-red-300 transition group text-left flex items-center gap-4">
+                <button onclick="window.startTargetedQuiz('Advanced')" class="w-full p-4 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 hover:border-red-300 transition group text-left flex items-center gap-4">
                     <span class="w-10 h-10 rounded-xl bg-red-200 text-red-700 flex items-center justify-center text-xl">🔥</span>
                     <div>
                         <div class="font-bold text-red-800">Advanced</div>
@@ -360,9 +362,14 @@ function createDifficultyModal(grade, subject, chapter, user) {
 
     document.getElementById("close-modal-btn").onclick = () => modal.remove();
 
-    window.startQuiz = (difficulty) => {
+    window.startTargetedQuiz = (difficulty) => {
+        // Step 2: Slug Construction
+        const topicSlug = `${grade}_${subject.toLowerCase().split(' ')[0]}_${chapter.toLowerCase().replace(/\s+/g, '_')}`;
+
         logQuizStart(user.uid, subject, chapter, difficulty);
-        window.location.href = `quiz-engine.html?grade=${grade}&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(chapter)}&difficulty=${difficulty}`;
+
+        // Step 3: Direct Redirect
+        window.location.href = `quiz-engine.html?topic=${encodeURIComponent(topicSlug)}&difficulty=${difficulty}&grade=${grade}&subject=${encodeURIComponent(subject)}`;
     };
 }
 

@@ -98,7 +98,14 @@ function parseUrlParameters() {
         return;
     }
 
-    quizState.topicSlug = params.get("table") || params.get("topic") || "";
+    quizState.topicSlug = params.get("topic") || params.get("table") || params.get("topicSlug") || "";
+
+    // Safety Check: Redirect if missing critical params
+    if (!quizState.topicSlug) {
+        alert("System Error: No quiz topic specified. Returning to dashboard.");
+        window.location.href = "consoles/student.html";
+        return;
+    }
 
     // A. TRY TO GET EXACT CHAPTER NAME FROM URL
     let displayChapter = params.get("chapter_name");
