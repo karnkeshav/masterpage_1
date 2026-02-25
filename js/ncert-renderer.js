@@ -363,12 +363,14 @@ function launchTargetedQuiz(grade, subject, chapter, user) {
     document.getElementById("close-modal-btn").onclick = () => modal.remove();
 
     window.startTargetedQuiz = (difficulty) => {
-        // Step 2: Slug Construction
-        const topicSlug = `${grade}_${subject.toLowerCase().split(' ')[0]}_${chapter.toLowerCase().replace(/\s+/g, '_')}`;
+        // Step 2: Slug Construction (Refined)
+        const subjectSlug = subject.trim().toLowerCase().split(' ')[0];
+        const chapterSlug = chapter.trim().toLowerCase().replace(/\s+/g, '_');
+        const topicSlug = `${grade}_${subjectSlug}_${chapterSlug}`;
 
         logQuizStart(user.uid, subject, chapter, difficulty);
 
-        // Step 3: Direct Redirect
+        // Step 3: Single Handshake Redirect
         window.location.href = `quiz-engine.html?topic=${encodeURIComponent(topicSlug)}&difficulty=${difficulty}&grade=${grade}&subject=${encodeURIComponent(subject)}`;
     };
 }
