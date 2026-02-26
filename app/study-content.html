@@ -188,16 +188,16 @@
             // 2. Clean Chapter: Lowercase + Remove special chars except spaces
             const rawChapter = chapter.toLowerCase().replace(/[^\w\s]/gi, '');
 
-            // 3. Apply Duplication Rule
+            // 3. Apply First_Last Rule
             const words = rawChapter.trim().split(/\s+/);
             let chapterSegment = '';
 
             if (words.length === 1 && words[0]) {
                 // Single Word -> Duplicate (e.g., polynomials_polynomials)
                 chapterSegment = `${words[0]}_${words[0]}`;
-            } else {
-                // Multiple Words -> Join with underscores (e.g., real_numbers)
-                chapterSegment = words.join('_');
+            } else if (words.length >= 2) {
+                // Multiple Words -> First_Last (e.g., real_numbers, surface_volumes)
+                chapterSegment = `${words[0]}_${words[words.length - 1]}`;
             }
 
             // 4. Construct Slug
