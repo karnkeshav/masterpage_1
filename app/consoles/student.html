@@ -278,9 +278,9 @@
                 let standardCount = 0;
 
                 const tierConfig = [
-                    { key: "Mathematics", label: "M", colorClass: "text-success-green" },
-                    { key: "Science", label: "S", colorClass: "text-cbse-blue" },
-                    { key: "Social Science", label: "SS", colorClass: "text-accent-gold" }
+                    { key: "Mathematics", label: "M", bgClass: "bg-blue-50 border-blue-100", colorClass: "text-success-green" },
+                    { key: "Science", label: "S", bgClass: "bg-purple-50 border-purple-100", colorClass: "text-cbse-blue" },
+                    { key: "Social Science", label: "SS", bgClass: "bg-amber-50 border-amber-100", colorClass: "text-accent-gold" }
                 ];
 
                 const tiersHtml = tierConfig.map(config => {
@@ -290,7 +290,6 @@
                     const medCount = masteryCounts[sub]["Medium"].size;
 
                     let shortTier = "F";
-
                     if (advCount > (0.30 * total)) {
                         shortTier = "C";
                         challengerCount++;
@@ -299,9 +298,9 @@
                         standardCount++;
                     }
 
-                    // Task 1 & 2: Specific Color Alignment and Tier Letter Injection
+                    // Boxes now use fixed subject backgrounds but dynamic tier letters
                     return `
-                        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-slate-100 shadow-sm">
+                        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${config.bgClass} shadow-sm" title="${sub}">
                             <span class="text-[10px] font-bold ${config.colorClass}">${config.label}</span>
                             <span class="text-[10px] font-black ${config.colorClass}">${shortTier}</span>
                         </div>
