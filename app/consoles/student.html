@@ -116,8 +116,8 @@
                 const totalChapters = curriculumCounts["Mathematics"] + curriculumCounts["Science"] + curriculumCounts["Social Science"];
                 const totalMasteryPoints = totalChapters * 3;
 
-                // Update Total Attempts
-                document.getElementById("stat-total").textContent = snapshot.size;
+                // Update Total Chapters and Radial Chart
+                document.getElementById("stat-total").textContent = totalChapters;
 
                 if (snapshot.empty) {
                      renderZeroState(curriculumCounts, totalChapters);
@@ -211,16 +211,24 @@
                 // --- UI RENDERING ---
 
                 // 1. Volume Dashboard
-                document.getElementById("stat-coverage").textContent = `${uniqueTouchedChapters.size} / ${totalChapters} Touched`;
+                document.getElementById("stat-coverage").textContent = `${uniqueTouchedChapters.size} Chapters Touched`;
+
+                // Radial Chart Update
+                const coveragePercent = Math.min((uniqueTouchedChapters.size / totalChapters) * 100, 100);
+                const radialBar = document.getElementById("stat-radial-bar");
+                if (radialBar) {
+                    // Circumference is ~100 in this viewbox scaling (2 * pi * 15.9155 = 100)
+                    radialBar.setAttribute("stroke-dasharray", `${coveragePercent}, 100`);
+                }
 
                 // Coverage Grid (Persistent)
                 const covMath = `${subjectTouchedCounts["Mathematics"].size}/${curriculumCounts["Mathematics"]}`;
                 const covSci = `${subjectTouchedCounts["Science"].size}/${curriculumCounts["Science"]}`;
                 const covSoc = `${subjectTouchedCounts["Social Science"].size}/${curriculumCounts["Social Science"]}`;
 
-                document.getElementById("coverage-math").textContent = `M: ${covMath}`;
-                document.getElementById("coverage-sci").textContent = `S: ${covSci}`;
-                document.getElementById("coverage-sst").textContent = `SS: ${covSoc}`;
+                document.getElementById("coverage-math").innerHTML = `<i class="fas fa-calculator mb-1"></i> M: ${covMath}`;
+                document.getElementById("coverage-sci").innerHTML = `<i class="fas fa-flask mb-1"></i> S: ${covSci}`;
+                document.getElementById("coverage-sst").innerHTML = `<i class="fas fa-landmark mb-1"></i> SS: ${covSoc}`;
 
                 // Mastery Funnel (Persistent Mini-Bars)
                 // Scaling: Each tier can have at most 'totalChapters' masteries (since each chapter has 1 S, 1 M, 1 A)
@@ -404,11 +412,14 @@
         function renderZeroState(curriculumCounts, totalChapters) {
              // Update Volume Dashboard for Zero State
              if (curriculumCounts && totalChapters) {
-                 document.getElementById("stat-coverage").textContent = `0 / ${totalChapters} Touched`;
+                 document.getElementById("stat-coverage").textContent = `0 Chapters Touched`;
 
-                 document.getElementById("coverage-math").textContent = `M: 0/${curriculumCounts["Mathematics"]}`;
-                 document.getElementById("coverage-sci").textContent = `S: 0/${curriculumCounts["Science"]}`;
-                 document.getElementById("coverage-sst").textContent = `SS: 0/${curriculumCounts["Social Science"]}`;
+                 const radialBar = document.getElementById("stat-radial-bar");
+                 if (radialBar) radialBar.setAttribute("stroke-dasharray", "0, 100");
+
+                 document.getElementById("coverage-math").innerHTML = `<i class="fas fa-calculator mb-1"></i> M: 0/${curriculumCounts["Mathematics"]}`;
+                 document.getElementById("coverage-sci").innerHTML = `<i class="fas fa-flask mb-1"></i> S: 0/${curriculumCounts["Science"]}`;
+                 document.getElementById("coverage-sst").innerHTML = `<i class="fas fa-landmark mb-1"></i> SS: 0/${curriculumCounts["Social Science"]}`;
 
                  document.getElementById("funnel-simple").style.width = "0%";
                  document.getElementById("funnel-medium").style.width = "0%";
@@ -487,35 +498,49 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <!-- Total Volume -->
             <div class="glass-panel p-6 rounded-3xl relative">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Attempts</div>
-                <div class="flex items-baseline gap-2 mb-3">
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Chapters</div>
+                <div class="flex items-center gap-4 mb-3">
                     <div id="stat-total" class="text-4xl font-black text-slate-900">--</div>
-                    <div id="stat-coverage" class="text-xs font-bold text-slate-500">-- / -- Touched</div>
+                    <!-- Radial Progress Donut -->
+                    <div class="relative w-12 h-12 flex items-center justify-center">
+                        <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
+                            <path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4"></path>
+                            <path id="stat-radial-bar" class="text-cbse-blue transition-all duration-1000 ease-out" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="4"></path>
+                        </svg>
+                        <i class="fas fa-book-open text-slate-300 text-xs absolute"></i>
+                    </div>
                 </div>
+                <div id="stat-coverage" class="text-xs font-bold text-slate-500 mb-4">-- Chapters Touched</div>
 
                 <!-- Coverage Grid -->
                 <div class="grid grid-cols-3 gap-2 mb-4">
-                    <div class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-bold text-center border border-blue-100" id="coverage-math">M: 0/0</div>
-                    <div class="bg-purple-50 text-purple-700 px-2 py-1 rounded text-[10px] font-bold text-center border border-purple-100" id="coverage-sci">S: 0/0</div>
-                    <div class="bg-amber-50 text-amber-700 px-2 py-1 rounded text-[10px] font-bold text-center border border-amber-100" id="coverage-sst">SS: 0/0</div>
+                    <div class="bg-blue-50 text-blue-700 px-2 py-1.5 rounded-lg text-[10px] font-bold text-center border border-blue-100 flex flex-col items-center justify-center h-full" id="coverage-math">
+                        <i class="fas fa-calculator mb-1"></i> M: 0/0
+                    </div>
+                    <div class="bg-purple-50 text-purple-700 px-2 py-1.5 rounded-lg text-[10px] font-bold text-center border border-purple-100 flex flex-col items-center justify-center h-full" id="coverage-sci">
+                        <i class="fas fa-flask mb-1"></i> S: 0/0
+                    </div>
+                    <div class="bg-amber-50 text-amber-700 px-2 py-1.5 rounded-lg text-[10px] font-bold text-center border border-amber-100 flex flex-col items-center justify-center h-full" id="coverage-sst">
+                        <i class="fas fa-landmark mb-1"></i> SS: 0/0
+                    </div>
                 </div>
 
                 <!-- Persistent Mastery Funnel (Mini-Bars) -->
-                <div class="space-y-1">
+                <div class="space-y-1.5">
                     <div class="flex items-center gap-2">
-                        <span class="w-4 text-[10px] font-bold text-slate-400">S</span>
+                        <span class="w-4 text-[10px] font-black text-success-green">S</span>
                         <div class="flex-grow h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div id="funnel-simple" class="h-full bg-success-green rounded-full" style="width: 0%"></div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="w-4 text-[10px] font-bold text-slate-400">M</span>
+                        <span class="w-4 text-[10px] font-black text-cbse-blue">M</span>
                         <div class="flex-grow h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div id="funnel-medium" class="h-full bg-cbse-blue rounded-full" style="width: 0%"></div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="w-4 text-[10px] font-bold text-slate-400">A</span>
+                        <span class="w-4 text-[10px] font-black text-accent-gold">A</span>
                         <div class="flex-grow h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div id="funnel-advanced" class="h-full bg-accent-gold rounded-full" style="width: 0%"></div>
                         </div>
