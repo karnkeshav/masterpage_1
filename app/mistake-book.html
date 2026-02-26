@@ -25,22 +25,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body{font-family:'Inter',sans-serif;}
-        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Scrollbar styling */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    body{font-family:'Inter',sans-serif;}
+    .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .slide-up { animation: slideUp 0.3s ease-out forwards; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .slide-up { animation: slideUp 0.3s ease-out forwards; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* Tier 1 Visuals */
-        .progress-step { transition: height 0.5s ease, opacity 0.3s ease; }
-    </style>
+    /* Radar Sweep Animation */
+    .radar-sweep {
+        position: absolute;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(from 0deg at 50% 50%, rgba(26, 62, 106, 0.15) 0deg, transparent 90deg);
+        animation: sweep 4s linear infinite;
+        pointer-events: none;
+    }
+    @keyframes sweep {
+        from { transform: translate(-50%, -50%) rotate(0deg); }
+        to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Tier 1 Visuals */
+    .progress-step { transition: height 0.5s ease, opacity 0.3s ease; }
+</style>
 
     <script src="../js/firebase-master-config.js"></script>
     <script src="../js/config.js" type="module"></script>
@@ -474,7 +489,7 @@ window.toggleList = (subject, type) => {
     let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
     names.forEach(ch => {
         const count = chapters[ch].length;
-        // Escape apostrophes for safe usage in inline JS handlers
+        // Strictly escaped for safety in HTML attributes
         const escapedCh = ch.replace(/'/g, "\\'"); 
         html += `
             <div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item"
