@@ -159,7 +159,7 @@
                 if (!topic) return;
 
                 const { subject, chapterName } = getSubjectContext(topic);
-                const score = data.percentage || data.score_percent || data.score || 0;
+                const score = parseFloat(data.percentage || data.score_percent || data.score || 0);
                 const difficulty = (data.difficulty || 'simple').toLowerCase();
 
                 if (!subjectScores[subject]) {
@@ -170,7 +170,7 @@
                 }
 
                 (data.mistakes || []).forEach(m => {
-                    const mId = m.id || m.question_id || m.question || "";
+                    const mId = m.id || m.question_id || m.question || m.question_text || "";
                     if (!mId) return;
                     const type = getQuestionType(mId);
                     state.proficiency[type].mistakes++;
@@ -200,7 +200,7 @@
 
                 attempts.forEach(att => {
                     att.mistakes.forEach(m => {
-                        const mId = m.id || m.question_id || m.question || "";
+                        const mId = m.id || m.question_id || m.question || m.question_text || "";
                         if (!mId) return;
                         if (!allMistakes.has(mId)) {
                             allMistakes.set(mId, { id: mId, text: m.question || m.question_text || "Question text unavailable", type: getQuestionType(mId), dates: [], topic: topic });
@@ -209,10 +209,10 @@
                     });
                 });
 
-                const latestMistakeIds = new Set(attempts[0].mistakes.map(m => m.id || m.question_id || m.question || "").filter(id => id));
+                const latestMistakeIds = new Set(attempts[0].mistakes.map(m => m.id || m.question_id || m.question || m.question_text || "").filter(id => id));
                 const previousMistakeIds = new Set();
                 attempts.slice(1).forEach(att => att.mistakes.forEach(m => {
-                    const id = m.id || m.question_id || m.question || "";
+                    const id = m.id || m.question_id || m.question || m.question_text || "";
                     if (id) previousMistakeIds.add(id);
                 }));
 
