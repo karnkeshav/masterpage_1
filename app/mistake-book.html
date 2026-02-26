@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mistake Notebook — Ready4Exam</title>
+    <title>Mistake Notebook — Mission Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
     tailwind.config = {
@@ -29,11 +29,12 @@
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Drill-down Styles */
-        details > summary { list-style: none; cursor: pointer; }
-        details > summary::-webkit-details-marker { display: none; }
-        details[open] > summary .fa-chevron-right { transform: rotate(90deg); }
-        .category-btn.active { ring: 2px solid currentColor; ring-offset: 2px; }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .active-chapter { background: #f1f5f9; border-left-color: #1a3e6a; }
     </style>
 
     <script src="../js/firebase-master-config.js"></script>
@@ -54,7 +55,7 @@
         let currentGrade = "9";
         let curriculumData = {};
 
-        // State for Drill-Down
+        // State for Mission Control
         const state = {
             friction: {}, // { Subject: { Chapter: [Questions] } }
             victory: {}   // { Subject: { Chapter: [Questions] } }
@@ -63,7 +64,8 @@
         const THEMES = {
             "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator" },
             "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask" },
-            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark" }
+            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark" },
+            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes" }
         };
 
         async function init(user) {
@@ -95,7 +97,7 @@
                 processData(scoresSnap.docs, mistakesSnap.docs);
 
                 // 4. Render UI
-                renderDrillDown(container);
+                renderMissionControl(container);
 
             } catch (e) {
                 console.error("Diagnostic Load Error:", e);
@@ -104,7 +106,7 @@
         }
 
         function processData(scoreDocs, mistakeDocs) {
-            // Helper: Get Subject & Chapter Name from Slug
+             // Helper: Get Subject & Chapter Name from Slug
             const getContext = (slug) => {
                 const s = slug.toLowerCase();
                 let subject = "General";
@@ -115,7 +117,7 @@
                     for (const [sec, chapters] of Object.entries(sections)) {
                         for (const ch of chapters) {
                             const title = ch.chapter_title.toLowerCase();
-                            // Fuzzy match: check if slug contains title or title contains slug parts
+                            // Fuzzy match
                             if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
                                 subject = subj;
                                 chapterName = ch.chapter_title;
@@ -144,12 +146,9 @@
 
                 if (!topicHistory[topic]) topicHistory[topic] = { attempts: [], mistakesByDate: {} };
 
-                // Track distinct dates (by day)
                 const date = data.timestamp ? data.timestamp.toDate().toDateString() : "Unknown";
                 const fullDate = data.timestamp ? data.timestamp.toDate() : new Date();
 
-                // Only add if not duplicate attempt on same exact timestamp
-                // Using timestamp as unique ID for attempt
                 topicHistory[topic].attempts.push({
                     date: date,
                     ts: fullDate.getTime(),
@@ -158,7 +157,6 @@
             });
 
             // B. Map Mistakes
-            // Need to map question ID to dates missed
             const questionMisses = {}; // { topic: { qId: [dates] } }
             const questionData = {};   // { qId: { text, ... } }
 
@@ -175,7 +173,6 @@
                     if (!questionMisses[topic][m.id]) questionMisses[topic][m.id] = new Set();
                     questionMisses[topic][m.id].add(date);
 
-                    // Store latest question data
                     questionData[m.id] = {
                         text: m.question,
                         topic: topic
@@ -188,7 +185,6 @@
                 const { subject, chapterName } = getContext(topic);
                 const misses = questionMisses[topic] || {};
 
-                // Sort attempts desc
                 const attempts = topicHistory[topic].attempts.sort((a,b) => b.ts - a.ts);
                 if (attempts.length === 0) return;
 
@@ -207,22 +203,8 @@
                 });
 
                 // 2. Victory Gallery: Missed in past, NOT in latest attempt
-                // Find IDs missed in previous attempts
-                const previousMissedIds = new Set();
                 Object.entries(misses).forEach(([qId, datesSet]) => {
-                    // check if any date is BEFORE latest attempt date
-                    // Or simpler: if it's NOT in the latest attempt's mistakes?
-                    // But wait, if latest attempt had mistakes, they are in `misses`.
-                    // So if `datesSet` DOES NOT contain `latestAttemptDate`?
-                    // Caveat: If user took 2 attempts today, `date` string matches.
-                    // We should use `ts` or assume distinct days. The requirement says "distinct attempts (on different dates)".
-                    // So we stick to date string.
-
                     if (!datesSet.has(latestAttemptDate)) {
-                        // It wasn't missed today/latest. Was it missed before?
-                        // Yes, it's in `misses`.
-                        // Does latest attempt cover this topic? Yes, we are iterating `topicHistory`.
-                        // So we assume it's a Victory.
                         addToState('victory', subject, chapterName, {
                             id: qId,
                             text: questionData[qId].text,
@@ -240,71 +222,81 @@
             state[type][subject][chapter].push(item);
         }
 
-        function renderDrillDown(container) {
-            const subjects = ["Mathematics", "Science", "Social Science", "General"]; // Added General fallback
+        function renderMissionControl(container) {
+            const subjects = ["Mathematics", "Science", "Social Science", "General"];
             let hasContent = false;
-            let html = `<div class="space-y-6">`;
+
+            // Grid Layout: 2/3 Left (Subjects), 1/3 Right (Inspector)
+            let html = `
+                <div class="grid lg:grid-cols-3 gap-8 items-start relative">
+                    <!-- Left: Subject Containers -->
+                    <div class="lg:col-span-2 space-y-6">
+            `;
 
             subjects.forEach(subject => {
-                const theme = THEMES[subject] || THEMES["Science"]; // Default style
+                const theme = THEMES[subject] || THEMES["Science"];
                 const frictionData = state.friction[subject] || {};
                 const victoryData = state.victory[subject] || {};
 
-                // Count totals
                 const frictionCount = Object.values(frictionData).reduce((a, b) => a + b.length, 0);
                 const victoryCount = Object.values(victoryData).reduce((a, b) => a + b.length, 0);
 
-                if (frictionCount === 0 && victoryCount === 0) return; // Skip empty subjects
+                if (frictionCount === 0 && victoryCount === 0) return;
 
                 hasContent = true;
 
                 html += `
-                    <!-- Level 1: Subject Panel -->
-                    <div class="${theme.bg || 'bg-slate-50'} rounded-3xl border ${theme.border || 'border-slate-200'} overflow-hidden">
-                        <div class="p-6 flex items-center justify-between">
+                    <!-- Level 1: Subject Container -->
+                    <div class="${theme.bg || 'bg-slate-50'} rounded-3xl border ${theme.border || 'border-slate-200'} overflow-hidden relative group">
+                        <!-- Subject Header -->
+                        <div class="px-6 py-5 flex items-center justify-between border-b border-black/5">
                             <div class="flex items-center space-x-4">
-                                <div class="w-12 h-12 rounded-2xl bg-white text-xl flex items-center justify-center shadow-sm ${theme.text || 'text-slate-700'}">
+                                <div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text || 'text-slate-700'}">
                                     <i class="fas ${theme.icon || 'fa-cubes'}"></i>
                                 </div>
-                                <h3 class="text-xl font-black ${theme.text || 'text-slate-700'}">${subject}</h3>
+                                <h3 class="text-lg font-black ${theme.text || 'text-slate-700'} tracking-tight">${subject}</h3>
                             </div>
-                            <div class="flex space-x-2 text-[10px] font-bold uppercase tracking-wide opacity-70">
-                                <span>${frictionCount} Issues</span>
-                                <span>•</span>
-                                <span>${victoryCount} Mastered</span>
+                            <!-- Level 2: Category Entry Points -->
+                            <div class="flex items-center space-x-6">
+                                <button onclick="toggleChapterList('${subject}', 'friction')" class="text-xs font-bold text-red-600 hover:text-red-700 hover:underline flex items-center group/btn transition">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
+                                    Persistent Friction (${frictionCount})
+                                </button>
+                                <button onclick="toggleChapterList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center group/btn transition">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Victory Gallery (${victoryCount})
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Level 2: Categories -->
-                        <div class="px-6 pb-6 grid grid-cols-2 gap-4">
-                            <button onclick="toggleCategory('${subject}', 'friction')" id="btn-${subject}-friction"
-                                class="category-btn bg-white border border-red-100 rounded-xl p-4 text-left hover:shadow-md transition group">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-xs font-black text-red-500 uppercase tracking-widest">Friction</span>
-                                    <span class="w-6 h-6 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xs font-bold group-hover:bg-red-500 group-hover:text-white transition">${frictionCount}</span>
-                                </div>
-                                <div class="text-[10px] text-slate-400 font-medium">Persistent Errors</div>
-                            </button>
-
-                            <button onclick="toggleCategory('${subject}', 'victory')" id="btn-${subject}-victory"
-                                class="category-btn bg-white border border-green-100 rounded-xl p-4 text-left hover:shadow-md transition group">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-xs font-black text-green-500 uppercase tracking-widest">Victory</span>
-                                    <span class="w-6 h-6 rounded-full bg-green-50 text-green-500 flex items-center justify-center text-xs font-bold group-hover:bg-green-500 group-hover:text-white transition">${victoryCount}</span>
-                                </div>
-                                <div class="text-[10px] text-slate-400 font-medium">Recent Mastery</div>
-                            </button>
-                        </div>
-
-                        <!-- Level 3: Chapter List (Container) -->
-                        <div id="list-${subject}" class="hidden bg-white/50 border-t border-black/5">
+                        <!-- Level 3: Chapter List (Hover-Interactive) -->
+                        <div id="chapters-${subject}" class="hidden bg-white/60 backdrop-blur-sm divide-y divide-black/5 max-h-64 overflow-y-auto">
                             <!-- Injected via JS -->
                         </div>
                     </div>
                 `;
             });
 
-            html += `</div>`;
+            html += `
+                    </div>
+                    <!-- Right: Diagnostic Inspector (Sticky) -->
+                    <div class="lg:col-span-1 hidden lg:block sticky top-24">
+                        <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm">
+                            <div class="text-4xl mb-4 opacity-50">📡</div>
+                            <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Diagnostic Inspector</h4>
+                            <p class="text-xs text-slate-500 max-w-[200px]">Hover over a chapter on the left to analyze specific questions without spoilers.</p>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Inspector Modal (Placeholder, logic handles display) -->
+                    <div id="mobile-inspector" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-end justify-center lg:hidden p-4 pb-8" onclick="closeMobileInspector()">
+                        <div class="bg-white w-full max-w-md rounded-3xl max-h-[80vh] overflow-y-auto p-6 relative animate-slide-up" onclick="event.stopPropagation()">
+                            <button onclick="closeMobileInspector()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                            <div id="mobile-inspector-content"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
 
             if (!hasContent) {
                 renderEmptyState(container);
@@ -313,108 +305,122 @@
             }
         }
 
-        // Expose to window for onclick
-        window.toggleCategory = (subject, type) => {
-            const container = document.getElementById(`list-${subject}`);
-            const btn = document.getElementById(`btn-${subject}-${type}`);
-            const allBtns = document.querySelectorAll(`.category-btn`);
+        // Global Handlers
+        window.toggleChapterList = (subject, type) => {
+            const container = document.getElementById(`chapters-${subject}`);
             const isHidden = container.classList.contains('hidden');
-            const currentType = container.dataset.activeType;
 
-            // Reset UI
-            allBtns.forEach(b => b.classList.remove('ring-2', 'ring-offset-2', 'ring-current'));
+            // Close others if needed (optional)
+            document.querySelectorAll('[id^="chapters-"]').forEach(el => {
+                if(el.id !== `chapters-${subject}`) el.classList.add('hidden');
+            });
 
-            if (!isHidden && currentType === type) {
-                // Toggle Off
+            if (!isHidden && container.dataset.type === type) {
                 container.classList.add('hidden');
-                container.dataset.activeType = "";
             } else {
-                // Show
                 container.classList.remove('hidden');
-                container.dataset.activeType = type;
-                btn.classList.add('ring-2', 'ring-offset-2', 'ring-current');
-                if (type === 'friction') btn.classList.add('text-red-500');
-                else btn.classList.add('text-green-500');
-
-                renderChapterList(subject, type, container);
+                container.dataset.type = type;
+                renderChapters(subject, type, container);
             }
         };
 
-        window.renderChapterList = (subject, type, container) => {
+        window.renderChapters = (subject, type, container) => {
             const chapters = state[type][subject] || {};
             const chapterNames = Object.keys(chapters).sort();
 
             if (chapterNames.length === 0) {
-                container.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs font-bold">No items in this category.</div>`;
+                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 font-bold">No items found.</div>`;
                 return;
             }
 
-            let html = `<div class="divide-y divide-black/5">`;
-
+            let html = ``;
             chapterNames.forEach(chapter => {
-                const questions = chapters[chapter];
-                const cleanChapter = chapter.replace(/_/g, " "); // Basic cleanup if slug slips through
+                const count = chapters[chapter].length;
+                const cleanChapter = chapter.replace(/_/g, " ");
 
+                // Hover trigger for desktop, Click trigger for mobile
                 html += `
-                    <details class="group/chapter">
-                        <summary class="p-5 flex items-center justify-between hover:bg-white/80 transition cursor-pointer select-none">
-                            <div class="flex items-center space-x-3">
-                                <i class="fas fa-chevron-right text-slate-300 text-xs transition-transform duration-200 group-open/chapter:rotate-90"></i>
-                                <span class="font-bold text-slate-700 text-sm">${cleanChapter}</span>
-                            </div>
-                            <span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-500">${questions.length}</span>
-                        </summary>
-
-                        <!-- Level 4: Question List -->
-                        <div class="px-5 pb-5 space-y-3 bg-slate-50/50">
-                            ${questions.map(q => renderQuestionCard(q, type)).join('')}
-                        </div>
-                    </details>
+                    <div class="chapter-item px-6 py-4 cursor-pointer hover:bg-slate-50 transition border-l-4 border-transparent hover:border-cbse-blue group flex justify-between items-center"
+                         onmouseenter="inspectChapter('${subject}', '${chapter}', '${type}')"
+                         onclick="inspectChapter('${subject}', '${chapter}', '${type}', true)">
+                        <span class="text-sm font-bold text-slate-700 group-hover:text-cbse-blue transition">${cleanChapter}</span>
+                        <span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-md group-hover:bg-blue-100 group-hover:text-blue-600 transition">${count}</span>
+                    </div>
                 `;
             });
-
-            html += `</div>`;
             container.innerHTML = html;
         };
 
-        window.renderQuestionCard = (q, type) => {
+        window.inspectChapter = (subject, chapter, type, isClick = false) => {
+            const questions = state[type][subject][chapter];
+            const cleanChapter = chapter.replace(/_/g, " ");
             const isFriction = type === 'friction';
-            const borderClass = isFriction ? 'border-l-red-500' : 'border-l-green-500';
-            const studyLink = `../study-content.html?grade=${currentGrade}&subject=${encodeURIComponent(state.subject || "Science")}&chapter=${encodeURIComponent(q.topic)}`; // Topic is usually slug
 
-            // Infer subject for link if possible, strictly we only have q.topic (slug)
-            // We can try to extract from state or just rely on slug parsing in study-content
-            // Improved link:
-            // We are inside a subject block, so we know the Subject.
-            // But we need to pass it.
-            // Let's just use the topic slug as is, study-content usually handles slugs.
-
-            return `
-                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 ${borderClass} relative">
-                    <p class="text-sm font-medium text-slate-800 mb-3 leading-relaxed">${cleanKatexMarkers(q.text)}</p>
-
-                    <div class="flex items-center justify-between border-t border-slate-100 pt-3">
-                        ${isFriction ? `
-                            <div class="flex items-center space-x-2 text-[10px] text-red-500 font-bold">
-                                <i class="fas fa-calendar-times"></i>
-                                <span>Missed: ${q.dates.join(', ')}</span>
-                            </div>
-                            <a href="../study-content.html?grade=${currentGrade}&topic=${q.topic}"
-                               class="text-[10px] bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-black hover:bg-red-600 hover:text-white transition uppercase tracking-wide">
-                                Master Concept
-                            </a>
-                        ` : `
-                            <div class="flex items-center space-x-2 text-[10px] text-green-600 font-bold">
-                                <i class="fas fa-calendar-check"></i>
-                                <span>Mastered: ${q.masteryDate}</span>
-                            </div>
-                            <span class="text-[10px] bg-green-50 text-green-600 px-3 py-1.5 rounded-lg font-black uppercase tracking-wide opacity-80">
-                                Recovered
-                            </span>
-                        `}
+            // Build Question List HTML
+            let contentHtml = `
+                <div class="w-full text-left animate-fade-in">
+                    <div class="mb-6 pb-4 border-b border-slate-100">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'}">${isFriction ? 'Persistent Friction' : 'Victory Gallery'}</span>
+                            <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded">${questions.length} Items</span>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-800 leading-tight">${cleanChapter}</h3>
                     </div>
-                </div>
+                    <div class="space-y-4">
             `;
+
+            questions.forEach(q => {
+                contentHtml += `
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition relative group/card">
+                        <div class="absolute left-0 top-4 bottom-4 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'} rounded-r-full"></div>
+                        <p class="text-xs font-medium text-slate-700 mb-3 pl-3 leading-relaxed select-text">${cleanKatexMarkers(q.text)}</p>
+
+                        <div class="pl-3 flex items-center justify-between border-t border-slate-200/50 pt-2">
+                            ${isFriction ? `
+                                <div class="text-[9px] text-red-500 font-bold flex flex-col">
+                                    <span class="opacity-70 uppercase tracking-wide">Missed On</span>
+                                    <span>${q.dates.slice(0, 3).join(', ')}</span>
+                                </div>
+                                <a href="../study-content.html?grade=${currentGrade}&topic=${q.topic}" class="text-[9px] bg-white border border-red-100 text-red-600 px-3 py-1.5 rounded-lg font-black hover:bg-red-50 transition uppercase tracking-wide shadow-sm">
+                                    Master Concept
+                                </a>
+                            ` : `
+                                <div class="text-[9px] text-green-600 font-bold flex flex-col">
+                                    <span class="opacity-70 uppercase tracking-wide">Badge</span>
+                                    <span>🏆 Mastered: ${q.masteryDate}</span>
+                                </div>
+                                <span class="text-[9px] text-green-600 opacity-60 font-medium italic">Previously struggled</span>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+            contentHtml += `</div></div>`;
+
+            // Update Desktop Inspector
+            const inspector = document.getElementById('inspector-panel');
+            if (inspector) {
+                // Highlight active chapter styling
+                document.querySelectorAll('.chapter-item').forEach(el => el.classList.remove('active-chapter'));
+                // Find the triggering element if possible, or just rely on css hover. JS active class is better.
+                // Hard to target specific element without passing 'this', but hover effect covers most.
+
+                inspector.innerHTML = contentHtml;
+                inspector.classList.remove('items-center', 'justify-center', 'text-center'); // Reset placeholder styles
+                inspector.classList.add('items-start', 'justify-start', 'text-left');
+            }
+
+            // Handle Mobile Modal
+            if (window.innerWidth < 1024 && isClick) {
+                const mobileModal = document.getElementById('mobile-inspector');
+                const mobileContent = document.getElementById('mobile-inspector-content');
+                mobileContent.innerHTML = contentHtml;
+                mobileModal.classList.remove('hidden');
+            }
+        };
+
+        window.closeMobileInspector = () => {
+            document.getElementById('mobile-inspector').classList.add('hidden');
         };
 
         function renderEmptyState(container) {
@@ -428,11 +434,9 @@
             `;
         }
 
-        // Init
         initializeAuthListener(async (user) => {
             if (user) {
-                const displayName = user.displayName || "Scholar";
-                document.getElementById("user-welcome").textContent = displayName;
+                document.getElementById("user-welcome").textContent = user.displayName || "Scholar";
                 await init(user);
             } else {
                 window.location.href = "../index.html";
@@ -443,12 +447,12 @@
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
     <!-- Glass Header -->
-    <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20">
+    <header class="glass-panel sticky top-0 z-50 flex justify-between items-center py-4 px-6 border-b border-white/20 backdrop-blur-md bg-white/80">
       <div class="flex items-center space-x-4">
         <a href="../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
         <div>
           <h2 class="text-xl font-black text-cbse-blue leading-none tracking-tight">Mistake<span class="text-danger-red">Book</span></h2>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Diagnostic View</p>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Mission Control</p>
         </div>
       </div>
 
@@ -462,7 +466,7 @@
       </div>
     </header>
 
-    <div class="flex-grow max-w-4xl mx-auto w-full p-4 md:p-8 fade-in">
+    <div class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8 fade-in">
         <div class="mb-8">
              <a href="consoles/student.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
                 <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back to Hub
