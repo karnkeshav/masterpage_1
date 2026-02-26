@@ -430,39 +430,14 @@
                     journeyBar.style.width = progress;
                 }
 
-                // 4. Subject Mastery (Radar & Diagnostics)
+                // 4. Subject Mastery (Slim-Tiles)
                 const subjectMeterContainer = document.getElementById("subject-mastery-container");
-
-                // Helper to get radar polygon points (0-100 mapped to triangle)
-                const getRadarPoints = (m, s, ss) => {
-                    // Center (50, 50), Radius ~40
-                    // M: Top (90deg), S: Bottom Right (330deg), SS: Bottom Left (210deg)
-                    const scale = r => 10 + (r/100)*40; // 10 min radius, max 50
-
-                    const mY = 50 - scale(m);
-                    const mX = 50;
-
-                    const sRad = 30 * (Math.PI / 180); // 30 deg from horizontal right
-                    const sX = 50 + scale(s) * Math.cos(sRad);
-                    const sY = 50 + scale(s) * Math.sin(sRad);
-
-                    const ssRad = 150 * (Math.PI / 180); // 150 deg
-                    const ssX = 50 + scale(ss) * Math.cos(ssRad);
-                    const ssY = 50 + scale(ss) * Math.sin(ssRad);
-
-                    return `${mX},${mY} ${sX},${sY} ${ssX},${ssY}`;
-                };
-
-                const mAvg = diagnostics["Mathematics"]?.simpleAvg || 0;
-                const sAvg = diagnostics["Science"]?.simpleAvg || 0;
-                const ssAvg = diagnostics["Social Science"]?.simpleAvg || 0;
-                const points = getRadarPoints(mAvg, sAvg, ssAvg);
 
                 let diagnosticRows = "";
                 const subjectConfigs = [
-                    { key: "Mathematics", icon: "fa-calculator", bg: "bg-blue-50", text: "text-success-green", border: "border-blue-100" },
-                    { key: "Science", icon: "fa-atom", bg: "bg-purple-50", text: "text-cbse-blue", border: "border-purple-100" },
-                    { key: "Social Science", icon: "fa-globe-americas", bg: "bg-amber-50", text: "text-accent-gold", border: "border-amber-100" }
+                    { key: "Mathematics", label: "M", icon: "fa-calculator", bg: "bg-blue-50", text: "text-success-green", border: "border-blue-100", bar: "bg-success-green" },
+                    { key: "Science", label: "S", icon: "fa-atom", bg: "bg-purple-50", text: "text-cbse-blue", border: "border-purple-100", bar: "bg-cbse-blue" },
+                    { key: "Social Science", label: "SS", icon: "fa-globe-americas", bg: "bg-amber-50", text: "text-accent-gold", border: "border-amber-100", bar: "bg-accent-gold" }
                 ];
 
                 subjectConfigs.forEach(cfg => {
@@ -470,51 +445,47 @@
                     const isSimpleMastered = (simpleMasteryCounts[cfg.key] / (simpleTotalCounts[cfg.key] || 1)) >= 0.95;
                     const sPipClass = isSimpleMastered ? cfg.text : "text-slate-200";
 
+                    // Overall Average for Mini-Spark
+                    const scores = subjectScores[cfg.key] ? [].concat(...Object.values(subjectScores[cfg.key])) : []; // Flatten logic
+                    const overallAvg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
                     diagnosticRows += `
-                        <div class="p-2 mb-2 rounded-lg border ${cfg.bg} ${cfg.border} flex justify-between items-center">
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
+                        <div class="p-2 mb-1 rounded-lg border ${cfg.bg} ${cfg.border} flex flex-col justify-between">
+                            <!-- Row 1: Header -->
+                            <div class="flex justify-between items-center mb-1">
+                                <div class="flex items-center gap-2">
                                     <i class="fas ${cfg.icon} ${cfg.text}"></i>
                                     <span class="text-[10px] font-bold text-slate-700">${cfg.key}</span>
                                 </div>
-                                <div class="text-[8px] font-medium text-slate-500 leading-tight">
-                                    <span class="font-bold text-success-green">Strong:</span> ${d.strong.substring(0, 15)}... | <span class="font-bold text-danger-red">Weak:</span> ${d.weak.substring(0, 15)}...
+                                <div class="flex gap-1 text-[8px]">
+                                    <i class="fas fa-circle ${sPipClass}"></i>
+                                    <i class="fas fa-circle text-slate-200"></i>
+                                    <i class="fas fa-circle text-slate-200"></i>
                                 </div>
                             </div>
-                            <div class="flex gap-1 text-[8px]">
-                                <i class="fas fa-circle ${sPipClass}"></i>
-                                <i class="fas fa-circle text-slate-200"></i>
-                                <i class="fas fa-circle text-slate-200"></i>
+
+                            <!-- Row 2: Diagnostic Note -->
+                            <div class="text-[9px] font-medium text-slate-500 leading-tight mb-1">
+                                <span class="font-bold text-success-green">Strong:</span> ${d.strong.substring(0, 15)} | <span class="font-bold text-danger-red">Weak:</span> ${d.weak.substring(0, 15)}
+                            </div>
+
+                            <!-- Row 3: Visual Hint (Mini-Spark) -->
+                            <div class="h-1 w-full bg-slate-200 rounded-full overflow-hidden">
+                                <div class="h-full ${cfg.bar} rounded-full" style="width: ${overallAvg}%"></div>
                             </div>
                         </div>
                     `;
                 });
 
                 subjectMeterContainer.innerHTML = `
-                    <div class="flex items-center justify-center mb-4 relative h-32">
-                        <!-- Background Grid -->
-                        <svg class="absolute w-full h-full" viewBox="0 0 100 100">
-                            <polygon points="50,10 85,70 15,70" fill="none" stroke="#e2e8f0" stroke-width="1"></polygon>
-                            <polygon points="50,30 67,60 33,60" fill="none" stroke="#e2e8f0" stroke-width="1"></polygon>
-                            <line x1="50" y1="50" x2="50" y2="10" stroke="#e2e8f0" stroke-width="1"></line>
-                            <line x1="50" y1="50" x2="85" y2="70" stroke="#e2e8f0" stroke-width="1"></line>
-                            <line x1="50" y1="50" x2="15" y2="70" stroke="#e2e8f0" stroke-width="1"></line>
+                    <div class="flex flex-col h-full justify-between">
+                        <div class="space-y-1">
+                            ${diagnosticRows}
+                        </div>
 
-                            <!-- Data Polygon -->
-                            <polygon points="${points}" fill="rgba(26, 62, 106, 0.2)" stroke="#1a3e6a" stroke-width="2"></polygon>
-                            <!-- Dots -->
-                            <circle cx="${points.split(' ')[0].split(',')[0]}" cy="${points.split(' ')[0].split(',')[1]}" r="2" fill="#16a34a"></circle>
-                            <circle cx="${points.split(' ')[1].split(',')[0]}" cy="${points.split(' ')[1].split(',')[1]}" r="2" fill="#1a3e6a"></circle>
-                            <circle cx="${points.split(' ')[2].split(',')[0]}" cy="${points.split(' ')[2].split(',')[1]}" r="2" fill="#ffb703"></circle>
-                        </svg>
-                    </div>
-
-                    <div class="space-y-1">
-                        ${diagnosticRows}
-                    </div>
-
-                    <div class="mt-3 pt-3 border-t border-slate-50 text-[10px] text-slate-400 italic">
-                        <span class="font-bold text-cbse-blue">Expert Insight:</span> Based on your Foundation (Simple) scores, focus on <span class="font-bold text-slate-600">${globalWeakestSection}</span> to improve your Class ${grade} mastery profile.
+                        <div class="mt-2 pt-2 border-t border-slate-50 text-[9px] text-slate-400 italic">
+                            <span class="font-bold text-cbse-blue">Expert Insight:</span> Focus on <span class="font-bold text-slate-600">${globalWeakestSection}</span> to improve mastery.
+                        </div>
                     </div>
                 `;
 
