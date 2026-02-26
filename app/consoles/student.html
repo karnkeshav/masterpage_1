@@ -119,6 +119,10 @@
                 // Update Total Chapters and Radial Chart
                 document.getElementById("stat-total").textContent = totalChapters;
 
+                // Update Total Attempts (in Average Mastery Card)
+                const attemptsEl = document.getElementById("stat-attempts-count");
+                if(attemptsEl) attemptsEl.textContent = snapshot.size;
+
                 if (snapshot.empty) {
                      renderZeroState(curriculumCounts, totalChapters);
                      document.getElementById("hub-sync-status").classList.add("hidden");
@@ -256,6 +260,12 @@
                 const avg = Math.round(totalScoreSum / snapshot.size);
                 document.getElementById("stat-avg").textContent = `${avg}%`;
 
+                // Update Radial Donut
+                const avgRadial = document.getElementById("stat-avg-radial");
+                if (avgRadial) {
+                    avgRadial.setAttribute("stroke-dasharray", `${avg}, 100`);
+                }
+
                 // --- NEW: Subject-Based Tier Logic ---
                 const masteryCounts = {
                     "Mathematics": { "Advanced": new Set(), "Medium": new Set() },
@@ -286,9 +296,9 @@
                 let standardCount = 0;
 
                 const tierConfig = [
-                    { key: "Mathematics", label: "M", bgClass: "bg-blue-50 border-blue-100", colorClass: "text-success-green" },
-                    { key: "Science", label: "S", bgClass: "bg-purple-50 border-purple-100", colorClass: "text-cbse-blue" },
-                    { key: "Social Science", label: "SS", bgClass: "bg-amber-50 border-amber-100", colorClass: "text-accent-gold" }
+                    { key: "Mathematics", label: "M", icon: "fa-calculator", bgClass: "bg-blue-50 border-blue-100 text-blue-700" },
+                    { key: "Science", label: "S", icon: "fa-flask", bgClass: "bg-purple-50 border-purple-100 text-purple-700" },
+                    { key: "Social Science", label: "SS", icon: "fa-landmark", bgClass: "bg-amber-50 border-amber-100 text-amber-700" }
                 ];
 
                 const tiersHtml = tierConfig.map(config => {
@@ -306,11 +316,14 @@
                         standardCount++;
                     }
 
-                    // Boxes now use fixed subject backgrounds but dynamic tier letters
+                    // Box Style Sync with Total Chapters + Tier Letter
                     return `
-                        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${config.bgClass} shadow-sm" title="${sub}">
-                            <span class="text-[10px] font-bold ${config.colorClass}">${config.label}</span>
-                            <span class="text-[10px] font-black ${config.colorClass}">${shortTier}</span>
+                        <div class="px-2 py-1 rounded text-[10px] font-bold text-center border ${config.bgClass} flex items-center gap-1.5 min-w-[80px] justify-between shadow-sm" title="${sub}">
+                            <div class="flex items-center gap-1">
+                                <i class="fas ${config.icon}"></i>
+                                <span>${config.label}:</span>
+                            </div>
+                            <span class="font-black text-slate-900">${shortTier}</span>
                         </div>
                     `;
                 }).join("");
@@ -334,6 +347,18 @@
                 if (badgeEl) {
                     badgeEl.textContent = globalBadgeText;
                     badgeEl.className = `px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${globalBadgeClass}`;
+                }
+
+                // Update Journey Line
+                const journeyBar = document.getElementById("journey-progress");
+                if (journeyBar) {
+                    let progress = "15%"; // Foundational default
+                    if (globalBadgeText.includes("Challenger")) progress = "100%";
+                    else if (globalBadgeText.includes("Standard")) progress = "50%";
+
+                    // Or map purely by avg score? Request implies "where the student currently stands".
+                    // Global Badge is the safest logic given the labels F, S, C.
+                    journeyBar.style.width = progress;
                 }
 
                 // 4. Subject Mastery Meters
@@ -496,7 +521,72 @@
 
         <!-- Stats Row -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <!-- Total Volume -->
+            <!-- Card 1: Avg Mastery (The Mastery Command) -->
+            <div class="glass-panel p-6 rounded-3xl relative flex flex-col justify-between">
+                <div id="hub-sync-status" class="absolute top-4 right-4 flex items-center gap-2 hidden">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
+                    <span class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Syncing Hub...</span>
+                </div>
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-3">Average Mastery</div>
+
+                <div class="flex items-center justify-between mb-4">
+                    <!-- Radial Progress Donut -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-20 h-20 flex items-center justify-center">
+                            <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
+                                <path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+                                <path id="stat-avg-radial" class="text-cbse-blue transition-all duration-1000 ease-out" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+                            </svg>
+                            <div id="stat-avg" class="absolute text-sm font-black text-cbse-blue">--%</div>
+                        </div>
+                        <div class="text-[10px] font-bold text-slate-400 mt-2"><span id="stat-attempts-count">--</span> Total Attempts</div>
+                    </div>
+
+                    <!-- Badge & Tiers Details -->
+                    <div class="flex flex-col items-end gap-2">
+                        <!-- Global Badge -->
+                        <div id="global-badge-container">
+                            <span id="global-badge" class="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border border-slate-200">
+                                Foundational
+                            </span>
+                        </div>
+                        <!-- Subject Tiers -->
+                        <div id="subject-tiers-container" class="flex flex-col gap-1.5 items-end">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Journey Line -->
+                <div class="relative pt-2">
+                    <div class="h-1 bg-slate-100 rounded-full w-full relative">
+                        <div id="journey-progress" class="h-full bg-accent-gold rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        <!-- Indicators -->
+                        <div class="absolute top-1/2 -translate-y-1/2 left-0 w-2 h-2 bg-slate-300 rounded-full border-2 border-white"></div>
+                        <div class="absolute top-1/2 -translate-y-1/2 left-1/2 w-2 h-2 bg-slate-300 rounded-full border-2 border-white"></div>
+                        <div class="absolute top-1/2 -translate-y-1/2 right-0 w-2 h-2 bg-slate-300 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div class="flex justify-between text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                        <span>Foundational</span>
+                        <span>Standard</span>
+                        <span>Challenger</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Subject Mastery (Expertise Radar) -->
+            <div class="glass-panel p-6 rounded-3xl">
+                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-3">Subject Mastery</div>
+                <div id="subject-mastery-container">
+                    <div class="animate-pulse space-y-3">
+                        <div class="h-2 bg-slate-200 rounded w-full"></div>
+                        <div class="h-2 bg-slate-200 rounded w-3/4"></div>
+                        <div class="h-2 bg-slate-200 rounded w-5/6"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Total Chapters (The Coverage/Progress) -->
             <div class="glass-panel p-6 rounded-3xl relative">
                 <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Total Chapters</div>
                 <div class="flex items-center gap-4 mb-3">
@@ -546,39 +636,10 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Avg Mastery -->
-            <div class="glass-panel p-6 rounded-3xl relative">
-                <div id="hub-sync-status" class="absolute top-4 right-4 flex items-center gap-2 hidden">
-                    <span class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
-                    <span class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Syncing Hub...</span>
-                </div>
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Average Mastery</div>
-                <div id="stat-avg" class="text-4xl font-black text-cbse-blue mb-2">--%</div>
-
-                <!-- Global Badge -->
-                <div id="global-badge-container" class="mb-3">
-                    <span id="global-badge" class="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border border-slate-200">
-                        Foundational
-                    </span>
-                </div>
-
-                <!-- Subject Tiers -->
-                <div id="subject-tiers-container" class="flex flex-wrap gap-2">
-                    <!-- Injected via JS -->
-                </div>
-            </div>
-
-            <!-- Subject Mastery Meters -->
-            <div class="glass-panel p-6 rounded-3xl">
-                <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-3">Subject Mastery</div>
-                <div id="subject-mastery-container">
-                    <div class="animate-pulse space-y-3">
-                        <div class="h-2 bg-slate-200 rounded w-full"></div>
-                        <div class="h-2 bg-slate-200 rounded w-3/4"></div>
-                        <div class="h-2 bg-slate-200 rounded w-5/6"></div>
-                    </div>
+                <!-- Mastery Goal Text -->
+                <div class="mt-4 pt-4 border-t border-slate-50 text-center">
+                    <p class="text-[10px] text-slate-400 font-medium">Target: <span class="font-bold text-slate-600">95% score</span> to master any subject tier.</p>
                 </div>
             </div>
         </div>
