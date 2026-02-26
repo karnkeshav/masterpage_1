@@ -182,6 +182,7 @@
             const chapter = params.get('chapter') || 'Polynomials';
             const grade = params.get('grade') || '9';
 
+            // 1. Standardize Slug Construction
             const cleanSubject = subject.toLowerCase();
             const rawChapter = chapter.toLowerCase().replace(/[^\w\s]/gi, '');
             const words = rawChapter.trim().split(/\s+/);
@@ -192,7 +193,7 @@
 
             const cleanSlug = `${cleanSubject}_${chapterSegment}_${grade}_quiz`;
 
-            // Redirect with Topic, Difficulty, Grade, Subject, and Clean Name
+            // 2. Redirect with full metadata for quiz-engine.js
             const url = `quiz-engine.html?topic=${encodeURIComponent(cleanSlug)}` +
                         `&difficulty=${difficulty}` +
                         `&grade=${grade}` +
