@@ -278,9 +278,9 @@
                 let standardCount = 0;
 
                 const tierConfig = [
-                    { key: "Mathematics", label: "M" },
-                    { key: "Science", label: "S" },
-                    { key: "Social Science", label: "SS" }
+                    { key: "Mathematics", label: "M", colorClass: "text-success-green" },
+                    { key: "Science", label: "S", colorClass: "text-cbse-blue" },
+                    { key: "Social Science", label: "SS", colorClass: "text-accent-gold" }
                 ];
 
                 const tiersHtml = tierConfig.map(config => {
@@ -289,26 +289,21 @@
                     const advCount = masteryCounts[sub]["Advanced"].size;
                     const medCount = masteryCounts[sub]["Medium"].size;
 
-                    let tier = "Foundational";
-                    let tierClass = "text-slate-400 bg-slate-50 border-slate-100";
                     let shortTier = "F";
 
                     if (advCount > (0.30 * total)) {
-                        tier = "Challenger";
-                        tierClass = "text-amber-600 bg-amber-50 border-amber-100";
                         shortTier = "C";
                         challengerCount++;
                     } else if (medCount > (0.40 * total)) {
-                        tier = "Standard";
-                        tierClass = "text-blue-600 bg-blue-50 border-blue-100";
                         shortTier = "S";
                         standardCount++;
                     }
 
+                    // Task 1 & 2: Specific Color Alignment and Tier Letter Injection
                     return `
-                        <div class="flex items-center gap-1 px-2 py-1 rounded border ${tierClass}" title="${sub}: ${tier}">
-                            <span class="text-[10px] font-bold opacity-60">${config.label}:</span>
-                            <span class="text-[10px] font-black">${shortTier}</span>
+                        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-slate-100 shadow-sm">
+                            <span class="text-[10px] font-bold ${config.colorClass}">${config.label}</span>
+                            <span class="text-[10px] font-black ${config.colorClass}">${shortTier}</span>
                         </div>
                     `;
                 }).join("");
