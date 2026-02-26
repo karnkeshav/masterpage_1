@@ -159,7 +159,7 @@
                 if (!topic) return;
 
                 const { subject, chapterName } = getSubjectContext(topic);
-                const score = data.score || 0;
+                const score = (data.percentage !== undefined) ? data.percentage : ((data.score_percent !== undefined) ? data.score_percent : (data.score || 0));
                 const difficulty = (data.difficulty || 'simple').toLowerCase();
 
                 if (!subjectScores[subject]) {
@@ -170,7 +170,9 @@
                 }
 
                 (data.mistakes || []).forEach(m => {
-                    const type = getQuestionType(m.id);
+                    const mId = m.id || m.question_id || "";
+                    if (!mId) return;
+                    const type = getQuestionType(mId);
                     state.proficiency[type].mistakes++;
                 });
 
@@ -198,16 +200,21 @@
 
                 attempts.forEach(att => {
                     att.mistakes.forEach(m => {
-                        if (!allMistakes.has(m.id)) {
-                            allMistakes.set(m.id, { id: m.id, text: m.question, type: getQuestionType(m.id), dates: [], topic: topic });
+                        const mId = m.id || m.question_id || "";
+                        if (!mId) return;
+                        if (!allMistakes.has(mId)) {
+                            allMistakes.set(mId, { id: mId, text: m.question, type: getQuestionType(mId), dates: [], topic: topic });
                         }
-                        allMistakes.get(m.id).dates.push(att.timestamp);
+                        allMistakes.get(mId).dates.push(att.timestamp);
                     });
                 });
 
-                const latestMistakeIds = new Set(attempts[0].mistakes.map(m => m.id));
+                const latestMistakeIds = new Set(attempts[0].mistakes.map(m => m.id || m.question_id || "").filter(id => id));
                 const previousMistakeIds = new Set();
-                attempts.slice(1).forEach(att => att.mistakes.forEach(m => previousMistakeIds.add(m.id)));
+                attempts.slice(1).forEach(att => att.mistakes.forEach(m => {
+                    const id = m.id || m.question_id || "";
+                    if (id) previousMistakeIds.add(id);
+                }));
 
                 allMistakes.forEach((data, id) => {
                     if (previousMistakeIds.has(id) && !latestMistakeIds.has(id)) {
@@ -356,7 +363,6 @@
             const theme = THEMES[subject] || THEMES["General"];
             const fChapters = Object.keys(state.friction[subject] || {}).length;
             const vChapters = Object.keys(state.victory[subject] || {}).length;
-            if (fChapters === 0 && vChapters === 0) return '';
 
             return `
                 <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm transition group">
@@ -402,7 +408,7 @@
             let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
             names.forEach(ch => {
                 const count = chapters[ch].length;
-                const escapedCh = ch.replace(/'/g, "\\'"); 
+                const escapedCh = ch.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 html += `
                     <div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item"
                          onmouseenter="inspectChapter('${subject}', '${escapedCh}', '${type}')"
