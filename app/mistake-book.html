@@ -479,8 +479,8 @@
                 const count = chapters[ch].length;
                 html += `
                     <div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item"
-                         onmouseenter="inspectChapter('${subject}', '${ch}', '${type}')"
-                         onclick="inspectChapter('${subject}', '${ch}', '${type}', true)">
+                         onmouseenter="inspectChapter('${subject}', '${ch.replace(/'/g, "\\'") }', '${type}')" 
+                         onclick="inspectChapter('${subject}', '${ch.replace(/'/g, "\\'") }', '${type}', true)">
                         <span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue transition">${ch}</span>
                         <span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded group-hover/item:bg-white group-hover/item:shadow-sm transition">${count}</span>
                     </div>
