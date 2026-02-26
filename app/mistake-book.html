@@ -241,12 +241,12 @@
         }
 
         function renderDrillDown(container) {
-            const subjects = ["Mathematics", "Science", "Social Science"];
-
+            const subjects = ["Mathematics", "Science", "Social Science", "General"]; // Added General fallback
+            let hasContent = false;
             let html = `<div class="space-y-6">`;
 
             subjects.forEach(subject => {
-                const theme = THEMES[subject] || THEMES["Science"]; // Default
+                const theme = THEMES[subject] || THEMES["Science"]; // Default style
                 const frictionData = state.friction[subject] || {};
                 const victoryData = state.victory[subject] || {};
 
@@ -256,15 +256,17 @@
 
                 if (frictionCount === 0 && victoryCount === 0) return; // Skip empty subjects
 
+                hasContent = true;
+
                 html += `
                     <!-- Level 1: Subject Panel -->
-                    <div class="${theme.bg} rounded-3xl border ${theme.border} overflow-hidden">
+                    <div class="${theme.bg || 'bg-slate-50'} rounded-3xl border ${theme.border || 'border-slate-200'} overflow-hidden">
                         <div class="p-6 flex items-center justify-between">
                             <div class="flex items-center space-x-4">
-                                <div class="w-12 h-12 rounded-2xl bg-white text-xl flex items-center justify-center shadow-sm ${theme.text}">
-                                    <i class="fas ${theme.icon}"></i>
+                                <div class="w-12 h-12 rounded-2xl bg-white text-xl flex items-center justify-center shadow-sm ${theme.text || 'text-slate-700'}">
+                                    <i class="fas ${theme.icon || 'fa-cubes'}"></i>
                                 </div>
-                                <h3 class="text-xl font-black ${theme.text}">${subject}</h3>
+                                <h3 class="text-xl font-black ${theme.text || 'text-slate-700'}">${subject}</h3>
                             </div>
                             <div class="flex space-x-2 text-[10px] font-bold uppercase tracking-wide opacity-70">
                                 <span>${frictionCount} Issues</span>
@@ -303,7 +305,12 @@
             });
 
             html += `</div>`;
-            container.innerHTML = html;
+
+            if (!hasContent) {
+                renderEmptyState(container);
+            } else {
+                container.innerHTML = html;
+            }
         }
 
         // Expose to window for onclick
