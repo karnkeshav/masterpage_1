@@ -163,7 +163,7 @@
 
         function createCard(level, subtitle, bg, border, text, icon, ctx) {
             return `
-                <button onclick="launchQuiz('${level}', '${ctx.subject}', '${ctx.chapter}', '${ctx.grade}')"
+                <button onclick="launchQuiz('${level}')"
                     class="w-full p-4 ${bg} border-2 ${border} rounded-2xl hover:scale-[1.02] active:scale-95 transition-all group text-left flex items-center gap-4 shadow-sm">
                     <span class="w-12 h-12 rounded-xl bg-white/50 ${text} flex items-center justify-center text-2xl shadow-sm">${icon}</span>
                     <div>
@@ -176,13 +176,36 @@
         }
 
         // Expose launch function globally for the HTML onclick
-        window.launchQuiz = (difficulty, subject, chapter, grade) => {
-            // Slug Formula: ${subject.toLowerCase()}_${chapter.toLowerCase().replace(/\s+/g, '_')}_${grade}_quiz
-            const cleanSubject = subject.toLowerCase();
-            const cleanChapter = chapter.toLowerCase().replace(/\s+/g, '_');
-            const cleanSlug = `${cleanSubject}_${cleanChapter}_${grade}_quiz`;
+        window.launchQuiz = (difficulty) => {
+            const params = new URLSearchParams(window.location.search);
+            const subject = params.get('subject') || 'Mathematics';
+            const chapter = params.get('chapter') || 'Polynomials';
+            const grade = params.get('grade') || '9';
 
-            const url = `../quiz/quiz-engine.html?topic=${encodeURIComponent(cleanSlug)}&difficulty=${difficulty}&grade=${grade}`;
+            // 1. Clean Subject
+            const cleanSubject = subject.toLowerCase();
+
+            // 2. Clean Chapter: Lowercase + Remove special chars except spaces
+            const rawChapter = chapter.toLowerCase().replace(/[^\w\s]/gi, '');
+
+            // 3. Apply Duplication Rule
+            const words = rawChapter.trim().split(/\s+/);
+            let chapterSegment = '';
+
+            if (words.length === 1 && words[0]) {
+                // Single Word -> Duplicate (e.g., polynomials_polynomials)
+                chapterSegment = `${words[0]}_${words[0]}`;
+            } else {
+                // Multiple Words -> Join with underscores (e.g., real_numbers)
+                chapterSegment = words.join('_');
+            }
+
+            // 4. Construct Slug
+            // Format: ${subject}_${chapterSegment}_${grade}_quiz
+            const cleanSlug = `${cleanSubject}_${chapterSegment}_${grade}_quiz`;
+
+            // 5. Launch (Fix Path Error: Use relative path without ../quiz/)
+            const url = `quiz-engine.html?topic=${encodeURIComponent(cleanSlug)}&difficulty=${difficulty}&grade=${grade}`;
             window.location.href = url;
         };
     </script>
