@@ -190,13 +190,13 @@
 
                 const latestAttemptDate = attempts[0].date;
 
-                // 1. Persistent Friction: Missed on >= 2 distinct dates
+                // 1. Persistent Friction: Missed on >= 1 distinct date (Updated per request)
                 Object.entries(misses).forEach(([qId, datesSet]) => {
-                    if (datesSet.size >= 2) {
+                    if (datesSet.size >= 1) {
                         addToState('friction', subject, chapterName, {
                             id: qId,
                             text: questionData[qId].text,
-                            dates: Array.from(datesSet).sort(),
+                            dates: Array.from(datesSet).sort((a,b) => new Date(b) - new Date(a)), // Sort descending
                             topic: topic
                         });
                     }
