@@ -182,30 +182,22 @@
             const chapter = params.get('chapter') || 'Polynomials';
             const grade = params.get('grade') || '9';
 
-            // 1. Clean Subject
             const cleanSubject = subject.toLowerCase();
-
-            // 2. Clean Chapter: Lowercase + Remove special chars except spaces
             const rawChapter = chapter.toLowerCase().replace(/[^\w\s]/gi, '');
-
-            // 3. Apply First_Last Rule
             const words = rawChapter.trim().split(/\s+/);
-            let chapterSegment = '';
 
-            if (words.length === 1 && words[0]) {
-                // Single Word -> Duplicate (e.g., polynomials_polynomials)
-                chapterSegment = `${words[0]}_${words[0]}`;
-            } else if (words.length >= 2) {
-                // Multiple Words -> First_Last (e.g., real_numbers, surface_volumes)
-                chapterSegment = `${words[0]}_${words[words.length - 1]}`;
-            }
+            let chapterSegment = words.length >= 2
+                ? `${words[0]}_${words[words.length - 1]}`
+                : `${words[0]}_${words[0]}`;
 
-            // 4. Construct Slug
-            // Format: ${subject}_${chapterSegment}_${grade}_quiz
             const cleanSlug = `${cleanSubject}_${chapterSegment}_${grade}_quiz`;
 
-            // 5. Launch (Fix Path Error: Use relative path without ../quiz/)
-            const url = `quiz-engine.html?topic=${encodeURIComponent(cleanSlug)}&difficulty=${difficulty}&grade=${grade}`;
+            // Redirect with Topic, Difficulty, Grade, Subject, and Clean Name
+            const url = `quiz-engine.html?topic=${encodeURIComponent(cleanSlug)}` +
+                        `&difficulty=${difficulty}` +
+                        `&grade=${grade}` +
+                        `&subject=${encodeURIComponent(subject)}` +
+                        `&chapter_name=${encodeURIComponent(chapter)}`;
             window.location.href = url;
         };
     </script>
