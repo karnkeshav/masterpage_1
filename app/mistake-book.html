@@ -453,42 +453,41 @@
         }
 
         // --- Window Handlers ---
-        window.toggleList = (subject, type) => {
-            const container = document.getElementById(`list-${subject}`);
-            // Hide others? Optional.
+window.toggleList = (subject, type) => {
+    const container = document.getElementById(`list-${subject}`);
+    const chapters = state[type][subject] || {};
+    const names = Object.keys(chapters).sort();
 
-            // Render content
-            const chapters = state[type][subject] || {};
-            const names = Object.keys(chapters).sort();
+    if (container.dataset.type === type && !container.classList.contains('hidden')) {
+        container.classList.add('hidden');
+        return;
+    }
 
-            if (container.dataset.type === type && !container.classList.contains('hidden')) {
-                container.classList.add('hidden');
-                return;
-            }
+    container.dataset.type = type;
+    container.classList.remove('hidden');
 
-            container.dataset.type = type;
-            container.classList.remove('hidden');
+    if (names.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`;
+        return;
+    }
 
-            if (names.length === 0) {
-                container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`;
-                return;
-            }
-
-            let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
-            names.forEach(ch => {
-                const count = chapters[ch].length;
-                html += `
-                    <div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item"
-                         onmouseenter="inspectChapter('${subject}', '${ch.replace(/'/g, "\\'") }', '${type}')" 
-                         onclick="inspectChapter('${subject}', '${ch.replace(/'/g, "\\'") }', '${type}', true)">
-                        <span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue transition">${ch}</span>
-                        <span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded group-hover/item:bg-white group-hover/item:shadow-sm transition">${count}</span>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-            container.innerHTML = html;
-        };
+    let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
+    names.forEach(ch => {
+        const count = chapters[ch].length;
+        // Escape apostrophes for safe usage in inline JS handlers
+        const escapedCh = ch.replace(/'/g, "\\'"); 
+        html += `
+            <div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item"
+                 onmouseenter="inspectChapter('${subject}', '${escapedCh}', '${type}')"
+                 onclick="inspectChapter('${subject}', '${escapedCh}', '${type}', true)">
+                <span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue transition">${ch}</span>
+                <span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded group-hover/item:bg-white group-hover/item:shadow-sm transition">${count}</span>
+            </div>
+        `;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
+};
 
         window.inspectChapter = (subject, chapter, type, isClick = false) => {
             const mistakes = state[type][subject][chapter];
@@ -570,15 +569,15 @@
         }
 
         // Init
-        initializeAuthListener(async (user) => {
-            if (user) {
-                const displayName = user.displayName || "Scholar";
-                document.getElementById("user-welcome").textContent = displayName;
-                await loadMistakeBook(user);
-            } else {
-                window.location.href = "../index.html";
-            }
-        });
+initializeAuthListener(async (user) => {
+    if (user) {
+        const displayName = user.displayName || "Scholar";
+        document.getElementById("user-welcome").textContent = displayName;
+        await init(user); // Corrected function name
+    } else {
+        window.location.href = "../index.html";
+    }
+});
     </script>
 </head>
 <body class="bg-cbse-light min-h-screen flex flex-col">
