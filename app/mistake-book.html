@@ -29,11 +29,6 @@
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Drill-down Styles */
-        details > summary { list-style: none; cursor: pointer; }
-        details > summary::-webkit-details-marker { display: none; }
-        details[open] > summary .fa-chevron-right { transform: rotate(90deg); }
-        .category-btn.active { ring: 2px solid currentColor; ring-offset: 2px; }
     </style>
 
     <script src="../js/firebase-master-config.js"></script>
@@ -46,384 +41,328 @@
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { cleanKatexMarkers } from "../js/utils.js";
         import * as UI from "../js/ui-renderer.js";
+        import { SlugEngine } from "../js/slug-engine.js";
         import { loadCurriculum } from "../js/curriculum/loader.js";
 
         UI.injectStyles();
         bindConsoleLogout("logout-nav-btn", "../index.html");
 
-        let currentGrade = "9";
-        let curriculumData = {};
+        let slugEngine;
+        let userGrade = "9"; // Default
 
-        // State for Drill-Down
-        const state = {
-            friction: {}, // { Subject: { Chapter: [Questions] } }
-            victory: {}   // { Subject: { Chapter: [Questions] } }
-        };
-
-        const THEMES = {
-            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator" },
-            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask" },
-            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark" }
-        };
-
-        async function init(user) {
+        async function loadMistakeBook(user) {
             const container = document.getElementById("mistakes-container");
-            UI.showSkeleton(container);
+            UI.showSkeleton(container); // While loading
 
             try {
-                // 1. Load User & Curriculum
-                const profile = await ensureUserInFirestore(user);
-                currentGrade = profile?.classId || "9";
-                document.getElementById("context-badge").textContent = `Grade ${currentGrade}`;
-
-                curriculumData = await loadCurriculum(currentGrade);
-
-                // 2. Fetch Data
                 const { db } = await getInitializedClients();
 
-                const [scoresSnap, mistakesSnap] = await Promise.all([
-                    getDocs(query(collection(db, "quiz_scores"), where("user_id", "==", user.uid), orderBy("timestamp", "desc"))),
-                    getDocs(query(collection(db, "mistake_notebook"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")))
+                // 1. Fetch User Data & Curriculum
+                const profile = await ensureUserInFirestore(user);
+                userGrade = profile?.classId || "9";
+                document.getElementById("context-badge").textContent = `Grade ${userGrade}`;
+
+                const curriculum = await loadCurriculum(userGrade);
+                slugEngine = new SlugEngine(curriculum);
+
+                // 2. Fetch Data (Parallel)
+                const mistakesQ = query(
+                    collection(db, "mistake_notebook"),
+                    where("user_id", "==", user.uid),
+                    orderBy("timestamp", "desc")
+                );
+
+                const scoresQ = query(
+                    collection(db, "quiz_scores"),
+                    where("user_id", "==", user.uid),
+                    orderBy("timestamp", "desc")
+                );
+
+                const [mistakesSnap, scoresSnap] = await Promise.all([
+                    getDocs(mistakesQ),
+                    getDocs(scoresQ)
                 ]);
 
-                if (scoresSnap.empty && mistakesSnap.empty) {
+                if (mistakesSnap.empty && scoresSnap.empty) {
                     renderEmptyState(container);
                     return;
                 }
 
-                // 3. Process Data
-                processData(scoresSnap.docs, mistakesSnap.docs);
+                const allMistakes = mistakesSnap.docs.map(d => ({...d.data(), id: d.id})); // Doc ID not question ID
+                const allScores = scoresSnap.docs.map(d => ({...d.data(), id: d.id}));
 
-                // 4. Render UI
-                renderDrillDown(container);
+                renderDashboard(container, allMistakes, allScores);
 
             } catch (e) {
-                console.error("Diagnostic Load Error:", e);
-                container.innerHTML = `<div class="text-center text-red-500 font-bold p-8">System Error. Please refresh.</div>`;
+                console.error("Mistake Book Error:", e);
+                container.innerHTML = `<div class="text-center text-red-500 font-bold p-8">Failed to load data. Please refresh.</div>`;
             }
         }
-
-        function processData(scoreDocs, mistakeDocs) {
-            // Helper: Get Subject & Chapter Name from Slug
-            const getContext = (slug) => {
-                const s = slug.toLowerCase();
-                let subject = "General";
-                let chapterName = slug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()); // Fallback
-
-                // Traverse Curriculum
-                for (const [subj, sections] of Object.entries(curriculumData)) {
-                    for (const [sec, chapters] of Object.entries(sections)) {
-                        for (const ch of chapters) {
-                            const title = ch.chapter_title.toLowerCase();
-                            // Fuzzy match: check if slug contains title or title contains slug parts
-                            if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
-                                subject = subj;
-                                chapterName = ch.chapter_title;
-                                return { subject, chapterName };
-                            }
-                        }
-                    }
-                }
-
-                // Fallback inference
-                if (s.includes("math")) subject = "Mathematics";
-                else if (s.includes("science")) subject = "Science";
-                else if (s.includes("social")) subject = "Social Science";
-
-                return { subject, chapterName };
-            };
-
-            // Group by Topic
-            const topicHistory = {}; // { topic: { attempts: [], mistakes: {} } }
-
-            // A. Map Scores (Attempts)
-            scoreDocs.forEach(d => {
-                const data = d.data();
-                const topic = data.topic || data.topicSlug;
-                if (!topic) return;
-
-                if (!topicHistory[topic]) topicHistory[topic] = { attempts: [], mistakesByDate: {} };
-
-                // Track distinct dates (by day)
-                const date = data.timestamp ? data.timestamp.toDate().toDateString() : "Unknown";
-                const fullDate = data.timestamp ? data.timestamp.toDate() : new Date();
-
-                // Only add if not duplicate attempt on same exact timestamp
-                // Using timestamp as unique ID for attempt
-                topicHistory[topic].attempts.push({
-                    date: date,
-                    ts: fullDate.getTime(),
-                    score: data.score
-                });
-            });
-
-            // B. Map Mistakes
-            // Need to map question ID to dates missed
-            const questionMisses = {}; // { topic: { qId: [dates] } }
-            const questionData = {};   // { qId: { text, ... } }
-
-            mistakeDocs.forEach(d => {
-                const data = d.data();
-                const topic = data.topic || data.chapter_slug;
-                if (!topic) return;
-
-                const date = data.timestamp ? data.timestamp.toDate().toDateString() : "Unknown";
-
-                if (!questionMisses[topic]) questionMisses[topic] = {};
-
-                data.mistakes.forEach(m => {
-                    if (!questionMisses[topic][m.id]) questionMisses[topic][m.id] = new Set();
-                    questionMisses[topic][m.id].add(date);
-
-                    // Store latest question data
-                    questionData[m.id] = {
-                        text: m.question,
-                        topic: topic
-                    };
-                });
-            });
-
-            // C. Analyze per Topic
-            Object.keys(topicHistory).forEach(topic => {
-                const { subject, chapterName } = getContext(topic);
-                const misses = questionMisses[topic] || {};
-
-                // Sort attempts desc
-                const attempts = topicHistory[topic].attempts.sort((a,b) => b.ts - a.ts);
-                if (attempts.length === 0) return;
-
-                const latestAttemptDate = attempts[0].date;
-
-                // 1. Persistent Friction: Missed on >= 2 distinct dates
-                Object.entries(misses).forEach(([qId, datesSet]) => {
-                    if (datesSet.size >= 2) {
-                        addToState('friction', subject, chapterName, {
-                            id: qId,
-                            text: questionData[qId].text,
-                            dates: Array.from(datesSet).sort(),
-                            topic: topic
-                        });
-                    }
-                });
-
-                // 2. Victory Gallery: Missed in past, NOT in latest attempt
-                // Find IDs missed in previous attempts
-                const previousMissedIds = new Set();
-                Object.entries(misses).forEach(([qId, datesSet]) => {
-                    // check if any date is BEFORE latest attempt date
-                    // Or simpler: if it's NOT in the latest attempt's mistakes?
-                    // But wait, if latest attempt had mistakes, they are in `misses`.
-                    // So if `datesSet` DOES NOT contain `latestAttemptDate`?
-                    // Caveat: If user took 2 attempts today, `date` string matches.
-                    // We should use `ts` or assume distinct days. The requirement says "distinct attempts (on different dates)".
-                    // So we stick to date string.
-
-                    if (!datesSet.has(latestAttemptDate)) {
-                        // It wasn't missed today/latest. Was it missed before?
-                        // Yes, it's in `misses`.
-                        // Does latest attempt cover this topic? Yes, we are iterating `topicHistory`.
-                        // So we assume it's a Victory.
-                        addToState('victory', subject, chapterName, {
-                            id: qId,
-                            text: questionData[qId].text,
-                            masteryDate: latestAttemptDate,
-                            topic: topic
-                        });
-                    }
-                });
-            });
-        }
-
-        function addToState(type, subject, chapter, item) {
-            if (!state[type][subject]) state[type][subject] = {};
-            if (!state[type][subject][chapter]) state[type][subject][chapter] = [];
-            state[type][subject][chapter].push(item);
-        }
-
-        function renderDrillDown(container) {
-            const subjects = ["Mathematics", "Science", "Social Science", "General"]; // Added General fallback
-            let hasContent = false;
-            let html = `<div class="space-y-6">`;
-
-            subjects.forEach(subject => {
-                const theme = THEMES[subject] || THEMES["Science"]; // Default style
-                const frictionData = state.friction[subject] || {};
-                const victoryData = state.victory[subject] || {};
-
-                // Count totals
-                const frictionCount = Object.values(frictionData).reduce((a, b) => a + b.length, 0);
-                const victoryCount = Object.values(victoryData).reduce((a, b) => a + b.length, 0);
-
-                if (frictionCount === 0 && victoryCount === 0) return; // Skip empty subjects
-
-                hasContent = true;
-
-                html += `
-                    <!-- Level 1: Subject Panel -->
-                    <div class="${theme.bg || 'bg-slate-50'} rounded-3xl border ${theme.border || 'border-slate-200'} overflow-hidden">
-                        <div class="p-6 flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-12 h-12 rounded-2xl bg-white text-xl flex items-center justify-center shadow-sm ${theme.text || 'text-slate-700'}">
-                                    <i class="fas ${theme.icon || 'fa-cubes'}"></i>
-                                </div>
-                                <h3 class="text-xl font-black ${theme.text || 'text-slate-700'}">${subject}</h3>
-                            </div>
-                            <div class="flex space-x-2 text-[10px] font-bold uppercase tracking-wide opacity-70">
-                                <span>${frictionCount} Issues</span>
-                                <span>•</span>
-                                <span>${victoryCount} Mastered</span>
-                            </div>
-                        </div>
-
-                        <!-- Level 2: Categories -->
-                        <div class="px-6 pb-6 grid grid-cols-2 gap-4">
-                            <button onclick="toggleCategory('${subject}', 'friction')" id="btn-${subject}-friction"
-                                class="category-btn bg-white border border-red-100 rounded-xl p-4 text-left hover:shadow-md transition group">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-xs font-black text-red-500 uppercase tracking-widest">Friction</span>
-                                    <span class="w-6 h-6 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xs font-bold group-hover:bg-red-500 group-hover:text-white transition">${frictionCount}</span>
-                                </div>
-                                <div class="text-[10px] text-slate-400 font-medium">Persistent Errors</div>
-                            </button>
-
-                            <button onclick="toggleCategory('${subject}', 'victory')" id="btn-${subject}-victory"
-                                class="category-btn bg-white border border-green-100 rounded-xl p-4 text-left hover:shadow-md transition group">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-xs font-black text-green-500 uppercase tracking-widest">Victory</span>
-                                    <span class="w-6 h-6 rounded-full bg-green-50 text-green-500 flex items-center justify-center text-xs font-bold group-hover:bg-green-500 group-hover:text-white transition">${victoryCount}</span>
-                                </div>
-                                <div class="text-[10px] text-slate-400 font-medium">Recent Mastery</div>
-                            </button>
-                        </div>
-
-                        <!-- Level 3: Chapter List (Container) -->
-                        <div id="list-${subject}" class="hidden bg-white/50 border-t border-black/5">
-                            <!-- Injected via JS -->
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += `</div>`;
-
-            if (!hasContent) {
-                renderEmptyState(container);
-            } else {
-                container.innerHTML = html;
-            }
-        }
-
-        // Expose to window for onclick
-        window.toggleCategory = (subject, type) => {
-            const container = document.getElementById(`list-${subject}`);
-            const btn = document.getElementById(`btn-${subject}-${type}`);
-            const allBtns = document.querySelectorAll(`.category-btn`);
-            const isHidden = container.classList.contains('hidden');
-            const currentType = container.dataset.activeType;
-
-            // Reset UI
-            allBtns.forEach(b => b.classList.remove('ring-2', 'ring-offset-2', 'ring-current'));
-
-            if (!isHidden && currentType === type) {
-                // Toggle Off
-                container.classList.add('hidden');
-                container.dataset.activeType = "";
-            } else {
-                // Show
-                container.classList.remove('hidden');
-                container.dataset.activeType = type;
-                btn.classList.add('ring-2', 'ring-offset-2', 'ring-current');
-                if (type === 'friction') btn.classList.add('text-red-500');
-                else btn.classList.add('text-green-500');
-
-                renderChapterList(subject, type, container);
-            }
-        };
-
-        window.renderChapterList = (subject, type, container) => {
-            const chapters = state[type][subject] || {};
-            const chapterNames = Object.keys(chapters).sort();
-
-            if (chapterNames.length === 0) {
-                container.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs font-bold">No items in this category.</div>`;
-                return;
-            }
-
-            let html = `<div class="divide-y divide-black/5">`;
-
-            chapterNames.forEach(chapter => {
-                const questions = chapters[chapter];
-                const cleanChapter = chapter.replace(/_/g, " "); // Basic cleanup if slug slips through
-
-                html += `
-                    <details class="group/chapter">
-                        <summary class="p-5 flex items-center justify-between hover:bg-white/80 transition cursor-pointer select-none">
-                            <div class="flex items-center space-x-3">
-                                <i class="fas fa-chevron-right text-slate-300 text-xs transition-transform duration-200 group-open/chapter:rotate-90"></i>
-                                <span class="font-bold text-slate-700 text-sm">${cleanChapter}</span>
-                            </div>
-                            <span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-500">${questions.length}</span>
-                        </summary>
-
-                        <!-- Level 4: Question List -->
-                        <div class="px-5 pb-5 space-y-3 bg-slate-50/50">
-                            ${questions.map(q => renderQuestionCard(q, type)).join('')}
-                        </div>
-                    </details>
-                `;
-            });
-
-            html += `</div>`;
-            container.innerHTML = html;
-        };
-
-        window.renderQuestionCard = (q, type) => {
-            const isFriction = type === 'friction';
-            const borderClass = isFriction ? 'border-l-red-500' : 'border-l-green-500';
-            const studyLink = `../study-content.html?grade=${currentGrade}&subject=${encodeURIComponent(state.subject || "Science")}&chapter=${encodeURIComponent(q.topic)}`; // Topic is usually slug
-
-            // Infer subject for link if possible, strictly we only have q.topic (slug)
-            // We can try to extract from state or just rely on slug parsing in study-content
-            // Improved link:
-            // We are inside a subject block, so we know the Subject.
-            // But we need to pass it.
-            // Let's just use the topic slug as is, study-content usually handles slugs.
-
-            return `
-                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 ${borderClass} relative">
-                    <p class="text-sm font-medium text-slate-800 mb-3 leading-relaxed">${cleanKatexMarkers(q.text)}</p>
-
-                    <div class="flex items-center justify-between border-t border-slate-100 pt-3">
-                        ${isFriction ? `
-                            <div class="flex items-center space-x-2 text-[10px] text-red-500 font-bold">
-                                <i class="fas fa-calendar-times"></i>
-                                <span>Missed: ${q.dates.join(', ')}</span>
-                            </div>
-                            <a href="../study-content.html?grade=${currentGrade}&topic=${q.topic}"
-                               class="text-[10px] bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-black hover:bg-red-600 hover:text-white transition uppercase tracking-wide">
-                                Master Concept
-                            </a>
-                        ` : `
-                            <div class="flex items-center space-x-2 text-[10px] text-green-600 font-bold">
-                                <i class="fas fa-calendar-check"></i>
-                                <span>Mastered: ${q.masteryDate}</span>
-                            </div>
-                            <span class="text-[10px] bg-green-50 text-green-600 px-3 py-1.5 rounded-lg font-black uppercase tracking-wide opacity-80">
-                                Recovered
-                            </span>
-                        `}
-                    </div>
-                </div>
-            `;
-        };
 
         function renderEmptyState(container) {
             container.innerHTML = `
                 <div class="glass-panel p-12 rounded-3xl text-center max-w-2xl mx-auto mt-12">
                     <div class="text-6xl mb-6">🎉</div>
-                    <h3 class="text-2xl font-black text-slate-700 mb-2">Diagnostic Clean!</h3>
-                    <p class="text-slate-500 font-medium">No persistent friction points detected.</p>
+                    <h3 class="text-2xl font-black text-slate-700 mb-2">Clean Sheet!</h3>
+                    <p class="text-slate-500 font-medium">No mistakes recorded yet. Start a quiz to populate your diagnostic notebook.</p>
                     <a href="consoles/student.html" class="inline-block mt-6 px-6 py-3 bg-cbse-blue text-white rounded-xl font-bold hover:bg-blue-800 transition">Go to Dashboard</a>
+                </div>
+            `;
+        }
+
+        function renderDashboard(container, allMistakes, allScores) {
+            // Group mistakes by Topic
+            // We need unique topics to iterate.
+            const uniqueTopics = [...new Set([
+                ...allMistakes.map(m => m.topic || m.chapter_slug),
+                ...allScores.map(s => s.topic || s.topicSlug)
+            ])].filter(Boolean);
+
+            // --- Layer 1: Success Shield ---
+            const trafficStats = { mcq: 0, ar: 0, case: 0 };
+            // We'll just count TOTAL mistakes by type as a proxy for "Area of Concern"
+            // Since we don't have total attempts per type easily without parsing all questions.
+
+            let totalFrictionItems = 0;
+            let totalGainsItems = 0;
+            let frictionList = [];
+            let gainsList = [];
+
+            // Process each topic
+            uniqueTopics.forEach(topic => {
+                const analysis = slugEngine.analyzeAttemptHistory(allScores, allMistakes, topic);
+                const ctx = slugEngine.getSubjectContext(topic);
+
+                // Aggregate Friction & Gains
+                if (analysis.friction.length > 0) {
+                    analysis.friction.forEach(item => {
+                        frictionList.push({ ...item, context: ctx, topic: topic });
+                        const type = slugEngine.getQuestionType(item);
+                        if(type.includes("Logic")) trafficStats.ar++;
+                        else if(type.includes("Application")) trafficStats.case++;
+                        else trafficStats.mcq++;
+                    });
+                }
+
+                if (analysis.gains.length > 0) {
+                    analysis.gains.forEach(item => {
+                        gainsList.push({ ...item, context: ctx, topic: topic });
+                    });
+                }
+            });
+
+            totalFrictionItems = frictionList.length;
+            totalGainsItems = gainsList.length;
+
+            let html = `
+                <!-- Layer 1: Success Shield -->
+                <div class="grid md:grid-cols-3 gap-6 mb-8">
+                    <!-- Motivation -->
+                    <div class="col-span-2 glass-panel p-6 rounded-3xl relative overflow-hidden">
+                         <div class="absolute top-0 right-0 w-32 h-32 bg-yellow-100 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
+                         <h3 class="text-lg font-black text-slate-700 mb-2"><i class="fas fa-shield-alt text-cbse-blue mr-2"></i>Remediation Status</h3>
+                         <div class="flex items-center space-x-4">
+                             <div class="text-4xl font-black ${totalGainsItems > 0 ? 'text-success-green' : 'text-slate-300'}">
+                                 ${totalGainsItems > 0 ? `+${totalGainsItems}` : '0'}
+                             </div>
+                             <div class="text-sm font-medium text-slate-500 leading-tight">
+                                 Questions mastered<br>since last attempt.
+                                 ${totalGainsItems > 0 ? '<span class="text-success-green font-bold block">Keep it up! 🚀</span>' : ''}
+                             </div>
+                         </div>
+                    </div>
+
+                    <!-- Skill Traffic Lights -->
+                    <div class="glass-panel p-6 rounded-3xl flex flex-col justify-between">
+                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Error Profile</h4>
+                        <div class="flex justify-between items-end">
+                            ${renderTrafficLight("MCQ", trafficStats.mcq, "Recall")}
+                            ${renderTrafficLight("Logic", trafficStats.ar, "A/R")}
+                            ${renderTrafficLight("App", trafficStats.case, "Case")}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layer 2: Subject Mastery Panels -->
+                <div class="grid md:grid-cols-3 gap-6 mb-8">
+                    ${renderMasteryCard("Mathematics", "bg-blue-50", "text-blue-700", allScores)}
+                    ${renderMasteryCard("Science", "bg-purple-50", "text-purple-700", allScores)}
+                    ${renderMasteryCard("Social Science", "bg-amber-50", "text-amber-700", allScores)}
+                </div>
+
+                <!-- Layer 3: Friction & Growth -->
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Persistent Friction -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-black text-slate-800 text-lg flex items-center">
+                                <span class="w-2 h-8 bg-danger-red rounded-full mr-3"></span>
+                                Persistent Friction
+                            </h3>
+                            <span class="bg-red-100 text-danger-red text-xs font-bold px-2 py-1 rounded-lg">${totalFrictionItems} Issues</span>
+                        </div>
+                        <div class="space-y-4">
+                            ${frictionList.length === 0 ? renderEmptyList("No persistent errors found!") : frictionList.map(item => renderFrictionCard(item)).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Victory Gallery -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-black text-slate-800 text-lg flex items-center">
+                                <span class="w-2 h-8 bg-success-green rounded-full mr-3"></span>
+                                Victory Gallery
+                            </h3>
+                            <span class="bg-green-100 text-success-green text-xs font-bold px-2 py-1 rounded-lg">${totalGainsItems} Wins</span>
+                        </div>
+                        <div class="space-y-4">
+                            ${gainsList.length === 0 ? renderEmptyList("Review more mistakes to see gains here!") : gainsList.map(item => renderVictoryCard(item)).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function renderTrafficLight(label, count, sub) {
+            // Logic: High errors -> Red, Med -> Yellow, Low -> Green
+            // Thresholds are arbitrary for now.
+            let color = "bg-green-500";
+            if (count > 5) color = "bg-red-500";
+            else if (count > 2) color = "bg-yellow-400";
+            else if (count === 0) color = "bg-slate-200"; // No data
+
+            return `
+                <div class="flex flex-col items-center">
+                    <div class="w-3 h-3 rounded-full ${color} mb-2 shadow-[0_0_10px_rgba(0,0,0,0.1)]"></div>
+                    <span class="text-[10px] font-black text-slate-600 uppercase">${label}</span>
+                    <span class="text-[9px] text-slate-400">${count} errs</span>
+                </div>
+            `;
+        }
+
+        function renderMasteryCard(subject, bgClass, textClass, allScores) {
+            // Filter scores for subject
+            const subScores = allScores.filter(s => {
+                const ctx = slugEngine.getSubjectContext(s.topic || s.topicSlug);
+                return ctx.subject === subject;
+            });
+
+            // Calculate Mastery per difficulty
+            const getAvg = (diff) => {
+                const filtered = subScores.filter(s => (s.difficulty || "Simple") === diff);
+                if (!filtered.length) return 0;
+                const total = filtered.reduce((acc, s) => acc + (s.percentage || s.score_percent || 0), 0);
+                return Math.round(total / filtered.length);
+            };
+
+            const simple = getAvg("Simple");
+            const medium = getAvg("Medium");
+            const advanced = getAvg("Advanced");
+
+            // Strength/Weakness (Analyze Simple scores by Section)
+            // Group by Section
+            const sections = {};
+            subScores.filter(s => (s.difficulty || "Simple") === "Simple").forEach(s => {
+                const ctx = slugEngine.getSubjectContext(s.topic || s.topicSlug);
+                if (!sections[ctx.section]) sections[ctx.section] = { total: 0, count: 0 };
+                sections[ctx.section].total += (s.percentage || 0);
+                sections[ctx.section].count++;
+            });
+
+            let strong = "-";
+            let weak = "-";
+            let best = -1;
+            let worst = 101;
+
+            Object.entries(sections).forEach(([sec, data]) => {
+                const avg = data.total / data.count;
+                if (avg > best) { best = avg; strong = sec; }
+                if (avg < worst) { worst = avg; weak = sec; }
+            });
+
+            if (Object.keys(sections).length < 2) { weak = ""; } // Don't show weak if only 1 section
+
+            return `
+                <div class="${bgClass} p-6 rounded-3xl border border-white/50 relative overflow-hidden group hover:shadow-lg transition">
+                    <h4 class="font-black ${textClass} text-lg mb-4">${subject}</h4>
+
+                    <!-- Progress Stairs -->
+                    <div class="flex items-end space-x-2 h-16 mb-4">
+                        <div class="flex-1 flex flex-col justify-end group/bar">
+                             <div class="w-full bg-white/50 rounded-t-lg relative transition-all duration-500 group-hover/bar:bg-white/80" style="height: ${Math.max(20, simple)}%">
+                                 ${simple >= 95 ? '<div class="absolute top-1 right-1 text-[8px] opacity-50">★</div>' : ''}
+                             </div>
+                             <span class="text-[9px] font-bold text-slate-400 mt-1 text-center">Basics</span>
+                        </div>
+                        <div class="flex-1 flex flex-col justify-end group/bar">
+                             <div class="w-full bg-white/40 rounded-t-lg relative transition-all duration-500 group-hover/bar:bg-white/70" style="height: ${Math.max(20, medium)}%"></div>
+                             <span class="text-[9px] font-bold text-slate-400 mt-1 text-center">Standard</span>
+                        </div>
+                        <div class="flex-1 flex flex-col justify-end group/bar">
+                             <div class="w-full bg-white/20 rounded-t-lg relative transition-all duration-500 group-hover/bar:bg-white/60" style="height: ${Math.max(20, advanced)}%"></div>
+                             <span class="text-[9px] font-bold text-slate-400 mt-1 text-center">Elite</span>
+                        </div>
+                    </div>
+
+                    <div class="text-[10px] text-slate-500 font-medium border-t border-black/5 pt-3 flex justify-between">
+                         <span>Strong: <span class="font-bold text-slate-700">${strong}</span></span>
+                         ${weak ? `<span>Focus: <span class="font-bold text-red-400">${weak}</span></span>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFrictionCard(item) {
+            const ctx = item.context;
+            const qType = slugEngine.getQuestionType(item);
+
+            // Generate link to study content
+            // Assuming we can map slug to chapter. Ideally we'd have exact chapter slug.
+            // item.topic is likely the topicSlug used in `study-content.html`.
+            // Check `study-content.html` logic: it takes `grade`, `subject`, `chapter`.
+            // `chapter` param usually expects the chapter title or ID.
+
+            const studyLink = `study-content.html?grade=${userGrade}&subject=${encodeURIComponent(ctx.subject)}&chapter=${encodeURIComponent(ctx.chapterTitle)}`;
+
+            return `
+                <div class="bg-white p-5 rounded-2xl border-l-4 border-danger-red shadow-sm hover:shadow-md transition group relative">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">${ctx.chapterTitle} • ${qType}</span>
+                        <a href="${studyLink}" class="text-[10px] font-bold text-cbse-blue bg-blue-50 px-2 py-1 rounded hover:bg-cbse-blue hover:text-white transition">
+                            <i class="fas fa-microscope mr-1"></i> Research
+                        </a>
+                    </div>
+                    <p class="text-sm font-bold text-slate-800 leading-snug mb-3">${cleanKatexMarkers(item.question)}</p>
+
+                    <div class="p-3 bg-red-50 rounded-lg text-xs border border-red-100 mb-2">
+                        <span class="font-bold text-red-800">Your Answer:</span> <span class="text-red-700">${item.selected}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-medium line-clamp-2">
+                        Correct: ${item.correct}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderVictoryCard(item) {
+            const ctx = item.context;
+            return `
+                <div class="bg-white p-5 rounded-2xl border-l-4 border-success-green shadow-sm hover:shadow-md transition opacity-80 hover:opacity-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">${ctx.chapterTitle}</span>
+                        <span class="text-success-green text-xs font-bold"><i class="fas fa-check-circle"></i> Mastered</span>
+                    </div>
+                    <p class="text-sm font-medium text-slate-600 leading-snug line-through decoration-success-green/50 decoration-2">${cleanKatexMarkers(item.question)}</p>
+                </div>
+            `;
+        }
+
+        function renderEmptyList(msg) {
+            return `
+                <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400">${msg}</p>
                 </div>
             `;
         }
@@ -433,7 +372,7 @@
             if (user) {
                 const displayName = user.displayName || "Scholar";
                 document.getElementById("user-welcome").textContent = displayName;
-                await init(user);
+                await loadMistakeBook(user);
             } else {
                 window.location.href = "../index.html";
             }
@@ -448,7 +387,7 @@
         <a href="../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
         <div>
           <h2 class="text-xl font-black text-cbse-blue leading-none tracking-tight">Mistake<span class="text-danger-red">Book</span></h2>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Diagnostic View</p>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Remediation Engine</p>
         </div>
       </div>
 
@@ -462,7 +401,7 @@
       </div>
     </header>
 
-    <div class="flex-grow max-w-4xl mx-auto w-full p-4 md:p-8 fade-in">
+    <div class="flex-grow max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
         <div class="mb-8">
              <a href="consoles/student.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
                 <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back to Hub
