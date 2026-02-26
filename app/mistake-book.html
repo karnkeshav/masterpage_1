@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mistake Notebook — Mission Control</title>
+    <title>Diagnostic Console — Mistake Notebook</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
     tailwind.config = {
@@ -34,26 +34,12 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .active-chapter { background: #f1f5f9; border-left-color: #1a3e6a; }
 
-        /* Radar Animation */
-        @keyframes radar-spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .radar-sweep {
-            background: conic-gradient(from 0deg, transparent 0deg, rgba(220, 38, 38, 0.1) 360deg);
-            animation: radar-spin 2s linear infinite;
-        }
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* Heat Dots */
-        .heat-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            display: inline-block; margin-right: 2px;
-        }
-        .heat-dot.high { background-color: #dc2626; } /* Red */
-        .heat-dot.med { background-color: #f87171; }  /* Light Red */
-        .heat-dot.low { background-color: #fee2e2; border: 1px solid #fca5a5; } /* Pale */
+        /* Tier 1 Visuals */
+        .progress-step { transition: height 0.5s ease, opacity 0.3s ease; }
     </style>
 
     <script src="../js/firebase-master-config.js"></script>
@@ -67,7 +53,6 @@
         import { cleanKatexMarkers } from "../js/utils.js";
         import * as UI from "../js/ui-renderer.js";
         import { loadCurriculum } from "../js/curriculum/loader.js";
-        import { SlugEngine } from "../js/slug-engine.js";
 
         UI.injectStyles();
         bindConsoleLogout("logout-nav-btn", "../index.html");
@@ -79,14 +64,20 @@
         const state = {
             friction: {}, // { Subject: { Chapter: [Questions] } }
             victory: {},   // { Subject: { Chapter: [Questions] } }
-            subjectStats: {} // { Subject: { simple: %, medium: %, advanced: %, weakest: 'name' } }
+            subjectStats: {}, // { Subject: { simple: %, medium: %, advanced: %, weakest: 'name' } }
+            proficiency: {
+                MCQ: { total: 0, mistakes: 0 },
+                AR: { total: 0, mistakes: 0 },
+                CB: { total: 0, mistakes: 0 }
+            },
+            victoryCount: 0
         };
 
         const THEMES = {
-            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
-            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask", bar: "bg-purple-500" },
-            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark", bar: "bg-amber-500" },
-            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500" }
+            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500", lightBar: "bg-blue-200" },
+            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask", bar: "bg-purple-500", lightBar: "bg-purple-200" },
+            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark", bar: "bg-amber-500", lightBar: "bg-amber-200" },
+            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500", lightBar: "bg-slate-200" }
         };
 
         async function init(user) {
@@ -100,11 +91,9 @@
                 document.getElementById("context-badge").textContent = `Grade ${currentGrade}`;
 
                 curriculumData = await loadCurriculum(currentGrade);
-                const engine = new SlugEngine(curriculumData);
 
-                // 2. Fetch Data (Only quiz_scores now)
+                // 2. Fetch Data (Quiz Scores Only)
                 const { db } = await getInitializedClients();
-
                 const scoresSnap = await getDocs(query(collection(db, "quiz_scores"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")));
 
                 if (scoresSnap.empty) {
@@ -113,10 +102,10 @@
                 }
 
                 // 3. Process Data
-                processData(scoresSnap.docs, engine);
+                processData(scoresSnap.docs);
 
                 // 4. Render UI
-                renderMissionControl(container);
+                renderConsole(container);
 
             } catch (e) {
                 console.error("Diagnostic Load Error:", e);
@@ -124,82 +113,157 @@
             }
         }
 
-        function processData(scoreDocs, engine) {
+        // Inline SlugEngine Logic
+        function getSubjectContext(topicSlug) {
+            const s = topicSlug.toLowerCase();
+            let subject = "General";
+            let chapterName = topicSlug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+
+            // 1. Try exact match in Curriculum
+            for (const [subj, sections] of Object.entries(curriculumData)) {
+                for (const [sec, chapters] of Object.entries(sections)) {
+                    for (const ch of chapters) {
+                        const title = ch.chapter_title.toLowerCase();
+                        if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
+                            subject = subj;
+                            chapterName = ch.chapter_title;
+                            return { subject, chapterName };
+                        }
+                    }
+                }
+            }
+
+            // 2. Fallback Inference
+            if (s.includes("math")) { subject = "Mathematics"; }
+            else if (s.includes("science")) { subject = "Science"; }
+            else if (s.includes("social")) { subject = "Social Science"; }
+
+            return { subject, chapterName };
+        }
+
+        function getQuestionType(id) {
+            if (id.startsWith("ar_")) return "AR";
+            if (id.startsWith("cb_")) return "CB";
+            return "MCQ"; // Default
+        }
+
+        function processData(scoreDocs) {
             const subjectScores = {};
-            const topicHistory = {}; // { topic: [scoreData] }
+            const topicHistory = {}; // { topic: [attempts] }
 
             scoreDocs.forEach(d => {
                 const data = d.data();
                 const topic = data.topic || data.topicSlug;
                 if (!topic) return;
 
-                // --- Part A: Mastery Stats (using engine for context) ---
-                const context = engine.getSubjectContext(topic);
-                const subject = context.subject;
-                const chapterName = context.chapterName;
+                const { subject, chapterName } = getSubjectContext(topic);
 
+                // --- Mastery Stats ---
                 const score = data.score || 0;
                 const difficulty = (data.difficulty || 'simple').toLowerCase();
 
                 if (!subjectScores[subject]) {
                     subjectScores[subject] = { simple: [], medium: [], advanced: [], chapterScores: {} };
                 }
-
                 if (subjectScores[subject][difficulty]) {
                     subjectScores[subject][difficulty].push(score);
                 }
-
                 if (!subjectScores[subject].chapterScores[chapterName]) {
                     subjectScores[subject].chapterScores[chapterName] = [];
                 }
                 subjectScores[subject].chapterScores[chapterName].push(score);
 
-                // --- Part B: Mistake Analysis Preparation ---
+                // --- Proficiency Stats (Heuristic) ---
+                // Assume 10 questions per quiz if total_questions missing
+                const totalQ = data.total_questions || 10;
+                const mistakesCount = (data.mistakes || []).length;
+
+                // Distribute "Total Attempts" roughly by mistake types found?
+                // Better: Just count mistakes per type.
+                (data.mistakes || []).forEach(m => {
+                    const type = getQuestionType(m.id);
+                    state.proficiency[type].mistakes++;
+                });
+
+                // Increment "Total" denominator for types?
+                // We don't know the type of correct questions.
+                // We'll use a placeholder "Total" based on overall quizzes?
+                // For now, let's track RAW MISTAKES as the primary signal.
+
+                // --- History Analysis ---
                 if (!topicHistory[topic]) topicHistory[topic] = [];
-                // Add necessary fields for analysis
                 topicHistory[topic].push({
-                    score: score,
-                    mistakes: data.mistakes || [], // Ensure array
+                    mistakes: data.mistakes || [],
                     timestamp: data.timestamp ? data.timestamp.toDate() : new Date()
                 });
             });
 
-            // Compute Stats
+            // Calculate Subject Mastery
             Object.keys(subjectScores).forEach(subj => {
                 const s = subjectScores[subj];
                 const avg = (arr) => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
 
-                let weakest = "None";
-                let minAvg = 101;
-
-                Object.entries(s.chapterScores).forEach(([ch, scores]) => {
-                    const chAvg = avg(scores);
-                    if (chAvg < minAvg) {
-                        minAvg = chAvg;
-                        weakest = ch;
-                    }
-                });
-
                 state.subjectStats[subj] = {
                     simple: avg(s.simple),
                     medium: avg(s.medium),
-                    advanced: avg(s.advanced),
-                    weakest: minAvg < 60 ? weakest : "None"
+                    advanced: avg(s.advanced)
                 };
             });
 
-            // Run Analysis via Engine
-            Object.entries(topicHistory).forEach(([topic, scores]) => {
-                const analysis = engine.analyzeAttemptHistory(scores, topic);
-                const context = engine.getSubjectContext(topic); // Reuse context logic
+            // Analyze History (Friction vs Victory)
+            Object.entries(topicHistory).forEach(([topic, attempts]) => {
+                const { subject, chapterName } = getSubjectContext(topic);
 
-                if (analysis.friction.length > 0) {
-                    analysis.friction.forEach(item => addToState('friction', context.subject, context.chapterName, item));
-                }
+                // Sort Descending
+                attempts.sort((a,b) => b.timestamp - a.timestamp);
 
-                if (analysis.victory.length > 0) {
-                    analysis.victory.forEach(item => addToState('victory', context.subject, context.chapterName, item));
-                }
+                const allMistakes = new Map(); // id -> { dates: [], text, type }
+
+                // 1. Collect ALL mistakes
+                attempts.forEach(att => {
+                    att.mistakes.forEach(m => {
+                        if (!allMistakes.has(m.id)) {
+                            allMistakes.set(m.id, {
+                                id: m.id,
+                                text: m.question,
+                                type: getQuestionType(m.id),
+                                dates: [],
+                                topic: topic
+                            });
+                        }
+                        allMistakes.get(m.id).dates.push(att.timestamp);
+                    });
+                });
+
+                // 2. Classify
+                // Victory: Missed in Past (attempts[1..n]), NOT in Latest (attempts[0])
+                // Friction: Everything else (i.e. Missed in Latest OR Unresolved)
+                // Actually, prompt says: "Persistent Friction: Any question_id missed >= 1 time."
+                // "Victory Gallery: Any question_id previously missed but answered correctly in the most recent attempt."
+
+                const latestMistakeIds = new Set(attempts[0].mistakes.map(m => m.id));
+                const previousMistakeIds = new Set();
+                attempts.slice(1).forEach(att => {
+                    att.mistakes.forEach(m => previousMistakeIds.add(m.id));
+                });
+
+                allMistakes.forEach((data, id) => {
+                    // Check Victory
+                    if (previousMistakeIds.has(id) && !latestMistakeIds.has(id)) {
+                        // It's a Victory!
+                        addToState('victory', subject, chapterName, {
+                            ...data,
+                            masteryDate: attempts[0].timestamp.toDateString()
+                        });
+                        state.victoryCount++;
+                    } else {
+                        // It's Friction (either new or persistent)
+                        addToState('friction', subject, chapterName, {
+                            ...data,
+                            dates: data.dates // "Trend"
+                        });
+                    }
+                });
             });
         }
 
@@ -209,138 +273,65 @@
             state[type][subject][chapter].push(item);
         }
 
-        function renderMasteryOverview() {
-            const subjects = ["Mathematics", "Science", "Social Science"];
-            let html = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">`;
-
-            subjects.forEach(sub => {
-                const stats = state.subjectStats[sub] || { simple: 0, medium: 0, advanced: 0, weakest: "None" };
-                const theme = THEMES[sub];
-
-                const hSimple = Math.max(20, stats.simple) + "%";
-                const hMedium = Math.max(20, stats.medium) + "%";
-                const hAdv = Math.max(20, stats.advanced) + "%";
-
-                const oSimple = Math.max(0.3, stats.simple / 100);
-                const oMedium = Math.max(0.3, stats.medium / 100);
-                const oAdv = Math.max(0.3, stats.advanced / 100);
-
-                html += `
-                    <div class="${theme.bg} rounded-3xl p-5 border ${theme.border} relative overflow-hidden group">
-                         <!-- Header -->
-                         <div class="flex justify-between items-start mb-4 relative z-10">
-                            <div>
-                                <h3 class="font-black ${theme.text} text-lg tracking-tight">${sub}</h3>
-                                ${stats.weakest !== "None" ?
-                                    `<p class="text-[10px] text-red-500 font-bold uppercase mt-1">Focus: ${stats.weakest.substring(0,15)}...</p>` :
-                                    `<p class="text-[10px] text-green-600 font-bold uppercase mt-1">Strong Performance</p>`
-                                }
-                            </div>
-                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-sm shadow-sm ${theme.text}">
-                                <i class="fas ${theme.icon}"></i>
-                            </div>
-                         </div>
-
-                         <!-- Progress Stairs -->
-                         <div class="flex items-end space-x-2 h-24 mt-2 relative z-10">
-                            <!-- Simple -->
-                            <div class="flex-1 flex flex-col items-center group/bar">
-                                <div class="w-full ${theme.bar} rounded-t-md transition-all duration-500 relative" style="height: ${hSimple}; opacity: ${oSimple}">
-                                     <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500 opacity-0 group-hover/bar:opacity-100 transition">${stats.simple}%</span>
-                                </div>
-                                <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Basics</span>
-                            </div>
-                            <!-- Medium -->
-                            <div class="flex-1 flex flex-col items-center group/bar">
-                                <div class="w-full ${theme.bar} rounded-t-md transition-all duration-500 relative" style="height: ${hMedium}; opacity: ${oMedium}">
-                                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500 opacity-0 group-hover/bar:opacity-100 transition">${stats.medium}%</span>
-                                </div>
-                                <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Std</span>
-                            </div>
-                            <!-- Advanced -->
-                            <div class="flex-1 flex flex-col items-center group/bar">
-                                <div class="w-full ${theme.bar} rounded-t-md transition-all duration-500 relative" style="height: ${hAdv}; opacity: ${oAdv}">
-                                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500 opacity-0 group-hover/bar:opacity-100 transition">${stats.advanced}%</span>
-                                </div>
-                                <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Elite</span>
-                            </div>
-                         </div>
-
-                         <!-- Decorative BG -->
-                         <div class="absolute -bottom-4 -right-4 text-9xl opacity-5 text-white pointer-events-none">
-                            <i class="fas ${theme.icon}"></i>
-                         </div>
+        function renderConsole(container) {
+            // Tier 1: Broad Awareness
+            const tier1 = `
+                <!-- Success Shield -->
+                <div class="glass-panel rounded-3xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between bg-gradient-to-r from-cbse-blue/5 to-transparent border-cbse-blue/10">
+                    <div class="flex items-center space-x-6 mb-4 md:mb-0">
+                        <div class="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-sm">🛡️</div>
+                        <div>
+                            <h3 class="text-2xl font-black text-cbse-blue tracking-tight">Diagnostic Status</h3>
+                            <p class="text-sm text-slate-500 font-medium">Identify patterns. Eliminate friction.</p>
+                        </div>
                     </div>
-                `;
-            });
-            html += `</div>`;
-            return html;
-        }
+                    <div class="flex items-center space-x-8">
+                        <div class="text-right">
+                            <span class="block text-3xl font-black text-green-600">${state.victoryCount}</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Victory Gains</span>
+                        </div>
+                        <div class="h-10 w-px bg-slate-200"></div>
+                        <div class="text-right">
+                            <span class="block text-3xl font-black text-red-500">${Object.keys(state.friction).length}</span> <!-- Count of Subjects with Friction -->
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Zones</span>
+                        </div>
+                    </div>
+                </div>
 
-        function renderMissionControl(container) {
-            const subjects = ["Mathematics", "Science", "Social Science", "General"];
-            let hasContent = false;
+                <!-- Behavioral Profile & Mastery Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <!-- Behavioral Profile (1 Col) -->
+                    <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between">
+                        <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Proficiency Profile</h4>
+                        <div class="space-y-4">
+                            ${renderProficiencyPill("MCQ", "Recall", state.proficiency.MCQ.mistakes)}
+                            ${renderProficiencyPill("AR", "Logic", state.proficiency.AR.mistakes)}
+                            ${renderProficiencyPill("CB", "Application", state.proficiency.CB.mistakes)}
+                        </div>
+                    </div>
 
-            const masteryHtml = renderMasteryOverview();
-
-            let html = `
-                ${masteryHtml}
-                <div class="grid lg:grid-cols-3 gap-8 items-start relative">
-                    <!-- Left: Subject Containers -->
-                    <div class="lg:col-span-2 space-y-6">
+                    <!-- Mastery Cards (3 Cols) -->
+                    ${renderMasteryCard("Mathematics")}
+                    ${renderMasteryCard("Science")}
+                    ${renderMasteryCard("Social Science")}
+                </div>
             `;
 
-            subjects.forEach(subject => {
-                const theme = THEMES[subject] || THEMES["Science"];
-                const frictionData = state.friction[subject] || {};
-                const victoryData = state.victory[subject] || {};
-
-                const frictionCount = Object.values(frictionData).reduce((a, b) => a + b.length, 0);
-                const victoryCount = Object.values(victoryData).reduce((a, b) => a + b.length, 0);
-
-                if (frictionCount === 0 && victoryCount === 0) return;
-
-                hasContent = true;
-
-                html += `
-                    <!-- Level 1: Subject Container -->
-                    <div class="${theme.bg || 'bg-slate-50'} rounded-3xl border ${theme.border || 'border-slate-200'} overflow-hidden relative group transition hover:shadow-md">
-                        <!-- Subject Header -->
-                        <div class="px-6 py-5 flex items-center justify-between border-b border-black/5">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text || 'text-slate-700'}">
-                                    <i class="fas ${theme.icon || 'fa-cubes'}"></i>
-                                </div>
-                                <h3 class="text-lg font-black ${theme.text || 'text-slate-700'} tracking-tight">${subject}</h3>
-                            </div>
-                            <!-- Level 2: Category Entry Points -->
-                            <div class="flex items-center space-x-6">
-                                <button onclick="toggleChapterList('${subject}', 'friction')" class="text-xs font-bold text-red-600 hover:text-red-700 hover:underline flex items-center group/btn transition">
-                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
-                                    Persistent Friction (${frictionCount})
-                                </button>
-                                <button onclick="toggleChapterList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center group/btn transition">
-                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                    Victory Gallery (${victoryCount})
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Level 3: Chapter List (Hover-Interactive) -->
-                        <div id="chapters-${subject}" class="hidden bg-white/60 backdrop-blur-sm divide-y divide-black/5 max-h-64 overflow-y-auto">
-                            <!-- Injected via JS -->
-                        </div>
+            // Tier 2: Active Remediation (Split Screen)
+            const tier2 = `
+                <div class="grid lg:grid-cols-3 gap-8 items-start relative min-h-[500px]">
+                    <!-- Left: Subject Navigator -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Subject Navigator</h4>
+                        ${renderSubjectNavigator("Mathematics")}
+                        ${renderSubjectNavigator("Science")}
+                        ${renderSubjectNavigator("Social Science")}
                     </div>
-                `;
-            });
 
-            html += `
-                    </div>
                     <!-- Right: Diagnostic Inspector (Sticky) -->
                     <div class="lg:col-span-1 hidden lg:block sticky top-24">
-                        <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm relative overflow-hidden">
-                             <!-- Radar Animation for Empty State -->
-                             <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                        <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm relative overflow-hidden bg-white/50">
+                             <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
                                 <div class="w-64 h-64 rounded-full border border-slate-300 relative overflow-hidden">
                                     <div class="absolute top-1/2 left-1/2 w-[50%] h-[50%] origin-top-left radar-sweep"></div>
                                 </div>
@@ -348,141 +339,218 @@
 
                             <div class="relative z-10">
                                 <div class="text-4xl mb-4 text-slate-300 animate-pulse">📡</div>
-                                <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">System Active</h4>
-                                <p class="text-xs text-slate-500 max-w-[200px]">Hover over any chapter to run a forensic analysis.</p>
+                                <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Inspector Active</h4>
+                                <p class="text-xs text-slate-500 max-w-[200px]">Hover over any chapter on the left to analyze friction points.</p>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Mobile Inspector Modal -->
-                    <div id="mobile-inspector" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-end justify-center lg:hidden p-4 pb-8" onclick="closeMobileInspector()">
-                        <div class="bg-white w-full max-w-md rounded-3xl max-h-[80vh] overflow-y-auto p-6 relative animate-slide-up" onclick="event.stopPropagation()">
-                            <button onclick="closeMobileInspector()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
-                            <div id="mobile-inspector-content"></div>
-                        </div>
+                <!-- Mobile Modal -->
+                <div id="mobile-inspector" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-end justify-center lg:hidden p-4 pb-8" onclick="closeMobileInspector()">
+                    <div class="bg-white w-full max-w-md rounded-3xl max-h-[85vh] overflow-y-auto p-6 relative slide-up shadow-2xl" onclick="event.stopPropagation()">
+                        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+                        <div id="mobile-inspector-content"></div>
                     </div>
                 </div>
             `;
 
-            if (!hasContent) {
-                renderEmptyState(container);
-            } else {
-                container.innerHTML = html;
-            }
+            container.innerHTML = tier1 + tier2;
         }
 
-        // Global Handlers
-        window.toggleChapterList = (subject, type) => {
-            const container = document.getElementById(`chapters-${subject}`);
-            const isHidden = container.classList.contains('hidden');
+        function renderProficiencyPill(type, label, mistakes) {
+            // Heuristic: < 5 mistakes = Green, 5-10 = Yellow, > 10 = Red
+            let color = "bg-green-100 text-green-700";
+            let dot = "bg-green-500";
+            let status = "Strong";
 
-            document.querySelectorAll('[id^="chapters-"]').forEach(el => {
-                if(el.id !== `chapters-${subject}`) el.classList.add('hidden');
-            });
-
-            if (!isHidden && container.dataset.type === type) {
-                container.classList.add('hidden');
-            } else {
-                container.classList.remove('hidden');
-                container.dataset.type = type;
-                renderChapters(subject, type, container);
+            if (mistakes > 10) {
+                color = "bg-red-100 text-red-700";
+                dot = "bg-red-500";
+                status = "Needs Focus";
+            } else if (mistakes > 5) {
+                color = "bg-yellow-100 text-yellow-700";
+                dot = "bg-yellow-500";
+                status = "Review";
             }
-        };
 
-        window.renderChapters = (subject, type, container) => {
+            return `
+                <div class="flex items-center justify-between p-3 rounded-xl ${color} transition hover:scale-[1.02]">
+                    <div class="flex items-center space-x-3">
+                        <span class="w-2 h-2 rounded-full ${dot} animate-pulse"></span>
+                        <div>
+                            <span class="block text-xs font-black uppercase tracking-wide">${label}</span>
+                            <span class="text-[10px] opacity-80 font-bold">${status}</span>
+                        </div>
+                    </div>
+                    <span class="text-lg font-black opacity-50">${type}</span>
+                </div>
+            `;
+        }
+
+        function renderMasteryCard(subject) {
+            const theme = THEMES[subject] || THEMES["General"];
+            const stats = state.subjectStats[subject] || { simple: 0, medium: 0, advanced: 0 };
+
+            // Progress Bar Calculations
+            const hS = Math.max(15, stats.simple) + "%";
+            const hM = Math.max(15, stats.medium) + "%";
+            const hA = Math.max(15, stats.advanced) + "%";
+
+            return `
+                <div class="${theme.bg} rounded-3xl p-5 border ${theme.border} relative overflow-hidden group">
+                     <div class="flex justify-between items-start mb-4 relative z-10">
+                        <h3 class="font-black ${theme.text} text-lg tracking-tight">${subject}</h3>
+                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-sm shadow-sm ${theme.text}">
+                            <i class="fas ${theme.icon}"></i>
+                        </div>
+                     </div>
+
+                     <div class="flex items-end space-x-2 h-24 mt-2 relative z-10">
+                        <div class="flex-1 flex flex-col items-center group/bar">
+                            <div class="w-full ${theme.bar} rounded-t-md transition-all duration-500 progress-step relative" style="height: ${hS}"></div>
+                            <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Basics</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center group/bar">
+                            <div class="w-full ${theme.bar} rounded-t-md transition-all duration-500 progress-step opacity-80" style="height: ${hM}"></div>
+                            <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Std</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center group/bar">
+                            <div class="w-full ${theme.bar} rounded-t-md transition-all duration-500 progress-step opacity-60" style="height: ${hA}"></div>
+                            <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Elite</span>
+                        </div>
+                     </div>
+                </div>
+            `;
+        }
+
+        function renderSubjectNavigator(subject) {
+            const theme = THEMES[subject] || THEMES["General"];
+            const frictionCount = Object.keys(state.friction[subject] || {}).length; // Chapters count? No, user wants Friction/Victory Links.
+            // Actually, state.friction[subject] is { ChapterName: [Mistakes] }
+            // Count total mistakes or chapters?
+            const fChapters = Object.keys(state.friction[subject] || {}).length;
+            const vChapters = Object.keys(state.victory[subject] || {}).length;
+
+            if (fChapters === 0 && vChapters === 0) return '';
+
+            return `
+                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition group">
+                    <div class="px-6 py-5 flex items-center justify-between border-b border-slate-50 ${theme.bg}">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text}">
+                                <i class="fas ${theme.icon}"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-slate-700 tracking-tight">${subject}</h3>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button onclick="toggleList('${subject}', 'friction')" class="text-xs font-bold text-red-500 hover:text-red-700 transition flex items-center">
+                                <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span> Friction (${fChapters})
+                            </button>
+                            <button onclick="toggleList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:text-green-700 transition flex items-center">
+                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Victory (${vChapters})
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Chapter Lists Container -->
+                    <div id="list-${subject}" class="hidden bg-white"></div>
+                </div>
+            `;
+        }
+
+        // --- Window Handlers ---
+        window.toggleList = (subject, type) => {
+            const container = document.getElementById(`list-${subject}`);
+            // Hide others? Optional.
+
+            // Render content
             const chapters = state[type][subject] || {};
-            const chapterNames = Object.keys(chapters).sort();
+            const names = Object.keys(chapters).sort();
 
-            if (chapterNames.length === 0) {
-                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 font-bold">No items found.</div>`;
+            if (container.dataset.type === type && !container.classList.contains('hidden')) {
+                container.classList.add('hidden');
                 return;
             }
 
-            let html = ``;
-            chapterNames.forEach(chapter => {
-                const count = chapters[chapter].length;
-                const cleanChapter = chapter.replace(/_/g, " ");
+            container.dataset.type = type;
+            container.classList.remove('hidden');
 
+            if (names.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`;
+                return;
+            }
+
+            let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
+            names.forEach(ch => {
+                const count = chapters[ch].length;
                 html += `
-                    <div class="chapter-item px-6 py-4 cursor-pointer hover:bg-slate-50 transition border-l-4 border-transparent hover:border-cbse-blue group flex justify-between items-center"
-                         onmouseenter="inspectChapter('${subject}', '${chapter}', '${type}')"
-                         onclick="inspectChapter('${subject}', '${chapter}', '${type}', true)">
-                        <span class="text-sm font-bold text-slate-700 group-hover:text-cbse-blue transition">${cleanChapter}</span>
-                        <span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded-md group-hover:bg-blue-100 group-hover:text-blue-600 transition">${count}</span>
+                    <div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item"
+                         onmouseenter="inspectChapter('${subject}', '${ch}', '${type}')"
+                         onclick="inspectChapter('${subject}', '${ch}', '${type}', true)">
+                        <span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue transition">${ch}</span>
+                        <span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded group-hover/item:bg-white group-hover/item:shadow-sm transition">${count}</span>
                     </div>
                 `;
             });
+            html += `</div>`;
             container.innerHTML = html;
         };
 
         window.inspectChapter = (subject, chapter, type, isClick = false) => {
-            const questions = state[type][subject][chapter];
-            const cleanChapter = chapter.replace(/_/g, " ");
+            const mistakes = state[type][subject][chapter];
             const isFriction = type === 'friction';
 
-            let contentHtml = `
-                <div class="w-full text-left animate-fade-in relative z-20">
+            let html = `
+                <div class="animate-fade-in text-left">
                     <div class="mb-6 pb-4 border-b border-slate-100">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'}">${isFriction ? 'Persistent Friction' : 'Victory Gallery'}</span>
-                            <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded">${questions.length} Items</span>
-                        </div>
-                        <h3 class="text-xl font-black text-slate-800 leading-tight">${cleanChapter}</h3>
+                        <span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Persistent Friction' : 'Victory Gallery'}</span>
+                        <h3 class="text-xl font-black text-slate-800 leading-tight">${chapter}</h3>
                     </div>
                     <div class="space-y-4">
             `;
 
-            questions.forEach(q => {
-                let heatDotsHtml = '';
-                if (isFriction && q.timestamps) {
-                    const count = Math.min(q.timestamps.length, 5);
-                    for(let i=0; i<count; i++) {
-                        heatDotsHtml += `<span class="heat-dot high"></span>`;
-                    }
-                }
+            mistakes.forEach(m => {
+                // Formatting Dates
+                const dateStr = (m.dates || []).map(d => {
+                    const date = d instanceof Date ? d : (d.toDate ? d.toDate() : new Date(d));
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                }).join(', ');
 
-                contentHtml += `
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition relative group/card">
+                html += `
+                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:border-slate-200 transition relative">
                         <div class="absolute left-0 top-4 bottom-4 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'} rounded-r-full"></div>
-                        <p class="text-xs font-medium text-slate-700 mb-3 pl-3 leading-relaxed select-text">${cleanKatexMarkers(q.text)}</p>
+                        <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed select-text">${cleanKatexMarkers(m.text)}</p>
 
-                        <div class="pl-3 flex items-center justify-between border-t border-slate-200/50 pt-2">
+                        <div class="pl-3 pt-2 border-t border-slate-200/50 flex justify-between items-center">
                             ${isFriction ? `
                                 <div class="flex flex-col">
-                                    <div class="flex items-center space-x-1 mb-1">
-                                        ${heatDotsHtml}
-                                    </div>
-                                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wide">Last: ${q.timestamps && q.timestamps[0] instanceof Date ? q.timestamps[0].toDateString().substring(4,10) : 'Unknown'}</span>
+                                    <span class="text-[9px] font-bold text-red-500 uppercase tracking-wide">Trend: ${dateStr}</span>
                                 </div>
-                                <a href="../study-content.html?grade=${currentGrade}&topic=${q.topic}" class="text-[9px] bg-white border border-red-100 text-red-600 px-3 py-1.5 rounded-lg font-black hover:bg-red-50 transition uppercase tracking-wide shadow-sm">
-                                    Master Concept
-                                </a>
+                                <a href="../study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-white border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 transition uppercase tracking-wide shadow-sm">Master Concept</a>
                             ` : `
-                                <div class="text-[9px] text-green-600 font-bold flex flex-col">
-                                    <span class="opacity-70 uppercase tracking-wide">Badge</span>
-                                    <span>🏆 Mastered: ${q.masteryDate}</span>
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-bold text-green-600 uppercase tracking-wide">🏆 Mastered: ${m.masteryDate}</span>
                                 </div>
-                                <span class="text-[9px] text-green-600 opacity-60 font-medium italic">Previously struggled</span>
                             `}
                         </div>
                     </div>
                 `;
             });
-            contentHtml += `</div></div>`;
+            html += `</div></div>`;
 
+            // Desktop
             const inspector = document.getElementById('inspector-panel');
             if (inspector) {
-                document.querySelectorAll('.chapter-item').forEach(el => el.classList.remove('active-chapter'));
-                inspector.innerHTML = contentHtml;
+                inspector.innerHTML = html;
                 inspector.classList.remove('items-center', 'justify-center', 'text-center');
-                inspector.classList.add('items-start', 'justify-start', 'text-left');
+                inspector.classList.add('items-start', 'justify-start');
             }
 
+            // Mobile
             if (window.innerWidth < 1024 && isClick) {
-                const mobileModal = document.getElementById('mobile-inspector');
-                const mobileContent = document.getElementById('mobile-inspector-content');
-                mobileContent.innerHTML = contentHtml;
-                mobileModal.classList.remove('hidden');
+                const modal = document.getElementById('mobile-inspector');
+                document.getElementById('mobile-inspector-content').innerHTML = html;
+                modal.classList.remove('hidden');
             }
         };
 
@@ -494,9 +562,8 @@
             container.innerHTML = `
                 <div class="glass-panel p-12 rounded-3xl text-center max-w-2xl mx-auto mt-12">
                     <div class="text-6xl mb-6">🎉</div>
-                    <h3 class="text-2xl font-black text-slate-700 mb-2">Diagnostic Clean!</h3>
-                    <p class="text-slate-500 font-medium">No persistent friction points detected.</p>
-                    <a href="consoles/student.html" class="inline-block mt-6 px-6 py-3 bg-cbse-blue text-white rounded-xl font-bold hover:bg-blue-800 transition">Go to Dashboard</a>
+                    <h3 class="text-2xl font-black text-slate-700 mb-2">Clean Record!</h3>
+                    <p class="text-slate-500 font-medium">No diagnostic friction points found.</p>
                 </div>
             `;
         }
@@ -519,7 +586,7 @@
         <a href="../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
         <div>
           <h2 class="text-xl font-black text-cbse-blue leading-none tracking-tight">Mistake<span class="text-danger-red">Book</span></h2>
-          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Mission Control</p>
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Diagnostic Console</p>
         </div>
       </div>
 
