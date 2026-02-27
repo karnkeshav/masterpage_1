@@ -116,8 +116,7 @@
         }
 
         function openDifficultyModal(ctx) {
-            // Use Parser to determine Theme
-            const { theme } = engine.getSubjectContext(ctx.subject);
+            const theme = engine.themes[ctx.subject] || engine.themes["General"];
 
             // Remove existing modal if present
             const existing = document.getElementById('symmetric-difficulty-modal');
@@ -179,15 +178,20 @@
         // Expose launch function globally for the HTML onclick
         window.launchQuiz = (difficulty) => {
             const params = new URLSearchParams(window.location.search);
+            const grade = params.get('grade') || '9';
             const subject = params.get('subject') || 'Mathematics';
             const chapter = params.get('chapter') || 'Polynomials';
-            const grade = params.get('grade') || '9';
 
-            // Use Canonical Table Slug Generator
-            const cleanSlug = engine.getQuizTableSlug(grade, subject, chapter);
+            // 1. Generate the Table Slug using the Engine's canonical handshake
+            const quizTableSlug = engine.getQuizTableSlug(grade, subject, chapter);
 
-            // Launch Quiz
-            const url = `quiz-engine.html?topic=${encodeURIComponent(cleanSlug)}&difficulty=${difficulty}&grade=${grade}&subject=${encodeURIComponent(subject)}`;
+            // 2. Build the redirect URL
+            const url = `quiz-engine.html?topic=${encodeURIComponent(quizTableSlug)}` +
+                        `&difficulty=${difficulty}` +
+                        `&grade=${grade}` +
+                        `&subject=${encodeURIComponent(subject)}` +
+                        `&chapter_name=${encodeURIComponent(chapter)}`;
+
             window.location.href = url;
         };
     </script>
