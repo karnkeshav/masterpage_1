@@ -20,6 +20,7 @@ export class SlugEngine {
         const s = (subject || "").toLowerCase().split(' ')[0]; // Handshake: social_
         const tClean = this.createSlug(topic);
         const words = tClean.split("_").filter(w => w);
+        if (words.length === 0) return "";
         const tSegment = words.length >= 2
             ? `${words[0]}_${words[words.length - 1]}`
             : `${words[0]}_${words[0]}`;
