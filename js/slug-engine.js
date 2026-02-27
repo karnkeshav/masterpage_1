@@ -1,7 +1,48 @@
-
 export class SlugEngine {
-    constructor(curriculum) {
-        this.curriculum = curriculum || {};
+    constructor(curriculum) { this.curriculum = curriculum || {}; }
+
+    /**
+     * CANONICAL SLUGGER (Syncs with gemini_frontend.js)
+     * Replaces all non-alphanumeric chars (hyphens, ?, ') with single underscores.
+     */
+    createSlug(text) {
+        if (!text) return "";
+        return text.toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/^_+|_+$/g, "");
+    }
+
+    /**
+     * GENERATOR: Supabase Table Slug
+     * Handshake: Uses first word (social_) + First_Last of topic.
+     */
+    getQuizTableSlug(grade, subject, topic) {
+        const s = (subject || "").toLowerCase().split(' ')[0]; // Handshake: social_
+        const tClean = this.createSlug(topic);
+        const words = tClean.split("_").filter(w => w);
+        const tSegment = words.length >= 2
+            ? `${words[0]}_${words[words.length - 1]}`
+            : `${words[0]}_${words[0]}`;
+        return `${s}_${tSegment}_${grade}_quiz`;
+    }
+
+    /**
+     * GENERATOR: Firestore Document ID
+     * Handshake: 9_geography_india_size_and_location
+     */
+    getFirestoreId(grade, subject, topic) {
+        const s = this.createSlug(subject);
+        const t = this.createSlug(topic);
+        return `${grade}_${s}_${t}`;
+    }
+
+    get themes() {
+        return {
+            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
+            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask", bar: "bg-purple-500" },
+            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark", bar: "bg-amber-500" },
+            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500" }
+        };
     }
 
     /**
@@ -40,17 +81,12 @@ export class SlugEngine {
     }
 
     _formatContext(subject, section, chapterName) {
-        const THEMES = {
-            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
-            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask", bar: "bg-purple-500" },
-            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark", bar: "bg-amber-500" },
-            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500" }
-        };
+        const theme = this.themes[subject] || this.themes["General"];
         return {
             subject,
             section,
             chapterName,
-            theme: THEMES[subject] || THEMES["General"]
+            theme
         };
     }
 

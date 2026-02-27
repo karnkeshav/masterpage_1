@@ -76,6 +76,7 @@
 
     <script type="module">
         import { SlugEngine } from '../js/slug-engine.js';
+        import { getInitializedClients } from "../js/config.js";
 
         // Initialize Engine for Themes
         const engine = new SlugEngine();
@@ -94,25 +95,57 @@
         }
 
         function upgradeButton(oldBtn) {
-            // Clone to strip listeners
             const newBtn = oldBtn.cloneNode(true);
             oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-
-            // Visual Upgrade
             newBtn.innerHTML = `<span>Take Chapter Test</span> <i class="fas fa-bolt"></i>`;
             newBtn.dataset.upgraded = "true";
 
-            // New Listener
+            // Guidance Message Container
+            const msgDiv = document.createElement('div');
+            msgDiv.id = 'quiz-guidance-msg';
+            msgDiv.className = 'text-xs font-black uppercase tracking-widest mb-3 text-cbse-blue';
+            newBtn.parentNode.insertBefore(msgDiv, newBtn);
+
             newBtn.addEventListener('click', () => {
-                 // Get context
-                 const params = new URLSearchParams(window.location.search);
-                 const context = {
-                     subject: params.get('subject') || 'Mathematics',
-                     chapter: params.get('chapter') || 'Polynomials',
-                     grade: params.get('grade') || '9'
-                 };
-                 openDifficultyModal(context);
+                const params = new URLSearchParams(window.location.search);
+                openDifficultyModal({
+                    subject: params.get('subject') || 'Mathematics',
+                    chapter: params.get('chapter') || 'Polynomials',
+                    grade: params.get('grade') || '9'
+                });
             });
+            renderGuidance();
+        }
+
+        async function renderGuidance() {
+            const params = new URLSearchParams(window.location.search);
+            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
+            const msgEl = document.getElementById('quiz-guidance-msg');
+
+            try {
+                const { auth, db } = await getInitializedClients();
+                const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                const q = query(collection(db, "quiz_scores"),
+                                where("user_id", "==", auth.currentUser.uid),
+                                where("topicSlug", "==", quizSlug));
+
+                const snap = await getDocs(q);
+                const scores = { Simple: 0, Medium: 0 };
+                snap.forEach(d => {
+                    const data = d.data();
+                    const pct = data.percentage || data.score_percent || 0;
+                    if (pct > (scores[data.difficulty] || 0)) scores[data.difficulty] = pct;
+                });
+
+                if (scores.Simple === 0) {
+                    msgEl.innerHTML = `<i class="fas fa-exclamation-circle text-red-500"></i> You have not taken the simple test for this chapter. Take it. Now.`;
+                } else if (scores.Simple < 95) {
+                    msgEl.innerHTML = `<i class="fas fa-redo text-amber-500"></i> Try again to achieve 95 percentage.`;
+                } else if (scores.Medium < 95) {
+                    msgEl.innerHTML = `<i class="fas fa-arrow-up text-green-600"></i> Take Medium Level test.`;
+                }
+            } catch (e) { console.error("Guidance failed", e); }
         }
 
         function openDifficultyModal(ctx) {
@@ -178,27 +211,13 @@
         // Expose launch function globally for the HTML onclick
         window.launchQuiz = (difficulty) => {
             const params = new URLSearchParams(window.location.search);
-            const subject = params.get('subject') || 'Mathematics';
-            const chapter = params.get('chapter') || 'Polynomials';
-            const grade = params.get('grade') || '9';
+            // Correctly generates: social_drainage_drainage_9_quiz
+            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
 
-            // 1. Standardize Slug Construction
-            const cleanSubject = subject.toLowerCase();
-            const rawChapter = chapter.toLowerCase().replace(/[^\w\s]/gi, '');
-            const words = rawChapter.trim().split(/\s+/);
-
-            let chapterSegment = words.length >= 2
-                ? `${words[0]}_${words[words.length - 1]}`
-                : `${words[0]}_${words[0]}`;
-
-            const cleanSlug = `${cleanSubject}_${chapterSegment}_${grade}_quiz`;
-
-            // 2. Redirect with full metadata for quiz-engine.js
-            const url = `quiz-engine.html?topic=${encodeURIComponent(cleanSlug)}` +
-                        `&difficulty=${difficulty}` +
-                        `&grade=${grade}` +
-                        `&subject=${encodeURIComponent(subject)}` +
-                        `&chapter_name=${encodeURIComponent(chapter)}`;
+            const url = `quiz-engine.html?topic=${encodeURIComponent(quizSlug)}` +
+                        `&difficulty=${difficulty}&grade=${params.get('grade')}` +
+                        `&subject=${encodeURIComponent(params.get('subject'))}` +
+                        `&chapter_name=${encodeURIComponent(params.get('chapter'))}`;
             window.location.href = url;
         };
     </script>
