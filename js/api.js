@@ -1,12 +1,8 @@
 // js/api.js
 import { getInitializedClients, getAuthUser, logAnalyticsEvent, initializeServices } from "./config.js";
 import { doc, getDoc, collection, addDoc, setDoc, serverTimestamp, query, where, getDocs, orderBy, writeBatch, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { SlugEngine } from "./slug-engine.js";
 
 const LOG = "[API]";
-
-// Initialize Engine
-const engine = new SlugEngine();
 
 // Re-export core services for consumers (e.g., student.html)
 export { getInitializedClients, initializeServices };
@@ -157,8 +153,11 @@ export async function waitForProfileReady(uid) {
 
 export async function fetchChapterSummary(grade, subject, topic) {
     const { db } = await getInitializedClients();
-
-    const docId = engine.getFirestoreId(grade, subject, topic);
+    // Doc ID Format: grade_subjectSlug_topicSlug
+    // e.g. 9_mathematics_polynomials
+    const subjectSlug = subject.toLowerCase().split(' ')[0]; // "Mathematics" -> "mathematics", "Social Science" -> "social"
+    const topicSlug = topic.toLowerCase().replace(/\s+/g, '_');
+    const docId = `${grade}_${subjectSlug}_${topicSlug}`;
 
     console.log("[API] Fetching Summary for:", docId);
 
