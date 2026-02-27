@@ -10,10 +10,7 @@ export class SlugEngine {
         };
     }
 
-    /**
-     * CANONICAL SLUGGER (Synced with gemini_frontend.js)
-     * Strict Regex: matches the automation producer exactly.
-     */
+    /** CANONICAL SLUGGER (Syncs with gemini_frontend.js) */
     createSlug(text) {
         if (!text) return "";
         return text.toLowerCase()
@@ -21,22 +18,22 @@ export class SlugEngine {
             .replace(/^_+|_+$/g, "");
     }
 
-    /**
-     * RESOLUTION A: Supabase Table Name
-     * Matches the "First_Last" rule used in automation.
+    /** * GENERATOR: Supabase Table Slug (The "Quiz Handshake")
+     * Rule: First word of Subject (social) + First/Last of Topic
      */
     getQuizTableSlug(grade, subject, topic) {
-        const s = this.createSlug(subject);
-        const words = this.createSlug(topic).split("_").filter(w => w);
-        const topicSegment = words.length >= 2
+        // Fix: Use only the first word for Social Science (e.g., "social")
+        const sPart = (subject || "").toLowerCase().split(' ')[0];
+        const tClean = this.createSlug(topic);
+        const words = tClean.split("_").filter(w => w);
+        const tSegment = words.length >= 2
             ? `${words[0]}_${words[words.length - 1]}`
             : `${words[0]}_${words[0]}`;
-        return `${s}_${topicSegment}_${grade}_quiz`;
+        return `${sPart}_${tSegment}_${grade}_quiz`;
     }
 
-    /**
-     * RESOLUTION B: Firestore Document ID
-     * Matches the automation: grade_subject_topic
+    /** * GENERATOR: Firestore Document ID (The "Summary Handshake")
+     * Rule: Full slugged subject (social_science) + Full slugged topic
      */
     getFirestoreId(grade, subject, topic) {
         return `${grade}_${this.createSlug(subject)}_${this.createSlug(topic)}`;
