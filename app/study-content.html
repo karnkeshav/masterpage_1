@@ -77,9 +77,10 @@
     <script type="module">
         import { SlugEngine } from '../js/slug-engine.js';
         import { getInitializedClients } from '../js/config.js';
+        import { curriculum } from '../js/curriculum/class-9.js';
 
         // Initialize Engine for Themes
-        const engine = new SlugEngine();
+        const engine = new SlugEngine(curriculum);
 
         // DOM Observer to Upgrade Button
         const observer = new MutationObserver((mutations) => {
@@ -107,12 +108,14 @@
             newBtn.parentNode.insertBefore(msgDiv, newBtn);
 
             newBtn.addEventListener('click', () => {
-                const params = new URLSearchParams(window.location.search);
-                openDifficultyModal({
-                    subject: params.get('subject') || 'Mathematics',
-                    chapter: params.get('chapter') || 'Polynomials',
-                    grade: params.get('grade') || '9'
-                });
+                 // Get context
+                 const params = new URLSearchParams(window.location.search);
+                 const context = {
+                     subject: params.get('subject') || 'Mathematics',
+                     chapter: params.get('chapter') || 'Polynomials',
+                     grade: params.get('grade') || '9'
+                 };
+                 openDifficultyModal(context);
             });
 
             // Trigger Guidance Check
