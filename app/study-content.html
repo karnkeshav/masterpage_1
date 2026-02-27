@@ -107,14 +107,12 @@
             newBtn.parentNode.insertBefore(msgDiv, newBtn);
 
             newBtn.addEventListener('click', () => {
-                 // Get context
-                 const params = new URLSearchParams(window.location.search);
-                 const context = {
-                     subject: params.get('subject') || 'Mathematics',
-                     chapter: params.get('chapter') || 'Polynomials',
-                     grade: params.get('grade') || '9'
-                 };
-                 openDifficultyModal(context);
+                const params = new URLSearchParams(window.location.search);
+                openDifficultyModal({
+                    subject: params.get('subject') || 'Mathematics',
+                    chapter: params.get('chapter') || 'Polynomials',
+                    grade: params.get('grade') || '9'
+                });
             });
 
             // Trigger Guidance Check
