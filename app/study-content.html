@@ -215,9 +215,9 @@
             const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
 
             const url = `quiz-engine.html?topic=${encodeURIComponent(quizSlug)}` +
-                        `&difficulty=${difficulty}&grade=${params.get('grade')}` +
-                        `&subject=${encodeURIComponent(params.get('subject'))}` +
-                        `&chapter_name=${encodeURIComponent(params.get('chapter'))}`;
+                        `&difficulty=${difficulty}&grade=${params.get('grade') || '9'}` +
+                        `&subject=${encodeURIComponent(params.get('subject') || 'Mathematics')}` +
+                        `&chapter_name=${encodeURIComponent(params.get('chapter') || '')}`;
             window.location.href = url;
         };
     </script>
