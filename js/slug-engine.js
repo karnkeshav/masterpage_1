@@ -1,6 +1,8 @@
 export class SlugEngine {
     constructor(curriculum) {
         this.curriculum = curriculum || {};
+        // Ported exactly from manageSupabase.js
+        this.SKIP_WORDS = ["as","of","the","a","an","in","on","for","to","ki","ke","ka"];
         // Legacy: Expose themes for UI compatibility (e.g., app/study-content.html)
         this.themes = {
             "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
@@ -10,7 +12,7 @@ export class SlugEngine {
         };
     }
 
-    /** CANONICAL SLUGGER (Syncs with gemini_frontend.js) */
+    /** CANONICAL SLUGGER: Mirrors gemini_frontend.js exactly */
     createSlug(text) {
         if (!text) return "";
         return text.toLowerCase()
@@ -18,46 +20,43 @@ export class SlugEngine {
             .replace(/^_+|_+$/g, "");
     }
 
-    /**
-     * SMART LOOKUP: Finds the full official NCERT title from the curriculum.
-     * Prevents "linear_equations" vs "linear_equations_in_two_variables" mismatch.
-     */
+    /** SMART LOOKUP: Finds the official chapter title from curriculum.js */
     getOfficialTitle(subject, chapter) {
         const target = this.createSlug(chapter);
         const subjectNode = this.curriculum[subject];
         if (!subjectNode) return chapter;
 
-        // Flatten chapters across all books/sections
         const allChapters = Array.isArray(subjectNode)
             ? subjectNode
             : Object.values(subjectNode).flat();
 
-        // Find the full title that contains our search term or matches the slug
         const match = allChapters.find(ch =>
             this.createSlug(ch.chapter_title).includes(target) ||
             target.includes(this.createSlug(ch.chapter_title))
         );
-
         return match ? match.chapter_title : chapter;
     }
 
-    /** GENERATOR: Supabase Table Slug (Quiz Handshake) */
+    /** GENERATOR: Supabase Table Slug (Mirror of buildTableName in manageSupabase.js) */
     getQuizTableSlug(grade, subject, topic) {
-        const sPart = (subject || "").toLowerCase().split(' ')[0];
-        const officialTopic = this.getOfficialTitle(subject, topic);
-        const tClean = this.createSlug(officialTopic);
-        const words = tClean.split("_").filter(w => w);
-        const tSegment = words.length >= 2
-            ? `${words[0]}_${words[words.length - 1]}`
-            : `${words[0]}_${words[0]}`;
-        return `${sPart}_${tSegment}_${grade}_quiz`;
+        // Rule: split(" ")[0] for subject
+        const sPart = (subject || "").toLowerCase().trim().split(" ")[0];
+
+        // Rule: First and Last words of chapter minus skip words
+        const chapter = (topic || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+        const words = chapter.split(" ").filter(Boolean);
+        const filtered = words.filter(w => !this.SKIP_WORDS.includes(w));
+        const first = filtered[0] || words[0] || "ch";
+        const last = filtered[filtered.length - 1] || words[words.length - 1] || "x";
+
+        return `${sPart}_${first}_${last}_${grade}_quiz`;
     }
 
-    /** GENERATOR: Firestore Document ID (Summary Handshake) */
+    /** GENERATOR: Firestore Document ID (Mirror of gemini_frontend.js) */
     getFirestoreId(grade, subject, topic) {
+        const officialChapter = this.getOfficialTitle(subject, topic);
         const s = this.createSlug(subject);
-        const officialTopic = this.getOfficialTitle(subject, topic);
-        const t = this.createSlug(officialTopic);
+        const t = this.createSlug(officialChapter);
         return `${grade}_${s}_${t}`;
     }
 
