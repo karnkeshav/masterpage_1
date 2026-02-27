@@ -12,7 +12,7 @@ export class SlugEngine {
         };
     }
 
-    /** CANONICAL SLUGGER: Mirrors gemini_frontend.js exactly */
+    /** CANONICAL SLUGGER: Mirrors gemini_frontend.js */
     createSlug(text) {
         if (!text) return "";
         return text.toLowerCase()
@@ -20,16 +20,13 @@ export class SlugEngine {
             .replace(/^_+|_+$/g, "");
     }
 
-    /** SMART LOOKUP: Finds the official chapter title from curriculum.js */
+    /** SMART LOOKUP: Finds the official NCERT title from curriculum.js */
     getOfficialTitle(subject, chapter) {
         const target = this.createSlug(chapter);
         const subjectNode = this.curriculum[subject];
         if (!subjectNode) return chapter;
 
-        const allChapters = Array.isArray(subjectNode)
-            ? subjectNode
-            : Object.values(subjectNode).flat();
-
+        const allChapters = Array.isArray(subjectNode) ? subjectNode : Object.values(subjectNode).flat();
         const match = allChapters.find(ch =>
             this.createSlug(ch.chapter_title).includes(target) ||
             target.includes(this.createSlug(ch.chapter_title))
@@ -37,27 +34,26 @@ export class SlugEngine {
         return match ? match.chapter_title : chapter;
     }
 
-    /** GENERATOR: Supabase Table Slug (Mirror of buildTableName in manageSupabase.js) */
+    /** GENERATOR: Supabase Table Slug (Mirror of manageSupabase.js) */
     getQuizTableSlug(grade, subject, topic) {
-        // Rule: split(" ")[0] for subject
-        const sPart = (subject || "").toLowerCase().trim().split(" ")[0];
-
-        // Rule: First and Last words of chapter minus skip words
+        const sPart = (subject || "").toLowerCase().trim().split(" ")[0]; //
         const chapter = (topic || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
         const words = chapter.split(" ").filter(Boolean);
         const filtered = words.filter(w => !this.SKIP_WORDS.includes(w));
         const first = filtered[0] || words[0] || "ch";
         const last = filtered[filtered.length - 1] || words[words.length - 1] || "x";
-
         return `${sPart}_${first}_${last}_${grade}_quiz`;
     }
 
     /** GENERATOR: Firestore Document ID (Mirror of gemini_frontend.js) */
     getFirestoreId(grade, subject, topic) {
-        const officialChapter = this.getOfficialTitle(subject, topic);
-        const s = this.createSlug(subject);
-        const t = this.createSlug(officialChapter);
-        return `${grade}_${s}_${t}`;
+        // Map Geography/History back to Social Science for Firestore handshake
+        const socialBooks = ["geography", "history", "civics", "economics", "political_science"];
+        let sClean = this.createSlug(subject);
+        if (socialBooks.includes(sClean)) sClean = "social_science";
+
+        const officialTopic = this.getOfficialTitle(subject, topic);
+        return `${grade}_${sClean}_${this.createSlug(officialTopic)}`;
     }
 
     /**

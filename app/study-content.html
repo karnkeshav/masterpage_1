@@ -131,13 +131,9 @@
                 const { auth, db } = await getInitializedClients();
                 const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
-                const q = query(collection(db, "quiz_scores"),
-                                where("user_id", "==", auth.currentUser.uid),
-                                where("topicSlug", "==", quizSlug));
-
+                const q = query(collection(db, "quiz_scores"), where("user_id", "==", auth.currentUser.uid), where("topicSlug", "==", quizSlug));
                 const snap = await getDocs(q);
-                let bestSimple = 0;
-                let bestMedium = 0;
+                let bestSimple = 0, bestMedium = 0;
 
                 snap.forEach(d => {
                     const data = d.data();
@@ -146,7 +142,6 @@
                     if (data.difficulty === "Medium" && pct > bestMedium) bestMedium = pct;
                 });
 
-                // Requested Guidance Messages
                 if (bestSimple === 0) {
                     msgEl.className = 'text-xs font-bold uppercase mb-3 text-red-600';
                     msgEl.innerHTML = `<i class="fas fa-info-circle"></i> You have not taken the simple test for this chapter. Take it. Now.`;
@@ -226,21 +221,12 @@
         // Expose launch function globally for the HTML onclick
         window.launchQuiz = (difficulty) => {
             const params = new URLSearchParams(window.location.search);
-            const grade = params.get('grade') || '9';
-            const subject = params.get('subject') || 'Mathematics';
-            const chapter = params.get('chapter') || 'Polynomials';
+            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
 
-            // 1. Generate the Table Slug using the Engine's canonical handshake
-            const quizTableSlug = engine.getQuizTableSlug(grade, subject, chapter);
-
-            // 2. Build the redirect URL
-            const url = `quiz-engine.html?topic=${encodeURIComponent(quizTableSlug)}` +
-                        `&difficulty=${difficulty}` +
-                        `&grade=${grade}` +
-                        `&subject=${encodeURIComponent(subject)}` +
-                        `&chapter_name=${encodeURIComponent(chapter)}`;
-
-            window.location.href = url;
+            window.location.href = `quiz-engine.html?topic=${encodeURIComponent(quizSlug)}` +
+                `&difficulty=${difficulty}&grade=${params.get('grade')}` +
+                `&subject=${encodeURIComponent(params.get('subject'))}` +
+                `&chapter_name=${encodeURIComponent(params.get('chapter'))}`;
         };
     </script>
 </body>
