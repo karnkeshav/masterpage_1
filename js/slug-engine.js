@@ -1,9 +1,18 @@
 export class SlugEngine {
-    constructor(curriculum) { this.curriculum = curriculum || {}; }
+    constructor(curriculum) {
+        this.curriculum = curriculum || {};
+        // Legacy: Expose themes for UI compatibility (e.g., app/study-content.html)
+        this.themes = {
+            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
+            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask", bar: "bg-purple-500" },
+            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark", bar: "bg-amber-500" },
+            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500" }
+        };
+    }
 
     /**
-     * CANONICAL SLUGGER (Syncs with gemini_frontend.js)
-     * Replaces all non-alphanumeric chars (hyphens, ?, ') with single underscores.
+     * CANONICAL SLUGGER (Synced with gemini_frontend.js)
+     * Strict Regex: matches the automation producer exactly.
      */
     createSlug(text) {
         if (!text) return "";
@@ -13,56 +22,39 @@ export class SlugEngine {
     }
 
     /**
-     * GENERATOR: Supabase Table Slug
-     * Handshake: Uses first word (social_) + First_Last of topic.
+     * RESOLUTION A: Supabase Table Name
+     * Matches the "First_Last" rule used in automation.
      */
     getQuizTableSlug(grade, subject, topic) {
-        const s = (subject || "").toLowerCase().split(' ')[0]; // Handshake: social_
-        const tClean = this.createSlug(topic);
-        const words = tClean.split("_").filter(w => w);
-        if (words.length === 0) return "";
-        const tSegment = words.length >= 2
+        const s = this.createSlug(subject);
+        const words = this.createSlug(topic).split("_").filter(w => w);
+        const topicSegment = words.length >= 2
             ? `${words[0]}_${words[words.length - 1]}`
             : `${words[0]}_${words[0]}`;
-        return `${s}_${tSegment}_${grade}_quiz`;
+        return `${s}_${topicSegment}_${grade}_quiz`;
     }
 
     /**
-     * GENERATOR: Firestore Document ID
-     * Handshake: 9_geography_india_size_and_location
+     * RESOLUTION B: Firestore Document ID
+     * Matches the automation: grade_subject_topic
      */
     getFirestoreId(grade, subject, topic) {
-        const s = this.createSlug(subject);
-        const t = this.createSlug(topic);
-        return `${grade}_${s}_${t}`;
-    }
-
-    get themes() {
-        return {
-            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
-            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask", bar: "bg-purple-500" },
-            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark", bar: "bg-amber-500" },
-            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500" }
-        };
+        return `${grade}_${this.createSlug(subject)}_${this.createSlug(topic)}`;
     }
 
     /**
-     * Parses topicSlug to determine Subject, Section, and Theme.
-     * @param {string} topicSlug
-     * @returns {object} { subject, section, theme, chapterName }
+     * PARSER: Determines Subject context from any slug or raw text
      */
     getSubjectContext(topicSlug) {
         const s = topicSlug.toLowerCase();
         let subject = "General";
-        let section = "General"; // e.g. Physics, Algebra
+        let section = "General";
         let chapterName = topicSlug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 
-        // 1. Try exact match in Curriculum
         for (const [subj, sections] of Object.entries(this.curriculum)) {
             for (const [sec, chapters] of Object.entries(sections)) {
                 for (const ch of chapters) {
                     const title = ch.chapter_title.toLowerCase();
-                    // Fuzzy match: check if slug contains title or title contains slug parts
                     if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
                         subject = subj;
                         section = sec;
@@ -73,7 +65,6 @@ export class SlugEngine {
             }
         }
 
-        // 2. Fallback Inference
         if (s.includes("math")) { subject = "Mathematics"; section = "Algebra"; }
         else if (s.includes("science")) { subject = "Science"; section = "Physics"; }
         else if (s.includes("social")) { subject = "Social Science"; section = "History"; }
@@ -82,13 +73,9 @@ export class SlugEngine {
     }
 
     _formatContext(subject, section, chapterName) {
-        const theme = this.themes[subject] || this.themes["General"];
-        return {
-            subject,
-            section,
-            chapterName,
-            theme
-        };
+        // Use constructor themes if available, else fallback
+        const theme = (this.themes && this.themes[subject]) ? this.themes[subject] : this.themes["General"];
+        return { subject, section, chapterName, theme };
     }
 
     /**
@@ -160,12 +147,5 @@ export class SlugEngine {
             friction: Array.from(frictionMap.values()),
             victory: Array.from(victoryMap.values())
         };
-    }
-
-    getQuestionType(questionId) {
-        if (questionId.startsWith("mcq_")) return "MCQ";
-        if (questionId.startsWith("ar_")) return "Assertion-Reasoning";
-        if (questionId.startsWith("cb_")) return "Case-Based";
-        return "Standard";
     }
 }

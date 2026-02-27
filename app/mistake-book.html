@@ -159,7 +159,7 @@
                 if (!topic) return;
 
                 const { subject, chapterName } = getSubjectContext(topic);
-                const score = data.percentage ?? data.score_percent ?? data.score ?? 0;
+                const score = parseFloat(data.percentage || data.score_percent || data.score || 0);
                 const difficulty = (data.difficulty || 'simple').toLowerCase();
 
                 if (!subjectScores[subject]) {
@@ -170,7 +170,7 @@
                 }
 
                 (data.mistakes || []).forEach(m => {
-                    const mId = m.id || m.question_id || "";
+                    const mId = m.id || m.question_id || m.question || m.question_text || "";
                     if (!mId) return;
                     const type = getQuestionType(mId);
                     state.proficiency[type].mistakes++;
@@ -200,19 +200,19 @@
 
                 attempts.forEach(att => {
                     att.mistakes.forEach(m => {
-                        const mId = m.id || m.question_id || "";
+                        const mId = m.id || m.question_id || m.question || m.question_text || "";
                         if (!mId) return;
                         if (!allMistakes.has(mId)) {
-                            allMistakes.set(mId, { id: mId, text: m.question || m.question_text, type: getQuestionType(mId), dates: [], topic: topic });
+                            allMistakes.set(mId, { id: mId, text: m.question || m.question_text || "Question text unavailable", type: getQuestionType(mId), dates: [], topic: topic });
                         }
                         allMistakes.get(mId).dates.push(att.timestamp);
                     });
                 });
 
-                const latestMistakeIds = new Set(attempts[0].mistakes.map(m => m.id || m.question_id || "").filter(id => id));
+                const latestMistakeIds = new Set(attempts[0].mistakes.map(m => m.id || m.question_id || m.question || m.question_text || "").filter(id => id));
                 const previousMistakeIds = new Set();
                 attempts.slice(1).forEach(att => att.mistakes.forEach(m => {
-                    const id = m.id || m.question_id || "";
+                    const id = m.id || m.question_id || m.question || m.question_text || "";
                     if (id) previousMistakeIds.add(id);
                 }));
 
@@ -234,6 +234,19 @@
         }
 
         function renderConsole(container) {
+            const allSubjects = new Set([
+                ...Object.keys(state.subjectStats),
+                ...Object.keys(state.friction),
+                ...Object.keys(state.victory)
+            ]);
+
+            // Ensure core subjects are always present if not found
+            if (!allSubjects.has("Mathematics")) allSubjects.add("Mathematics");
+            if (!allSubjects.has("Science")) allSubjects.add("Science");
+            if (!allSubjects.has("Social Science")) allSubjects.add("Social Science");
+
+            const sortedSubjects = Array.from(allSubjects).sort();
+
             const tier1 = `
                 <div class="glass-panel rounded-3xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between bg-gradient-to-r from-cbse-blue/5 to-transparent border-cbse-blue/10">
                     <div class="flex items-center space-x-6 mb-4 md:mb-0">
@@ -265,9 +278,7 @@
                             ${renderProficiencyPill("CB", "Application", state.proficiency.CB.mistakes)}
                         </div>
                     </div>
-                    ${renderMasteryCard("Mathematics")}
-                    ${renderMasteryCard("Science")}
-                    ${renderMasteryCard("Social Science")}
+                    ${sortedSubjects.map(s => renderMasteryCard(s)).join('')}
                 </div>
             `;
 
@@ -275,9 +286,7 @@
                 <div class="grid lg:grid-cols-3 gap-8 items-start relative min-h-[500px]">
                     <div class="lg:col-span-2 space-y-6">
                         <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Subject Navigator</h4>
-                        ${renderSubjectNavigator("Mathematics")}
-                        ${renderSubjectNavigator("Science")}
-                        ${renderSubjectNavigator("Social Science")}
+                        ${sortedSubjects.map(s => renderSubjectNavigator(s)).join('')}
                     </div>
                     <div class="lg:col-span-1 hidden lg:block sticky top-24">
                         <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm relative overflow-hidden bg-white/50">

@@ -211,13 +211,20 @@
         // Expose launch function globally for the HTML onclick
         window.launchQuiz = (difficulty) => {
             const params = new URLSearchParams(window.location.search);
-            // Correctly generates: social_drainage_drainage_9_quiz
-            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
+            const grade = params.get('grade') || '9';
+            const subject = params.get('subject') || 'Mathematics';
+            const chapter = params.get('chapter') || 'Polynomials';
 
-            const url = `quiz-engine.html?topic=${encodeURIComponent(quizSlug)}` +
-                        `&difficulty=${difficulty}&grade=${params.get('grade') || '9'}` +
-                        `&subject=${encodeURIComponent(params.get('subject') || 'Mathematics')}` +
-                        `&chapter_name=${encodeURIComponent(params.get('chapter') || '')}`;
+            // 1. Generate the Table Slug using the Engine's canonical handshake
+            const quizTableSlug = engine.getQuizTableSlug(grade, subject, chapter);
+
+            // 2. Build the redirect URL
+            const url = `quiz-engine.html?topic=${encodeURIComponent(quizTableSlug)}` +
+                        `&difficulty=${difficulty}` +
+                        `&grade=${grade}` +
+                        `&subject=${encodeURIComponent(subject)}` +
+                        `&chapter_name=${encodeURIComponent(chapter)}`;
+
             window.location.href = url;
         };
     </script>
