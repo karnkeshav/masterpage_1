@@ -175,7 +175,7 @@ function changeDifficulty(level){
   const subject = urlParams.get("subject") || "Unknown";
   const chapter = urlParams.get("chapter") || "Unknown";
   const difficulty = urlParams.get("difficulty") || "Simple";
-  const classId = urlParams.get("grade") || urlParams.get("class") || "9";
+  const classId = urlParams.get("class") || "9";
 
   // Track Quiz Entry
   gtag('event', 'quiz_engine_load', { 'subject': subject, 'chapter': chapter, 'difficulty': difficulty, 'class': classId });

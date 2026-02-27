@@ -39,8 +39,8 @@
 
         let selectedQuiz = null;
 
-        window.startQuiz = (tableId, title, grade, subject) => {
-            selectedQuiz = { tableId, title, grade, subject };
+        window.startQuiz = (tableId, title, grade) => {
+            selectedQuiz = { tableId, title, grade };
             document.getElementById('difficulty-modal').classList.remove('hidden');
         };
 
@@ -51,8 +51,8 @@
 
         window.selectDifficulty = (difficulty) => {
             if (!selectedQuiz) return;
-            const { tableId, title, grade, subject } = selectedQuiz;
-            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}&subject=${encodeURIComponent(subject)}`;
+            const { tableId, title, grade } = selectedQuiz;
+            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}`;
         };
 
         window.loadSelection = async () => {
@@ -114,7 +114,7 @@
                 const tableId = ch.table_name || buildTableName(title, subject, grade);
 
                 return `
-                    <div onclick="startQuiz('${tableId}', '${title}', '${grade}', '${subject}')"
+                    <div onclick="startQuiz('${tableId}', '${title}', '${grade}')"
                          class="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-500 hover:shadow-md transition cursor-pointer flex items-center justify-between">
                         <div class="flex items-center gap-4">
                             <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition">
