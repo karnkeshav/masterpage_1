@@ -241,7 +241,13 @@
                 }
             }
 
-            if (s.includes("math")) { subject = "Mathematics"; }
+            // Improved Fallback: Use the exact prefix from the Supabase slug if available
+            // E.g., 'mathematics_triangles_9_quiz' -> 'mathematics'
+            const prefix = s.split('_')[0];
+            if (prefix === "math" || prefix === "mathematics") { subject = "Mathematics"; }
+            else if (prefix === "social") { subject = "Social Science"; }
+            else if (prefix === "science") { subject = "Science"; }
+            else if (s.includes("math")) { subject = "Mathematics"; }
             else if (s.includes("social")) { subject = "Social Science"; }
             else if (s.includes("science")) { subject = "Science"; }
 
