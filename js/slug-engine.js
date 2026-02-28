@@ -3,7 +3,7 @@ export class SlugEngine {
     constructor(curriculum) {
         this.curriculum = curriculum || {};
         // Ported exactly from manageSupabase.js, added 'and' for "surface areas and volumes" -> "surface_volumes"
-        this.SKIP_WORDS = ["as","of","the","a","an","in","on","for","to","and","ki","ke","ka"];
+        this.SKIP_WORDS = ["as", "of", "the", "a", "an", "in", "on", "for", "to", "and", "ki", "ke", "ka"];
         // Legacy: Expose themes for UI compatibility (e.g., app/study-content.html)
         this.themes = {
             "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
@@ -21,23 +21,44 @@ export class SlugEngine {
             .replace(/^_+|_+$/g, "");
     }
 
-    /** SMART LOOKUP: Finds the official NCERT title from curriculum.js */
+    /** SMART LOOKUP: Finds the official NCERT title from curriculum.js using word intersection */
     getOfficialTitle(subject, chapter) {
-        const target = this.createSlug(chapter);
+        const targetWords = this.createSlug(chapter).split('_').filter(Boolean);
         const subjectNode = this.curriculum[subject];
         if (!subjectNode) return chapter;
 
         const allChapters = Array.isArray(subjectNode) ? subjectNode : Object.values(subjectNode).flat();
-        const match = allChapters.find(ch =>
-            this.createSlug(ch.chapter_title).includes(target) ||
-            target.includes(this.createSlug(ch.chapter_title))
-        );
-        return match ? match.chapter_title : chapter;
+
+        let bestMatch = chapter;
+        let highestScore = 0;
+
+        for (const ch of allChapters) {
+            const chWords = this.createSlug(ch.chapter_title).split('_').filter(Boolean);
+
+            // Count how many target words exist in the chapter title words
+            let score = 0;
+            for (const w of targetWords) {
+                if (chWords.includes(w)) score++;
+            }
+
+            // If words match perfectly, return immediately
+            if (score === targetWords.length && targetWords.length === chWords.length) {
+                return ch.chapter_title;
+            }
+
+            // Otherwise keep track of best partial match (e.g. "Euclid Geometry" matches "Introduction to Euclid's Geometry" with score 2)
+            if (score > highestScore && score >= targetWords.length * 0.5) { // Needs at least 50% match
+                highestScore = score;
+                bestMatch = ch.chapter_title;
+            }
+        }
+
+        return bestMatch;
     }
 
     /** GENERATOR: Supabase Table Slug (Mirror of manageSupabase.js) */
     getQuizTableSlug(grade, subject, topic) {
-        let sPart = (subject || "").toLowerCase().trim().split(" ")[0]; 
+        let sPart = (subject || "").toLowerCase().trim().split(" ")[0];
         if ((subject || "").toLowerCase().includes("social")) sPart = "social";
 
         // Let's use the official curriculum string so we filter the exact words they generated from
@@ -45,11 +66,11 @@ export class SlugEngine {
         const chapter = (officialTopic || topic || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
         const words = chapter.split(" ").filter(Boolean);
         const filtered = words.filter(w => !this.SKIP_WORDS.includes(w));
-        
+
         const finalWords = filtered.length > 0 ? filtered : words;
         const first = finalWords[0] || "ch";
         const last = finalWords[finalWords.length - 1] || "x"; // If 1 word, first and last are the same
-        
+
         return `${sPart}_${first}_${last}_${grade}_quiz`;
     }
 
