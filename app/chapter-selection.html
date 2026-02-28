@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,40 +8,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body{font-family:'Inter',sans-serif;}</style>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 
     <script src="../js/firebase-master-config.js"></script>
     <script src="../js/config.js" type="module"></script>
 
     <script type="module">
         import { loadCurriculum } from "../js/curriculum/loader.js";
+        import { SlugEngine } from "../js/slug-engine.js";
 
-        // --- HELPER: Transliterate to Table Name ---
-        function buildTableName(chapterTitle, subject, grade) {
-            const skipList = ["as","of","the","a","an","in","on","for","to","ki","ke","ka"];
-
-            // subjectSlug is just the FIRST word of the subject
-            const subjectSlug = subject.toLowerCase().split(' ')[0]; // "science" for "Science", "social" for "Social Science"
-
-            // sanitize
-            let clean = chapterTitle.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-            const words = clean.split(/\s+/).filter(w => !skipList.includes(w));
-
-            // Format: subject_firstword_lastword_grade_quiz
-            let first = words[0];
-            let last = words.length > 1 ? words[words.length-1] : "";
-
-            let tableID = `${subjectSlug}_${first}`;
-            if (last) tableID += `_${last}`;
-            tableID += `_${grade}_quiz`;
-
-            return tableID;
-        }
-
+        let engine = null;
         let selectedQuiz = null;
 
-        window.startQuiz = (tableId, title, grade, subject) => {
-            selectedQuiz = { tableId, title, grade, subject };
+        window.startQuiz = (tableId, title, grade) => {
+            selectedQuiz = { tableId, title, grade };
             document.getElementById('difficulty-modal').classList.remove('hidden');
         };
 
@@ -51,8 +36,8 @@
 
         window.selectDifficulty = (difficulty) => {
             if (!selectedQuiz) return;
-            const { tableId, title, grade, subject } = selectedQuiz;
-            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}&subject=${encodeURIComponent(subject)}`;
+            const { tableId, title, grade } = selectedQuiz;
+            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}`;
         };
 
         window.loadSelection = async () => {
@@ -65,6 +50,7 @@
 
             try {
                 const curriculum = await loadCurriculum(grade);
+                engine = new SlugEngine(curriculum);
                 const data = curriculum[subject];
 
                 if (!data) {
@@ -111,10 +97,10 @@
                 // Note: In real app, table_name might be in the JSON. If not, generate it.
                 // Assuming we generate it strictly based on title for now.
                 // Or if the object has `table_name`, use it.
-                const tableId = ch.table_name || buildTableName(title, subject, grade);
+                const tableId = ch.table_name || (engine ? engine.getQuizTableSlug(grade, subject, title) : "");
 
                 return `
-                    <div onclick="startQuiz('${tableId}', '${title}', '${grade}', '${subject}')"
+                    <div onclick="startQuiz('${tableId}', '${title}', '${grade}')"
                          class="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-500 hover:shadow-md transition cursor-pointer flex items-center justify-between">
                         <div class="flex items-center gap-4">
                             <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition">
@@ -147,10 +133,12 @@
         loadSelection();
     </script>
 </head>
+
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
     <div class="max-w-5xl mx-auto fade-in">
         <header class="flex items-center gap-4 mb-8">
-            <a id="back-link" href="#" class="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-400 transition">
+            <a id="back-link" href="#"
+                class="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-400 transition">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div>
@@ -168,15 +156,19 @@
     </div>
 
     <!-- Difficulty Modal -->
-    <div id="difficulty-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div id="difficulty-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all scale-100">
             <h3 class="text-2xl font-black text-slate-800 mb-2">Select Difficulty</h3>
             <p class="text-slate-500 mb-6">Choose your challenge level to begin.</p>
 
             <div class="space-y-3">
-                <button onclick="selectDifficulty('Simple')" class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-green-500 hover:bg-green-50 flex items-center justify-between group transition-all">
+                <button onclick="selectDifficulty('Simple')"
+                    class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-green-500 hover:bg-green-50 flex items-center justify-between group transition-all">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold">S</div>
+                        <div
+                            class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold">
+                            S</div>
                         <div class="text-left">
                             <div class="font-bold text-slate-800 group-hover:text-green-700">Simple</div>
                             <div class="text-xs text-slate-400">Build confidence</div>
@@ -185,9 +177,12 @@
                     <i class="fas fa-arrow-right text-slate-300 group-hover:text-green-500"></i>
                 </button>
 
-                <button onclick="selectDifficulty('Medium')" class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 flex items-center justify-between group transition-all">
+                <button onclick="selectDifficulty('Medium')"
+                    class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-blue-500 hover:bg-blue-50 flex items-center justify-between group transition-all">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">M</div>
+                        <div
+                            class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                            M</div>
                         <div class="text-left">
                             <div class="font-bold text-slate-800 group-hover:text-blue-700">Medium</div>
                             <div class="text-xs text-slate-400">Standard level</div>
@@ -196,9 +191,12 @@
                     <i class="fas fa-arrow-right text-slate-300 group-hover:text-blue-500"></i>
                 </button>
 
-                <button onclick="selectDifficulty('Advanced')" class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-purple-500 hover:bg-purple-50 flex items-center justify-between group transition-all">
+                <button onclick="selectDifficulty('Advanced')"
+                    class="w-full p-4 rounded-xl border-2 border-slate-100 hover:border-purple-500 hover:bg-purple-50 flex items-center justify-between group transition-all">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold">A</div>
+                        <div
+                            class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
+                            A</div>
                         <div class="text-left">
                             <div class="font-bold text-slate-800 group-hover:text-purple-700">Advanced</div>
                             <div class="text-xs text-slate-400">Mastery check</div>
@@ -208,8 +206,10 @@
                 </button>
             </div>
 
-            <button onclick="closeModal()" class="mt-6 w-full py-3 text-slate-400 hover:text-slate-600 font-semibold text-sm">Cancel</button>
+            <button onclick="closeModal()"
+                class="mt-6 w-full py-3 text-slate-400 hover:text-slate-600 font-semibold text-sm">Cancel</button>
         </div>
     </div>
 </body>
+
 </html>

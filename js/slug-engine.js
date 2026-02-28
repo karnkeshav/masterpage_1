@@ -1,6 +1,8 @@
 export class SlugEngine {
     constructor(curriculum) {
         this.curriculum = curriculum || {};
+        // Ported exactly from manageSupabase.js, added 'and' for "surface areas and volumes" -> "surface_volumes"
+        this.SKIP_WORDS = ["as","of","the","a","an","in","on","for","to","and","ki","ke","ka"];
         // Legacy: Expose themes for UI compatibility (e.g., app/study-content.html)
         this.themes = {
             "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
@@ -10,10 +12,7 @@ export class SlugEngine {
         };
     }
 
-    /**
-     * CANONICAL SLUGGER (Synced with gemini_frontend.js)
-     * Strict Regex: matches the automation producer exactly.
-     */
+    /** CANONICAL SLUGGER: Mirrors gemini_frontend.js */
     createSlug(text) {
         if (!text) return "";
         return text.toLowerCase()
@@ -21,25 +20,47 @@ export class SlugEngine {
             .replace(/^_+|_+$/g, "");
     }
 
-    /**
-     * RESOLUTION A: Supabase Table Name
-     * Matches the "First_Last" rule used in automation.
-     */
-    getQuizTableSlug(grade, subject, topic) {
-        const s = this.createSlug(subject);
-        const words = this.createSlug(topic).split("_").filter(w => w);
-        const topicSegment = words.length >= 2
-            ? `${words[0]}_${words[words.length - 1]}`
-            : `${words[0]}_${words[0]}`;
-        return `${s}_${topicSegment}_${grade}_quiz`;
+    /** SMART LOOKUP: Finds the official NCERT title from curriculum.js */
+    getOfficialTitle(subject, chapter) {
+        const target = this.createSlug(chapter);
+        const subjectNode = this.curriculum[subject];
+        if (!subjectNode) return chapter;
+
+        const allChapters = Array.isArray(subjectNode) ? subjectNode : Object.values(subjectNode).flat();
+        const match = allChapters.find(ch =>
+            this.createSlug(ch.chapter_title).includes(target) ||
+            target.includes(this.createSlug(ch.chapter_title))
+        );
+        return match ? match.chapter_title : chapter;
     }
 
-    /**
-     * RESOLUTION B: Firestore Document ID
-     * Matches the automation: grade_subject_topic
-     */
+    /** GENERATOR: Supabase Table Slug (Mirror of manageSupabase.js) */
+    getQuizTableSlug(grade, subject, topic) {
+        let sPart = (subject || "").toLowerCase().trim().split(" ")[0]; 
+        if ((subject || "").toLowerCase().includes("social")) sPart = "social";
+
+        // Let's use the official curriculum string so we filter the exact words they generated from
+        const officialTopic = this.getOfficialTitle(subject, topic);
+        const chapter = (officialTopic || topic || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+        const words = chapter.split(" ").filter(Boolean);
+        const filtered = words.filter(w => !this.SKIP_WORDS.includes(w));
+        
+        const finalWords = filtered.length > 0 ? filtered : words;
+        const first = finalWords[0] || "ch";
+        const last = finalWords[finalWords.length - 1] || "x"; // If 1 word, first and last are the same
+        
+        return `${sPart}_${first}_${last}_${grade}_quiz`;
+    }
+
+    /** GENERATOR: Firestore Document ID (Mirror of gemini_frontend.js) */
     getFirestoreId(grade, subject, topic) {
-        return `${grade}_${this.createSlug(subject)}_${this.createSlug(topic)}`;
+        let sClean = this.createSlug(subject);
+        const socialBooks = ["geography", "history", "civics", "economics", "political_science", "social"];
+        if (socialBooks.includes(sClean) || sClean.includes("social")) sClean = "social_science";
+        if (sClean === "maths" || sClean === "math") sClean = "mathematics";
+
+        const officialTopic = this.getOfficialTitle(subject, topic);
+        return `${grade}_${sClean}_${this.createSlug(officialTopic)}`;
     }
 
     /**

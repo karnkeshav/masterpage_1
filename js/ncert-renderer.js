@@ -88,19 +88,24 @@ async function loadContent(grade, subject, chapter, user) {
 
     let data = null;
 
+    // Use SlugEngine to grab the official chapter string
+    const curriculum = await loadCurriculum(grade);
+    const __engine = new (await import("./slug-engine.js")).SlugEngine(curriculum);
+    const officialChapter = __engine.getOfficialTitle(subject, chapter);
+
     // 1. Try Curriculum-Aware Fetch (e.g. Social Science -> Geography)
     const subDiscipline = await getCurriculumSubDiscipline(grade, subject, chapter);
     if (subDiscipline) {
         const specificId = subDiscipline.toLowerCase().replace(/ /g, '_');
         console.log(`[NCERT] Trying specific fetch: ${specificId}`);
-        data = await fetchChapterSummary(grade, specificId, chapter);
+        data = await fetchChapterSummary(grade, specificId, officialChapter);
     }
 
     // 2. Fallback: Generic Subject Fetch (e.g. Social Science -> social_science)
     if (!data) {
         const genericId = subject.toLowerCase().replace(/ /g, '_');
         console.log(`[NCERT] Fallback to generic fetch: ${genericId}`);
-        data = await fetchChapterSummary(grade, genericId, chapter);
+        data = await fetchChapterSummary(grade, genericId, officialChapter);
     }
 
     if (!data) {
@@ -176,8 +181,8 @@ function renderDynamicContent(container, data, subject) {
                 </h3>
                 <div class="grid md:grid-cols-2 gap-4 relative z-10">
                     ${formulaData.map(item => {
-                        const f = getFormulaContent(item);
-                        return `
+            const f = getFormulaContent(item);
+            return `
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                             <div class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">${sanitize(f.label)}</div>
                             <div class="font-mono text-lg font-bold text-slate-900">${f.content}</div>
@@ -241,11 +246,11 @@ function renderDynamicContent(container, data, subject) {
             label = "Economic Principles";
             icon = "💰";
         } else if (data.socialScienceData) {
-             specificData = getArray(data.socialScienceData);
+            specificData = getArray(data.socialScienceData);
         }
 
         if (specificData.length > 0) {
-             socialDataHtml = `
+            socialDataHtml = `
             <div class="glass-panel p-6 rounded-3xl">
                 <h3 class="text-lg font-black text-cbse-blue mb-4 flex items-center gap-2">
                     <span class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 text-sm">${icon}</span>
@@ -362,11 +367,11 @@ function launchTargetedQuiz(grade, subject, chapter, user) {
 
     document.getElementById("close-modal-btn").onclick = () => modal.remove();
 
-    window.startTargetedQuiz = (difficulty) => {
-        // Step 2: Slug Construction (Refined)
-        const subjectSlug = subject.trim().toLowerCase().split(' ')[0];
-        const chapterSlug = chapter.trim().toLowerCase().replace(/\s+/g, '_');
-        const topicSlug = `${grade}_${subjectSlug}_${chapterSlug}`;
+    window.startTargetedQuiz = async (difficulty) => {
+        // Step 2: Slug Construction using the standardized SlugEngine
+        const curriculum = await loadCurriculum(grade);
+        const __engine = new (await import("./slug-engine.js")).SlugEngine(curriculum);
+        const topicSlug = __engine.getQuizTableSlug(grade, subject, chapter);
 
         logQuizStart(user.uid, subject, chapter, difficulty);
 
