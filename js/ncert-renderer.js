@@ -92,20 +92,21 @@ async function loadContent(grade, subject, chapter, user) {
     const curriculum = await loadCurriculum(grade);
     const __engine = new (await import("./slug-engine.js")).SlugEngine(curriculum);
     const officialChapter = __engine.getOfficialTitle(subject, chapter);
+    const safeSlug = __engine.createSlug(officialChapter); // Strips punctuation like ' and ?
 
     // 1. Try Curriculum-Aware Fetch (e.g. Social Science -> Geography)
     const subDiscipline = await getCurriculumSubDiscipline(grade, subject, chapter);
     if (subDiscipline) {
         const specificId = subDiscipline.toLowerCase().replace(/ /g, '_');
         console.log(`[NCERT] Trying specific fetch: ${specificId}`);
-        data = await fetchChapterSummary(grade, specificId, officialChapter);
+        data = await fetchChapterSummary(grade, specificId, safeSlug);
     }
 
     // 2. Fallback: Generic Subject Fetch (e.g. Social Science -> social_science)
     if (!data) {
         const genericId = subject.toLowerCase().replace(/ /g, '_');
         console.log(`[NCERT] Fallback to generic fetch: ${genericId}`);
-        data = await fetchChapterSummary(grade, genericId, officialChapter);
+        data = await fetchChapterSummary(grade, genericId, safeSlug);
     }
 
     if (!data) {
