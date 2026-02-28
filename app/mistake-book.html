@@ -441,7 +441,23 @@
 
         function renderProficiencyPill(type, label, stats) {
             const { total, mistakes } = stats;
-            const errorRate = total > 0 ? (mistakes / total) * 100 : 0;
+
+            if (total === 0) {
+                return `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-100 text-slate-500 transition hover:scale-[1.02]">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+                            <div>
+                                <span class="block text-xs font-black uppercase tracking-wide">${label}</span>
+                                <span class="text-[10px] opacity-80 font-bold">No Data</span>
+                            </div>
+                        </div>
+                        <span class="text-lg font-black opacity-30">${type}</span>
+                    </div>
+                `;
+            }
+
+            const errorRate = (mistakes / total) * 100;
 
             let color = "bg-green-100 text-green-700";
             let dot = "bg-green-500";
