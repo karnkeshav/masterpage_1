@@ -249,8 +249,9 @@
         }
 
         function getQuestionType(id) {
-            if (id.startsWith("ar_")) return "AR";
-            if (id.startsWith("cb_")) return "CB";
+            const strId = String(id || "");
+            if (strId.startsWith("ar_")) return "AR";
+            if (strId.startsWith("cb_")) return "CB";
             return "MCQ";
         }
 
