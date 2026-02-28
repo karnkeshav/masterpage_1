@@ -282,6 +282,15 @@
                     state.proficiency[type].mistakes++;
                 });
 
+                // Estimate total questions of each type based on the score percentage to prevent division by zero.
+                // In a perfect system, `data` would contain the exact breakdown of questions seen.
+                // For the UI, we'll increment the total based on the fact that an attempt was made.
+                // Since we don't know exactly what types were in the quiz if they got them right, 
+                // we'll assume a standard 60% MCQ, 20% AR, 20% CB split for a 10-question quiz.
+                state.proficiency.MCQ.total += 6;
+                state.proficiency.AR.total += 2;
+                state.proficiency.CB.total += 2;
+
                 if (!topicHistory[topic]) topicHistory[topic] = [];
                 topicHistory[topic].push({
                     mistakes: data.mistakes || [],
@@ -383,9 +392,9 @@
                     <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between">
                         <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Proficiency Profile</h4>
                         <div class="space-y-4">
-                            ${renderProficiencyPill("MCQ", "Recall", state.proficiency.MCQ.mistakes)}
-                            ${renderProficiencyPill("AR", "Logic", state.proficiency.AR.mistakes)}
-                            ${renderProficiencyPill("CB", "Application", state.proficiency.CB.mistakes)}
+                            ${renderProficiencyPill("MCQ", "Recall", state.proficiency.MCQ)}
+                            ${renderProficiencyPill("AR", "Logic", state.proficiency.AR)}
+                            ${renderProficiencyPill("CB", "Application", state.proficiency.CB)}
                         </div>
                     </div>
                     ${sortedSubjects.map(s => renderMasteryCard(s)).join('')}
@@ -424,12 +433,23 @@
             container.innerHTML = tier1 + tier2;
         }
 
-        function renderProficiencyPill(type, label, mistakes) {
+        function renderProficiencyPill(type, label, stats) {
+            const { total, mistakes } = stats;
+            const errorRate = total > 0 ? (mistakes / total) * 100 : 0;
+
             let color = "bg-green-100 text-green-700";
             let dot = "bg-green-500";
             let status = "Strong";
-            if (mistakes > 10) { color = "bg-red-100 text-red-700"; dot = "bg-red-500"; status = "Needs Focus"; }
-            else if (mistakes > 5) { color = "bg-yellow-100 text-yellow-700"; dot = "bg-yellow-500"; status = "Review"; }
+
+            if (errorRate > 30) {
+                color = "bg-red-100 text-red-700";
+                dot = "bg-red-500";
+                status = "Needs Focus";
+            } else if (errorRate > 15) {
+                color = "bg-yellow-100 text-yellow-700";
+                dot = "bg-yellow-500";
+                status = "Review";
+            }
 
             return `
                 <div class="flex items-center justify-between p-3 rounded-xl ${color} transition hover:scale-[1.02]">
