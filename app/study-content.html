@@ -76,9 +76,11 @@
 
     <script type="module">
         import { SlugEngine } from '../js/slug-engine.js';
+        import { getInitializedClients } from '../js/config.js';
+        import { curriculum } from '../js/curriculum/class-9.js';
 
         // Initialize Engine for Themes
-        const engine = new SlugEngine();
+        const engine = new SlugEngine(curriculum);
 
         // DOM Observer to Upgrade Button
         const observer = new MutationObserver((mutations) => {
@@ -94,15 +96,17 @@
         }
 
         function upgradeButton(oldBtn) {
-            // Clone to strip listeners
             const newBtn = oldBtn.cloneNode(true);
             oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-
-            // Visual Upgrade
             newBtn.innerHTML = `<span>Take Chapter Test</span> <i class="fas fa-bolt"></i>`;
             newBtn.dataset.upgraded = "true";
 
-            // New Listener
+            // STRICT ADDITION: Add Guidance Message Container
+            const msgDiv = document.createElement('div');
+            msgDiv.id = 'quiz-guidance-msg';
+            msgDiv.className = 'text-xs font-bold uppercase tracking-widest mb-3 animate-pulse';
+            newBtn.parentNode.insertBefore(msgDiv, newBtn);
+
             newBtn.addEventListener('click', () => {
                  // Get context
                  const params = new URLSearchParams(window.location.search);
@@ -113,6 +117,45 @@
                  };
                  openDifficultyModal(context);
             });
+
+            // Trigger Guidance Check
+            renderGuidance();
+        }
+
+        async function renderGuidance() {
+            const params = new URLSearchParams(window.location.search);
+            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
+            const msgEl = document.getElementById('quiz-guidance-msg');
+
+            try {
+                const { auth, db } = await getInitializedClients();
+                const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                const q = query(collection(db, "quiz_scores"), where("user_id", "==", auth.currentUser.uid), where("topicSlug", "==", quizSlug));
+                const snap = await getDocs(q);
+                let bestSimple = 0, bestMedium = 0;
+
+                snap.forEach(d => {
+                    const data = d.data();
+                    const pct = data.percentage || data.score_percent || 0;
+                    if (data.difficulty === "Simple" && pct > bestSimple) bestSimple = pct;
+                    if (data.difficulty === "Medium" && pct > bestMedium) bestMedium = pct;
+                });
+
+                if (bestSimple === 0) {
+                    msgEl.className = 'text-xs font-bold uppercase mb-3 text-red-600';
+                    msgEl.innerHTML = `<i class="fas fa-info-circle"></i> You have not taken the simple test for this chapter. Take it. Now.`;
+                } else if (bestSimple < 95) {
+                    msgEl.className = 'text-xs font-bold uppercase mb-3 text-amber-600';
+                    msgEl.innerHTML = `<i class="fas fa-redo"></i> Try again to achieve 95 percentage on Simple Level.`;
+                } else if (bestMedium < 95) {
+                    msgEl.className = 'text-xs font-bold uppercase mb-3 text-green-600';
+                    msgEl.innerHTML = `<i class="fas fa-check-circle"></i> Great! Now take the Medium Level test.`;
+                } else {
+                    msgEl.className = 'text-xs font-bold uppercase mb-3 text-blue-600';
+                    msgEl.innerHTML = `<i class="fas fa-fire"></i> Mastery achieved! Push to Advanced.`;
+                }
+            } catch (e) { console.error("Guidance Error:", e); }
         }
 
         function openDifficultyModal(ctx) {
@@ -178,35 +221,12 @@
         // Expose launch function globally for the HTML onclick
         window.launchQuiz = (difficulty) => {
             const params = new URLSearchParams(window.location.search);
-            const subject = params.get('subject') || 'Mathematics';
-            const chapter = params.get('chapter') || 'Polynomials';
-            const grade = params.get('grade') || '9';
+            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
 
-            // 1. Clean Subject
-            const cleanSubject = subject.toLowerCase();
-
-            // 2. Clean Chapter: Lowercase + Remove special chars except spaces
-            const rawChapter = chapter.toLowerCase().replace(/[^\w\s]/gi, '');
-
-            // 3. Apply First_Last Rule
-            const words = rawChapter.trim().split(/\s+/);
-            let chapterSegment = '';
-
-            if (words.length === 1 && words[0]) {
-                // Single Word -> Duplicate (e.g., polynomials_polynomials)
-                chapterSegment = `${words[0]}_${words[0]}`;
-            } else if (words.length >= 2) {
-                // Multiple Words -> First_Last (e.g., real_numbers, surface_volumes)
-                chapterSegment = `${words[0]}_${words[words.length - 1]}`;
-            }
-
-            // 4. Construct Slug
-            // Format: ${subject}_${chapterSegment}_${grade}_quiz
-            const cleanSlug = `${cleanSubject}_${chapterSegment}_${grade}_quiz`;
-
-            // 5. Launch (Fix Path Error: Use relative path without ../quiz/)
-            const url = `quiz-engine.html?topic=${encodeURIComponent(cleanSlug)}&difficulty=${difficulty}&grade=${grade}`;
-            window.location.href = url;
+            window.location.href = `quiz-engine.html?topic=${encodeURIComponent(quizSlug)}` +
+                `&difficulty=${difficulty}&grade=${params.get('grade')}` +
+                `&subject=${encodeURIComponent(params.get('subject'))}` +
+                `&chapter_name=${encodeURIComponent(params.get('chapter'))}`;
         };
     </script>
 </body>
