@@ -98,7 +98,11 @@ function parseUrlParameters() {
         return;
     }
 
-    quizState.topicSlug = params.get("topic") || params.get("table") || params.get("topicSlug") || "";
+    const explicitTable = params.get("table");
+    const fallbackTopic = params.get("topic") || params.get("topicSlug") || "";
+
+    // The 'table' param is the exact Supabase ID. Old links might only have 'topic'
+    quizState.topicSlug = explicitTable || fallbackTopic;
 
     // Safety Check: Redirect if missing critical params
     if (!quizState.topicSlug) {
@@ -108,7 +112,8 @@ function parseUrlParameters() {
     }
 
     // A. TRY TO GET EXACT CHAPTER NAME FROM URL
-    let displayChapter = params.get("chapter_name");
+    // If explicitTable exists, the 'topic' parameter contains the human-readable chapter name!
+    let displayChapter = params.get("chapter_name") || (explicitTable ? fallbackTopic : "");
 
     // B. FALLBACK: IF NO NAME IN URL, CLEAN THE ID
     if (!displayChapter) {
@@ -232,8 +237,8 @@ async function handleSubmit() {
         total: quizState.questions.length,
         correct: 0,
         mcq: { c: 0, w: 0, t: 0 },
-        ar:  { c: 0, w: 0, t: 0 },
-        case:{ c: 0, w: 0, t: 0 }
+        ar: { c: 0, w: 0, t: 0 },
+        case: { c: 0, w: 0, t: 0 }
     };
 
     quizState.questions.forEach(q => {
