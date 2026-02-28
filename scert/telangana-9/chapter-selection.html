@@ -10,7 +10,7 @@
   <script>window.__firebase_config = { apiKey: "AIzaSyAXdKiYRxBKAj280YcNuNwlKKDp85xpOWQ", authDomain: "quiz-signon.firebaseapp.com", projectId: "quiz-signon", storageBucket: "quiz-signon.appspot.com", messagingSenderId: "863414222321", appId: "1:863414222321:web:819f5564825308bcd9d850", measurementId: "G-4EFDM0CRYY", supabaseUrl: "https://zqhzekzilalbszpfwxhn.supabase.co", supabaseAnonKey: "sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys" };</script>
 </head>
 <body class="bg-cbse-light min-h-screen flex flex-col">
-<header class="bg-cbse-blue py-4 shadow-lg"><div class="max-w-6xl mx-auto flex justify-between items-center px-6"><h1 class="text-2xl font-extrabold text-accent-gold">Ready4<span class="text-white">Exam</span></h1><button onclick="location.href='index.html'" class="text-white underline">← Back</button></div></header>
+<header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center"><div class="max-w-6xl mx-auto flex justify-between items-center px-6"><h1 class="text-2xl font-extrabold text-accent-gold">Ready4<span class="text-white">Exam</span></h1><button onclick="location.href='index.html'" class="text-white underline">← Back</button></div></header>
 <main class="flex-grow max-w-3xl mx-auto px-4 py-8 w-full">
   <h2 id="page-title" class="text-3xl font-extrabold text-cbse-blue mb-2 text-center">Select Book</h2>
   <p id="subject-desc" class="text-center text-gray-600 mb-8 font-medium"></p>
@@ -19,7 +19,9 @@
   <p id="error-msg" class="hidden text-center text-red-500 mb-4 font-semibold"></p>
   <div class="text-center sticky bottom-6 md:static"><button id="start-quiz" disabled class="w-full md:w-auto px-12 py-4 bg-cbse-blue text-white rounded-xl font-bold text-lg hover:bg-blue-800 transition shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">Start Quiz</button></div>
 </main>
-<footer class="bg-cbse-blue py-6 text-center text-white mt-12"><small>© 2025 Ready4Exam Academic Portal</small></footer>
+<footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
+  <p>© 2025 Ready4Exam Academic Portal.</p>
+</footer>
 <script type="module">
 import curriculum from "./js/curriculum.js";
 import { transliterate as tr } from "https://cdn.jsdelivr.net/npm/transliteration/+esm";
