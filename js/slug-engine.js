@@ -1,74 +1,26 @@
+
 export class SlugEngine {
     constructor(curriculum) {
         this.curriculum = curriculum || {};
-        // Ported exactly from manageSupabase.js
-        this.SKIP_WORDS = ["as","of","the","a","an","in","on","for","to","ki","ke","ka"];
-        // Legacy: Expose themes for UI compatibility (e.g., app/study-content.html)
-        this.themes = {
-            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
-            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask", bar: "bg-purple-500" },
-            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark", bar: "bg-amber-500" },
-            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500" }
-        };
-    }
-
-    /** CANONICAL SLUGGER: Mirrors gemini_frontend.js */
-    createSlug(text) {
-        if (!text) return "";
-        return text.toLowerCase()
-            .replace(/[^a-z0-9]+/g, "_")
-            .replace(/^_+|_+$/g, "");
-    }
-
-    /** SMART LOOKUP: Finds the official NCERT title from curriculum.js */
-    getOfficialTitle(subject, chapter) {
-        const target = this.createSlug(chapter);
-        const subjectNode = this.curriculum[subject];
-        if (!subjectNode) return chapter;
-
-        const allChapters = Array.isArray(subjectNode) ? subjectNode : Object.values(subjectNode).flat();
-        const match = allChapters.find(ch =>
-            this.createSlug(ch.chapter_title).includes(target) ||
-            target.includes(this.createSlug(ch.chapter_title))
-        );
-        return match ? match.chapter_title : chapter;
-    }
-
-    /** GENERATOR: Supabase Table Slug (Mirror of manageSupabase.js) */
-    getQuizTableSlug(grade, subject, topic) {
-        const sPart = (subject || "").toLowerCase().trim().split(" ")[0]; //
-        const chapter = (topic || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
-        const words = chapter.split(" ").filter(Boolean);
-        const filtered = words.filter(w => !this.SKIP_WORDS.includes(w));
-        const first = filtered[0] || words[0] || "ch";
-        const last = filtered[filtered.length - 1] || words[words.length - 1] || "x";
-        return `${sPart}_${first}_${last}_${grade}_quiz`;
-    }
-
-    /** GENERATOR: Firestore Document ID (Mirror of gemini_frontend.js) */
-    getFirestoreId(grade, subject, topic) {
-        // Map Geography/History back to Social Science for Firestore handshake
-        const socialBooks = ["geography", "history", "civics", "economics", "political_science"];
-        let sClean = this.createSlug(subject);
-        if (socialBooks.includes(sClean)) sClean = "social_science";
-
-        const officialTopic = this.getOfficialTitle(subject, topic);
-        return `${grade}_${sClean}_${this.createSlug(officialTopic)}`;
     }
 
     /**
-     * PARSER: Determines Subject context from any slug or raw text
+     * Parses topicSlug to determine Subject, Section, and Theme.
+     * @param {string} topicSlug
+     * @returns {object} { subject, section, theme, chapterName }
      */
     getSubjectContext(topicSlug) {
         const s = topicSlug.toLowerCase();
         let subject = "General";
-        let section = "General";
+        let section = "General"; // e.g. Physics, Algebra
         let chapterName = topicSlug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 
+        // 1. Try exact match in Curriculum
         for (const [subj, sections] of Object.entries(this.curriculum)) {
             for (const [sec, chapters] of Object.entries(sections)) {
                 for (const ch of chapters) {
                     const title = ch.chapter_title.toLowerCase();
+                    // Fuzzy match: check if slug contains title or title contains slug parts
                     if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
                         subject = subj;
                         section = sec;
@@ -79,6 +31,7 @@ export class SlugEngine {
             }
         }
 
+        // 2. Fallback Inference
         if (s.includes("math")) { subject = "Mathematics"; section = "Algebra"; }
         else if (s.includes("science")) { subject = "Science"; section = "Physics"; }
         else if (s.includes("social")) { subject = "Social Science"; section = "History"; }
@@ -87,9 +40,18 @@ export class SlugEngine {
     }
 
     _formatContext(subject, section, chapterName) {
-        // Use constructor themes if available, else fallback
-        const theme = (this.themes && this.themes[subject]) ? this.themes[subject] : this.themes["General"];
-        return { subject, section, chapterName, theme };
+        const THEMES = {
+            "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500" },
+            "Science": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", icon: "fa-flask", bar: "bg-purple-500" },
+            "Social Science": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: "fa-landmark", bar: "bg-amber-500" },
+            "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500" }
+        };
+        return {
+            subject,
+            section,
+            chapterName,
+            theme: THEMES[subject] || THEMES["General"]
+        };
     }
 
     /**
@@ -161,5 +123,12 @@ export class SlugEngine {
             friction: Array.from(frictionMap.values()),
             victory: Array.from(victoryMap.values())
         };
+    }
+
+    getQuestionType(questionId) {
+        if (questionId.startsWith("mcq_")) return "MCQ";
+        if (questionId.startsWith("ar_")) return "Assertion-Reasoning";
+        if (questionId.startsWith("cb_")) return "Case-Based";
+        return "Standard";
     }
 }
