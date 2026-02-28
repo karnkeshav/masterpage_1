@@ -627,16 +627,20 @@
                     </div>
             `;
 
-            const diffOrder = ['simple', 'medium', 'advanced'];
+            const availableDifficulties = Object.keys(difficultiesObj).sort();
 
-            diffOrder.forEach(diff => {
+            availableDifficulties.forEach(diff => {
                 if (!difficultiesObj[diff] || difficultiesObj[diff].length === 0) return;
 
-                // Add difficulty headers
+                // Add difficulty headers with safe fallbacks for legacy/unrecognized tags
                 const colorMap = { 'simple': 'text-blue-500', 'medium': 'text-amber-500', 'advanced': 'text-purple-500' };
                 const bgMap = { 'simple': 'bg-blue-50', 'medium': 'bg-amber-50', 'advanced': 'bg-purple-50' };
 
-                html += `<div class="mt-6 mb-3 flex items-center"><span class="text-xs font-black uppercase tracking-widest ${colorMap[diff]} px-2 py-1 ${bgMap[diff]} rounded">${diff} Level</span></div>`;
+                const textColor = colorMap[diff] || 'text-slate-500';
+                const bgColor = bgMap[diff] || 'bg-slate-100';
+                const labelName = ['simple', 'medium', 'advanced'].includes(diff) ? `${diff} Level` : `Questions`;
+
+                html += `<div class="mt-6 mb-3 flex items-center"><span class="text-xs font-black uppercase tracking-widest ${textColor} px-2 py-1 ${bgColor} rounded">${labelName}</span></div>`;
 
                 difficultiesObj[diff].forEach(m => {
                     const dateStr = (m.dates || []).map(d => {
