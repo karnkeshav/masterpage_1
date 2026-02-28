@@ -1,14 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parent Console — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        'cbse-blue': '#1a3e6a',
+                        'cbse-light': '#f5f7fa',
+                        'accent-gold': '#ffb703',
+                        'success-green': '#16a34a',
+                        'warning-yellow': '#ca8a04',
+                        'danger-red': '#dc2626'
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>body{font-family:'Inter',sans-serif;}</style>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 
     <script src="../../js/firebase-master-config.js"></script>
     <script src="../../js/config.js" type="module"></script>
@@ -18,8 +40,8 @@
         import { signOut } from "../../js/auth-paywall.js";
 
         // LOGOUT LOGIC
-        const logoutBtn = document.getElementById('logout-btn');
-        if(logoutBtn) {
+        const logoutBtn = document.getElementById('logout-nav-btn');
+        if (logoutBtn) {
             logoutBtn.addEventListener('click', async () => {
                 if (confirm("Sign out of your Ready4Exam session?")) {
                     try {
@@ -37,13 +59,10 @@
 
         window.loadConsoleData = async (profile) => {
             console.log("Loading Parent Console for:", profile.uid);
-
-            // Constraint: Strictly isolate to child's user_id
-            // In a real implementation, we would fetch profile.linked_children
-            // For now, we simulate finding the child
-            const childName = "Aarav"; // Mock
-
-            document.getElementById("child-name").textContent = childName;
+            const welcomeEl = document.getElementById("user-welcome");
+            if (welcomeEl) {
+                welcomeEl.textContent = profile.displayName || "Guardian";
+            }
             renderGrowthChart();
         };
 
@@ -52,84 +71,370 @@
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: ['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9'],
+                    labels: ['Class 6', 'Class 7', 'Class 8', 'Class 9'],
                     datasets: [{
-                        label: 'Science Mastery',
+                        label: 'Mastery Average (%)',
                         data: [72, 78, 85, 92],
-                        borderColor: '#2563eb',
-                        backgroundColor: '#2563eb',
-                        tension: 0.4
-                    }, {
-                        label: 'Math Mastery',
-                        data: [65, 70, 72, 88],
-                        borderColor: '#f59e0b',
-                        backgroundColor: '#f59e0b',
-                        tension: 0.4
+                        borderColor: '#1a3e6a',
+                        backgroundColor: 'rgba(26, 62, 106, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
                 options: {
                     responsive: true,
-                    scales: { y: { beginAtZero: true, max: 100 } }
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
                 }
             });
         }
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-    <nav class="fixed top-0 right-0 p-4 z-50">
-        <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
-            <i class="fas fa-sign-out-alt text-red-400"></i>
-            <span>Sign Out</span>
-        </button>
-    </nav>
 
-    <div id="loading" class="flex items-center justify-center min-h-screen">
+<body class="bg-cbse-light text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Glass Header (Global) -->
+    <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <a href="../../index.html"
+                class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
+            <div>
+                <h2 class="text-xl font-black leading-none tracking-tight text-accent-gold">Parent Console</h2>
+                <p
+                    class="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">
+                    Ready4Exam • Powered by Ready4Industry</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <div class="hidden md:flex flex-col items-end mr-2">
+                <span id="user-welcome" class="text-xs font-bold text-white">Guardian</span>
+                <span
+                    class="text-[10px] font-black text-accent-gold bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">Command
+                    Center</span>
+            </div>
+            <button id="logout-nav-btn"
+                class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
+        </div>
+    </header>
+
+    <div id="loading" class="flex items-center justify-center min-h-[50vh]">
         <div class="animate-pulse font-bold text-slate-400">Verifying Parental Access...</div>
     </div>
 
-    <div id="app" class="hidden max-w-5xl mx-auto p-4 md:p-8 fade-in">
-        <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-black  tracking-tight mb-2 text-accent-gold">Guardian<span class="text-blue-600">Link</span></h1>
-                <p class="font-medium text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry</p>
+    <!-- MAIN APP STRUCTURE -->
+    <div id="app" class="hidden max-w-6xl mx-auto w-full p-4 md:p-8 flex-grow fade-in">
+
+        <div class="mb-8 border-b border-slate-200 pb-4">
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Finalized Foundation: <span
+                    class="text-cbse-blue">The 5 Command Pillars</span></h1>
+            <p class="text-slate-500 text-sm mt-2">Authoritative oversight of the academic journey through mandatory
+                triggers, verification matrices, and long-term diagnostic vaults.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6 mb-8">
+            <!-- Left Column: Topic 1, 2 & 3 -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Topic 1 & 2: Sync Wall & Authority Flow -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4">
+                        <span class="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase rounded">Topic
+                            1 & 2</span>
+                    </div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg shadow-inner">
+                            <i class="fas fa-satellite-dish"></i></div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg leading-snug">The Mandatory Handshake &
+                                Authority Flow</h3>
+                            <p class="text-xs text-slate-500 font-medium">School-Home Sync ensuring no chapter is left
+                                behind</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 relative z-10 font-sans">
+                        <!-- Taught Trigger -->
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
+                                <div
+                                    class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-cbse-blue rounded-full border-4 border-white">
+                                </div>
+                            </div>
+                            <div class="pb-2">
+                                <div class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">The
+                                    Teacher Trigger</div>
+                                <div class="font-bold text-slate-800 text-sm">Force and Laws of Motion (Science) marked
+                                    "Taught"</div>
+                                <div class="text-xs text-slate-500 mt-1">Verification Status: <span
+                                        class="text-accent-gold font-bold">Pending Test</span> (Home Initiation required
+                                    in Student Inbox)</div>
+                            </div>
+                        </div>
+
+                        <!-- Diagnostic Alert -->
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
+                                <div
+                                    class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-danger-red rounded-full border-4 border-white shadow-[0_0_8px_rgba(220,38,38,0.3)]">
+                                </div>
+                            </div>
+                            <div class="pb-2">
+                                <div class="text-[10px] font-bold text-danger-red uppercase tracking-widest mb-1">
+                                    Diagnostic Alert (System to Parent)</div>
+                                <div class="font-bold text-slate-800 text-sm">Polynomials (Mathematics)</div>
+                                <div class="text-xs text-slate-500 mt-1">Verification Status: <span
+                                        class="text-danger-red font-bold">Under Review (<95% Score)</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1"><i
+                                        class="fas fa-exclamation-triangle text-amber-500"></i> Identified weakness in
+                                    Case-Based questions. Parent-to-Teacher feedback loop activated.</p>
+                                <button
+                                    class="mt-2 text-[10px] bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded font-bold transition flex items-center gap-1"><i
+                                        class="fas fa-reply"></i> Request Conceptual Review in Class</button>
+                            </div>
+                        </div>
+
+                        <!-- Mastered -->
+                        <div class="flex gap-4 relative">
+                            <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
+                                <div
+                                    class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-success-green rounded-full border-4 border-white">
+                                </div>
+                            </div>
+                            <div class="pb-0">
+                                <div class="text-[10px] font-bold text-success-green uppercase tracking-widest mb-1">
+                                    Student Execution</div>
+                                <div class="font-bold text-slate-800 text-sm">French Revolution (Social Science)</div>
+                                <div class="text-xs text-slate-500 mt-1">Verification Status: <span
+                                        class="text-success-green font-bold">Mastered (95%+)</span></div>
+                                <p class="text-[10px] italic text-slate-400 mt-1">Teacher & Parent commands have been
+                                    safely cleared from the Persistent Inbox.</p>
+                            </div>
+                            <!-- Connector Line Hack -->
+                            <div class="absolute -top-10 left-[0.2rem] w-[2px] h-[calc(100%+20px)] bg-slate-100 -z-10">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Topic 3: Diagnostic Report Card / Mastery Matrix -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative">
+                    <div class="absolute top-0 right-0 p-4">
+                        <span
+                            class="px-2 py-1 bg-purple-50 text-purple-600 text-[10px] font-black uppercase rounded">Topic
+                            3</span>
+                    </div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg shadow-inner">
+                            <i class="fas fa-table-cells"></i></div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg leading-snug">The Diagnostic Report Card</h3>
+                            <p class="text-xs text-slate-500 font-medium">A granular "Truth Engine" and 3-Column Mastery
+                                Matrix</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto text-sm">
+                        <table class="w-full text-left border-collapse min-w-[500px]">
+                            <thead>
+                                <tr
+                                    class="text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                                    <th class="pb-3 px-2">Subject / Chapter</th>
+                                    <th class="pb-3 px-2 text-center text-success-green">Simple<br /><span
+                                            class="font-normal text-[8px]">(Core Eval)</span></th>
+                                    <th class="pb-3 px-2 text-center text-cbse-blue">Medium<br /><span
+                                            class="font-normal text-[8px]">(Application)</span></th>
+                                    <th class="pb-3 px-2 text-center text-accent-gold">Advanced<br /><span
+                                            class="font-normal text-[8px]">(Higher Order)</span></th>
+                                    <th class="pb-3 px-2 text-right">Failure Diagnostics</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-medium">
+                                <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                                    <td class="py-3 px-2">
+                                        <div class="text-slate-800 font-bold">Structure of Atom</div>
+                                        <div class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Science
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <div
+                                            class="inline-block px-2 py-1 bg-green-50 text-success-green rounded font-black border border-green-100">
+                                            98%</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <div
+                                            class="inline-block px-2 py-1 bg-green-50 text-success-green rounded font-black border border-green-100">
+                                            95%</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <div class="inline-block px-2 py-1 bg-amber-50 text-warning-yellow rounded font-black border border-amber-100"
+                                            title="Amber: Retake Required">72%</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <button
+                                            class="text-[10px] text-cbse-blue font-bold hover:underline transition"><i
+                                                class="fas fa-history"></i> Historical Deep-Dive</button>
+                                        <div class="text-[9px] text-slate-400 mt-1">2 attempts • Last 14 Oct</div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition border-b border-slate-50">
+                                    <td class="py-3 px-2">
+                                        <div class="text-slate-800 font-bold">Lines and Angles</div>
+                                        <div class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">
+                                            Mathematics</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <div
+                                            class="inline-block px-2 py-1 bg-green-50 text-success-green rounded font-black border border-green-100">
+                                            96%</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <div class="inline-block px-2 py-1 bg-red-50 text-danger-red rounded font-black border border-red-100"
+                                            title="Red: Critical Gap">45%</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="text-slate-300 text-xs font-bold">—</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <button
+                                            class="text-[10px] text-cbse-blue font-bold hover:underline transition"><i
+                                                class="fas fa-history"></i> Historical Deep-Dive</button>
+                                        <div class="text-[9px] text-danger-red mt-1 font-bold"><i
+                                                class="fas fa-exclamation-circle"></i> Critical Gap Found</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
-        </header>
 
-        <div class="grid md:grid-cols-2 gap-8 mb-8">
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <h3 class="font-bold text-slate-900 mb-6">Longitudinal Growth (Grades 6-12)</h3>
-                <canvas id="growthChart"></canvas>
-            </div>
+            <!-- Right Column: Topic 5, 4, 3 (Analyzer) -->
+            <div class="lg:col-span-1 space-y-6">
 
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm overflow-hidden relative">
-                 <h3 class="font-bold text-slate-900 mb-6">Live Evidence Feed</h3>
-                 <div class="space-y-6 relative z-10">
-                     <div class="flex gap-4">
-                         <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative">
-                             <div class="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-green-500 rounded-full border-4 border-white"></div>
-                         </div>
-                         <div class="pb-6">
-                             <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Today, 10:42 AM</div>
-                             <div class="font-bold text-slate-900">Mastered "Force and Laws of Motion"</div>
-                             <div class="text-sm text-slate-500 mt-1">Score: 92% • Difficulty: Advanced</div>
-                         </div>
-                     </div>
-                     <div class="flex gap-4">
-                         <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative">
-                             <div class="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-amber-400 rounded-full border-4 border-white"></div>
-                         </div>
-                         <div class="pb-6">
-                             <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Yesterday</div>
-                             <div class="font-bold text-slate-900">Attempted "Polynomials"</div>
-                             <div class="text-sm text-slate-500 mt-1">Score: 65% • Triggered Remedial Loop</div>
-                         </div>
-                     </div>
-                 </div>
+                <!-- Topic 5: Mirror Portal -->
+                <div class="bg-cbse-blue text-white p-6 rounded-3xl shadow-lg relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 z-10">
+                        <span
+                            class="px-2 py-1 bg-white/20 text-white text-[10px] font-black uppercase rounded backdrop-blur-sm">Topic
+                            5</span>
+                    </div>
+                    <div
+                        class="absolute -right-4 -top-4 text-white/10 text-7xl group-hover:rotate-12 group-hover:scale-110 transition duration-500">
+                        <i class="fas fa-desktop"></i>
+                    </div>
 
-                 <!-- Connector Line Hack -->
-                 <div class="absolute top-20 left-[2.4rem] w-0.5 h-40 bg-slate-100 -z-0"></div>
+                    <div class="relative z-10 mb-4">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-lg mb-4 backdrop-blur-sm">
+                            <i class="fas fa-search"></i></div>
+                        <h3 class="font-bold text-lg leading-tight mb-2">Technical Mode Mirror</h3>
+                        <p class="text-xs text-white/70 font-medium">A deep-dive tool for highly technical parents.
+                            Sovereignty Mirror for forensic audits.</p>
+                    </div>
+
+                    <ul class="text-[10px] space-y-2 mb-6 text-white/80 font-medium">
+                        <li class="flex items-center gap-2"><i class="fas fa-check-circle text-accent-gold"></i> Secure,
+                            Read-Only link to live dashboard</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check-circle text-accent-gold"></i> Audit
+                            time spent per question</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check-circle text-accent-gold"></i> View
+                            mistake notebook entries</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check-circle text-accent-gold"></i>
+                            Identify rushing or late-night patterns</li>
+                    </ul>
+
+                    <button
+                        class="w-full py-3 bg-accent-gold text-slate-900 font-black uppercase text-xs rounded-xl hover:bg-yellow-400 transition shadow-lg relative z-10 flex justify-center items-center gap-2">
+                        <i class="fas fa-external-link-alt"></i> Launch Mirror
+                    </button>
+                </div>
+
+                <!-- Topic 4: Legacy Vault -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative">
+                    <div class="absolute top-0 right-0 p-4">
+                        <span
+                            class="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase rounded">Topic
+                            4</span>
+                    </div>
+                    <h3 class="font-bold text-slate-900 text-sm leading-tight mb-1"><i
+                            class="fas fa-vault text-accent-gold mr-1"></i> Persistent Inbox & Legacy Vault</h3>
+                    <p class="text-[10px] text-slate-500 font-medium uppercase tracking-widest mb-4">Class 6-12 Records
+                    </p>
+
+                    <div class="h-32 w-full mb-4">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+
+                    <div
+                        class="text-[10px] font-medium text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 leading-snug">
+                        <p><span class="font-bold text-cbse-blue">Un-Dismissible Inbox:</span> Any Parent or Teacher
+                            Command strictly stays active until student scores 95%.</p>
+                        <p><span class="font-bold text-accent-gold">Expiries:</span> Operational nudges clear at
+                            academic year-end. Mastery data is archived in the Legacy Vault.</p>
+                    </div>
+                </div>
+
+                <!-- Topic 3: Section Analyzer Tool -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 text-sm"><i
+                                class="fas fa-microscope text-cbse-blue mr-1"></i> Section Analyzer</h3>
+                        <span
+                            class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-bold uppercase tracking-wider">Topic
+                            3</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mb-3">Highlights persistent gaps across Supabase metadata logic
+                        types.</p>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-medium text-slate-600">Pure MCQ Logic</span>
+                            <span class="font-black text-success-green">94%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-success-green h-full rounded-full" style="width: 94%"></div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs pt-1">
+                            <span class="font-medium text-slate-600">A/R Logic</span>
+                            <span class="font-black text-danger-red">65%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-danger-red h-full rounded-full" style="width: 65%"></div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs pt-1">
+                            <span class="font-medium text-slate-600">Case-Based Logic</span>
+                            <span class="font-black text-warning-yellow">78%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-warning-yellow h-full rounded-full" style="width: 78%"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
+
     </div>
+
+    <!-- Global Footer -->
+    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
+        <p>© 2025 Ready4Exam Academic Portal.</p>
+    </footer>
+
 </body>
+
 </html>
