@@ -185,7 +185,9 @@
                     });
 
                     // Inject mistakes array so processData doesn't break
+                    // We also capture the explicit difficulty from the quiz score so we can group mistakes later
                     data.mistakes = matchingNotebookEntry ? (matchingNotebookEntry.data().mistakes || []) : [];
+                    data.difficulty = data.difficulty || 'simple'; // Default fallback
                     return { data: () => data };
                 });
 
@@ -208,6 +210,7 @@
                                 topic: topic,
                                 timestamp: mData.timestamp,
                                 percentage: 0,
+                                difficulty: mData.difficulty || 'simple', // Fallback for isolated legacy mistakes
                                 mistakes: mData.mistakes || []
                             })
                         });
@@ -297,8 +300,12 @@
                 state.proficiency.AR.total += 2;
                 state.proficiency.CB.total += 2;
 
-                if (!topicHistory[topic]) topicHistory[topic] = [];
-                topicHistory[topic].push({
+                if (!topicHistory[topic]) topicHistory[topic] = {};
+                // Organize history nested by Difficulty Level (Simple, Medium, Advanced)
+                // This ensures we can track Mastery vs Friction separately for advanced concepts
+                if (!topicHistory[topic][difficulty]) topicHistory[topic][difficulty] = [];
+
+                topicHistory[topic][difficulty].push({
                     mistakes: data.mistakes || [],
                     timestamp: data.timestamp ? data.timestamp.toDate() : new Date()
                 });
@@ -314,40 +321,61 @@
                 };
             });
 
-            Object.entries(topicHistory).forEach(([topic, attempts]) => {
+            Object.entries(topicHistory).forEach(([topic, difficulties]) => {
                 const { subject, chapterName } = getSubjectContext(topic);
-                attempts.sort((a, b) => b.timestamp - a.timestamp);
-                const allMistakes = new Map();
 
-                attempts.forEach(att => {
-                    att.mistakes.forEach(m => {
-                        const mId = m.id || m.question_id || m.question || m.question_text || "";
-                        if (!mId) return;
-                        if (!allMistakes.has(mId)) {
-                            allMistakes.set(mId, { id: mId, text: m.question || m.question_text || "Question text unavailable", type: getQuestionType(mId), dates: [], topic: topic });
+                Object.entries(difficulties).forEach(([diff, attempts]) => {
+                    attempts.sort((a, b) => b.timestamp - a.timestamp);
+                    const allMistakes = new Map();
+
+                    // Keep track of the raw state existence for UI mapping
+                    if (!state.friction[subject]) state.friction[subject] = {};
+                    if (!state.friction[subject][chapterName]) state.friction[subject][chapterName] = [];
+
+                    let hasRealMistakes = false;
+
+                    attempts.forEach(att => {
+                        if (att.mistakes && att.mistakes.length > 0) hasRealMistakes = true;
+
+                        (att.mistakes || []).forEach(m => {
+                            const mId = m.id || m.question_id || m.question || m.question_text || "";
+                            if (!mId) return;
+                            if (!allMistakes.has(mId)) {
+                                allMistakes.set(mId, {
+                                    id: mId,
+                                    text: m.question || m.question_text || "Question text unavailable",
+                                    type: getQuestionType(mId),
+                                    dates: [],
+                                    topic: topic,
+                                    difficulty: diff
+                                });
+                            }
+                            allMistakes.get(mId).dates.push(att.timestamp);
+                        });
+                    });
+
+                    // If it was just an empty legacy score (0% but no mistake data physical logged), skip it.
+                    if (!hasRealMistakes) return;
+
+                    const latestMistakeIds = new Set((attempts[0].mistakes || []).map(m => m.id || m.question_id || m.question || m.question_text || "").filter(id => id));
+                    const previousMistakeIds = new Set();
+
+                    // Start looking from index 1 (previous attempts)
+                    attempts.slice(1).forEach(att => {
+                        (att.mistakes || []).forEach(m => {
+                            const id = m.id || m.question_id || m.question || m.question_text || "";
+                            if (id) previousMistakeIds.add(id);
+                        });
+                    });
+
+                    allMistakes.forEach((data, id) => {
+                        if (previousMistakeIds.has(id) && !latestMistakeIds.has(id)) {
+                            addToState('victory', subject, chapterName, { ...data, masteryDate: attempts[0].timestamp.toDateString() });
+                            state.victoryCount++;
+                        } else {
+                            addToState('friction', subject, chapterName, { ...data, dates: data.dates });
                         }
-                        allMistakes.get(mId).dates.push(att.timestamp);
                     });
-                });
-
-                const latestMistakeIds = new Set(attempts[0].mistakes.map(m => m.id || m.question_id || m.question || m.question_text || "").filter(id => id));
-                const previousMistakeIds = new Set();
-
-                // Start looking from index 1 (previous attempts)
-                attempts.slice(1).forEach(att => {
-                    (att.mistakes || []).forEach(m => {
-                        const id = m.id || m.question_id || m.question || m.question_text || "";
-                        if (id) previousMistakeIds.add(id);
-                    });
-                });
-
-                allMistakes.forEach((data, id) => {
-                    if (previousMistakeIds.has(id) && !latestMistakeIds.has(id)) {
-                        addToState('victory', subject, chapterName, { ...data, masteryDate: attempts[0].timestamp.toDateString() });
-                        state.victoryCount++;
-                    } else {
-                        addToState('friction', subject, chapterName, { ...data, dates: data.dates });
-                    }
                 });
             });
         } // Closing processData
@@ -568,7 +596,10 @@
 
             let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
             names.forEach(ch => {
-                const count = chapters[ch].length;
+                // Now chapters[ch] is an object keyed by difficulty: { simple: [...], medium: [...] }
+                let count = 0;
+                Object.values(chapters[ch]).forEach(diffArray => count += diffArray.length);
+
                 const escapedCh = ch.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 html += `
                     <div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item"
@@ -584,7 +615,8 @@
         };
 
         window.inspectChapter = (subject, chapter, type, isClick = false) => {
-            const mistakes = state[type][subject][chapter];
+            // Now fetching an object { simple: [], medium: [], advanced: [] }
+            const difficultiesObj = state[type][subject][chapter];
             const isFriction = type === 'friction';
 
             let html = `
@@ -595,26 +627,42 @@
                     </div>
             `;
 
-            mistakes.forEach(m => {
-                const dateStr = (m.dates || []).map(d => {
-                    const date = d instanceof Date ? d : (d.toDate ? d.toDate() : new Date(d));
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                }).join(', ');
+            const diffOrder = ['simple', 'medium', 'advanced'];
 
-                html += `
-                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-3 relative">
-                        <div class="absolute left-0 top-4 bottom-4 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'} rounded-r-full"></div>
-                        <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
-                        <div class="pl-3 pt-2 border-t border-slate-200/50 flex justify-between items-center">
-                            ${isFriction ? `
-                                <span class="text-[9px] font-bold text-red-500 uppercase">Trend: ${dateStr}</span>
-                                <a href="../study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-white border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 transition uppercase shadow-sm">Master Concept</a>
-                            ` : `
-                                <span class="text-[9px] font-bold text-green-600 uppercase">🏆 Mastered: ${m.masteryDate}</span>
-                            `}
+            diffOrder.forEach(diff => {
+                if (!difficultiesObj[diff] || difficultiesObj[diff].length === 0) return;
+
+                // Add difficulty headers
+                const colorMap = { 'simple': 'text-blue-500', 'medium': 'text-amber-500', 'advanced': 'text-purple-500' };
+                const bgMap = { 'simple': 'bg-blue-50', 'medium': 'bg-amber-50', 'advanced': 'bg-purple-50' };
+
+                html += `<div class="mt-6 mb-3 flex items-center"><span class="text-xs font-black uppercase tracking-widest ${colorMap[diff]} px-2 py-1 ${bgMap[diff]} rounded">${diff} Level</span></div>`;
+
+                difficultiesObj[diff].forEach(m => {
+                    const dateStr = (m.dates || []).map(d => {
+                        const date = d instanceof Date ? d : (d.toDate ? d.toDate() : new Date(d));
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }).join(', ');
+
+                    const mistakeCount = (m.dates || []).length;
+                    const repeatedFriction = isFriction && mistakeCount > 1;
+
+                    html += `
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-3 relative">
+                            <div class="absolute left-0 top-4 bottom-4 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'} rounded-r-full"></div>
+                            ${repeatedFriction ? `<div class="mb-2"><span class="text-[9px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200 uppercase tracking-wider shadow-sm">⚠️ Failed ${mistakeCount} Times</span></div>` : ''}
+                            <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
+                            <div class="pl-3 pt-2 border-t border-slate-200/50 flex justify-between items-center">
+                                ${isFriction ? `
+                                    <span class="text-[9px] font-bold text-red-500 uppercase">Trend: ${dateStr}</span>
+                                    <a href="../study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-white border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 transition uppercase shadow-sm">Master Concept</a>
+                                ` : `
+                                    <span class="text-[9px] font-bold text-green-600 uppercase">🏆 Mastered: ${m.masteryDate}</span>
+                                `}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                });
             });
             html += `</div>`;
 
