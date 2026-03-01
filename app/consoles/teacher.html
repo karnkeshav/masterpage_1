@@ -647,6 +647,7 @@
             const [profile, setProfile] = useState(null);
             const [db, setDb] = useState(null);
             const [activeTab, setActiveTab] = useState('curriculum');
+            const [activeChapters, setActiveChapters] = useState([]);
 
             // Sovereignty Context
             const [context, setContext] = useState({
@@ -654,6 +655,36 @@
                 section: 'A',
                 discipline: 'Chemistry'
             });
+
+            // Load Curriculum
+            useEffect(() => {
+                let isMounted = true;
+
+                const fetchCurriculum = async () => {
+                    try {
+                        const curr = await window.loadCurriculum(context.grade);
+                        if (!isMounted) return;
+
+                        let allChapters = [];
+                        if (curr && curr["Science"]) {
+                            const disciplineChapters = curr["Science"][context.discipline] || [];
+                            allChapters = disciplineChapters.map(ch => ({
+                                id: ch.chapter_title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""),
+                                title: ch.chapter_title
+                            }));
+                        }
+                        setActiveChapters(allChapters);
+                    } catch (error) {
+                        console.error("Failed to load curriculum:", error);
+                    }
+                };
+
+                fetchCurriculum();
+
+                return () => {
+                    isMounted = false;
+                };
+            }, [context.grade, context.discipline]);
 
             // Init Firebase
             useEffect(() => {
