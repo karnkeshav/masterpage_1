@@ -70,29 +70,28 @@
             const childUid = "I5t4hWd27sXg8p7w2W0fKjA4m8u1"; // Replace with actual student9 UID if known, simulating query for student9 
             // In a real scenario we use profile.linked_children, but here we query based on the prompt "student9 who is in 9th standard"
 
-            await fetchChildData(profile.uid);
-            renderGrowthChart();
+            const overallAvg = await fetchChildData(profile.uid);
+            renderGrowthChart(overallAvg);
         };
 
         async function fetchChildData(parentUid) {
             try {
                 const { db } = await getInitializedClients();
 
-                // For demonstration based on prompt, we need the report card of student9. 
-                // First find student9 uid (mocking uid retrieval or just query all scores and filter if needed).
-                // Let's query users to find student9
-                const usersRef = collection(db, "users");
-                const qUser = query(usersRef, where("email", "==", "student9@ready4exam.com"));
-                const userDocs = await getDocs(qUser);
-
-                let targetUid = null;
+                let targetUid = "I5t4hWd27sXg8p7w2W0fKjA4m8u1"; // Fallback to a known mock UID or just empty
                 let childName = "Student 9";
-                if (!userDocs.empty) {
-                    targetUid = userDocs.docs[0].id;
-                    if (userDocs.docs[0].data().displayName) childName = userDocs.docs[0].data().displayName;
-                } else {
-                    // Fallback to a known UID or just query everything if we can't find email
-                    targetUid = parentUid; // Fallback for safety
+
+                try {
+                    const usersRef = collection(db, "users");
+                    const qUser = query(usersRef, where("email", "==", "student9@ready4exam.com"));
+                    const userDocs = await getDocs(qUser);
+
+                    if (!userDocs.empty) {
+                        targetUid = userDocs.docs[0].id;
+                        if (userDocs.docs[0].data().displayName) childName = userDocs.docs[0].data().displayName;
+                    }
+                } catch (e) {
+                    console.warn("Could not query users directly due to rules. Using fallback UID.", e);
                 }
 
                 // Update UI with Target Child Name
@@ -101,17 +100,21 @@
                     contextBadge.innerHTML = `<i class="fas fa-child mr-1"></i> ${childName} (Class 9)`;
                 }
 
-                // Temporary override for development/demo matching "student9"
                 if (targetUid === parentUid) {
-                    // If we couldn't find student9 by email, try to query scores directly for a known mock or just use the current parent's uid temporarily if linked
-                    console.warn("Could not isolate student9. Showing linked data.");
+                    console.warn("Targeting parent's own UID for demo purposes since no student UID linked.");
                 }
 
-                // If user wants EXACTLY student9 and we don't have the UID, we query quiz_scores for any student named student9 or email student9. 
-                // Let's assume we grabbed the targetUid.
-
-                const q = query(collection(db, "quiz_scores"), where("user_id", "==", targetUid), orderBy("timestamp", "desc"));
-                const snapshot = await getDocs(q);
+                let snapshot;
+                try {
+                    const q = query(collection(db, "quiz_scores"), where("user_id", "==", targetUid), orderBy("timestamp", "desc"));
+                    snapshot = await getDocs(q);
+                } catch (e) {
+                    console.error("Critical Permission Error fetching quiz_scores. The parent account may not have rule access.", e);
+                    // Force clear matrix to remove static html
+                    document.getElementById("matrix-body").innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500 text-xs">Permission Denied: Unable to fetch actual student data.</td></tr>`;
+                    document.getElementById("sync-wall-container").innerHTML = `<div class="text-sm text-slate-500 italic p-4 text-center">Data access restricted.</div>`;
+                    return 0;
+                }
 
                 if (snapshot.empty) {
                     console.log("No data found for student.");
@@ -146,18 +149,174 @@
                     if (diff.includes('medium') && (chapterData[chap].medium === null || p > chapterData[chap].medium)) chapterData[chap].medium = p;
                     if (diff.includes('advanced') && (chapterData[chap].advanced === null || p > chapterData[chap].advanced)) chapterData[chap].advanced = p;
 
-                    // Aggregate Logic Types (Mocking based on difficulty for demonstration if metadata missing, normally from Supabase)
-                    // "Simple" -> MCQ, "Medium" -> A/R, "Advanced" -> Case
                     if (diff.includes('simple')) { totalMCQ++; mcqScore += p; }
                     if (diff.includes('medium')) { totalAR++; arScore += p; }
                     if (diff.includes('advanced')) { totalCase++; caseScore += p; }
                 });
 
+                let totalScore = mcqScore + arScore + caseScore;
+                let totalQs = totalMCQ + totalAR + totalCase;
+                let overallAvg = totalQs > 0 ? Math.round(totalScore / totalQs) : 0;
+
                 renderMatrix(chapterData);
                 renderAnalyzer(totalMCQ, mcqScore, totalAR, arScore, totalCase, caseScore);
 
+                // Fetch assignments & notifications to populate Sync Wall & Inbox
+                await renderSyncWallAndInbox(db, targetUid, chapterData);
+
+                return overallAvg;
+
             } catch (error) {
                 console.error("Error fetching child data:", error);
+                return 0;
+            }
+        }
+
+        async function renderSyncWallAndInbox(db, childUid, chapterData) {
+            const syncWall = document.getElementById("sync-wall-container");
+            const inboxList = document.getElementById("parent-inbox-list");
+            const inboxBadge = document.getElementById("parent-inbox-badge");
+
+            if (!syncWall || !inboxList) return;
+
+            let syncHtml = "";
+            let inboxHtml = "";
+            let priorityCount = 0;
+            const now = new Date();
+            const renderedChaps = new Set();
+
+            try {
+                const q = query(collection(db, "student_notifications"), where("student_id", "==", childUid), orderBy("timestamp", "desc"));
+                const notifDocs = await getDocs(q);
+
+                if (!notifDocs.empty) {
+                    notifDocs.forEach(doc => {
+                        const data = doc.data();
+                        if (data.type !== "TEST_ASSIGNED" || !data.topicSlug) return;
+
+                        const chap = data.topicSlug;
+                        renderedChaps.add(chap);
+                        const assignedDate = data.timestamp ? data.timestamp.toDate() : new Date();
+                        const hoursDiff = Math.floor((now - assignedDate) / (1000 * 60 * 60));
+
+                        // Check if student has taken it
+                        const scoreData = chapterData[chap];
+                        const hasScore = scoreData && (scoreData.simple !== null || scoreData.medium !== null || scoreData.advanced !== null);
+                        const latestScore = hasScore ? Math.max(scoreData.simple || 0, scoreData.medium || 0, scoreData.advanced || 0) : null;
+
+                        if (!hasScore) {
+                            if (hoursDiff <= 48) {
+                                // Scenario 1: Pending Execution
+                                syncHtml += `
+                                <div class="flex gap-4">
+                                    <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
+                                        <div class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-cbse-blue rounded-full border-4 border-white"></div>
+                                    </div>
+                                    <div class="pb-4 w-full">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <div class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Teacher Trigger</div>
+                                                <div class="font-bold text-slate-800 text-sm">${chap}</div>
+                                            </div>
+                                            <span class="text-[9px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded">Assigned ${hoursDiff}h ago</span>
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-1">Verification Status: <span class="text-accent-gold font-bold">Pending Execution</span></div>
+                                        <p class="text-[10px] text-slate-400 mt-1 italic"><i class="fas fa-lock mr-0.5 text-slate-300"></i> Nudge locked. Student is in 48-hour autonomous window.</p>
+                                    </div>
+                                </div>`;
+                            } else {
+                                // Scenario 2: Overdue
+                                priorityCount++;
+                                inboxHtml += `
+                                <div class="text-xs border-b border-slate-50 pb-2 mb-2 p-2 rounded hover:bg-red-50 transition cursor-pointer">
+                                    <span class="font-bold text-danger-red">System Diagnostic:</span> ${chap} deadline missed by ${hoursDiff}h. Command Nudge required immediately.
+                                </div>`;
+
+                                syncHtml += `
+                                <div class="flex gap-4">
+                                    <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
+                                        <div class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-warning-yellow rounded-full border-4 border-white shadow-[0_0_8px_rgba(202,138,4,0.3)]"></div>
+                                    </div>
+                                    <div class="pb-4 w-full">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <div class="text-[10px] font-bold text-warning-yellow uppercase tracking-widest mb-1">Escalation Protocol Active</div>
+                                                <div class="font-bold text-slate-800 text-sm">${chap}</div>
+                                            </div>
+                                            <span class="text-[9px] text-danger-red font-bold animate-pulse bg-red-50 px-2 py-0.5 rounded">Overdue (${hoursDiff}h)</span>
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-1">Verification Status: <span class="text-danger-red font-bold">Missed Deadline</span></div>
+                                        <button class="mt-2 text-[10px] bg-cbse-blue text-white hover:bg-blue-800 px-3 py-1.5 rounded font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-bell"></i> Issue Command Nudge to Student</button>
+                                        <p class="text-[9px] text-slate-400 mt-1">If unaddressed by 96h, Teacher Escalation Protocol automatically activates.</p>
+                                    </div>
+                                </div>`;
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn("Skipping notification fetch due to rules error, falling back to pure mastery data.", e);
+            }
+
+            // Fallback - Map remaining chapters to diagnostic alerts if they score below 95%
+            for (const [chap, scoreData] of Object.entries(chapterData)) {
+                if (renderedChaps.has(chap)) continue;
+
+                const hasScore = (scoreData.simple !== null || scoreData.medium !== null || scoreData.advanced !== null);
+                if (!hasScore) continue;
+
+                const latestScore = Math.max(scoreData.simple || 0, scoreData.medium || 0, scoreData.advanced || 0);
+
+                if (latestScore < 95) {
+                    priorityCount++;
+                    inboxHtml += `
+                    <div class="text-xs border-b border-slate-50 pb-2 mb-2 p-2 rounded hover:bg-amber-50 transition cursor-pointer">
+                        <span class="font-bold text-warning-yellow">Test Completed:</span> Score below 95% threshold in ${chap}. Re-attempt required.
+                    </div>`;
+
+                    syncHtml += `
+                    <div class="flex gap-4 relative">
+                        <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
+                            <div class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-danger-red rounded-full border-4 border-white shadow-[0_0_8px_rgba(220,38,38,0.3)]"></div>
+                        </div>
+                        <div class="pb-4 w-full">
+                            <div class="text-[10px] font-bold text-danger-red uppercase tracking-widest mb-1">Diagnostic Alert (System to Parent)</div>
+                            <div class="font-bold text-slate-800 text-sm">${chap}</div>
+                            <div class="text-xs text-slate-500 mt-1">Latest Score: <span class="text-danger-red font-bold">${latestScore}%</span></div>
+                            <p class="text-xs text-slate-500 mt-1"><i class="fas fa-exclamation-triangle text-amber-500"></i> Student completed execution, but failed to reach 95% Mastery threshold. Task persists in Student Inbox.</p>
+                            <div class="flex gap-2 mt-2">
+                                <button class="text-[10px] bg-cbse-blue text-white hover:bg-blue-800 px-3 py-1.5 rounded font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-redo"></i> Nudge Re-Attempt</button>
+                                <button class="text-[10px] bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded font-bold transition flex items-center gap-1"><i class="fas fa-reply"></i> Request Teacher Review</button>
+                            </div>
+                        </div>
+                    </div>`;
+                } else {
+                    syncHtml += `
+                    <div class="flex gap-4 relative opacity-60">
+                        <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
+                            <div class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-success-green rounded-full border-4 border-white"></div>
+                        </div>
+                        <div class="pb-4 w-full">
+                            <div class="text-[10px] font-bold text-success-green uppercase tracking-widest mb-1">Student Execution</div>
+                            <div class="font-bold text-slate-800 text-sm">${chap}</div>
+                            <div class="text-xs text-slate-500 mt-1">Verification Status: <span class="text-success-green font-bold">Mastered (${latestScore}%)</span></div>
+                        </div>
+                    </div>`;
+                }
+            }
+
+            if (syncHtml === "") syncHtml = `<div class="text-sm text-slate-500 italic p-4 text-center">No immediate authoritative triggers found. Student is performing nominally.</div>`;
+            syncWall.innerHTML = syncHtml;
+
+            if (priorityCount > 0) {
+                if (inboxBadge) {
+                    inboxBadge.textContent = priorityCount;
+                    inboxBadge.classList.remove("hidden");
+                }
+                inboxList.innerHTML = inboxHtml;
+            } else {
+                if (inboxBadge) inboxBadge.classList.add("hidden");
+                inboxList.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">No priority alerts. Dashboard nominal.</div>`;
             }
         }
 
@@ -243,7 +402,7 @@
             return "bg-danger-red";
         }
 
-        function renderGrowthChart() {
+        function renderGrowthChart(overallAvg) {
             const ctx = document.getElementById('growthChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
@@ -251,7 +410,7 @@
                     labels: ['Class 6', 'Class 7', 'Class 8', 'Class 9'],
                     datasets: [{
                         label: 'Mastery Average (%)',
-                        data: [72, 78, 85, 92],
+                        data: [null, null, null, overallAvg || 0],
                         borderColor: '#1a3e6a',
                         backgroundColor: 'rgba(26, 62, 106, 0.1)',
                         borderWidth: 3,
@@ -291,6 +450,29 @@
         </div>
 
         <div class="flex items-center space-x-3">
+            <!-- Dynamic Priority Inbox Dropdown -->
+            <div class="relative mr-4 cursor-pointer group">
+                <div
+                    class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:text-cbse-blue hover:bg-white transition shadow-sm">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div id="parent-inbox-badge"
+                    class="absolute -top-1 -right-1 w-5 h-5 bg-danger-red text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-cbse-blue shadow-sm animate-pulse hidden">
+                    0</div>
+
+                <!-- Hover Dropdown -->
+                <div
+                    class="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 origin-top-right">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-3">
+                        <h4 class="font-black text-slate-800 text-sm">Priority Inbox</h4>
+                        <span
+                            class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Un-dismissible</span>
+                    </div>
+                    <div id="parent-inbox-list" class="space-y-3 max-h-60 overflow-y-auto">
+                        <div class="text-xs text-slate-400 text-center py-4 animate-pulse">Loading alerts...</div>
+                    </div>
+                </div>
+            </div>
             <div class="hidden md:flex flex-col items-end mr-2">
                 <span id="user-welcome" class="text-xs font-bold text-white">Guardian</span>
                 <span
@@ -339,68 +521,10 @@
                         </div>
                     </div>
 
-                    <div class="space-y-4 relative z-10 font-sans">
-                        <!-- Taught Trigger -->
-                        <div class="flex gap-4">
-                            <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
-                                <div
-                                    class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-cbse-blue rounded-full border-4 border-white">
-                                </div>
-                            </div>
-                            <div class="pb-2">
-                                <div class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">The
-                                    Teacher Trigger</div>
-                                <div class="font-bold text-slate-800 text-sm">Force and Laws of Motion (Science) marked
-                                    "Taught"</div>
-                                <div class="text-xs text-slate-500 mt-1">Verification Status: <span
-                                        class="text-accent-gold font-bold">Pending Test</span> (Home Initiation required
-                                    in Student Inbox)</div>
-                            </div>
-                        </div>
-
-                        <!-- Diagnostic Alert -->
-                        <div class="flex gap-4">
-                            <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
-                                <div
-                                    class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-danger-red rounded-full border-4 border-white shadow-[0_0_8px_rgba(220,38,38,0.3)]">
-                                </div>
-                            </div>
-                            <div class="pb-2">
-                                <div class="text-[10px] font-bold text-danger-red uppercase tracking-widest mb-1">
-                                    Diagnostic Alert (System to Parent)</div>
-                                <div class="font-bold text-slate-800 text-sm">Polynomials (Mathematics)</div>
-                                <div class="text-xs text-slate-500 mt-1">Verification Status: <span
-                                        class="text-danger-red font-bold">Under Review (<95% Score)</span>
-                                </div>
-                                <p class="text-xs text-slate-500 mt-1"><i
-                                        class="fas fa-exclamation-triangle text-amber-500"></i> Identified weakness in
-                                    Case-Based questions. Parent-to-Teacher feedback loop activated.</p>
-                                <button
-                                    class="mt-2 text-[10px] bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded font-bold transition flex items-center gap-1"><i
-                                        class="fas fa-reply"></i> Request Conceptual Review in Class</button>
-                            </div>
-                        </div>
-
-                        <!-- Mastered -->
-                        <div class="flex gap-4 relative">
-                            <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
-                                <div
-                                    class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-success-green rounded-full border-4 border-white">
-                                </div>
-                            </div>
-                            <div class="pb-0">
-                                <div class="text-[10px] font-bold text-success-green uppercase tracking-widest mb-1">
-                                    Student Execution</div>
-                                <div class="font-bold text-slate-800 text-sm">French Revolution (Social Science)</div>
-                                <div class="text-xs text-slate-500 mt-1">Verification Status: <span
-                                        class="text-success-green font-bold">Mastered (95%+)</span></div>
-                                <p class="text-[10px] italic text-slate-400 mt-1">Teacher & Parent commands have been
-                                    safely cleared from the Persistent Inbox.</p>
-                            </div>
-                            <!-- Connector Line Hack -->
-                            <div class="absolute -top-10 left-[0.2rem] w-[2px] h-[calc(100%+20px)] bg-slate-100 -z-10">
-                            </div>
-                        </div>
+                    <div id="sync-wall-container"
+                        class="space-y-4 relative z-10 font-sans max-h-96 overflow-y-auto pr-2">
+                        <div class="text-center py-8 text-slate-400 text-sm animate-pulse">Syncing authoritative
+                            triggers...</div>
                     </div>
                 </div>
 
@@ -438,7 +562,7 @@
                                     <th class="pb-3 px-2 text-right">Failure Diagnostics</th>
                                 </tr>
                             </thead>
-                            <tbody class="font-medium">
+                            <tbody id="matrix-body" class="font-medium">
                                 <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
                                     <td class="py-3 px-2">
                                         <div class="text-slate-800 font-bold">Structure of Atom</div>
