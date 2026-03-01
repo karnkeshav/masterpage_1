@@ -17,6 +17,12 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Real Curriculum Loader -->
+    <script type="module">
+        import { loadCurriculum } from '../../js/curriculum/loader.js';
+        window.loadCurriculum = loadCurriculum;
+    </script>
+
     <!-- Firebase Hooks -->
     <script src="../../js/firebase-master-config.js"></script>
     <script src="../../js/config.js" type="module"></script>
@@ -146,33 +152,12 @@
             );
         }
 
-        const CURRICULUM = {
-            '8_Chemistry': [
-                { id: 'synthetic_materials', title: 'Synthetic Fibres and Plastics' },
-                { id: 'materials_metals', title: 'Materials: Metals and Non-Metals' },
-                { id: 'coal_petroleum', title: 'Coal and Petroleum' }
-            ],
-            '9_Chemistry': [
-                { id: 'matter_surroundings', title: 'Matter in Our Surroundings' },
-                { id: 'is_matter_pure', title: 'Is Matter Around Us Pure' },
-                { id: 'atoms_molecules', title: 'Atoms and Molecules' },
-                { id: 'structure_atom', title: 'Structure of the Atom' }
-            ],
-            '8_Biology': [
-                { id: 'crop_production', title: 'Crop Production and Management' },
-                { id: 'microorganisms', title: 'Microorganisms: Friend and Foe' }
-            ],
-            '9_Biology': [
-                { id: 'fundamental_unit', title: 'The Fundamental Unit of Life' },
-                { id: 'tissues', title: 'Tissues' }
-            ]
-        };
 
-        function CurriculumHub({ context, db }) {
+
+        function CurriculumHub({ context, db, chapters = [] }) {
             const [completedChapters, setCompletedChapters] = useState({});
 
             const currKey = `${context.grade}_${context.discipline}`;
-            const chapters = CURRICULUM[currKey] || [];
 
             const getControlDocId = (slug) => {
                 return `${context.grade}_${context.grade}${context.section}_science_${context.discipline.toLowerCase()}_${slug}`;
@@ -283,15 +268,19 @@
 
         const MOCK_UIDS = Array.from({ length: 40 }, (_, i) => i === 8 ? "I5t4hWd27sXg8p7w2W0fKjA4m8u1" : `mock_student_${i + 1}`);
 
-        function SectionHeatmap({ context, db }) {
-            const currKey = `${context.grade}_${context.discipline}`;
-            const chapters = CURRICULUM[currKey] || [];
-            const [selectedChapter, setSelectedChapter] = useState(chapters[0]?.id || "");
+        function SectionHeatmap({ context, db, chapters = [] }) {
+            const [selectedChapter, setSelectedChapter] = useState("");
             const [taughtDate, setTaughtDate] = useState(null);
             const [studentData, setStudentData] = useState({});
             const [selectedStudent, setSelectedStudent] = useState(null);
 
             // 1. Fetch Taught Date for selected chapter
+            useEffect(() => {
+                if (chapters.length > 0 && !selectedChapter) {
+                    setSelectedChapter(chapters[0].id);
+                }
+            }, [chapters, selectedChapter]);
+
             useEffect(() => {
                 if (!db || !selectedChapter) return;
                 const fb = window.firebaseAPI;
@@ -488,14 +477,20 @@
             );
         }
 
-        function RemedialQueue({ context }) {
+        function RemedialQueue({ context, chapters = [] }) {
             const currKey = `${context.grade}_${context.discipline}`;
-            const chapters = CURRICULUM[currKey] || [];
-            const [selectedChapter, setSelectedChapter] = useState(chapters[0]?.id || "");
+            const [selectedChapter, setSelectedChapter] = useState("");
             const [benchmark, setBenchmark] = useState(3);
             const [allStudents, setAllStudents] = useState([]);
 
             useEffect(() => {
+                if (chapters.length > 0 && !selectedChapter) {
+                    setSelectedChapter(chapters[0].id);
+                }
+            }, [chapters, selectedChapter]);
+
+            useEffect(() => {
+                if (!selectedChapter) return;
                 // Simulate 160 students across 4 sections (A, B, C, D) managed by this teacher
                 const sim = Array.from({ length: 160 }, (_, i) => {
                     // deterministic simulation seed
@@ -721,9 +716,9 @@
                                 </div>
 
                                 {/* Content Router */}
-                                {activeTab === 'curriculum' && <CurriculumHub context={context} db={db} />}
-                                {activeTab === 'analytics' && <SectionHeatmap context={context} db={db} />}
-                                {activeTab === 'remedial' && <RemedialQueue context={context} />}
+                                {activeTab === 'curriculum' && <CurriculumHub context={context} db={db} chapters={activeChapters} />}
+                                {activeTab === 'analytics' && <SectionHeatmap context={context} db={db} chapters={activeChapters} />}
+                                {activeTab === 'remedial' && <RemedialQueue context={context} chapters={activeChapters} />}
 
                             </div>
                         </main>
