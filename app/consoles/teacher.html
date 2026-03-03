@@ -14,7 +14,6 @@
     <!-- Firebase Hooks -->
     <script src="../../js/firebase-master-config.js"></script>
     <script src="../../js/config.js" type="module"></script>
-    <script src="../../js/firebase-init.js" type="module"></script>
 
     <script type="module">
         import { initializeAuthListener, ensureUserInFirestore } from "../../js/auth-paywall.js";
@@ -97,26 +96,34 @@
             unsubs = [];
 
             // 1. Listen to Curriculum Handshake Nodes
+            const schoolId = window.userProfile?.school_id || "DPS_001";
             activeChapters.forEach(chap => {
-                const docId = `${currentGrade}_${currentGrade}${currentSection}_science_${currentDiscipline.toLowerCase()}_${chap.id}`;
-                const u = onSnapshot(doc(db, "chapter_control", docId), (docSnap) => {
+                const docId = `${currentGrade}_${currentGrade}${current सेक्शन
+            }_science_${ currentDiscipline.toLowerCase() }_${ chap.id }`;
+                const u = onSnapshot(doc(db, "schools", schoolId, "chapter_control", docId), (docSnap) => {
                     completedChapters[chap.id] = docSnap.exists() ? docSnap.data().taught_date : null;
                     if (activeTab === 'curriculum') renderMain();
+                }, (error) => {
+                    console.warn("chapter_control permission explicitly denied:", error.message);
                 });
                 unsubs.push(u);
             });
 
             // 2. Listen to Heatmap & Real Student Data
             if (selectedChapter) {
-                const docId = `${currentGrade}_${currentGrade}${currentSection}_science_${currentDiscipline.toLowerCase()}_${selectedChapter}`;
-                const u1 = onSnapshot(doc(db, "chapter_control", docId), (docSnap) => {
+                const docId = `${ currentGrade }_${ currentGrade }${ currentSection }_science_${ currentDiscipline.toLowerCase() }_${ selectedChapter }`;
+                const u1 = onSnapshot(doc(db, "schools", schoolId, "chapter_control", docId), (docSnap) => {
                     heatmapTaughtDate = docSnap.exists() && docSnap.data().taught_date ? docSnap.data().taught_date.toDate() : null;
                     if (activeTab === 'analytics') renderMain();
-                });
+                }, (err) => console.warn(err.message));
                 unsubs.push(u1);
 
                 const targetUid = "I5t4hWd27sXg8p7w2W0fKjA4m8u1"; // Student 9
-                const q = query(collection(db, "quiz_scores"), where("user_id", "==", targetUid));
+                const q = query(
+                    collection(db, "quiz_scores"), 
+                    where("user_id", "==", targetUid),
+                    where("school_id", "==", schoolId)
+                );
                 const u2 = onSnapshot(q, (snapshot) => {
                     let s9Simple = 0, s9Medium = 0, s9Advanced = 0;
                     snapshot.forEach(docSnap => {
@@ -134,7 +141,7 @@
                     });
                     heatmapStudents[targetUid] = { simple: s9Simple, medium: s9Medium, advanced: s9Advanced, isReal: true };
                     if (activeTab === 'analytics') renderMain();
-                });
+                }, (err) => console.warn("quiz_scores missing permission:", err.message));
                 unsubs.push(u2);
             }
 
@@ -175,8 +182,8 @@
                 if (attempts === 1 && rng < 0.2) score = 95;
 
                 return {
-                    id: `STU${1000 + i}`,
-                    name: `Student ${1000 + i}`,
+                    id: `STU${ 1000 + i }`,
+                    name: `Student ${ 1000 + i }`,
                     section: ['A', 'B', 'C', 'D'][i % 4],
                     attempts,
                     score: Math.min(100, score)
@@ -211,9 +218,10 @@
 
         window.markChapterFinished = async (chapterId) => {
             if (!db) return;
-            const docId = `${currentGrade}_${currentGrade}${currentSection}_science_${currentDiscipline.toLowerCase()}_${chapterId}`;
+            const schoolId = window.userProfile?.school_id || "DPS_001";
+            const docId = `${ currentGrade }_${ currentGrade }${ currentSection }_science_${ currentDiscipline.toLowerCase() }_${ chapterId }`;
             try {
-                await setDoc(doc(db, "chapter_control", docId), {
+                await setDoc(doc(db, "schools", schoolId, "chapter_control", docId), {
                     chapter_slug: chapterId,
                     grade: currentGrade,
                     section: currentSection,
@@ -241,7 +249,7 @@
         function renderTopbar() {
             const topbar = document.getElementById("topbar-context");
             topbar.innerHTML = `
-                <div class="flex items-center gap-2">
+            < div class= "flex items-center gap-2" >
                     <select class="bg-white/10 text-white border border-white/20 rounded-lg px-3 py-1.5 text-sm font-bold shadow-sm outline-none cursor-pointer" onchange="setContext('grade', this.value)">
                         <option value="8" ${currentGrade === '8' ? 'selected' : ''} class="text-slate-800">8th Grade</option>
                         <option value="9" ${currentGrade === '9' ? 'selected' : ''} class="text-slate-800">9th Grade</option>
@@ -252,7 +260,7 @@
                         <option value="C" ${currentSection === 'C' ? 'selected' : ''} class="text-slate-800">Section C</option>
                         <option value="D" ${currentSection === 'D' ? 'selected' : ''} class="text-slate-800">Section D</option>
                     </select>
-                </div>
+                </div >
                 <div class="h-6 w-px bg-white/20"></div>
                 <div class="flex items-center gap-2">
                     <select class="bg-blue-800/50 text-white border border-blue-700 rounded-lg px-3 py-1.5 text-sm font-bold shadow-sm outline-none cursor-pointer" onchange="setContext('discipline', this.value)">
@@ -272,21 +280,21 @@
 
             const sidebar = document.getElementById("sidebar-nav");
             sidebar.innerHTML = tabs.map(t => `
-                <button onclick="setTab('${t.id}')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm ${activeTab === t.id ? 'bg-cbse-blue text-white shadow-blue-900/20' : 'text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200'}">
-                    <i class="fas ${t.icon} w-5 text-center ${activeTab === t.id ? 'text-accent-gold' : ''}"></i>
-                    ${t.label}
-                </button>
-            `).join('');
+                < button onclick = "setTab('${t.id}')" class= "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm ${activeTab === t.id ? 'bg-cbse-blue text-white shadow-blue-900/20' : 'text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200'}" >
+                <i class="fas ${t.icon} w-5 text-center ${activeTab === t.id ? 'text-accent-gold' : ''}"></i>
+                    ${ t.label }
+                </button >
+                `).join('');
         }
 
         function renderMain() {
             const main = document.getElementById("main-content");
             const titleHtml = `
-                <div>
+                < div >
                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">Class ${currentGrade}-${currentSection} <span class="text-cbse-blue">| ${currentDiscipline}</span></h1>
                     <p class="text-slate-500 text-sm mt-1">Real-time Command Hub linking the classroom to the student's mastery matrix.</p>
-                </div>
-            `;
+                </div >
+                `;
 
             let contentHtml = "";
             if (activeTab === 'curriculum') contentHtml = buildCurriculumHub();
@@ -299,56 +307,56 @@
         // --- Core Builders --- //
 
         function getChapterDropdownHtml() {
-            if (activeChapters.length === 0) return `<select class="bg-slate-50 border border-slate-200 rounded-lg text-slate-800 px-4 py-2" disabled><option>No chapters</option></select>`;
+            if (activeChapters.length === 0) return `< select class= "bg-slate-50 border border-slate-200 rounded-lg text-slate-800 px-4 py-2" disabled > <option>No chapters</option></select > `;
             return `
-                <select class="bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm font-bold px-4 py-2 outline-none focus:ring-2 focus:ring-cbse-blue cursor-pointer shadow-sm" onchange="changeTargetChapter(this.value)">
-                    ${activeChapters.map(c => `<option value="${c.id}" ${selectedChapter === c.id ? 'selected' : ''}>${c.title}</option>`).join('')}
-                </select>
-            `;
+            < select class= "bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm font-bold px-4 py-2 outline-none focus:ring-2 focus:ring-cbse-blue cursor-pointer shadow-sm" onchange = "changeTargetChapter(this.value)" >
+            ${ activeChapters.map(c => `<option value="${c.id}" ${selectedChapter === c.id ? 'selected' : ''}>${c.title}</option>`).join('') }
+                </select >
+                `;
         }
 
         function buildCurriculumHub() {
             let html = `
-                <div class="space-y-4">
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mt-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 class="text-xl font-black text-slate-800">Curriculum Handshake Hub</h2>
-                                <p class="text-sm text-slate-500">Initiate global authoritative triggers for ${currentDiscipline}.</p>
-                            </div>
-                            <div class="w-12 h-12 bg-blue-50 text-cbse-blue flex items-center justify-center rounded-2xl text-xl">
-                                <i class="fas fa-book-open"></i>
-                            </div>
+                < div class= "space-y-4" >
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mt-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800">Curriculum Handshake Hub</h2>
+                            <p class="text-sm text-slate-500">Initiate global authoritative triggers for ${currentDiscipline}.</p>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            `;
+                        <div class="w-12 h-12 bg-blue-50 text-cbse-blue flex items-center justify-center rounded-2xl text-xl">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        `;
 
-            if (activeChapters.length === 0) {
-                html += `<div class="col-span-2 p-8 text-center text-slate-500 font-medium italic">No chapters loaded from curriculum JSON.</div>`;
+                        if (activeChapters.length === 0) {
+                            html += `<div class="col-span-2 p-8 text-center text-slate-500 font-medium italic">No chapters loaded from curriculum JSON.</div>`;
             }
 
             activeChapters.forEach((chap, idx) => {
                 const isFinished = !!completedChapters[chap.id];
-                html += `
-                    <div class="p-5 rounded-2xl border-2 transition-all ${isFinished ? 'border-success-green bg-green-50/30' : 'border-slate-100 bg-white hover:border-blue-100'}">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chapter ${idx + 1}</span>
-                                <h3 class="font-bold text-slate-800 text-lg leading-snug mt-1">${chap.title}</h3>
+                        html += `
+                        <div class="p-5 rounded-2xl border-2 transition-all ${isFinished ? 'border-success-green bg-green-50/30' : 'border-slate-100 bg-white hover:border-blue-100'}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chapter ${idx + 1}</span>
+                                    <h3 class="font-bold text-slate-800 text-lg leading-snug mt-1">${chap.title}</h3>
+                                </div>
+                                ${isFinished ? `<span class="bg-success-green text-white text-[9px] font-black uppercase px-2 py-1 rounded tracking-widest shadow-sm flex items-center gap-1 animate-pulse"><i class="fas fa-satellite-dish"></i> Sync Active</span>` : ''}
                             </div>
-                            ${isFinished ? `<span class="bg-success-green text-white text-[9px] font-black uppercase px-2 py-1 rounded tracking-widest shadow-sm flex items-center gap-1 animate-pulse"><i class="fas fa-satellite-dish"></i> Sync Active</span>` : ''}
+                            <div class="mt-6 pt-4 border-t ${isFinished ? 'border-green-200/50' : 'border-slate-100'} flex items-center justify-between">
+                                ${isFinished
+                                    ? `<span class="text-xs font-bold text-success-green flex items-center gap-2"><i class="fas fa-check-circle"></i> Handshake Triggered</span>`
+                                    : `<button onclick="markChapterFinished('${chap.id}')" class="bg-cbse-blue hover:bg-blue-800 text-white px-4 py-2 flex items-center gap-2 rounded-lg text-xs font-bold shadow-md transition transform hover:-translate-y-0.5"><i class="fas fa-bolt text-accent-gold"></i> Mark as Finished</button>`
+                                }
+                            </div>
                         </div>
-                        <div class="mt-6 pt-4 border-t ${isFinished ? 'border-green-200/50' : 'border-slate-100'} flex items-center justify-between">
-                            ${isFinished
-                        ? `<span class="text-xs font-bold text-success-green flex items-center gap-2"><i class="fas fa-check-circle"></i> Handshake Triggered</span>`
-                        : `<button onclick="markChapterFinished('${chap.id}')" class="bg-cbse-blue hover:bg-blue-800 text-white px-4 py-2 flex items-center gap-2 rounded-lg text-xs font-bold shadow-md transition transform hover:-translate-y-0.5"><i class="fas fa-bolt text-accent-gold"></i> Mark as Finished</button>`
-                    }
-                        </div>
-                    </div>
-                `;
+                        `;
             });
 
-            html += `</div></div></div>`;
+                        html += `</div></div></div > `;
             return html;
         }
 
@@ -368,14 +376,14 @@
                 const isReal = uid === "I5t4hWd27sXg8p7w2W0fKjA4m8u1";
                 const color = evaluateColor(uid);
                 return `
-                    <button onclick="openMistakeNotebook('${uid}', ${idx + 1})" class="w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center text-white font-black text-xs ${color}">
-                        ${isReal ? '<i class="fas fa-satellite-dish animate-pulse"></i>' : (idx + 1)}
-                    </button>
+            < button onclick = "openMistakeNotebook('${uid}', ${idx + 1})" class= "w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center text-white font-black text-xs ${color}" >
+            ${ isReal? '<i class="fas fa-satellite-dish animate-pulse"></i>': (idx + 1) }
+                    </button >
                 `;
             }).join('');
 
             return `
-                <div class="flex gap-6 h-[calc(100vh-200px)] mt-6">
+                < div class= "flex gap-6 h-[calc(100vh-200px)] mt-6" >
                     <div class="flex-1 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center relative overflow-hidden">
                         <div class="absolute top-6 left-6 flex items-center gap-4">
                             <div class="w-10 h-10 bg-slate-100 text-slate-800 flex items-center justify-center rounded-xl text-lg shadow-sm"><i class="fas fa-th-large"></i></div>
@@ -437,8 +445,8 @@
                             <button class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl text-sm shadow-md hover:bg-cbse-blue transition flex justify-center items-center gap-2"><i class="fas fa-paper-plane"></i> Dispatch Nudge</button>
                         </div>` : ''}
                     </div>
-                </div>
-            `;
+                </div >
+                `;
         }
 
         function buildRemedialQueue() {
@@ -446,18 +454,18 @@
             const strugglers = [...remedialStudents].filter(s => s.attempts >= (remedialBenchmark + 1)).sort((a, b) => a.score - b.score).slice(0, 20);
 
             let strugglerHtml = strugglers.length === 0
-                ? `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">No students currently in the remedial loop.</td></tr>`
+                ? `< tr > <td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">No students currently in the remedial loop.</td></tr > `
                 : strugglers.map(s => `
-                    <tr class="hover:bg-red-50/30 transition group">
+            < tr class= "hover:bg-red-50/30 transition group" >
                         <td class="p-4 font-bold text-slate-800 flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-danger-red block animate-pulse"></span>${s.name}</td>
                         <td class="p-4 text-center font-bold text-slate-500">${currentGrade}-${s.section}</td>
                         <td class="p-4 text-center"><div class="inline-block px-2 py-1 bg-red-100 text-danger-red rounded text-xs font-black border border-red-200">${s.attempts} (B+${s.attempts - remedialBenchmark})</div></td>
                         <td class="p-4 text-right font-black text-slate-700">${s.score}%</td>
-                    </tr>
+                    </tr >
                 `).join('');
 
             let top10Html = top10.map((s, idx) => `
-                <li class="p-4 flex justify-between items-center hover:bg-white/5 transition">
+                < li class= "p-4 flex justify-between items-center hover:bg-white/5 transition" >
                     <div class="flex items-center gap-3">
                         <div class="w-6 text-center text-blue-300 font-black text-sm">#${idx + 1}</div>
                         <div>
@@ -466,11 +474,11 @@
                         </div>
                     </div>
                     <div class="font-black text-accent-gold text-lg">${s.score}%</div>
-                </li>
-            `).join('');
+                </li >
+                `).join('');
 
             return `
-                <div class="space-y-6 mt-6">
+                < div class= "space-y-6 mt-6" >
                     <div class="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                         <div>
                             <h2 class="text-xl font-black text-slate-800">Dynamic Benchmarking & Remedial Queue</h2>
@@ -498,14 +506,14 @@
                             <div class="p-6 border-b border-white/10 relative overflow-hidden">
                                 <div class="absolute -right-4 -top-4 text-white/10 text-6xl transform rotate-12"><i class="fas fa-trophy"></i></div>
                                 <h3 class="text-lg font-black text-accent-gold relative z-10">Top 10 Finishers</h3>
-                                <p class="text-xs font-medium text-blue-200 mt-1 relative z-10">Advanced Phase ({currentGrade}th Cohort)</p>
+                                <p class="text-xs font-medium text-blue-200 mt-1 relative z-10">Advanced Phase (${currentGrade}th Cohort)</p>
                             </div>
                             <div class="flex-1 overflow-y-auto max-h-[500px]">
                                 <ul class="divide-y divide-white/5">${top10Html}</ul>
                             </div>
                         </div>
                     </div>
-                </div>
+                </div >
             `;
         }
 
@@ -534,7 +542,8 @@
                 <div class="flex items-center gap-3 border-r border-white/10 pr-6">
                     <div
                         class="w-10 h-10 bg-accent-gold rounded-full flex items-center justify-center text-white font-black text-xl shadow-inner">
-                        <i class="fas fa-chalkboard-teacher"></i></div>
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
                     <div class="hidden md:block">
                         <span class="text-[10px] font-black uppercase tracking-widest text-accent-gold">Sovereignty
                             Matrix</span>

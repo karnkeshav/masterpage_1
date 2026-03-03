@@ -109,22 +109,22 @@ export async function ensureUserProfile(uid, username, additionalData = {}) {
 }
 
 export async function ensureUserInFirestore(user) {
-  if (!user?.uid) return null;
-  const { db } = await getInitializedClients();
-  const ref = doc(db, "users", user.uid);
+    if (!user?.uid) return null;
+    const { db } = await getInitializedClients();
+    const ref = doc(db, "users", user.uid);
 
-  try {
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
+    try {
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+            return null;
+        } else {
+            await updateDoc(ref, { lastLogin: serverTimestamp() });
+            return snap.data();
+        }
+    } catch (e) {
+        console.warn(LOG, "Sync failed", e);
         return null;
-    } else {
-        await updateDoc(ref, { lastLogin: serverTimestamp() });
-        return snap.data();
     }
-  } catch (e) {
-    console.warn(LOG, "Sync failed", e);
-    return null;
-  }
 }
 
 
@@ -175,160 +175,170 @@ export async function fetchChapterSummary(grade, subject, topic) {
 }
 
 function getTableName(topic) {
-  // Prevent double-slugging if already a table ID
-  if (topic && typeof topic === 'string' && topic.includes("_") && topic.includes("quiz")) {
-      return topic;
-  }
+    // Prevent double-slugging if already a table ID
+    if (topic && typeof topic === 'string' && topic.includes("_") && topic.includes("quiz")) {
+        return topic;
+    }
 
-  // Fallback for older chapter names -> simple slug
-  return (topic || "").toLowerCase().replace(/\s+/g, "_").trim();
+    // Fallback for older chapter names -> simple slug
+    return (topic || "").toLowerCase().replace(/\s+/g, "_").trim();
 }
 
 function normalizeQuestionData(q) {
-  let text = q.question_text || "";
-  let reason = q.scenario_reason_text || "";
-  const type = (q.question_type || "").toLowerCase();
+    let text = q.question_text || "";
+    let reason = q.scenario_reason_text || "";
+    const type = (q.question_type || "").toLowerCase();
 
-  if (type.includes("ar") || type.includes("assertion")) {
-    const combined = `${text} ${reason}`.replace(/\s+/g, " ").trim();
-    const parts = combined.split(/Reason\s*\(R\)\s*:/i);
-    if (parts.length > 1) {
-      text = parts[0].replace(/Assertion\s*\(A\)\s*:/i, "").trim();
-      reason = parts[1].trim();
-    } else {
-      text = text.replace(/Assertion\s*\(A\)\s*:/i, "").trim();
-      reason = reason.replace(/Reason\s*\(R\)\s*:/i, "").trim();
+    if (type.includes("ar") || type.includes("assertion")) {
+        const combined = `${text} ${reason}`.replace(/\s+/g, " ").trim();
+        const parts = combined.split(/Reason\s*\(R\)\s*:/i);
+        if (parts.length > 1) {
+            text = parts[0].replace(/Assertion\s*\(A\)\s*:/i, "").trim();
+            reason = parts[1].trim();
+        } else {
+            text = text.replace(/Assertion\s*\(A\)\s*:/i, "").trim();
+            reason = reason.replace(/Reason\s*\(R\)\s*:/i, "").trim();
+        }
     }
-  }
 
-  return {
-    id: q.id,
-    question_type: type,
-    text: text,
-    scenario_reason: reason,
-    correct_answer: (q.correct_answer_key || "").trim().toUpperCase(),
-    options: {
-      A: q.option_a || "",
-      B: q.option_b || "",
-      C: q.option_c || "",
-      D: q.option_d || ""
-    },
-    difficulty: q.difficulty
-  };
+    return {
+        id: q.id,
+        question_type: type,
+        text: text,
+        scenario_reason: reason,
+        correct_answer: (q.correct_answer_key || "").trim().toUpperCase(),
+        options: {
+            A: q.option_a || "",
+            B: q.option_b || "",
+            C: q.option_c || "",
+            D: q.option_d || ""
+        },
+        difficulty: q.difficulty
+    };
 }
 
 export async function fetchQuestions(topic, difficulty) {
-  const { supabase } = await getInitializedClients();
-  if (!supabase) throw new Error("Question service unavailable: Supabase not initialized");
+    const { supabase } = await getInitializedClients();
+    if (!supabase) throw new Error("Question service unavailable: Supabase not initialized");
 
-  const cleanDiff = (difficulty || "Simple").trim();
+    const cleanDiff = (difficulty || "Simple").trim();
 
-  let topics = [];
-  if (Array.isArray(topic)) topics = topic;
-  else if (typeof topic === 'string' && topic.includes(',')) topics = topic.split(',').map(t => t.trim());
-  else topics = [topic];
+    let topics = [];
+    if (Array.isArray(topic)) topics = topic;
+    else if (typeof topic === 'string' && topic.includes(',')) topics = topic.split(',').map(t => t.trim());
+    else topics = [topic];
 
-  const isMixedMode = topics.length > 1;
-  let allQuestions = [];
+    const isMixedMode = topics.length > 1;
+    let allQuestions = [];
 
-  const promises = topics.map(async (t) => {
-    const table = getTableName(t);
-    try {
-        const { data, error } = await supabase
-        .from(table)
-        .select('id,question_text,question_type,scenario_reason_text,option_a,option_b,option_c,option_d,correct_answer_key,difficulty')
-        .eq('difficulty', cleanDiff);
+    const promises = topics.map(async (t) => {
+        const table = getTableName(t);
+        try {
+            const { data, error } = await supabase
+                .from(table)
+                .select('id,question_text,question_type,scenario_reason_text,option_a,option_b,option_c,option_d,correct_answer_key,difficulty')
+                .eq('difficulty', cleanDiff);
 
-        if (error) {
-            console.warn(`Supabase fetch error for ${table}:`, error.message);
+            if (error) {
+                console.warn(`Supabase fetch error for ${table}:`, error.message);
+                return [];
+            }
+            return data || [];
+        } catch (e) {
+            console.warn(`Failed to fetch from ${table}`, e);
             return [];
         }
-        return data || [];
-    } catch (e) {
-        console.warn(`Failed to fetch from ${table}`, e);
-        return [];
+    });
+
+    const results = await Promise.all(promises);
+    results.forEach(res => allQuestions.push(...res));
+
+    if (!allQuestions.length) throw new Error(`No questions found matching "${difficulty}".`);
+
+    let normalized = allQuestions.map(normalizeQuestionData);
+
+    if (isMixedMode) {
+        normalized.sort(() => Math.random() - 0.5);
+        return normalized.slice(0, 20);
     }
-  });
-
-  const results = await Promise.all(promises);
-  results.forEach(res => allQuestions.push(...res));
-
-  if (!allQuestions.length) throw new Error(`No questions found matching "${difficulty}".`);
-
-  let normalized = allQuestions.map(normalizeQuestionData);
-
-  if (isMixedMode) {
-    normalized.sort(() => Math.random() - 0.5);
-    return normalized.slice(0, 20);
-  }
-  return normalized;
+    return normalized;
 }
 
 export async function saveResult(result) {
-  console.log('Attempting to save result...', result);
-  const { auth, db } = await getInitializedClients();
+    console.log('Attempting to save result...', result);
+    const { auth, db } = await getInitializedClients();
 
-  // Persistence Priority: Auth > Window Profile (fallback)
-  const uid = auth.currentUser?.uid || window.userProfile?.uid;
+    // Persistence Priority: Auth > Window Profile (fallback)
+    const uid = auth.currentUser?.uid || window.userProfile?.uid;
 
-  if (!uid) {
-      console.error('Save failed: No UID found (User not authenticated)');
-      return;
-  }
+    if (!uid) {
+        console.error('Save failed: No UID found (User not authenticated)');
+        return;
+    }
 
-  try {
-    // TENANT CONTEXT INJECTION
-    const userSnap = await getDoc(doc(db, "users", uid));
-    const userData = userSnap.exists() ? userSnap.data() : {};
+    try {
+        // TENANT CONTEXT INJECTION
+        const userSnap = await getDoc(doc(db, "users", uid));
+        const userData = userSnap.exists() ? userSnap.data() : {};
 
-    const data = {
-      user_id: uid,
-      email: auth.currentUser?.email || "",
-      subject: result.subject || "Unknown",
+        const data = {
+            user_id: uid,
+            email: auth.currentUser?.email || "",
+            subject: result.subject || "Unknown",
 
-      // Standardized Fields for Frontend
-      topicSlug: result.topicSlug || result.topic || "Unknown",
-      topic: result.topicSlug || result.topic || "Unknown", // Keep both for safety
+            // Standardized Fields for Frontend
+            topicSlug: result.topicSlug || result.topic || "Unknown",
+            topic: result.topicSlug || result.topic || "Unknown", // Keep both for safety
 
-      difficulty: result.difficulty,
-      score: result.score,
-      total: result.total,
-      totalQuestions: result.total, // Alias for clarity
+            difficulty: result.difficulty,
+            score: result.score,
+            total: result.total,
+            totalQuestions: result.total, // Alias for clarity
 
-      score_percent: Math.round((result.score / result.total) * 100),
-      percentage: Math.round((result.score / result.total) * 100), // Keep for backward compatibility
-      timestamp: serverTimestamp(),
+            score_percent: Math.round((result.score / result.total) * 100),
+            percentage: Math.round((result.score / result.total) * 100), // Keep for backward compatibility
+            timestamp: serverTimestamp(),
 
-      quiz_mode: result.quiz_mode || "standard",
-      latency_vector: result.latency_vector || [],
-      term_id: result.term_id || null,
+            quiz_mode: result.quiz_mode || "standard",
+            latency_vector: result.latency_vector || [],
+            term_id: result.term_id || null,
 
-      // Standardized Class ID
-      classId: result.classId || "9",
-      class_id: result.classId || "9", // Snake case alias
+            // Standardized Class ID
+            classId: result.classId || "9",
+            class_id: result.classId || "9", // Snake case alias
 
-      // ISOLATION FIELDS
-      tenantType: userData.tenantType || "individual",
-      tenantId: userData.tenantId || null,
-      school_id: userData.school_id || null
-    };
+            // ISOLATION FIELDS
+            tenantType: userData.tenantType || "individual",
+            tenantId: userData.tenantId || null,
+            school_id: userData.school_id || null,
 
-    await addDoc(collection(db, "quiz_scores"), data);
-    console.log('Result saved successfully to Firestore');
+            // SESSION LINK: Allows mistake-book.html to join score + notebook doc by ID
+            // instead of relying on fragile timestamp proximity.
+            session_id: result.session_id || null,
 
-    logAnalyticsEvent("quiz_completed", {
-        topic: data.topic,
-        score: data.score,
-        mode: data.quiz_mode,
-        user_id: uid,
-        tenant: data.tenantType
-    });
-  } catch (err) {
-    console.warn("Save result failed", err);
-  }
+            // REAL Q-TYPE TOTALS: Actual counts from the quiz attempt (not hardcoded)
+            // Used by mistake-book.html proficiency profile
+            mcq_total: result.typeStats ? result.typeStats.mcq : 0,
+            ar_total: result.typeStats ? result.typeStats.ar : 0,
+            cb_total: result.typeStats ? result.typeStats.cb : 0
+        };
+
+        await addDoc(collection(db, "quiz_scores"), data);
+        console.log('Result saved successfully to Firestore');
+
+        logAnalyticsEvent("quiz_completed", {
+            topic: data.topic,
+            score: data.score,
+            mode: data.quiz_mode,
+            user_id: uid,
+            tenant: data.tenantType
+        });
+    } catch (err) {
+        console.warn("Save result failed", err);
+    }
 }
 
-export async function saveMistakes(questions, userAnswers, topic, classId) {
+export async function saveMistakes(questions, userAnswers, topic, classId, difficulty, sessionId) {
     const { auth, db } = await getInitializedClients();
     // Persistence Priority: Auth > Window Profile (fallback)
     const uid = auth.currentUser?.uid || window.userProfile?.uid;
@@ -349,16 +359,26 @@ export async function saveMistakes(questions, userAnswers, topic, classId) {
             topic: topic,
             chapter_slug: topic,
             class_id: classId,
+            // FIXED: difficulty is now explicitly saved (was missing before,
+            // causing all mistakes to fall back to 'simple' in mistake-book.html)
+            difficulty: (difficulty || 'Simple').toLowerCase(),
+            // SESSION LINK: same ID written to quiz_scores so mistake-book.html
+            // can reliably join both documents without guessing by timestamp
+            session_id: sessionId || null,
             timestamp: serverTimestamp(),
             mistakes: mistakes.map(q => ({
                 user_id: uid,
                 chapter_slug: topic,
                 id: q.id,
-                question: q.text,
+                question_text: q.text,   // consistent field name for reader
+                question: q.text,         // keep legacy field too
                 options: q.options,
                 correct: q.correct_answer,
                 selected: userAnswers[q.id] || "Skipped",
-                explanation: q.scenario_reason || ""
+                explanation: q.scenario_reason || "",
+                // Store the actual question_type so proficiency is computed
+                // from real data in mistake-book.html instead of 6/2/2 fiction
+                question_type: q.question_type || "mcq"
             }))
         };
 

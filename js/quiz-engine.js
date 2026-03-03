@@ -259,9 +259,30 @@ async function handleSubmit() {
 
     // --- CLOSED-LOOP REMEDIATION ---
     const percentage = (stats.correct / stats.total) * 100;
+
+    // Generate a shared session ID so quiz_scores and mistake_notebook
+    // documents can be reliably joined in mistake-book.html by session_id
+    // instead of the previous fragile 5-second timestamp heuristic.
+    const sessionId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    // Build real per-type totals from the actual questions in this quiz.
+    // This replaces the hardcoded 6/2/2 MCQ/AR/CB assumption in mistake-book.html.
+    const typeStats = {
+        mcq: stats.mcq.t,
+        ar: stats.ar.t,
+        cb: stats.case.t
+    };
+
     if (percentage < 85) {
-        // Save to Mistake Notebook
-        saveMistakes(quizState.questions, quizState.userAnswers, quizState.topicSlug, quizState.classId);
+        // Save to Mistake Notebook — now passes difficulty and session_id
+        saveMistakes(
+            quizState.questions,
+            quizState.userAnswers,
+            quizState.topicSlug,
+            quizState.classId,
+            quizState.difficulty,  // fixes: difficulty was never passed before
+            sessionId               // links to the quiz_scores document
+        );
 
         // Trigger In-Page Review
         setTimeout(() => {
@@ -278,7 +299,9 @@ async function handleSubmit() {
         total: stats.total,
         topic: quizState.topicSlug,
         latency_vector: quizState.latency,
-        quiz_mode: quizState.quizMode
+        quiz_mode: quizState.quizMode,
+        session_id: sessionId,  // links to the mistake_notebook document
+        typeStats               // real per-type counts for proficiency profile
     });
 }
 
