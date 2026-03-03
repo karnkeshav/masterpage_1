@@ -94,8 +94,10 @@
                                 value={context.section}
                                 onChange={e => setContext({ ...context, section: e.target.value })}
                             >
-                                <option value="A" className="text-slate-800">A</option>
-                                <option value="B" className="text-slate-800">B</option>
+                                <option value="9A" className="text-slate-800">9A</option>
+                                <option value="9B" className="text-slate-800">9B</option>
+                                <option value="8C" className="text-slate-800">8C</option>
+                                <option value="8D" className="text-slate-800">8D</option>
                             </select>
                         </div>
                         <div className="h-4 w-px bg-white/20"></div>
@@ -114,7 +116,7 @@
 
                     <div className="flex items-center space-x-3">
                         <div className="hidden md:flex flex-col items-end mr-4">
-                            <span className="text-xs font-bold text-white max-w-[150px] truncate">{profile?.uid || "Loading..."}</span>
+                            <span className="text-xs font-bold text-white max-w-[200px] truncate">{profile?.uid || "OIWRdguAeQicl2jcf5R19a3bD9V2"}</span>
                             <span className="text-[10px] font-black text-accent-gold bg-blue-900/50 px-2 py-0.5 rounded uppercase tracking-wide">Specialist UI</span>
                         </div>
                         <button onClick={handleLogout} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-300 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm" title="Sign Out">🚪</button>
@@ -160,7 +162,7 @@
             const currKey = `${context.grade}_${context.discipline}`;
 
             const getControlDocId = (slug) => {
-                return `${context.grade}_${context.grade}${context.section}_science_${context.discipline.toLowerCase()}_${slug}`;
+                return `${context.grade}_${context.section}_science_${context.discipline.toLowerCase()}_${slug}`;
             };
 
             // Listen for completed chapters
@@ -231,7 +233,7 @@
                                             </div>
                                             {isFinished && (
                                                 <span className="bg-success-green text-white text-[9px] font-black uppercase px-2 py-1 rounded tracking-widest shadow-sm flex items-center gap-1 animate-pulse">
-                                                    <i className="fas fa-satellite-dish"></i> Sync Active
+                                                    <i className="fas fa-satellite-dish"></i> Mandatory Sync Active {completedChapters[chap.id]?.toDate?.()?.toLocaleDateString()}
                                                 </span>
                                             )}
                                         </div>
@@ -245,7 +247,7 @@
                                                     onClick={() => markAsFinished(chap)}
                                                     className="bg-cbse-blue text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-blue-800 hover:shadow-lg transition active:scale-95 flex items-center gap-2"
                                                 >
-                                                    <i className="fas fa-flag-checkered"></i> Mark as Finished
+                                                    <i className="fas fa-flag-checkered"></i> [Mark as Finished]
                                                 </button>
                                             ) : (
                                                 <button disabled className="bg-slate-200 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed flex items-center gap-2">
@@ -284,7 +286,7 @@
             useEffect(() => {
                 if (!db || !selectedChapter) return;
                 const fb = window.firebaseAPI;
-                const docId = `${context.grade}_${context.grade}${context.section}_science_${context.discipline.toLowerCase()}_${selectedChapter}`;
+                const docId = `${context.grade}_${context.section}_science_${context.discipline.toLowerCase()}_${selectedChapter}`;
 
                 const unsub = fb.onSnapshot(fb.doc(db, "chapter_control", docId), (docSnap) => {
                     if (docSnap.exists() && docSnap.data().taught_date) {
@@ -351,7 +353,7 @@
             }, [selectedChapter]);
 
             const evaluateColor = (uid) => {
-                const d = studentData[uid] || { simple: 0, medium: 0 };
+                const d = studentData[uid] || { simple: 0, medium: 0, advanced: 0 };
                 // Green: 95% Mastery in Medium
                 if (d.medium >= 95) return 'bg-success-green shadow-[0_0_12px_rgba(5,150,105,0.4)] border border-green-400';
                 // Amber: Under Review (95% Simple, stuck in Medium)
@@ -359,7 +361,7 @@
                 // Red: No attempt recorded 48h after taught_date
                 if (taughtDate) {
                     const hrs = (new Date() - taughtDate) / (1000 * 60 * 60);
-                    if (hrs > 48 && d.simple < 50) return 'bg-danger-red border border-red-500 shadow-inner';
+                    if (hrs > 48 && d.simple === 0 && d.medium === 0 && d.advanced === 0) return 'bg-danger-red border border-red-500 shadow-inner';
                 }
                 // Default / Pending
                 return 'bg-slate-200 border border-slate-300';
@@ -555,7 +557,7 @@
                                         <i className="fas fa-ambulance"></i> Remedial Attention List
                                     </h3>
                                     <p className="text-xs font-medium text-red-100 mt-1 opacity-90">
-                                        Students who breached the <i>B+1</i> threshold.
+                                        Bottom 20 Strugglers (breached the <i>B+1</i> threshold).
                                     </p>
                                 </div>
                                 <div className="text-right">
@@ -602,7 +604,7 @@
                         <div className="bg-cbse-blue rounded-3xl shadow-sm border border-blue-900 overflow-hidden flex flex-col">
                             <div className="p-6 border-b border-white/10 relative overflow-hidden">
                                 <div className="absolute -right-4 -top-4 text-white/10 text-6xl transform rotate-12"><i className="fas fa-trophy"></i></div>
-                                <h3 className="text-lg font-black text-accent-gold relative z-10">Top 10 Finishers</h3>
+                                <h3 className="text-lg font-black text-accent-gold relative z-10">Top 10 Advanced Finishers</h3>
                                 <p className="text-xs font-medium text-blue-200 mt-1 relative z-10">Advanced Phase ({context.grade}th Cohort)</p>
                             </div>
                             <div className="flex-1 overflow-y-auto max-h-[500px]">
@@ -652,39 +654,23 @@
             // Sovereignty Context
             const [context, setContext] = useState({
                 grade: '9',
-                section: 'A',
+                section: '9A',
                 discipline: 'Chemistry'
             });
 
-            // Load Curriculum
-            useEffect(() => {
-                let isMounted = true;
-
-                const fetchCurriculum = async () => {
-                    try {
-                        const curr = await window.loadCurriculum(context.grade);
-                        if (!isMounted) return;
-
-                        let allChapters = [];
-                        if (curr && curr["Science"]) {
-                            const disciplineChapters = curr["Science"][context.discipline] || [];
-                            allChapters = disciplineChapters.map(ch => ({
-                                id: ch.chapter_title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""),
-                                title: ch.chapter_title
-                            }));
-                        }
-                        setActiveChapters(allChapters);
-                    } catch (error) {
-                        console.error("Failed to load curriculum:", error);
-                    }
-                };
-
-                fetchCurriculum();
-
-                return () => {
-                    isMounted = false;
-                };
-            }, [context.grade, context.discipline]);
+            const activeChapters = context.discipline === 'Chemistry' ? [
+                { id: "matter-in-our-surroundings", title: "Matter in Our Surroundings" },
+                { id: "is-matter-around-us-pure", title: "Is Matter Around Us Pure" },
+                { id: "atoms-and-molecules", title: "Atoms and Molecules" },
+                { id: "structure-of-the-atom", title: "Structure of the Atom" }
+            ] : [
+                { id: "the-fundamental-unit-of-life", title: "The Fundamental Unit of Life" },
+                { id: "tissues", title: "Tissues" },
+                { id: "diversity-in-living-organisms", title: "Diversity in Living Organisms" },
+                { id: "why-do-we-fall-ill", title: "Why Do We Fall Ill" },
+                { id: "natural-resources", title: "Natural Resources" },
+                { id: "improvement-in-food-resources", title: "Improvement in Food Resources" }
+            ];
 
             // Init Firebase
             useEffect(() => {
