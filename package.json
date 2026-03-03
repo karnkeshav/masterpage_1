@@ -27,8 +27,5 @@
   "bugs": {
     "url": "https://github.com/karnkeshav/masterpage_1/issues"
   },
-  "homepage": "https://github.com/karnkeshav/masterpage_1#readme",
-  "dependencies": {
-    "lighthouse": "^13.0.3"
-  }
+  "homepage": "https://github.com/karnkeshav/masterpage_1#readme"
 }
