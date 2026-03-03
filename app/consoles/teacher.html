@@ -619,9 +619,9 @@
 
         // Bootstrap
         document.addEventListener('DOMContentLoaded', () => {
+            window.loadConsoleData = (profile) => init(profile);
             guardConsole("teacher");
-            initializeAuthListener(init);
-            bindConsoleLogout();
+            bindConsoleLogout("logout-nav-btn", "../../index.html");
         });
 
     </script>
