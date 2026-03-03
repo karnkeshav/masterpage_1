@@ -1,754 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Console — Ready4Exam</title>
 
-    <!-- CSS & Fonts -->
     <link href="../../css/global.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-
-    <!-- React & Babel -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Real Curriculum Loader -->
-    <script type="module">
-        import { loadCurriculum } from '../../js/curriculum/loader.js';
-        window.loadCurriculum = loadCurriculum;
-    </script>
-
-    <!-- Firebase Hooks -->
     <script src="../../js/firebase-master-config.js"></script>
     <script src="../../js/config.js" type="module"></script>
-    <script type="module">
-        import { getInitializedClients } from "../../js/config.js";
-        import { guardConsole } from "../../js/guard.js";
-        import { signOut } from "../../js/auth-paywall.js";
-        import { collection, query, where, onSnapshot, getDocs, setDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // Expose Firebase API to global scope for React Babel compilation
-        window.firebaseAPI = {
-            getInitializedClients,
-            guardConsole,
-            signOut,
-            collection, query, where, onSnapshot, getDocs, setDoc, doc, serverTimestamp, orderBy
+    <script type="module">
+        import { initializeAuthListener } from "../../js/auth-paywall.js";
+        import { getInitializedClients } from "../../js/api.js";
+        import { loadCurriculum, getGradeFromURL } from "../../js/curriculum/loader.js";
+        import { doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import * as UI from "../../js/ui-renderer.js";
+
+        // --- GLOBAL STATE ---
+        let db;
+        let currentGrade = "9";
+        let curriculumData = {};
+        let completedChapters = {};
+
+        async function init(user) {
+            const container = document.getElementById("main-content");
+            UI.showSkeleton(container, 3);
+
+            try {
+                // 1. Setup Clients
+                const clients = await getInitializedClients();
+                db = clients.db;
+
+                // 2. Load Real Curriculum
+                currentGrade = getGradeFromURL();
+                curriculumData = await loadCurriculum(currentGrade);
+
+                // 3. Start Sync Listeners
+                attachSyncListeners();
+
+                // 4. Initial Render
+                renderDashboard();
+
+            } catch (e) {
+                console.error("Initialization Failed:", e);
+                container.innerHTML = `<div class="p-12 text-center text-red-500 font-bold">Failed to connect to local curriculum engine.</div>`;
+            }
+        }
+
+        function attachSyncListeners() {
+            // We look at the "Science" subject by default as per your code
+            const scienceChapters = curriculumData["Science"]?.["Chemistry"] || [];
+            
+            scienceChapters.forEach(chap => {
+                const slug = chap.chapter_title.toLowerCase().replace(/\s+/g, '_');
+                const docId = `${currentGrade}_9A_science_chemistry_${slug}`;
+                
+                onSnapshot(doc(db, "chapter_control", docId), (docSnap) => {
+                    completedChapters[slug] = docSnap.exists() ? docSnap.data().taught_date : null;
+                    renderDashboard(); // Re-roll the UI on data change
+                }, (err) => console.warn("Listener standby..."));
+            });
+        }
+
+        window.markFinished = async (slug, title) => {
+            const docId = `${currentGrade}_9A_science_chemistry_${slug}`;
+            await setDoc(doc(db, "chapter_control", docId), {
+                chapter_slug: slug,
+                grade: currentGrade,
+                discipline: "Chemistry",
+                taught_date: serverTimestamp(),
+                status: 'finished'
+            });
         };
 
-        // Notify React that Firebase is ready
-        window.dispatchEvent(new Event('firebaseAPIReady'));
-    </script>
-</head>
+        function renderDashboard() {
+            const container = document.getElementById("main-content");
+            const chapters = curriculumData["Science"]?.["Chemistry"] || [];
 
-<body class="bg-cbse-light text-slate-800 min-h-screen">
-
-    <div id="react-root"></div>
-
-    <!-- React Dashboard Implementation -->
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-
-        // --- SUB-COMPONENTS ---
-
-        function SovereigntyNavigation({ context, setContext, profile }) {
-            const handleLogout = async () => {
-                if (confirm("Sign out of your Ready4Exam session?")) {
-                    await window.firebaseAPI.signOut();
-                    window.location.href = "../../index.html";
-                }
-            };
-
-            return (
-                <header className="bg-cbse-blue shadow-lg py-3 px-6 sticky top-0 z-40 flex justify-between items-center text-white">
-                    <div className="flex items-center space-x-4">
-                        <a href="../../index.html" className="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
+            let html = `
+                <div class="space-y-6 fade-in">
+                    <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex justify-between items-center">
                         <div>
-                            <h2 className="text-xl font-black leading-none tracking-tight text-accent-gold">Sovereignty Navigation</h2>
-                            <p className="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">Ready4Exam • Multi-Discipline</p>
+                            <h1 class="text-2xl font-black text-slate-900">Grade ${currentGrade} • Chemistry Hub</h1>
+                            <p class="text-sm text-slate-500 mt-1">Authorized Command Center for Classroom Sync.</p>
                         </div>
                     </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            `;
 
-                    {/* Context Switcher */}
-                    <div className="flex gap-4 items-center bg-cbse-blue/50 border border-white/10 rounded-xl px-4 py-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-300 font-bold uppercase">Grade:</span>
-                            <select
-                                className="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"
-                                value={context.grade}
-                                onChange={e => setContext({ ...context, grade: e.target.value })}
-                            >
-                                <option value="8" className="text-slate-800">8th</option>
-                                <option value="9" className="text-slate-800">9th</option>
-                            </select>
-                        </div>
-                        <div className="h-4 w-px bg-white/20"></div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-300 font-bold uppercase">Section:</span>
-                            <select
-                                className="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"
-                                value={context.section}
-                                onChange={e => setContext({ ...context, section: e.target.value })}
-                            >
-                                <option value="A" className="text-slate-800">A</option>
-                                <option value="B" className="text-slate-800">B</option>
-                            </select>
-                        </div>
-                        <div className="h-4 w-px bg-white/20"></div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-300 font-bold uppercase">Discipline:</span>
-                            <select
-                                className="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"
-                                value={context.discipline}
-                                onChange={e => setContext({ ...context, discipline: e.target.value })}
-                            >
-                                <option value="Chemistry" className="text-slate-800">Chemistry</option>
-                                <option value="Biology" className="text-slate-800">Biology</option>
-                            </select>
-                        </div>
-                    </div>
+            chapters.forEach((chap, idx) => {
+                const slug = chap.chapter_title.toLowerCase().replace(/\s+/g, '_');
+                const isSync = !!completedChapters[slug];
 
-                    <div className="flex items-center space-x-3">
-                        <div className="hidden md:flex flex-col items-end mr-4">
-                            <span className="text-xs font-bold text-white max-w-[150px] truncate">{profile?.uid || "Loading..."}</span>
-                            <span className="text-[10px] font-black text-accent-gold bg-blue-900/50 px-2 py-0.5 rounded uppercase tracking-wide">Specialist UI</span>
-                        </div>
-                        <button onClick={handleLogout} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-300 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm" title="Sign Out">🚪</button>
-                    </div>
-                </header>
-            );
-        }
-
-        function Sidebar({ activeTab, setActiveTab }) {
-            const tabs = [
-                { id: 'curriculum', icon: 'fa-book-open', label: 'Curriculum Hub' },
-                { id: 'analytics', icon: 'fa-chart-pie', label: 'Live Analytics' },
-                { id: 'remedial', icon: 'fa-user-nurse', label: 'Remedial Queue' }
-            ];
-
-            return (
-                <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-6 min-h-[calc(100vh-76px)] hidden lg:block shadow-sm z-10 relative">
-                    <h1 className="text-lg font-black text-slate-900 tracking-tight mb-8">Faculty<span className="text-cbse-blue">Board</span></h1>
-                    <nav className="space-y-2">
-                        {tabs.map(t => (
-                            <button
-                                key={t.id}
-                                onClick={() => setActiveTab(t.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm ${activeTab === t.id
-                                    ? 'bg-cbse-blue text-white shadow-blue-900/20'
-                                    : 'text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200'
-                                    }`}
-                            >
-                                <i className={`fas ${t.icon} w-5 text-center ${activeTab === t.id ? 'text-accent-gold' : ''}`}></i>
-                                {t.label}
-                            </button>
-                        ))}
-                    </nav>
-                </aside>
-            );
-        }
-
-
-
-        function CurriculumHub({ context, db, chapters = [] }) {
-            const [completedChapters, setCompletedChapters] = useState({});
-
-            const currKey = `${context.grade}_${context.discipline}`;
-
-            const getControlDocId = (slug) => {
-                return `${context.grade}_${context.grade}${context.section}_science_${context.discipline.toLowerCase()}_${slug}`;
-            };
-
-            // Listen for completed chapters
-            useEffect(() => {
-                if (!db) return;
-                const fb = window.firebaseAPI;
-
-                // For a Teacher Dashboard, querying all chapter_control documents that begin with this class/discipline combo might need an index.
-                // We will do a simpler listener: listen to the whole collection and filter client-side, OR since chapters are small, just fetch them via simple getDocs or listen.
-                // For prototype robust safety against indexes: just fetch the specific docs.
-
-                const unsubscribes = chapters.map(chap => {
-                    const docId = getControlDocId(chap.id);
-                    return fb.onSnapshot(fb.doc(db, "chapter_control", docId), (docSnap) => {
-                        if (!docSnap.exists()) {
-                            setCompletedChapters(prev => ({ ...prev, [chap.id]: null }));
-                        } else {
-                            setCompletedChapters(prev => ({ ...prev, [chap.id]: docSnap.data().taught_date }));
-                        }
-                    }, (error) => {
-                        // Empty error handler to swallow "Permission Denied" if missing
-                    });
-                });
-
-                return () => {
-                    unsubscribes.forEach(unsub => unsub());
-                };
-            }, [context.grade, context.section, context.discipline, db]);
-
-            const markAsFinished = async (chapter) => {
-                if (!db) return;
-                const docId = getControlDocId(chapter.id);
-                try {
-                    const fb = window.firebaseAPI;
-                    await fb.setDoc(fb.doc(db, "chapter_control", docId), {
-                        chapter_slug: chapter.id,
-                        grade: context.grade,
-                        section: context.section,
-                        discipline: context.discipline,
-                        taught_date: fb.serverTimestamp(),
-                        status: 'finished'
-                    });
-                } catch (e) {
-                    // Fail silently or handle gracefully per spec logic if needed
-                }
-            };
-
-            return (
-                <div className="space-y-4">
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <div className="flex justify-between items-center mb-6">
+                html += `
+                    <div class="bg-white p-6 rounded-3xl border-2 transition-all ${isSync ? 'border-green-500 bg-green-50/20' : 'border-slate-100'}">
+                        <div class="flex justify-between items-start">
                             <div>
-                                <h2 className="text-xl font-black text-slate-800">Curriculum Handshake Hub</h2>
-                                <p className="text-sm text-slate-500">Initiate global authoritative triggers for {context.discipline}.</p>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chapter ${idx + 1}</span>
+                                <h3 class="font-bold text-lg text-slate-800">${chap.chapter_title}</h3>
                             </div>
-                            <div className="w-12 h-12 bg-blue-50 text-cbse-blue flex items-center justify-center rounded-2xl text-xl">
-                                <i className="fas fa-book-open"></i>
-                            </div>
+                            ${isSync ? '<span class="text-green-600 animate-pulse text-xl">📡</span>' : ''}
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {chapters.map((chap, idx) => {
-                                const isFinished = !!completedChapters[chap.id];
-                                return (
-                                    <div key={chap.id} className={`p-5 rounded-2xl border-2 transition-all ${isFinished ? 'border-success-green bg-green-50/30' : 'border-slate-100 bg-white hover:border-blue-100'}`}>
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chapter {idx + 1}</span>
-                                                <h3 className="font-bold text-slate-800 text-lg leading-snug mt-1">{chap.title}</h3>
-                                            </div>
-                                            {isFinished && (
-                                                <span className="bg-success-green text-white text-[9px] font-black uppercase px-2 py-1 rounded tracking-widest shadow-sm flex items-center gap-1 animate-pulse">
-                                                    <i className="fas fa-satellite-dish"></i> Sync Active
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <div className="mt-6 flex justify-between items-center">
-                                            <div className="text-xs text-slate-500 font-medium">
-                                                {isFinished ? "Mandatory handshake initiated." : "Pending commencement."}
-                                            </div>
-                                            {!isFinished ? (
-                                                <button
-                                                    onClick={() => markAsFinished(chap)}
-                                                    className="bg-cbse-blue text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-blue-800 hover:shadow-lg transition active:scale-95 flex items-center gap-2"
-                                                >
-                                                    <i className="fas fa-flag-checkered"></i> Mark as Finished
-                                                </button>
-                                            ) : (
-                                                <button disabled className="bg-slate-200 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed flex items-center gap-2">
-                                                    <i className="fas fa-check"></i> Triggered
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-
-                            {chapters.length === 0 && (
-                                <div className="col-span-full py-12 text-center text-slate-400 italic">No NCERT chapters defined for this syllabus.</div>
-                            )}
+                        <div class="mt-8 pt-4 border-t border-slate-50 flex justify-between items-center">
+                            ${isSync 
+                                ? `<span class="text-xs font-bold text-green-600"><i class="fas fa-check-circle"></i> Sync Active</span>`
+                                : `<button onclick="markFinished('${slug}', '${chap.chapter_title}')" class="bg-cbse-blue text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-blue-800 transition">Mark as Finished</button>`
+                            }
                         </div>
                     </div>
-                </div>
-            );
-        }
-
-        const MOCK_UIDS = Array.from({ length: 40 }, (_, i) => i === 8 ? "I5t4hWd27sXg8p7w2W0fKjA4m8u1" : `mock_student_${i + 1}`);
-
-        function SectionHeatmap({ context, db, chapters = [] }) {
-            const [selectedChapter, setSelectedChapter] = useState("");
-            const [taughtDate, setTaughtDate] = useState(null);
-            const [studentData, setStudentData] = useState({});
-            const [selectedStudent, setSelectedStudent] = useState(null);
-
-            // 1. Fetch Taught Date for selected chapter
-            useEffect(() => {
-                if (chapters.length > 0 && !selectedChapter) {
-                    setSelectedChapter(chapters[0].id);
-                }
-            }, [chapters, selectedChapter]);
-
-            useEffect(() => {
-                if (!db || !selectedChapter) return;
-                const fb = window.firebaseAPI;
-                const docId = `${context.grade}_${context.grade}${context.section}_science_${context.discipline.toLowerCase()}_${selectedChapter}`;
-
-                const unsub = fb.onSnapshot(fb.doc(db, "chapter_control", docId), (docSnap) => {
-                    if (docSnap.exists() && docSnap.data().taught_date) {
-                        setTaughtDate(docSnap.data().taught_date.toDate());
-                    } else {
-                        setTaughtDate(null);
-                    }
-                }, (error) => {
-                    setTaughtDate(null);
-                });
-                return unsub;
-            }, [selectedChapter, context.grade, context.section, context.discipline, db]);
-
-            // 2. Fetch Real Data for Student 9
-            useEffect(() => {
-                if (!db || !selectedChapter) return;
-                const fb = window.firebaseAPI;
-                const targetUid = "I5t4hWd27sXg8p7w2W0fKjA4m8u1";
-
-                const q = fb.query(fb.collection(db, "quiz_scores"), fb.where("user_id", "==", targetUid));
-                const unsub = fb.onSnapshot(q, (snapshot) => {
-                    let s9Simple = 0, s9Medium = 0, s9Advanced = 0;
-                    snapshot.forEach(doc => {
-                        const d = doc.data();
-                        const chapMatch = (d.topic === selectedChapter || d.topicSlug === selectedChapter || d.chapter === selectedChapter);
-                        if (chapMatch) {
-                            const diff = (d.difficulty || "Simple").toLowerCase();
-                            const totalQ = d.totalQuestions || d.total || 20;
-                            const p = totalQ > 0 ? Math.round(((d.score || 0) / totalQ) * 100) : (d.score_percent || 0);
-
-                            if (diff.includes("simple")) s9Simple = Math.max(s9Simple, p);
-                            if (diff.includes("medium")) s9Medium = Math.max(s9Medium, p);
-                            if (diff.includes("advanced")) s9Advanced = Math.max(s9Advanced, p);
-                        }
-                    });
-                    setStudentData(prev => ({
-                        ...prev,
-                        [targetUid]: { simple: s9Simple, medium: s9Medium, advanced: s9Advanced, isReal: true }
-                    }));
-                }, (err) => {
-                    console.error("Student 9 Heatmap sync errored:", err);
-                });
-                return unsub;
-            }, [selectedChapter, db]);
-
-            // 3. Generate Mock Data for peers to populate the 10x4 grid
-            useEffect(() => {
-                if (!selectedChapter) return;
-                const mocks = {};
-                MOCK_UIDS.forEach((uid, index) => {
-                    if (uid !== "I5t4hWd27sXg8p7w2W0fKjA4m8u1") {
-                        const seed = uid.length + selectedChapter.charCodeAt(0) + index * 13;
-                        const rng = Math.sin(seed) * 10000;
-                        const rand = rng - Math.floor(rng);
-
-                        let s = 0, m = 0;
-                        // Simulating a bell curve of performance
-                        if (rand > 0.5) { s = 96; m = Math.floor(70 + rand * 30); }
-                        else if (rand > 0.2) { s = 96; m = Math.floor(40 + rand * 50); }
-                        else { s = Math.floor(rand * 50); m = 0; }
-
-                        mocks[uid] = { simple: s, medium: m, isReal: false };
-                    }
-                });
-                setStudentData(prev => ({ ...mocks, ...prev }));
-            }, [selectedChapter]);
-
-            const evaluateColor = (uid) => {
-                const d = studentData[uid] || { simple: 0, medium: 0 };
-                // Green: 95% Mastery in Medium
-                if (d.medium >= 95) return 'bg-success-green shadow-[0_0_12px_rgba(5,150,105,0.4)] border border-green-400';
-                // Amber: Under Review (95% Simple, stuck in Medium)
-                if (d.simple >= 95 && d.medium < 95) return 'bg-warning-yellow border border-amber-400 shadow-[0_0_8px_rgba(202,138,4,0.3)] animate-pulse';
-                // Red: No attempt recorded 48h after taught_date
-                if (taughtDate) {
-                    const hrs = (new Date() - taughtDate) / (1000 * 60 * 60);
-                    if (hrs > 48 && d.simple < 50) return 'bg-danger-red border border-red-500 shadow-inner';
-                }
-                // Default / Pending
-                return 'bg-slate-200 border border-slate-300';
-            };
-
-            return (
-                <div className="flex gap-6 h-[calc(100vh-200px)]">
-                    {/* Main Grid Area */}
-                    <div className="flex-1 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center relative overflow-hidden">
-
-                        <div className="absolute top-6 left-6 flex items-center gap-4">
-                            <div className="w-10 h-10 bg-slate-100 text-slate-800 flex items-center justify-center rounded-xl text-lg shadow-sm">
-                                <i className="fas fa-th-large"></i>
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-black text-slate-800">Section Heatmap</h2>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">40-Student Grid</p>
-                            </div>
-                        </div>
-
-                        <div className="absolute top-6 right-6">
-                            <select
-                                className="bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm font-bold px-4 py-2 outline-none focus:ring-2 focus:ring-cbse-blue cursor-pointer shadow-sm"
-                                value={selectedChapter}
-                                onChange={e => setSelectedChapter(e.target.value)}
-                            >
-                                {chapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                            </select>
-                        </div>
-
-                        {/* Top Context Indicators */}
-                        <div className="w-full max-w-4xl mt-16 mb-6 flex justify-between items-center px-4">
-                            <div className="flex gap-4 text-xs font-bold text-slate-600 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
-                                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-success-green"></span> Mastered</div>
-                                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-warning-yellow"></span> Under Review</div>
-                                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-danger-red"></span> Critical (&gt;48h)</div>
-                            </div>
-                            <div className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                                {taughtDate ? `Sync Activated: ${taughtDate.toLocaleDateString()}` : "Sync Not Activated"}
-                            </div>
-                        </div>
-
-                        {/* 10x4 Grid representing 40 students */}
-                        <div className="grid grid-cols-10 grid-rows-4 gap-3 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner">
-                            {MOCK_UIDS.map((uid, idx) => {
-                                const isReal = uid === "I5t4hWd27sXg8p7w2W0fKjA4m8u1";
-                                return (
-                                    <button
-                                        key={uid}
-                                        onClick={() => setSelectedStudent({ uid, index: idx + 1, ...studentData[uid], isReal })}
-                                        title={isReal ? "Student 9 (Real Data)" : `Seat ${idx + 1}`}
-                                        className={`w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center text-white font-black text-xs ${evaluateColor(uid)}`}
-                                    >
-                                        {isReal ? <i className="fas fa-satellite-dish animate-pulse"></i> : (idx + 1)}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Side Mistake Notebook Slide-out */}
-                    <div className={`w-80 bg-white border border-slate-200 rounded-3xl shadow-lg transition-all duration-500 overflow-hidden flex flex-col ${(!taughtDate || selectedStudent) ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12 hidden'}`}>
-                        {!taughtDate ? (
-                            <div className="flex-1 flex items-center justify-center p-6 text-center">
-                                <div>
-                                    <div className="w-16 h-16 mx-auto bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-2xl mb-4 shadow-inner">
-                                        <i className="fas fa-handshake-slash"></i>
-                                    </div>
-                                    <h3 className="text-lg font-black text-slate-800">Waiting for Teacher Handshake</h3>
-                                    <p className="text-xs text-slate-500 mt-2">Initialize the curriculum sync in the Handshake Hub to activate live analytics.</p>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col h-full">
-                                <div className="bg-cbse-blue p-6 text-white relative">
-                                    <button onClick={() => setSelectedStudent(null)} className="absolute top-4 right-4 text-white/50 hover:text-white transition">
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                    <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
-                                        <i className="fas fa-book"></i> Mistake Notebook
-                                    </h3>
-                                    <p className="text-xs font-medium text-blue-200 mt-1">
-                                        {selectedStudent?.isReal ? "Student 9 (Active Sync)" : `Seat ${selectedStudent?.index}`}
-                                    </p>
-                                </div>
-
-                                {selectedStudent && (
-                                    <div className="p-6 flex-1 bg-slate-50 space-y-4">
-                                        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                                            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Core Foundation (Simple)</div>
-                                            <div className="flex items-end justify-between">
-                                                <span className="text-2xl font-black text-slate-800">{selectedStudent.simple}%</span>
-                                                <span className={`text-xs font-bold ${selectedStudent.simple >= 95 ? 'text-success-green' : 'text-danger-red'}`}>
-                                                    {selectedStudent.simple >= 95 ? "Mastered" : "Gap Detected"}
-                                                </span>
-                                            </div>
-                                            <div className="w-full bg-slate-100 h-2 mt-3 rounded-full overflow-hidden">
-                                                <div className={`h-full ${selectedStudent.simple >= 95 ? 'bg-success-green' : 'bg-danger-red'}`} style={{ width: `${selectedStudent.simple}%` }}></div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden">
-                                            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Application (Medium)</div>
-                                            <div className="flex items-end justify-between">
-                                                <span className="text-2xl font-black text-slate-800">{selectedStudent.medium}%</span>
-                                            </div>
-                                            <div className="w-full bg-slate-100 h-2 mt-3 rounded-full overflow-hidden">
-                                                <div className={`h-full ${selectedStudent.medium >= 95 ? 'bg-success-green' : 'bg-warning-yellow'}`} style={{ width: `${selectedStudent.medium}%` }}></div>
-                                            </div>
-                                        </div>
-
-                                        {selectedStudent.simple >= 95 && selectedStudent.medium < 95 && (
-                                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 text-warning-yellow shadow-inner">
-                                                <div className="font-bold flex items-center gap-2 mb-1"><i className="fas fa-exclamation-triangle"></i> Under Review</div>
-                                                <p className="text-[10px] font-medium text-amber-800/80 leading-relaxed">Student has mastered foundation but is failing application sequences. Suggest in-class conceptual review.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                <div className="p-4 border-t border-slate-200 bg-white">
-                                    <button className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl text-sm shadow-md hover:bg-cbse-blue transition flex justify-center items-center gap-2">
-                                        <i className="fas fa-paper-plane"></i> Dispatch Nudge
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                </div>
-            );
-        }
-
-        function RemedialQueue({ context, chapters = [] }) {
-            const currKey = `${context.grade}_${context.discipline}`;
-            const [selectedChapter, setSelectedChapter] = useState("");
-            const [benchmark, setBenchmark] = useState(3);
-            const [allStudents, setAllStudents] = useState([]);
-
-            useEffect(() => {
-                if (chapters.length > 0 && !selectedChapter) {
-                    setSelectedChapter(chapters[0].id);
-                }
-            }, [chapters, selectedChapter]);
-
-            useEffect(() => {
-                if (!selectedChapter) return;
-                // Simulate 160 students across 4 sections (A, B, C, D) managed by this teacher
-                const sim = Array.from({ length: 160 }, (_, i) => {
-                    // deterministic simulation seed
-                    const seed = selectedChapter.length + (i * 17);
-                    const rng = Math.abs(Math.sin(seed));
-
-                    let attempts = 1;
-                    if (rng > 0.95) attempts = 5;
-                    else if (rng > 0.8) attempts = 4;
-                    else if (rng > 0.4) attempts = 3;
-                    else if (rng > 0.1) attempts = 2;
-
-                    let score = Math.floor(40 + rng * 60);
-                    // High attempts often correlate with struggle or persistence
-                    if (attempts >= 4) score = Math.max(30, score - 20);
-                    if (attempts === 1 && rng < 0.2) score = 95; // geniuses
-
-                    return {
-                        id: `STU${1000 + i}`,
-                        name: `Student ${1000 + i}`,
-                        section: ['A', 'B', 'C', 'D'][i % 4],
-                        attempts,
-                        score: Math.min(100, score)
-                    };
-                });
-
-                // Calculate B = 70th Percentile of attempts
-                const sortedAttempts = [...sim].map(s => s.attempts).sort((a, b) => a - b);
-                const p70Index = Math.floor(160 * 0.70);
-                const B = sortedAttempts[p70Index] || 3;
-
-                setBenchmark(B);
-                setAllStudents(sim);
-            }, [selectedChapter, context]);
-
-            const top10 = [...allStudents].sort((a, b) => b.score - a.score || a.attempts - b.attempts).slice(0, 10);
-            const strugglers = [...allStudents].filter(s => s.attempts >= (benchmark + 1)).sort((a, b) => a.score - b.score).slice(0, 20);
-
-            return (
-                <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                        <div>
-                            <h2 className="text-xl font-black text-slate-800">Dynamic Benchmarking & Remedial Queue</h2>
-                            <p className="text-sm text-slate-500">Processing 160 active students across {context.grade}th Grade.</p>
-                        </div>
-                        <select
-                            className="bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm font-bold px-4 py-2 outline-none focus:ring-2 focus:ring-cbse-blue cursor-pointer shadow-sm"
-                            value={selectedChapter}
-                            onChange={e => setSelectedChapter(e.target.value)}
-                        >
-                            {chapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                        </select>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                        {/* The Remedial Queue (Main) */}
-                        <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                            <div className="bg-danger-red p-6 text-white flex justify-between items-center">
-                                <div>
-                                    <h3 className="text-lg font-black flex items-center gap-2">
-                                        <i className="fas fa-ambulance"></i> Remedial Attention List
-                                    </h3>
-                                    <p className="text-xs font-medium text-red-100 mt-1 opacity-90">
-                                        Students who breached the <i>B+1</i> threshold.
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-3xl font-black">{benchmark}</div>
-                                    <div className="text-[9px] uppercase tracking-widest font-bold opacity-80">Current Benchmark (B)</div>
-                                </div>
-                            </div>
-
-                            <div className="p-0 overflow-y-auto max-h-[500px]">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold sticky top-0 border-b border-slate-100 shadow-sm z-10">
-                                        <tr>
-                                            <th className="p-4">Student</th>
-                                            <th className="p-4 text-center">Class / Sec</th>
-                                            <th className="p-4 text-center">Attempts</th>
-                                            <th className="p-4 text-right">Avg Score</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {strugglers.map(s => (
-                                            <tr key={s.id} className="hover:bg-red-50/30 transition group">
-                                                <td className="p-4 font-bold text-slate-800 flex items-center gap-3">
-                                                    <span className="w-2 h-2 rounded-full bg-danger-red block animate-pulse"></span>
-                                                    {s.name}
-                                                </td>
-                                                <td className="p-4 text-center font-bold text-slate-500">{context.grade}-{s.section}</td>
-                                                <td className="p-4 text-center">
-                                                    <div className="inline-block px-2 py-1 bg-red-100 text-danger-red rounded text-xs font-black border border-red-200">
-                                                        {s.attempts} (B+{s.attempts - benchmark})
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-right font-black text-slate-700">{s.score}%</td>
-                                            </tr>
-                                        ))}
-                                        {strugglers.length === 0 && (
-                                            <tr><td colSpan="4" className="p-8 text-center text-slate-400 italic font-medium">No students currently in the remedial loop.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        {/* Top 10 Leaderboard */}
-                        <div className="bg-cbse-blue rounded-3xl shadow-sm border border-blue-900 overflow-hidden flex flex-col">
-                            <div className="p-6 border-b border-white/10 relative overflow-hidden">
-                                <div className="absolute -right-4 -top-4 text-white/10 text-6xl transform rotate-12"><i className="fas fa-trophy"></i></div>
-                                <h3 className="text-lg font-black text-accent-gold relative z-10">Top 10 Finishers</h3>
-                                <p className="text-xs font-medium text-blue-200 mt-1 relative z-10">Advanced Phase ({context.grade}th Cohort)</p>
-                            </div>
-                            <div className="flex-1 overflow-y-auto max-h-[500px]">
-                                <ul className="divide-y divide-white/5">
-                                    {top10.map((s, idx) => (
-                                        <li key={s.id} className="p-4 flex justify-between items-center hover:bg-white/5 transition">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-6 text-center text-blue-300 font-black text-sm">#{idx + 1}</div>
-                                                <div>
-                                                    <div className="font-bold text-white text-sm">{s.name}</div>
-                                                    <div className="text-[10px] text-blue-300 font-bold tracking-widest uppercase mt-0.5">{context.grade}-{s.section} • {s.attempts} Attempt(s)</div>
-                                                </div>
-                                            </div>
-                                            <div className="font-black text-accent-gold text-lg">{s.score}%</div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            );
-        }
-
-        function PlaceholderComponent({ title }) {
-            return (
-                <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px]">
-                    <div className="w-16 h-16 bg-blue-50 text-cbse-blue rounded-full mb-4 flex items-center justify-center text-2xl">
-                        <i className="fas fa-hammer"></i>
-                    </div>
-                    <h2 className="text-xl font-black text-slate-800">{title}</h2>
-                    <p className="text-slate-500 mt-2 text-sm">Component implementation in progress...</p>
-                </div>
-            );
-        }
-
-        // --- MAIN APPLICATION ---
-
-        function TeacherDashboard() {
-            const [isReady, setIsReady] = useState(false);
-            const [profile, setProfile] = useState(null);
-            const [db, setDb] = useState(null);
-            const [activeTab, setActiveTab] = useState('curriculum');
-
-            // Sovereignty Context
-            const [context, setContext] = useState({
-                grade: '9',
-                section: 'A',
-                discipline: 'Chemistry'
+                `;
             });
 
-            // Init Firebase
-            useEffect(() => {
-                let isMounted = true;
-                const initFirebase = async () => {
-                    if (!window.firebaseAPI) return;
-
-                    try {
-                        const fb = window.firebaseAPI;
-                        fb.guardConsole("teacher");
-                        const clients = await fb.getInitializedClients();
-
-                        if (isMounted) {
-                            setProfile(clients.auth.currentUser);
-                            setDb(clients.db);
-                            setIsReady(true);
-                        }
-                    } catch (error) {
-                        console.error("Firebase init error:", error);
-                    }
-                };
-
-                if (window.firebaseAPI) {
-                    initFirebase();
-                } else {
-                    window.addEventListener('firebaseAPIReady', initFirebase);
-                }
-
-                return () => {
-                    isMounted = false;
-                    window.removeEventListener('firebaseAPIReady', initFirebase);
-                };
-            }, []);
-
-            if (!isReady) {
-                return (
-                    <div className="flex items-center justify-center min-h-screen">
-                        <div className="animate-pulse font-bold text-slate-400">Verifying Faculty Access via React Firebase Hooks...</div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="flex flex-col min-h-screen">
-                    <SovereigntyNavigation context={context} setContext={setContext} profile={profile} />
-
-                    <div className="flex flex-1 overflow-hidden relative">
-                        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-                        <main className="flex-1 overflow-y-auto bg-slate-50/50 p-6">
-                            <div className="max-w-6xl mx-auto space-y-6">
-                                {/* Header / Breadcrumb */}
-                                <div>
-                                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                                        Class {context.grade}-{context.section} <span className="text-cbse-blue">| {context.discipline}</span>
-                                    </h1>
-                                    <p className="text-slate-500 text-sm mt-1">
-                                        Real-time Command Hub linking the classroom to the student's mastery matrix.
-                                    </p>
-                                </div>
-
-                                {/* Content Router */}
-                                {activeTab === 'curriculum' && <CurriculumHub context={context} db={db} chapters={activeChapters} />}
-                                {activeTab === 'analytics' && <SectionHeatmap context={context} db={db} chapters={activeChapters} />}
-                                {activeTab === 'remedial' && <RemedialQueue context={context} chapters={activeChapters} />}
-
-                            </div>
-                        </main>
-                    </div>
-                </div>
-            );
+            html += `</div></div>`;
+            container.innerHTML = html;
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('react-root'));
-        root.render(<TeacherDashboard />);
+        // --- Bootstrap ---
+        initializeAuthListener(async (user) => {
+            if (user) { await init(user); }
+            else { window.location.href = "../../index.html"; }
+        });
     </script>
-</body>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <header class="bg-cbse-blue p-4 px-6 text-white flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <a href="../../index.html" class="w-8 h-8 bg-white text-cbse-blue rounded-lg flex items-center justify-center font-bold">🏠</a>
+            <h2 class="font-black tracking-tight">Faculty<span class="text-accent-gold">Console</span></h2>
+        </div>
+        <button id="logout-btn" class="text-xs font-bold bg-white/10 px-3 py-1 rounded-lg">Logout 🚪</button>
+    </header>
 
+    <main id="main-content" class="max-w-6xl mx-auto p-6 md:p-10">
+        </main>
+</body>
 </html>
