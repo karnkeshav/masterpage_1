@@ -234,11 +234,11 @@
                     }
                 });
 
-                if (scoreDocs.length === 0) {
-                    renderEmptyState(container, false);
-                    return;
-                }
-
+                // Always run processData + renderConsole when Firestore returned data.
+                // The only true empty state (both collections empty) is caught at the top.
+                // Removing the scoreDocs.length === 0 guard because it fires incorrectly
+                // when scoresSnap is empty but mistakesSnap has legacy docs with no session_id
+                // and no mistakes array — which would cause a false "Clean Record!" display.
                 processData(scoreDocs);
                 renderConsole(container);
 
