@@ -164,80 +164,58 @@
                 const mistakesSnap = await getDocs(query(collection(db, "mistake_notebook"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")));
 
                 if (scoresSnap.empty && mistakesSnap.empty) {
-                    // True empty: no quiz history at all
-                    renderEmptyState(container, true);
+                    renderEmptyState(container);
                     return;
                 }
 
-                // Build a fast lookup map for mistake_notebook docs keyed by session_id.
-                // This replaces the previous 5-second timestamp heuristic which was
-                // unreliable because serverTimestamp() resolves on the Firestore server
-                // and both documents could easily be >5s apart even within the same session.
-                const notebookBySessionId = new Map();
-                const notebookOrphans = []; // docs without a session_id (legacy data)
-
-                mistakesSnap.docs.forEach(md => {
-                    const mData = md.data();
-                    const sid = mData.session_id || null;
-                    if (sid) {
-                        notebookBySessionId.set(sid, mData);
-                    } else {
-                        notebookOrphans.push(mData);
-                    }
-                });
-
-                // Hydrate each quiz_scores doc with its paired mistake_notebook entry.
-                // For new data: match by session_id (exact, reliable).
-                // For legacy data without session_id: fall back to topic-only match.
+                // Hydrate scores with mistakes based on timestamp/topic grouping
                 const scoreDocs = scoresSnap.docs.map(d => {
                     const data = d.data();
                     const topic = data.topic || data.topicSlug || data.chapter_slug || "";
-                    const sid = data.session_id || null;
 
-                    let matchingNotebook = null;
-                    if (sid && notebookBySessionId.has(sid)) {
-                        matchingNotebook = notebookBySessionId.get(sid);
-                    } else {
-                        matchingNotebook = notebookOrphans.find(mData => {
-                            const mTopic = mData.topic || mData.chapter_slug || "";
-                            return mTopic === topic;
-                        }) || null;
-                    }
+                    // Find corresponding mistakes for this topic from roughly the same time
+                    const t1 = data.timestamp ? data.timestamp.seconds : 0;
 
-                    data.mistakes = matchingNotebook ? (matchingNotebook.mistakes || []) : [];
-                    data.difficulty = data.difficulty || matchingNotebook?.difficulty || 'simple';
-                    data.mcq_total = data.mcq_total || 0;
-                    data.ar_total = data.ar_total || 0;
-                    data.cb_total = data.cb_total || 0;
+                    const matchingNotebookEntry = mistakesSnap.docs.find(md => {
+                        const mData = md.data();
+                        const mTopic = mData.topic || mData.chapter_slug || "";
+                        const mTime = mData.timestamp ? mData.timestamp.seconds : 0;
+                        // Match if same topic and occurred within 5 seconds (same quiz session)
+                        return (mTopic === topic) && (Math.abs(mTime - t1) < 5);
+                    });
 
+                    // Inject mistakes array so processData doesn't break
+                    // We also capture the explicit difficulty from the quiz score so we can group mistakes later
+                    data.mistakes = matchingNotebookEntry ? (matchingNotebookEntry.data().mistakes || []) : [];
+                    data.difficulty = data.difficulty || 'simple'; // Default fallback
                     return { data: () => data };
                 });
 
-                // Also include orphan notebook entries with no paired score doc
-                notebookOrphans.forEach(mData => {
+                // Also add any isolated mistakes that might not have a matching score doc
+                mistakesSnap.docs.forEach(md => {
+                    const mData = md.data();
                     const topic = mData.topic || mData.chapter_slug || "";
+                    const mTime = mData.timestamp ? mData.timestamp.seconds : 0;
+
                     const alreadyMapped = scoreDocs.some(sd => {
-                        const sTopic = sd.data().topic || sd.data().topicSlug || sd.data().chapter_slug || "";
-                        return sTopic === topic;
+                        const sData = sd.data();
+                        const sTopic = sData.topic || sData.topicSlug || sData.chapter_slug || "";
+                        const sTime = sData.timestamp ? sData.timestamp.seconds : 0;
+                        return (sTopic === topic) && (Math.abs(sTime - mTime) < 5);
                     });
+
                     if (!alreadyMapped) {
                         scoreDocs.push({
                             data: () => ({
                                 topic: topic,
                                 timestamp: mData.timestamp,
                                 percentage: 0,
-                                difficulty: mData.difficulty || 'simple',
-                                mistakes: mData.mistakes || [],
-                                mcq_total: 0, ar_total: 0, cb_total: 0
+                                difficulty: mData.difficulty || 'simple', // Fallback for isolated legacy mistakes
+                                mistakes: mData.mistakes || []
                             })
                         });
                     }
                 });
-
-                if (scoreDocs.length === 0) {
-                    renderEmptyState(container, false);
-                    return;
-                }
 
                 processData(scoreDocs);
                 renderConsole(container);
@@ -253,37 +231,28 @@
             let subject = "General";
             let chapterName = topicSlug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 
-            // Step 1: Resolve subject from the Supabase slug prefix FIRST.
-            // Slug format: {subject}_{chapter}_{grade}_quiz e.g. 'mathematics_triangles_9_quiz'
-            // This prevents cross-subject chapter collisions (e.g. 'Lines' matching wrong subject).
-            const prefix = s.split('_')[0];
-            if (prefix === "mathematics" || prefix === "math") subject = "Mathematics";
-            else if (prefix === "science") subject = "Science";
-            else if (prefix === "social") subject = "Social Science";
-            else if (s.includes("math")) subject = "Mathematics";
-            else if (s.includes("social")) subject = "Social Science";
-            else if (s.includes("science")) subject = "Science";
-
-            // Step 2: Strip the slug to extract just the chapter body for title matching.
-            const slugBody = s
-                .replace(/^(mathematics|math|science|social)_/, '')
-                .replace(/_\d+_quiz$/, '')
-                .replace(/_/g, ' ');
-
-            // Step 3: Find the exact chapter title within the already-resolved subject.
             for (const [subj, sections] of Object.entries(curriculumData)) {
-                if (subj !== subject && subject !== "General") continue;
-                for (const [, chapters] of Object.entries(sections)) {
+                for (const [sec, chapters] of Object.entries(sections)) {
                     for (const ch of chapters) {
                         const title = ch.chapter_title.toLowerCase();
-                        if (title === slugBody || title.includes(slugBody) || slugBody.includes(title)) {
+                        if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
+                            subject = subj;
                             chapterName = ch.chapter_title;
-                            if (subject === "General") subject = subj;
                             return { subject, chapterName };
                         }
                     }
                 }
             }
+
+            // Improved Fallback: Use the exact prefix from the Supabase slug if available
+            // E.g., 'mathematics_triangles_9_quiz' -> 'mathematics'
+            const prefix = s.split('_')[0];
+            if (prefix === "math" || prefix === "mathematics") { subject = "Mathematics"; }
+            else if (prefix === "social") { subject = "Social Science"; }
+            else if (prefix === "science") { subject = "Science"; }
+            else if (s.includes("math")) { subject = "Mathematics"; }
+            else if (s.includes("social")) { subject = "Social Science"; }
+            else if (s.includes("science")) { subject = "Science"; }
 
             return { subject, chapterName };
         }
@@ -318,19 +287,18 @@
                 (data.mistakes || []).forEach(m => {
                     const mId = m.id || m.question_id || m.question || m.question_text || "";
                     if (!mId) return;
-                    // Use stored question_type from new data; fall back to ID-prefix for legacy.
-                    const type = m.question_type
-                        ? (m.question_type.includes('ar') ? 'AR' : (m.question_type.includes('cb') || m.question_type.includes('case')) ? 'CB' : 'MCQ')
-                        : getQuestionType(mId);
+                    const type = getQuestionType(mId);
                     state.proficiency[type].mistakes++;
                 });
 
-                // FIXED: Use real per-type question totals written by quiz-engine.js.
-                // For legacy docs pre-dating this fix, these will be 0 so the
-                // proficiency pill shows 'No Data' instead of fabricated values.
-                state.proficiency.MCQ.total += (data.mcq_total || 0);
-                state.proficiency.AR.total += (data.ar_total || 0);
-                state.proficiency.CB.total += (data.cb_total || 0);
+                // Estimate total questions of each type based on the score percentage to prevent division by zero.
+                // In a perfect system, `data` would contain the exact breakdown of questions seen.
+                // For the UI, we'll increment the total based on the fact that an attempt was made.
+                // Since we don't know exactly what types were in the quiz if they got them right, 
+                // we'll assume a standard 60% MCQ, 20% AR, 20% CB split for a 10-question quiz.
+                state.proficiency.MCQ.total += 6;
+                state.proficiency.AR.total += 2;
+                state.proficiency.CB.total += 2;
 
                 if (!topicHistory[topic]) topicHistory[topic] = {};
                 // Organize history nested by Difficulty Level (Simple, Medium, Advanced)
@@ -632,11 +600,7 @@
                 let count = 0;
                 Object.values(chapters[ch]).forEach(diffArray => count += diffArray.length);
 
-                // FIX: escapedCh was referenced but never declared, causing a ReferenceError
-                // that crashed the chapter list for every subject. Declared here with proper
-                // HTML entity escaping so apostrophes/quotes in chapter names are safe.
-                const escapedCh = ch.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
+                // We use data attributes instead of inline JS to perfectly handle apostrophes in chapter names
                 html += `
                     <div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item chapter-item"
                          data-subject="${subject}" data-chapter="${escapedCh}" data-type="${type}">
@@ -733,25 +697,14 @@
 
         window.closeMobileInspector = () => document.getElementById('mobile-inspector').classList.add('hidden');
 
-        function renderEmptyState(container, noHistory = false) {
-            if (noHistory) {
-                container.innerHTML = `
-                    <div class="glass-panel p-12 rounded-3xl text-center max-w-2xl mx-auto mt-12">
-                        <div class="text-6xl mb-6">📚</div>
-                        <h3 class="text-2xl font-black text-slate-700 mb-2">No Quiz History Yet</h3>
-                        <p class="text-slate-500 font-medium">Complete your first quiz to start tracking your progress here.</p>
-                        <a href="consoles/student.html" class="inline-block mt-6 px-6 py-3 bg-cbse-blue text-white font-bold rounded-xl shadow hover:shadow-lg transition">Go to Hub →</a>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <div class="glass-panel p-12 rounded-3xl text-center max-w-2xl mx-auto mt-12">
-                        <div class="text-6xl mb-6">🎉</div>
-                        <h3 class="text-2xl font-black text-slate-700 mb-2">Clean Record!</h3>
-                        <p class="text-slate-500 font-medium">You've scored above 85% on every attempt. No friction points logged.</p>
-                    </div>
-                `;
-            }
+        function renderEmptyState(container) {
+            container.innerHTML = `
+                <div class="glass-panel p-12 rounded-3xl text-center max-w-2xl mx-auto mt-12">
+                    <div class="text-6xl mb-6">🎉</div>
+                    <h3 class="text-2xl font-black text-slate-700 mb-2">Clean Record!</h3>
+                    <p class="text-slate-500 font-medium">No diagnostic friction points found.</p>
+                </div>
+            `;
         }
 
         initializeAuthListener(async (user) => {
@@ -773,9 +726,7 @@
             <div>
                 <h2 class="text-xl font-black  leading-none tracking-tight text-accent-gold">Mistake<span
                         class="text-danger-red">Book</span></h2>
-                <p
-                    class="text-[10px]  font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">
-                    Ready4Exam • Powered by Ready4Industry</p>
+                <p class="text-[10px]  font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry</p>
             </div>
         </div>
         <div class="flex items-center space-x-3">
@@ -803,8 +754,8 @@
     </div>
 
     <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-        <p>© 2025 Ready4Exam Academic Portal.</p>
-    </footer>
+  <p>© 2025 Ready4Exam Academic Portal.</p>
+</footer>
 </body>
 
 </html>
