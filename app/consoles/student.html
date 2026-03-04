@@ -259,9 +259,8 @@
                 // 2. Latest Achievement
                 if (latestQuiz && document.getElementById("stat-subject")) {
                     document.getElementById("stat-subject").innerHTML = `${latestQuiz.chapter} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
+                    document.getElementById("stat-subject-label").textContent = "Latest Achievement:";
                 }
-                const statSubjectLabel = document.getElementById("stat-subject-label");
-                if (latestQuiz && statSubjectLabel) statSubjectLabel.textContent = "Latest Achievement:";
 
                 // 3. Average Mastery
                 const avg = Math.round(totalScoreSum / snapshot.size);
@@ -567,9 +566,7 @@
             }
 
             document.getElementById("stat-avg").textContent = "0%";
-            // stat-subject is not present in this page's HTML — guard against null crash
-            const statSubjectEl = document.getElementById("stat-subject");
-            if (statSubjectEl) statSubjectEl.textContent = "None";
+            document.getElementById("stat-subject").textContent = "None";
             document.getElementById("subject-mastery-container").innerHTML = `
                 <div class="text-center py-4">
                     <p class="text-xs text-slate-400 mb-2">No data yet.</p>
@@ -668,9 +665,7 @@
             <div>
                 <h2 id="class-title" class="text-xl font-black  leading-none tracking-tight text-accent-gold">Class Hub
                 </h2>
-                <p
-                    class="text-[10px]  font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">
-                    Ready4Exam • Powered by Ready4Industry</p>
+                <p class="text-[10px]  font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry</p>
             </div>
         </div>
 
@@ -945,8 +940,8 @@
     </div>
 
     <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-        <p>© 2025 Ready4Exam Academic Portal.</p>
-    </footer>
+  <p>© 2025 Ready4Exam Academic Portal.</p>
+</footer>
 
 </body>
 
