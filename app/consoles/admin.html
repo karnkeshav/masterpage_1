@@ -4,127 +4,596 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Console — Ready4Exam</title>
+
+    <link href="../../css/global.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body{font-family:'Inter',sans-serif;}</style>
 
+    <!-- Configs & Auth -->
     <script src="../../js/firebase-master-config.js"></script>
     <script src="../../js/config.js" type="module"></script>
 
     <script type="module">
-        import { guardConsole } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
-        import { collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { signOut } from "../../js/auth-paywall.js";
+        import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 
-        // LOGOUT LOGIC
-        const logoutBtn = document.getElementById('logout-btn');
-        if(logoutBtn) {
-            logoutBtn.addEventListener('click', async () => {
-                if (confirm("Sign out of your Ready4Exam session?")) {
-                    try {
-                        await signOut();
-                        window.location.href = "../../index.html";
-                    } catch (err) {
-                        console.error("Logout failed", err);
-                    }
-                }
-            });
-        }
+        // Global state
+        let currentSchoolId = null;
 
-        // GLOBAL GUARD
-        guardConsole("admin");
-
-        // Data Loader (Called by Guard)
+        // Ensure window.loadConsoleData is defined before guardConsole
         window.loadConsoleData = async (profile) => {
-            const schoolId = profile.school_id;
-            if (!schoolId) {
+            currentSchoolId = profile.school_id;
+            if (!currentSchoolId) {
                 alert("Critical Error: No School ID found for Admin.");
                 return;
             }
-            console.log(`Loading Admin Console for School: ${schoolId}`);
+            console.log(`Loading Admin Console for School: ${currentSchoolId}`);
 
-            // Here we would strictly fetch users belonging to this school
-            // const q = query(collection(db, "users"), where("school_id", "==", schoolId));
+            document.getElementById('user-welcome').innerText = profile.email || "Admin User";
 
-            // MOCK DATA (Simulating Scoped Fetch)
-            const users = [
-                { email: "teacher1@school.com", role: "teacher", class: "9-A", school_id: schoolId },
-                { email: "principal@school.com", role: "principal", class: "All", school_id: schoolId },
-                { email: "student1@school.com", role: "student", class: "9-A", school_id: schoolId },
-            ];
-
-            renderUsers(users);
+            // Initial render
+            window.switchTab('identity');
         };
 
-        function renderUsers(users) {
-            const list = document.getElementById("user-list");
-            list.innerHTML = users.map(u => `
-                <tr class="border-b border-slate-50">
-                    <td class="p-4 font-bold text-slate-700">${u.email}</td>
-                    <td class="p-4">
-                        <select class="bg-slate-50 border-none rounded px-2 py-1 text-sm font-bold text-slate-600">
-                            <option ${u.role==='student'?'selected':''}>student</option>
-                            <option ${u.role==='teacher'?'selected':''}>teacher</option>
-                            <option ${u.role==='principal'?'selected':''}>principal</option>
-                        </select>
-                    </td>
-                    <td class="p-4 text-sm text-slate-500">${u.class}</td>
-                    <td class="p-4 text-right">
-                         <button class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Revoke</button>
-                    </td>
-                </tr>
-            `).join("");
-        }
+        // GLOBAL GUARD
+        document.addEventListener('DOMContentLoaded', () => {
+            guardConsole("admin");
+            bindConsoleLogout("logout-nav-btn", "../../index.html");
+        });
+
+        import { loadCurriculum } from "../../js/curriculum/loader.js";
+        import { collection, query, where, getDocs, doc, updateDoc, setDoc, addDoc, serverTimestamp, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // Tab switching logic
+        window.switchTab = (tabId) => {
+            ['identity', 'observability', 'messaging'].forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (!btn) return;
+
+                if (t === tabId) {
+                    btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm bg-cbse-blue text-white shadow-blue-900/20";
+                    btn.querySelector('i')?.classList.add('text-accent-gold');
+                } else {
+                    btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200";
+                    btn.querySelector('i')?.classList.remove('text-accent-gold');
+                }
+            });
+
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+            // Show selected tab content
+            const activeContent = document.getElementById(`tab-${tabId}`);
+            if (activeContent) {
+                activeContent.classList.remove('hidden');
+
+                // Call render function for tab if needed
+                if (tabId === 'identity' && window.renderIdentityVault) window.renderIdentityVault();
+                if (tabId === 'observability' && window.renderObservability) window.renderObservability();
+                if (tabId === 'messaging' && window.renderMessaging) window.renderMessaging();
+            }
+        };
+
+        // --- TASK 1: IDENTITY MAPPING VAULT ---
+        window.renderIdentityVault = () => {
+            const container = document.getElementById('tab-identity');
+            container.innerHTML = `
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-blue-50 text-cbse-blue flex items-center justify-center rounded-2xl text-xl">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-800 tracking-tight">Relational Onboarding</h2>
+                            <p class="text-sm text-slate-500 font-medium mt-1">Upload CSV to map teachers and build Parent-Student bridges.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-cbse-blue transition bg-slate-50/50">
+                            <i class="fas fa-file-csv text-4xl text-slate-300 mb-4"></i>
+                            <h3 class="text-lg font-bold text-slate-800 mb-2">Upload Mapping CSV</h3>
+                            <p class="text-xs text-slate-500 mb-4 px-4">Expected format: email, role, target_id, grade, section, discipline<br><i>target_id is student UID for parents.</i></p>
+
+                            <label class="bg-cbse-blue text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-blue-800 transition cursor-pointer inline-block">
+                                Select File
+                                <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="window.handleCSVUpload(event)">
+                            </label>
+                            <div id="upload-status" class="mt-4 text-sm font-bold text-slate-600 hidden"></div>
+                        </div>
+
+                        <div class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4"><i class="fas fa-info-circle text-cbse-blue"></i> Execution Log</h3>
+                            <div id="mapping-log" class="text-xs font-mono text-slate-600 h-40 overflow-y-auto space-y-2 bg-white p-3 rounded-xl border border-slate-200">
+                                <div class="text-slate-400 italic">Waiting for CSV upload...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.logMessage = (msg, isError = false) => {
+            const logBox = document.getElementById('mapping-log');
+            if(logBox.innerHTML.includes("Waiting")) logBox.innerHTML = "";
+            const div = document.createElement('div');
+            div.className = isError ? 'text-danger-red' : 'text-slate-700';
+            div.innerText = `> ${msg}`;
+            logBox.appendChild(div);
+            logBox.scrollTop = logBox.scrollHeight;
+        };
+
+        // --- TASK 2: VIP OBSERVABILITY DASHBOARD ---
+        window.renderObservability = async () => {
+            const container = document.getElementById('tab-observability');
+            container.innerHTML = `
+                <div class="flex items-center justify-center h-64 text-slate-400">
+                    <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
+                    <div class="animate-pulse font-bold ml-3">Loading God View...</div>
+                </div>
+            `;
+
+            try {
+                const { db } = await getInitializedClients();
+
+                // 1. Calculate Remedial Red-Zone using chapter_benchmarks
+                const benchmarkQuery = query(collection(db, "chapter_benchmarks"), where("school_id", "==", currentSchoolId));
+                const benchmarkSnap = await getDocs(benchmarkQuery);
+                const benchmarks = {};
+                let averageB = 3;
+                let totalB = 0;
+
+                if (!benchmarkSnap.empty) {
+                    benchmarkSnap.forEach(doc => {
+                        const data = doc.data();
+                        benchmarks[data.chapter_slug] = data.benchmark_attempts || 3;
+                        totalB += (data.benchmark_attempts || 3);
+                    });
+                    averageB = Math.round(totalB / benchmarkSnap.size);
+                }
+
+                const scoresQuery = query(collection(db, "quiz_scores"), where("school_id", "==", currentSchoolId));
+                const scoresSnap = await getDocs(scoresQuery);
+
+                // Group attempts by student AND chapter
+                const studentChapterAttempts = {};
+                scoresSnap.forEach(doc => {
+                    const data = doc.data();
+                    const uid = data.user_id;
+                    const chapter = data.topicSlug || data.topic || data.chapter; // Support multiple schemas
+
+                    if(!chapter) return;
+
+                    const key = `${uid}_${chapter}`;
+                    if(!studentChapterAttempts[key]) {
+                         studentChapterAttempts[key] = { uid, chapter, attempts: 0 };
+                    }
+                    studentChapterAttempts[key].attempts++;
+                });
+
+                let breachedCount = 0;
+                const breachedStudents = new Set();
+
+                Object.values(studentChapterAttempts).forEach(entry => {
+                    const B = benchmarks[entry.chapter] || averageB;
+                    if (entry.attempts > B) {
+                        breachedStudents.add(entry.uid);
+                    }
+                });
+                breachedCount = breachedStudents.size;
+
+                // 2. Syllabus Heatmap (Finished chapters)
+                const controlQuery = query(collection(db, "chapter_control"), where("status", "==", "finished"), where("school_id", "==", currentSchoolId));
+                const controlSnap = await getDocs(controlQuery);
+
+                let finishedHtml = '';
+                if(controlSnap.empty) {
+                     finishedHtml = `<div class="col-span-full py-8 text-center text-slate-400 italic font-bold">No chapters marked finished yet.</div>`;
+                } else {
+                     controlSnap.forEach(doc => {
+                         const d = doc.data();
+                         // Skip if doesn't belong to this school's structure, though for prototype we can just render what we find
+                         // A production app would likely have school_id on chapter_control
+                         finishedHtml += `
+                            <div class="bg-success-green text-white p-4 rounded-xl shadow-sm border border-green-600 flex justify-between items-center transition hover:scale-105">
+                                <div>
+                                    <div class="text-[10px] font-black uppercase tracking-widest opacity-80">${d.grade}-${d.section} • ${d.discipline}</div>
+                                    <div class="font-bold mt-1 text-sm truncate">${d.chapter_slug || 'Chapter'}</div>
+                                </div>
+                                <i class="fas fa-check-circle text-2xl opacity-50"></i>
+                            </div>
+                         `;
+                     });
+                }
+
+                container.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 bg-amber-50 text-amber-600 flex items-center justify-center rounded-2xl text-xl">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-black text-slate-800 tracking-tight">The "God View"</h2>
+                                <p class="text-sm text-slate-500 font-medium mt-1">High-density observability for Principals/Directors.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <!-- Remedial Red Zone -->
+                            <div class="md:col-span-1 bg-danger-red p-6 rounded-3xl shadow-lg border border-red-800 text-white flex flex-col justify-between relative overflow-hidden">
+                                <i class="fas fa-exclamation-triangle absolute -right-4 -bottom-4 text-8xl text-black/10"></i>
+                                <div>
+                                    <h3 class="text-lg font-black flex items-center gap-2 relative z-10"><i class="fas fa-ambulance"></i> Remedial Red-Zone</h3>
+                                    <p class="text-xs font-medium text-red-100 mt-1 opacity-90 relative z-10">Students breaching the B+1 threshold</p>
+                                </div>
+                                <div class="mt-8 relative z-10">
+                                    <div class="text-6xl font-black">${breachedCount}</div>
+                                    <div class="text-xs uppercase tracking-widest font-bold opacity-80 mt-1">School-Wide Alerts</div>
+                                    <div class="text-[10px] bg-black/20 px-2 py-1 rounded inline-block mt-4">Avg Benchmark (B) = ${averageB}</div>
+                                </div>
+                            </div>
+
+                            <!-- Syllabus Heatmap -->
+                            <div class="md:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                                <h3 class="text-lg font-black text-slate-800 flex items-center gap-2 mb-1"><i class="fas fa-fire text-amber-500"></i> Syllabus Heatmap</h3>
+                                <p class="text-xs font-medium text-slate-500 mb-6">Cross-grade finished status mapped from chapter_control.</p>
+
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                                    ${finishedHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            } catch(e) {
+                container.innerHTML = `<div class="text-danger-red font-bold p-8">Error loading dashboard: ${e.message}</div>`;
+            }
+        };
+
+        // --- TASK 3: SOVEREIGN INTERCOM (MESSAGING HUB) ---
+        let unsubMessages = null;
+
+        window.renderMessaging = () => {
+            const container = document.getElementById('tab-messaging');
+            container.innerHTML = `
+                <div class="space-y-6 h-full flex flex-col">
+                    <div class="flex items-center gap-4 mb-2">
+                        <div class="w-12 h-12 bg-purple-50 text-purple-600 flex items-center justify-center rounded-2xl text-xl">
+                            <i class="fas fa-satellite-dish"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-800 tracking-tight">Sovereign Intercom</h2>
+                            <p class="text-sm text-slate-500 font-medium mt-1">Persona-based messaging hub for School ID: ${currentSchoolId}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 flex-1 min-h-[400px]">
+                        <!-- Message Composition -->
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col">
+                            <h3 class="text-lg font-black text-slate-800 mb-6">Compose Message</h3>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Target Audience</label>
+                                    <select id="msg-target-type" onchange="window.toggleTargetInput()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                                        <option value="broadcast">Broadcast to All Parents</option>
+                                        <option value="targeted">Targeted Nudge (Specific Teacher)</option>
+                                    </select>
+                                </div>
+
+                                <div id="msg-teacher-container" class="hidden">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Teacher Email</label>
+                                    <input type="email" id="msg-teacher-email" placeholder="teacher@school.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-cbse-blue">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Message Content</label>
+                                    <textarea id="msg-content" rows="4" placeholder="Type your official communication here..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:border-cbse-blue resize-none"></textarea>
+                                </div>
+
+                                <button onclick="window.sendMessage()" class="w-full bg-cbse-blue text-white font-bold py-3 rounded-xl shadow-md hover:bg-blue-800 transition flex items-center justify-center gap-2">
+                                    <i class="fas fa-paper-plane"></i> Dispatch Communication
+                                </button>
+                                <div id="msg-status" class="text-sm font-bold text-center hidden"></div>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Flow -->
+                        <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200 flex flex-col h-full">
+                            <h3 class="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-stream text-cbse-blue"></i> Real-time Flow
+                            </h3>
+                            <div id="msg-feed" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+                                <div class="text-center text-slate-400 font-bold italic py-8">Loading communications...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            window.listenToMessages();
+        };
+
+        window.toggleTargetInput = () => {
+            const type = document.getElementById('msg-target-type').value;
+            const container = document.getElementById('msg-teacher-container');
+            if(type === 'targeted') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        };
+
+        window.sendMessage = async () => {
+            const type = document.getElementById('msg-target-type').value;
+            const content = document.getElementById('msg-content').value.trim();
+            const statusEl = document.getElementById('msg-status');
+
+            if(!content) {
+                statusEl.innerText = "Message content is required.";
+                statusEl.className = "text-sm font-bold text-center text-danger-red block mt-4";
+                return;
+            }
+
+            try {
+                const { db } = await getInitializedClients();
+                const payload = {
+                    school_id: currentSchoolId,
+                    content: content,
+                    timestamp: serverTimestamp(),
+                    sender_role: "admin",
+                    target_role: type === 'broadcast' ? "parent" : "teacher",
+                    status: "sent"
+                };
+
+                if(type === 'targeted') {
+                    const teacherEmail = document.getElementById('msg-teacher-email').value.trim();
+                    if(!teacherEmail) {
+                        statusEl.innerText = "Teacher email is required for targeted nudges.";
+                        statusEl.className = "text-sm font-bold text-center text-danger-red block mt-4";
+                        return;
+                    }
+                    payload.target_email = teacherEmail;
+                }
+
+                await addDoc(collection(db, "communications"), payload);
+
+                document.getElementById('msg-content').value = "";
+                if(type === 'targeted') document.getElementById('msg-teacher-email').value = "";
+
+                statusEl.innerText = "Communication Dispatched Successfully.";
+                statusEl.className = "text-sm font-bold text-center text-success-green block mt-4";
+
+                setTimeout(() => { statusEl.classList.add('hidden'); }, 3000);
+
+            } catch(e) {
+                statusEl.innerText = "Failed to dispatch: " + e.message;
+                statusEl.className = "text-sm font-bold text-center text-danger-red block mt-4";
+            }
+        };
+
+        window.listenToMessages = async () => {
+            if(unsubMessages) unsubMessages();
+
+            const { db } = await getInitializedClients();
+            const q = query(
+                collection(db, "communications"),
+                where("school_id", "==", currentSchoolId),
+                orderBy("timestamp", "desc")
+            );
+
+            unsubMessages = onSnapshot(q, (snapshot) => {
+                const feed = document.getElementById('msg-feed');
+                if(!feed) return; // Tab might have changed
+
+                if(snapshot.empty) {
+                    feed.innerHTML = `<div class="text-center text-slate-400 font-bold italic py-8">No communications found for this school.</div>`;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const date = d.timestamp?.toDate ? d.timestamp.toDate().toLocaleString() : 'Just now';
+                    const isBroadcast = d.target_role === 'parent';
+
+                    html += `
+                        <div class="bg-white p-4 rounded-xl shadow-sm border ${isBroadcast ? 'border-blue-100' : 'border-purple-100'}">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${isBroadcast ? 'bg-blue-50 text-cbse-blue' : 'bg-purple-50 text-purple-600'}">
+                                    ${isBroadcast ? 'Broadcast to Parents' : 'Targeted: ' + (d.target_email || 'Teacher')}
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-bold">${date}</span>
+                            </div>
+                            <p class="text-sm text-slate-700 font-medium">${d.content}</p>
+                        </div>
+                    `;
+                });
+
+                feed.innerHTML = html;
+            }, (error) => {
+                const feed = document.getElementById('msg-feed');
+                if(feed) feed.innerHTML = `<div class="text-danger-red font-bold p-4">Error loading messages. Check index.</div>`;
+                console.error("Messages listener error:", error);
+            });
+        };
+
+        window.handleCSVUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('upload-status').innerText = `Processing ${file.name}...`;
+            document.getElementById('upload-status').classList.remove('hidden');
+            window.logMessage(`Starting processing of ${file.name}`);
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const text = e.target.result;
+                const rows = text.split('\\n').map(row => row.split(',').map(c => c.trim()));
+                // Skip header
+                const dataRows = rows.slice(1).filter(r => r.length > 1);
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                const { db } = await getInitializedClients();
+
+                for (let i = 0; i < dataRows.length; i++) {
+                    const row = dataRows[i];
+                    try {
+                        // Expected: email, role, target_id, grade, section, discipline
+                        const email = row[0];
+                        const role = row[1];
+
+                        // Look up user by email
+                        const q = query(collection(db, "users"), where("email", "==", email), where("school_id", "==", currentSchoolId));
+                        const snap = await getDocs(q);
+
+                        if (snap.empty) {
+                            window.logMessage(`Skipped ${email}: User not found in school.`, true);
+                            errorCount++;
+                            continue;
+                        }
+
+                        const userDoc = snap.docs[0];
+                        const userId = userDoc.id;
+
+                        if (role === 'teacher') {
+                            const targetGrade = row[3] || '9';
+                            const targetSection = row[4];
+                            const targetDiscipline = row[5];
+
+                            // Load curriculum map
+                            const curriculumData = await loadCurriculum(targetGrade);
+                            let hasMapping = false;
+                            if (curriculumData["Science"] && curriculumData["Science"][targetDiscipline]) hasMapping = true;
+                            if (curriculumData["Social Science"] && curriculumData["Social Science"][targetDiscipline]) hasMapping = true;
+                            if (curriculumData["Mathematics"] && curriculumData["Mathematics"][targetDiscipline]) hasMapping = true;
+
+                            if(hasMapping) {
+                                await updateDoc(doc(db, "users", userId), {
+                                    mapped_grade: targetGrade,
+                                    mapped_section: targetSection,
+                                    mapped_discipline: targetDiscipline
+                                });
+                                window.logMessage(`Mapped Teacher ${email} to ${targetGrade}-${targetSection} ${targetDiscipline}`);
+                                successCount++;
+                            } else {
+                                window.logMessage(`Invalid discipline '${targetDiscipline}' for Grade ${targetGrade}`, true);
+                                errorCount++;
+                            }
+
+                        } else if (role === 'parent') {
+                            const studentId = row[2];
+                            if(!studentId) {
+                                window.logMessage(`Skipped ${email}: No student ID provided.`, true);
+                                errorCount++;
+                                continue;
+                            }
+
+                            // Map parent -> student
+                            await updateDoc(doc(db, "users", studentId), {
+                                parent_id: userId
+                            });
+
+                            window.logMessage(`Bridged Parent ${email} to Student ${studentId}`);
+                            successCount++;
+                        }
+                    } catch (err) {
+                        window.logMessage(`Error processing row ${i+1}: ${err.message}`, true);
+                        errorCount++;
+                    }
+                }
+
+                document.getElementById('upload-status').innerHTML = `<span class="text-success-green">Complete: ${successCount} success, ${errorCount} failed.</span>`;
+                window.logMessage("CSV Processing Finished.", false);
+            };
+            reader.readAsText(file);
+        };
+
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-    <nav class="fixed top-0 right-0 p-4 z-50">
-        <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
-            <i class="fas fa-sign-out-alt text-red-400"></i>
-            <span>Sign Out</span>
-        </button>
-    </nav>
 
-    <div id="loading" class="flex items-center justify-center min-h-screen">
-        <div class="animate-pulse font-bold text-slate-400">Verifying Admin Privileges...</div>
-    </div>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8 fade-in">
-        <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
+    <!-- Sovereign Theme Header -->
+    <header class="glass-panel sticky top-0 z-40 bg-cbse-blue shadow-lg py-3 px-6 flex justify-between items-center text-white border-b border-white/10">
+        <div class="flex items-center space-x-4">
+            <a href="../../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
             <div>
-                <h1 class="text-3xl font-black  tracking-tight mb-2 text-accent-gold">Master<span class="text-blue-600">IAM</span></h1>
-                <p class="font-medium text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry</p>
+                <h2 class="text-xl font-black leading-none tracking-tight text-accent-gold">Relational Bridge</h2>
+                <p class="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">Ready4Exam • Master IAM</p>
             </div>
-            <button class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition">
-                + Bulk Onboard (CSV)
-            </button>
-        </header>
-
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-             <div class="p-6 border-b border-slate-50 flex gap-4">
-                <input type="text" placeholder="Search by email..." class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm flex-grow outline-none">
-                <select class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none">
-                    <option>All Roles</option>
-                    <option>Students</option>
-                    <option>Teachers</option>
-                </select>
-            </div>
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
-                    <tr>
-                        <th class="p-4">User Email</th>
-                        <th class="p-4">Role</th>
-                        <th class="p-4">Mapping</th>
-                        <th class="p-4 text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="user-list">
-                    <!-- Injected -->
-                </tbody>
-            </table>
         </div>
+
+        <div class="flex items-center space-x-3">
+            <div class="hidden md:flex flex-col items-end mr-4">
+                <span id="user-welcome" class="text-xs font-bold text-white max-w-[200px] truncate">Authenticating...</span>
+                <span class="text-[10px] font-black text-accent-gold bg-blue-900/50 px-2 py-0.5 rounded uppercase tracking-wide">Admin Role</span>
+            </div>
+            <button id="logout-nav-btn" class="logout-nav-btn w-10 h-10 flex items-center justify-center bg-danger-red/10 text-red-300 rounded-2xl hover:bg-danger-red hover:text-white transition shadow-sm" title="Sign Out">🚪</button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-6 min-h-[calc(100vh-76px)] hidden lg:block shadow-sm z-10 relative">
+            <h1 class="text-lg font-black text-slate-900 tracking-tight mb-8">Admin<span class="text-cbse-blue">Console</span></h1>
+            <nav class="space-y-2">
+                <button id="tab-btn-identity" onclick="window.switchTab('identity')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm bg-cbse-blue text-white shadow-blue-900/20">
+                    <i class="fas fa-users-cog w-5 text-center text-accent-gold"></i> Identity Mapping Vault
+                </button>
+                <button id="tab-btn-observability" onclick="window.switchTab('observability')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200">
+                    <i class="fas fa-tachometer-alt w-5 text-center"></i> VIP Observability
+                </button>
+                <button id="tab-btn-messaging" onclick="window.switchTab('messaging')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200">
+                    <i class="fas fa-broadcast-tower w-5 text-center"></i> Sovereign Intercom
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto bg-slate-50/50 p-6">
+            <div id="loading" class="flex flex-col items-center justify-center h-full text-slate-400">
+                <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
+                <div class="animate-pulse font-bold">Verifying Admin Privileges...</div>
+            </div>
+
+            <div id="app" class="hidden max-w-6xl mx-auto space-y-6 fade-in h-full">
+
+                <!-- Tab Viewports -->
+                <div id="tab-identity" class="tab-content h-full">
+                    <!-- Injected by renderIdentityVault() -->
+                </div>
+
+                <div id="tab-observability" class="tab-content hidden h-full">
+                    <!-- Injected by renderObservability() -->
+                </div>
+
+                <div id="tab-messaging" class="tab-content hidden h-full">
+                    <!-- Injected by renderMessaging() -->
+                </div>
+
+            </div>
+        </main>
     </div>
+
+    <!-- Sovereign Theme Footer -->
+    <footer class="bg-slate-900 text-white py-6 border-t border-slate-800">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-sm font-medium text-slate-400">
+                &copy; 2024 Ready4Exam. Built for modern educational institutions.
+            </div>
+            <div class="flex gap-4">
+                <a href="#" class="text-slate-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-slate-400 hover:text-white transition"><i class="fab fa-linkedin"></i></a>
+                <a href="#" class="text-slate-400 hover:text-white transition"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+
 </body>
 </html>
