@@ -27,7 +27,7 @@ window.loadConsoleData = async (profile) => {
     if(appEl) appEl.classList.remove('hidden');
 
     // Initial render
-    window.switchTab('identity');
+    window.switchTab('inventory');
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.switchTab = (tabId) => {
-    ['identity', 'registry', 'observability', 'messaging'].forEach(t => {
+    ['inventory', 'observability', 'messaging'].forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
         if (!btn) return;
 
@@ -59,51 +59,52 @@ window.switchTab = (tabId) => {
     if (activeContent) {
         activeContent.classList.remove('hidden');
 
-        if (tabId === 'identity') renderIdentityVault();
-        if (tabId === 'registry') renderRegistryEngine();
-        if (tabId === 'observability') renderObservability();
-        if (tabId === 'messaging') renderMessaging();
+        if (tabId === 'inventory') window.renderInventoryEngine();
+        if (tabId === 'observability') window.renderObservability();
+        if (tabId === 'messaging') window.renderMessaging();
     }
 };
 
-// --- TASK 1: IDENTITY MAPPING VAULT (Relational Onboarding) ---
-function renderIdentityVault() {
-    const container = document.getElementById('tab-identity');
-    container.innerHTML = `
-        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-            <div class="flex items-center gap-4 mb-6">
-                <div class="w-12 h-12 bg-blue-50 text-cbse-blue flex items-center justify-center rounded-2xl text-xl">
-                    <i class="fas fa-network-wired"></i>
+// --- THE INVENTORY NAVIGATION ENGINE ---
+window.renderInventoryEngine = () => {
+    if(unsubRegistry) { unsubRegistry(); unsubRegistry = null; }
+
+    const container = document.getElementById('tab-inventory');
+
+    // Level 1: Grade grid
+    let gridHtml = '';
+    for(let g = 6; g <= 12; g++) {
+        gridHtml += `
+            <button onclick="window.loadSectionGrid('${g}')" class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-sm hover:border-cbse-blue hover:shadow-md transition-all text-left group">
+                <div class="w-12 h-12 bg-blue-50 text-cbse-blue rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-layer-group"></i>
                 </div>
+                <h3 class="text-lg font-black text-slate-800">Grade ${g}</h3>
+                <p class="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">View Sections</p>
+            </button>
+        `;
+    }
+
+    container.innerHTML = `
+        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col" id="inventory-main">
+            <div class="flex justify-between items-center mb-8">
                 <div>
-                    <h2 class="text-2xl font-black text-slate-800 tracking-tight">Relational Onboarding</h2>
-                    <p class="text-sm text-slate-500 font-medium mt-1">Upload CSV to map teachers and build Parent-Student bridges.</p>
+                    <h2 class="text-2xl font-black text-slate-800">Inventory Registry</h2>
+                    <p class="text-sm text-slate-500 mt-1">Manage ${currentSchoolId} registry by Grade & Section.</p>
                 </div>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-cbse-blue transition bg-slate-50/50">
-                    <i class="fas fa-file-csv text-4xl text-slate-300 mb-4"></i>
-                    <h3 class="text-lg font-bold text-slate-800 mb-2">Upload Mapping CSV</h3>
-                    <p class="text-xs text-slate-500 mb-4 px-4">Expected format: email, role, target_id, grade, section, discipline<br><i>target_id is student UID for parents.</i></p>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                ${gridHtml}
+            </div>
 
-                    <label class="bg-cbse-blue text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-blue-800 transition cursor-pointer inline-block">
-                        Select File
-                        <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="window.handleCSVUpload(event)">
-                    </label>
-                    <div id="upload-status" class="mt-4 text-sm font-bold text-slate-600 hidden"></div>
-                </div>
-
-                <div class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4"><i class="fas fa-info-circle text-cbse-blue"></i> Execution Log</h3>
-                    <div id="mapping-log" class="text-xs font-mono text-slate-600 h-40 overflow-y-auto space-y-2 bg-white p-3 rounded-xl border border-slate-200">
-                        <div class="text-slate-400 italic">Waiting for CSV upload...</div>
-                    </div>
-                </div>
+            <!-- Relational Onboarding moved below grid -->
+            <div class="mt-12 border-t border-slate-100 pt-8">
+                ${getRelationalOnboardingHTML()}
             </div>
         </div>
     `;
-}
+};
 
 window.logMessage = (msg, isError = false) => {
     const logBox = document.getElementById('mapping-log');
@@ -215,68 +216,111 @@ window.handleCSVUpload = async (event) => {
     reader.readAsText(file);
 };
 
-// --- NEW TASK 2: REGISTRY ENGINE (Grade Grouping & Mapping) ---
-window.renderRegistryEngine = () => {
-    if(unsubRegistry) { unsubRegistry(); unsubRegistry = null; }
 
-    const container = document.getElementById('tab-registry');
+function getRelationalOnboardingHTML() {
+    return `
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-10 h-10 bg-slate-50 text-slate-400 flex items-center justify-center rounded-xl text-lg">
+                <i class="fas fa-file-csv"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-black text-slate-800">Bulk Relational Onboarding</h3>
+                <p class="text-xs text-slate-500 font-medium">Upload CSV to map teachers and bridge parents.</p>
+            </div>
+        </div>
+        <div class="flex gap-4 items-center">
+            <label class="bg-slate-100 text-slate-700 px-6 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-200 transition cursor-pointer border border-slate-200">
+                Select CSV File
+                <input type="file" accept=".csv" class="hidden" onchange="window.handleCSVUpload(event)">
+            </label>
+            <div id="upload-status" class="text-sm font-bold text-slate-600 hidden"></div>
+        </div>
+        <div id="mapping-log" class="mt-4 text-xs font-mono text-slate-500 h-24 overflow-y-auto space-y-1 bg-slate-50 p-3 rounded-lg border border-slate-100"></div>
+    `;
+}
 
-    // Class View: Grade grid
-    let gridHtml = '';
-    for(let g = 6; g <= 12; g++) {
-        gridHtml += `
-            <button onclick="window.loadGradeRegistry('${g}')" class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-sm hover:border-cbse-blue hover:shadow-md transition-all text-left group">
-                <div class="w-12 h-12 bg-blue-50 text-cbse-blue rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
-                    <i class="fas fa-folder"></i>
+window.loadSectionGrid = (grade) => {
+    const container = document.getElementById('inventory-main');
+
+    // Level 2: Section grid (Mocking A, B, C for demo, in reality we might fetch these or hardcode typical sections)
+    let sectionHtml = '';
+    ['A', 'B', 'C'].forEach(sec => {
+        sectionHtml += `
+            <button onclick="window.loadSectionInventory('${grade}', '${sec}')" class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-sm hover:border-success-green hover:shadow-md transition-all text-left group">
+                <div class="w-12 h-12 bg-green-50 text-success-green rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-users-class"></i>
                 </div>
-                <h3 class="text-lg font-black text-slate-800">Grade ${g}</h3>
-                <p class="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">Class Roster</p>
+                <h3 class="text-lg font-black text-slate-800">Section ${sec}</h3>
+                <p class="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">Grade ${grade}</p>
             </button>
         `;
-    }
+    });
 
     container.innerHTML = `
-        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col" id="registry-main">
-            <div class="flex justify-between items-center mb-8">
-                <div>
-                    <h2 class="text-2xl font-black text-slate-800">Registry Engine</h2>
-                    <p class="text-sm text-slate-500 mt-1">Select a Grade folder to manage user mappings for ${currentSchoolId}.</p>
-                </div>
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <button onclick="window.renderInventoryEngine()" class="text-xs font-bold text-slate-400 hover:text-cbse-blue mb-2 flex items-center gap-1 uppercase tracking-widest"><i class="fas fa-arrow-left"></i> Back to Grades</button>
+                <h2 class="text-2xl font-black text-slate-800">Grade ${grade} Sections</h2>
+                <p class="text-sm text-slate-500 mt-1">Select a section to view its registry.</p>
             </div>
+        </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                ${gridHtml}
-            </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            ${sectionHtml}
         </div>
     `;
 };
 
-window.loadGradeRegistry = async (grade) => {
-    const container = document.getElementById('registry-main');
+window.loadSectionInventory = async (grade, section) => {
+    const container = document.getElementById('inventory-main');
     container.innerHTML = `
         <div class="flex justify-between items-center mb-6">
             <div>
-                <button onclick="window.renderRegistryEngine()" class="text-xs font-bold text-slate-400 hover:text-cbse-blue mb-2 flex items-center gap-1 uppercase tracking-widest"><i class="fas fa-arrow-left"></i> Back to Folders</button>
-                <h2 class="text-xl font-black text-slate-800">Grade ${grade} Roster</h2>
-                <p class="text-sm text-slate-500">Live view of students and linked personnel.</p>
+                <button onclick="window.loadSectionGrid('${grade}')" class="text-xs font-bold text-slate-400 hover:text-cbse-blue mb-2 flex items-center gap-1 uppercase tracking-widest"><i class="fas fa-arrow-left"></i> Back to Sections</button>
+                <h2 class="text-xl font-black text-slate-800">Grade ${grade} - Section ${section}</h2>
+                <p class="text-sm text-slate-500">Live Registry View.</p>
             </div>
-            <input type="text" id="registry-search" placeholder="Search by name/email..." onkeyup="window.filterRegistry()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-cbse-blue w-64">
         </div>
 
-        <div class="flex-1 overflow-y-auto border border-slate-100 rounded-xl">
-            <table class="w-full text-left text-sm">
-                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold sticky top-0 z-10">
-                    <tr>
-                        <th class="p-4">Student Name / Email</th>
-                        <th class="p-4">Linked Parent</th>
-                        <th class="p-4">Assigned Section</th>
-                        <th class="p-4 text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="registry-list" class="divide-y divide-slate-50">
-                    <tr><td colspan="4" class="p-8 text-center text-slate-400 italic">Loading Registry...</td></tr>
-                </tbody>
-            </table>
+        <div class="space-y-8">
+            <!-- Students Bucket -->
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2"><i class="fas fa-user-graduate text-cbse-blue mr-2"></i>Students</h3>
+                <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                            <tr><th class="p-4">Name / Email</th><th class="p-4">Linked Parent</th><th class="p-4">Assigned Section</th><th class="p-4 text-right">Actions</th></tr>
+                        </thead>
+                        <tbody id="bucket-students" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Teachers Bucket -->
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2"><i class="fas fa-chalkboard-teacher text-amber-500 mr-2"></i>Subject Teachers</h3>
+                <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                            <tr><th class="p-4">Name / Email</th><th class="p-4">Discipline</th><th class="p-4">Assigned Section</th><th class="p-4 text-right">Actions</th></tr>
+                        </thead>
+                        <tbody id="bucket-teachers" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIP Dignitaries Bucket -->
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2"><i class="fas fa-star text-purple-500 mr-2"></i>VIP Dignitaries</h3>
+                <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                            <tr><th class="p-4">Name / Email</th><th class="p-4">Role</th><th class="p-4">School ID</th><th class="p-4 text-right">Status</th></tr>
+                        </thead>
+                        <tbody id="bucket-vips" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     `;
 
@@ -284,88 +328,105 @@ window.loadGradeRegistry = async (grade) => {
 
     const { db } = await getInitializedClients();
 
-    // Unique Filtering: Filter by school_id AND grade
+    // Query all users for this school to distribute into buckets (since section logic might differ slightly per role)
     const q = query(
         collection(db, "users"),
-        where("school_id", "==", currentSchoolId),
-        where("grade", "==", grade.toString()) // Assuming grade is stored as a string
+        where("school_id", "==", currentSchoolId)
     );
 
     unsubRegistry = onSnapshot(q, (snapshot) => {
-        const list = document.getElementById('registry-list');
-        if(!list) return;
+        const studentMap = new Map();
+        const teacherMap = new Map();
+        const vipMap = new Map();
 
-        if(snapshot.empty) {
-            list.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">No students found in Grade ${grade}.</td></tr>`;
-            return;
-        }
-
-        // Use a Map to ensure unique UID entries
-        const uniqueUsers = new Map();
         snapshot.forEach(doc => {
             const data = doc.data();
-            // In a school registry, we mostly want to show students to map their parents/sections
-            if (data.role === 'student') {
-                uniqueUsers.set(doc.id, { id: doc.id, ...data });
+            const u = { id: doc.id, ...data };
+
+            // Unique Filtering logic via Map and Section check
+            if (u.role === 'student' && u.grade == grade && (u.section_id == `${grade}-${section}` || u.section == section || u.section_id == section)) {
+                studentMap.set(u.id, u);
+            }
+            else if (u.role === 'teacher' && u.mapped_grade == grade && (u.mapped_section == `${grade}-${section}` || u.mapped_section == section)) {
+                teacherMap.set(u.id, u);
+            }
+            else if (u.role === 'principal' || u.role === 'admin') {
+                vipMap.set(u.id, u);
             }
         });
 
-        window.renderRegistryList(Array.from(uniqueUsers.values()));
+        renderBucket('bucket-students', Array.from(studentMap.values()), 'student');
+        renderBucket('bucket-teachers', Array.from(teacherMap.values()), 'teacher');
+        renderBucket('bucket-vips', Array.from(vipMap.values()), 'vip');
     });
 };
 
-window.renderRegistryList = (users) => {
-    const list = document.getElementById('registry-list');
-    if(!list) return;
+function renderBucket(elementId, users, type) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
 
-    if(users.length === 0) {
-        list.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">No students found for this grade filter.</td></tr>`;
+    if (users.length === 0) {
+        el.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic font-medium">No entries found.</td></tr>`;
         return;
     }
 
-    list.innerHTML = users.map(u => {
+    el.innerHTML = users.map(u => {
         const nameOrEmail = u.displayName || u.email || u.id;
-        const parentText = u.parent_id ? `<span class="text-slate-700 font-mono text-[10px] bg-slate-100 px-2 py-1 rounded border border-slate-200">${u.parent_id}</span>` : `<span class="text-danger-red text-xs font-bold">Unlinked</span>`;
-        const sectionText = u.section || '<span class="text-slate-300 italic">Unassigned</span>';
 
-        return `
-            <tr class="hover:bg-slate-50 transition registry-row" data-search="${nameOrEmail.toLowerCase()}">
-                <td class="p-4 font-bold text-slate-700">
-                    ${nameOrEmail}
-                    ${!u.displayName && !u.email ? `<br><span class="text-[9px] text-slate-400 font-normal">UID: ${u.id}</span>` : ''}
-                </td>
-                <td class="p-4">${parentText}</td>
-                <td class="p-4 text-xs font-bold text-slate-500">${sectionText}</td>
-                <td class="p-4 text-right">
-                    <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-xs bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Edit Mapping</button>
-                </td>
-            </tr>
-        `;
-    }).join("");
-};
-
-window.filterRegistry = () => {
-    const query = document.getElementById('registry-search').value.toLowerCase();
-    document.querySelectorAll('.registry-row').forEach(row => {
-        if(row.getAttribute('data-search').includes(query)) row.style.display = '';
-        else row.style.display = 'none';
-    });
-};
+        if (type === 'student') {
+            const parentText = u.parent_id ? `<span class="text-slate-700 font-mono text-[10px] bg-slate-100 px-2 py-1 rounded border border-slate-200">${u.parent_id}</span>` : `<span class="text-danger-red text-xs font-bold">Unlinked</span>`;
+            const sectionText = u.section_id || u.section || '<span class="text-slate-300 italic">Unassigned</span>';
+            return `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
+                    <td class="p-4">${parentText}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${sectionText}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-xs bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Edit Mapping</button>
+                    </td>
+                </tr>
+            `;
+        } else if (type === 'teacher') {
+            return `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${u.mapped_discipline || 'Unassigned'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${u.mapped_section || 'Unassigned'}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
+                    </td>
+                </tr>
+            `;
+        } else {
+            return `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
+                    <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest bg-purple-100 text-purple-700">${u.role}</span></td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${u.school_id}</td>
+                    <td class="p-4 text-right"><span class="text-success-green font-bold text-xs"><i class="fas fa-check-circle"></i> Active</span></td>
+                </tr>
+            `;
+        }
+    }).join('');
+}
 
 window.promptLinkParent = async (studentId) => {
     const parentId = prompt("Enter the Parent UID to link to this student:");
     if(!parentId) return;
+    window.linkParentToStudent(studentId, parentId);
+};
 
+window.linkParentToStudent = async (studentUid, parentUid) => {
     try {
         const { db } = await getInitializedClients();
 
         // Double-Link
-        await updateDoc(doc(db, "users", studentId), {
-            parent_id: parentId,
+        await updateDoc(doc(db, "users", studentUid), {
+            parent_id: parentUid,
             updated_at: serverTimestamp()
         });
-        await updateDoc(doc(db, "users", parentId), {
-            linked_children: arrayUnion(studentId),
+        await updateDoc(doc(db, "users", parentUid), {
+            linked_children: arrayUnion(studentUid),
             updated_at: serverTimestamp()
         });
 
@@ -376,6 +437,35 @@ window.promptLinkParent = async (studentId) => {
             alert("Admin Role detected but Firestore Rules are blocking the write. Please authorize the Admin bypass in the Firebase Console.");
         } else {
             alert("Failed to link parent: " + e.message);
+        }
+    }
+};
+
+window.promptAssignTeacher = async (teacherId) => {
+    const grade = prompt("Enter Grade (e.g., 9):");
+    const section = prompt("Enter Section (e.g., A):");
+    const discipline = prompt("Enter Discipline (e.g., Science):");
+
+    if(!grade || !section || !discipline) return;
+    window.assignTeacherToSection(teacherId, grade, section, discipline);
+};
+
+window.assignTeacherToSection = async (teacherUid, grade, section, discipline) => {
+    try {
+        const { db } = await getInitializedClients();
+        await updateDoc(doc(db, "users", teacherUid), {
+            mapped_grade: grade,
+            mapped_section: section,
+            mapped_discipline: discipline,
+            updated_at: serverTimestamp()
+        });
+        alert(`Teacher assigned to Grade ${grade}-${section} for ${discipline}`);
+    } catch(e) {
+        const errorMsg = e.message.toLowerCase();
+        if (errorMsg.includes("insufficient permissions") || errorMsg.includes("missing or insufficient permissions")) {
+            alert("Admin Role detected but Firestore Rules are blocking the write. Please authorize the Admin bypass in the Firebase Console.");
+        } else {
+            alert("Failed to assign teacher: " + e.message);
         }
     }
 };
