@@ -215,44 +215,80 @@ window.handleCSVUpload = async (event) => {
     reader.readAsText(file);
 };
 
-// --- NEW TASK 2: REGISTRY ENGINE (Mid-Session Mapping) ---
-window.renderRegistryEngine = async () => {
+// --- NEW TASK 2: REGISTRY ENGINE (Grade Grouping & Mapping) ---
+window.renderRegistryEngine = () => {
+    if(unsubRegistry) { unsubRegistry(); unsubRegistry = null; }
+
     const container = document.getElementById('tab-registry');
-    container.innerHTML = `
-        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-xl font-black text-slate-800">Registry Engine</h2>
-                    <p class="text-sm text-slate-500">Live view of all users assigned to ${currentSchoolId}.</p>
+
+    // Class View: Grade grid
+    let gridHtml = '';
+    for(let g = 6; g <= 12; g++) {
+        gridHtml += `
+            <button onclick="window.loadGradeRegistry('${g}')" class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-sm hover:border-cbse-blue hover:shadow-md transition-all text-left group">
+                <div class="w-12 h-12 bg-blue-50 text-cbse-blue rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-folder"></i>
                 </div>
-                <input type="text" id="registry-search" placeholder="Search by email..." onkeyup="window.filterRegistry()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-cbse-blue w-64">
+                <h3 class="text-lg font-black text-slate-800">Grade ${g}</h3>
+                <p class="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">Class Roster</p>
+            </button>
+        `;
+    }
+
+    container.innerHTML = `
+        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col" id="registry-main">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800">Registry Engine</h2>
+                    <p class="text-sm text-slate-500 mt-1">Select a Grade folder to manage user mappings for ${currentSchoolId}.</p>
+                </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto border border-slate-100 rounded-xl">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold sticky top-0 z-10">
-                        <tr>
-                            <th class="p-4">UID</th>
-                            <th class="p-4">Email</th>
-                            <th class="p-4">Role</th>
-                            <th class="p-4">Mappings</th>
-                            <th class="p-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="registry-list" class="divide-y divide-slate-50">
-                        <tr><td colspan="5" class="p-8 text-center text-slate-400 italic">Loading Registry...</td></tr>
-                    </tbody>
-                </table>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                ${gridHtml}
             </div>
+        </div>
+    `;
+};
+
+window.loadGradeRegistry = async (grade) => {
+    const container = document.getElementById('registry-main');
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <button onclick="window.renderRegistryEngine()" class="text-xs font-bold text-slate-400 hover:text-cbse-blue mb-2 flex items-center gap-1 uppercase tracking-widest"><i class="fas fa-arrow-left"></i> Back to Folders</button>
+                <h2 class="text-xl font-black text-slate-800">Grade ${grade} Roster</h2>
+                <p class="text-sm text-slate-500">Live view of students and linked personnel.</p>
+            </div>
+            <input type="text" id="registry-search" placeholder="Search by name/email..." onkeyup="window.filterRegistry()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-cbse-blue w-64">
+        </div>
+
+        <div class="flex-1 overflow-y-auto border border-slate-100 rounded-xl">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold sticky top-0 z-10">
+                    <tr>
+                        <th class="p-4">Student Name / Email</th>
+                        <th class="p-4">Linked Parent</th>
+                        <th class="p-4">Assigned Section</th>
+                        <th class="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="registry-list" class="divide-y divide-slate-50">
+                    <tr><td colspan="4" class="p-8 text-center text-slate-400 italic">Loading Registry...</td></tr>
+                </tbody>
+            </table>
         </div>
     `;
 
     if(unsubRegistry) unsubRegistry();
 
     const { db } = await getInitializedClients();
+
+    // Unique Filtering: Filter by school_id AND grade
     const q = query(
         collection(db, "users"),
-        where("school_id", "==", currentSchoolId)
+        where("school_id", "==", currentSchoolId),
+        where("grade", "==", grade.toString()) // Assuming grade is stored as a string
     );
 
     unsubRegistry = onSnapshot(q, (snapshot) => {
@@ -260,16 +296,21 @@ window.renderRegistryEngine = async () => {
         if(!list) return;
 
         if(snapshot.empty) {
-            list.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 italic">No users found.</td></tr>`;
+            list.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">No students found in Grade ${grade}.</td></tr>`;
             return;
         }
 
-        window.registryData = [];
+        // Use a Map to ensure unique UID entries
+        const uniqueUsers = new Map();
         snapshot.forEach(doc => {
-            window.registryData.push({ id: doc.id, ...doc.data() });
+            const data = doc.data();
+            // In a school registry, we mostly want to show students to map their parents/sections
+            if (data.role === 'student') {
+                uniqueUsers.set(doc.id, { id: doc.id, ...data });
+            }
         });
 
-        window.renderRegistryList(window.registryData);
+        window.renderRegistryList(Array.from(uniqueUsers.values()));
     });
 };
 
@@ -277,26 +318,27 @@ window.renderRegistryList = (users) => {
     const list = document.getElementById('registry-list');
     if(!list) return;
 
-    list.innerHTML = users.map(u => {
-        let mappingText = "-";
-        if(u.role === 'teacher') mappingText = `${u.mapped_grade || '?'}-${u.mapped_section || '?'} ${u.mapped_discipline || '?'}`;
-        else if(u.role === 'student') mappingText = `Parent: ${u.parent_id || 'None'}`;
-        else if(u.role === 'parent') mappingText = `Children: ${(u.linked_children || []).join(', ') || 'None'}`;
+    if(users.length === 0) {
+        list.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic font-medium">No students found for this grade filter.</td></tr>`;
+        return;
+    }
 
-        let actionHtml = '';
-        if(u.role === 'student') {
-            actionHtml = `<button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:underline font-bold text-xs">Link Parent</button>`;
-        }
+    list.innerHTML = users.map(u => {
+        const nameOrEmail = u.displayName || u.email || u.id;
+        const parentText = u.parent_id ? `<span class="text-slate-700 font-mono text-[10px] bg-slate-100 px-2 py-1 rounded border border-slate-200">${u.parent_id}</span>` : `<span class="text-danger-red text-xs font-bold">Unlinked</span>`;
+        const sectionText = u.section || '<span class="text-slate-300 italic">Unassigned</span>';
 
         return `
-            <tr class="hover:bg-slate-50 transition registry-row" data-email="${(u.email || '').toLowerCase()}">
-                <td class="p-4 font-mono text-[10px] text-slate-400">${u.id}</td>
-                <td class="p-4 font-bold text-slate-700">${u.email || 'N/A'}</td>
-                <td class="p-4">
-                    <span class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-600">${u.role || 'user'}</span>
+            <tr class="hover:bg-slate-50 transition registry-row" data-search="${nameOrEmail.toLowerCase()}">
+                <td class="p-4 font-bold text-slate-700">
+                    ${nameOrEmail}
+                    ${!u.displayName && !u.email ? `<br><span class="text-[9px] text-slate-400 font-normal">UID: ${u.id}</span>` : ''}
                 </td>
-                <td class="p-4 text-xs text-slate-500">${mappingText}</td>
-                <td class="p-4 text-right">${actionHtml}</td>
+                <td class="p-4">${parentText}</td>
+                <td class="p-4 text-xs font-bold text-slate-500">${sectionText}</td>
+                <td class="p-4 text-right">
+                    <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-xs bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Edit Mapping</button>
+                </td>
             </tr>
         `;
     }).join("");
@@ -305,7 +347,7 @@ window.renderRegistryList = (users) => {
 window.filterRegistry = () => {
     const query = document.getElementById('registry-search').value.toLowerCase();
     document.querySelectorAll('.registry-row').forEach(row => {
-        if(row.getAttribute('data-email').includes(query)) row.style.display = '';
+        if(row.getAttribute('data-search').includes(query)) row.style.display = '';
         else row.style.display = 'none';
     });
 };
@@ -329,7 +371,12 @@ window.promptLinkParent = async (studentId) => {
 
         alert("Double-Link established successfully.");
     } catch(e) {
-        alert("Failed to link parent: " + e.message);
+        const errorMsg = e.message.toLowerCase();
+        if (errorMsg.includes("insufficient permissions") || errorMsg.includes("missing or insufficient permissions")) {
+            alert("Admin Role detected but Firestore Rules are blocking the write. Please authorize the Admin bypass in the Firebase Console.");
+        } else {
+            alert("Failed to link parent: " + e.message);
+        }
     }
 };
 
