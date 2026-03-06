@@ -27,5 +27,8 @@
   "bugs": {
     "url": "https://github.com/karnkeshav/masterpage_1/issues"
   },
-  "homepage": "https://github.com/karnkeshav/masterpage_1#readme"
+  "homepage": "https://github.com/karnkeshav/masterpage_1#readme",
+  "dependencies": {
+    "acorn": "^8.16.0"
+  }
 }
