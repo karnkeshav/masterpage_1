@@ -32,6 +32,10 @@
 
             document.getElementById('user-welcome').innerText = profile.email || "Admin User";
 
+            // The Loading Lock
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+
             // Initial render
             window.switchTab('identity');
         };
@@ -43,7 +47,7 @@
         });
 
         import { loadCurriculum } from "../../js/curriculum/loader.js";
-        import { collection, query, where, getDocs, doc, updateDoc, setDoc, addDoc, serverTimestamp, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { collection, query, where, getDocs, doc, updateDoc, setDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Tab switching logic
         window.switchTab = (tabId) => {
@@ -147,8 +151,8 @@
                 if (!benchmarkSnap.empty) {
                     benchmarkSnap.forEach(doc => {
                         const data = doc.data();
-                        benchmarks[data.chapter_slug] = data.benchmark_attempts || 3;
-                        totalB += (data.benchmark_attempts || 3);
+                        benchmarks[data.chapter_slug] = data.benchmark_B || 3;
+                        totalB += (data.benchmark_B || 3);
                     });
                     averageB = Math.round(totalB / benchmarkSnap.size);
                 }
@@ -415,7 +419,19 @@
                 feed.innerHTML = html;
             }, (error) => {
                 const feed = document.getElementById('msg-feed');
-                if(feed) feed.innerHTML = `<div class="text-danger-red font-bold p-4">Error loading messages. Check index.</div>`;
+                let errHtml = `<div class="text-danger-red font-bold p-4">Error loading messages.</div>`;
+
+                if (error.message.includes('Missing or insufficient permissions')) {
+                    errHtml += `<p class="text-xs text-slate-500 px-4">Permission denied.</p>`;
+                } else if (error.message.includes('FAILED_PRECONDITION')) {
+                    const match = error.message.match(/(https:\/\/console\.firebase\.google\.com[^\s]+)/);
+                    if (match) {
+                        errHtml += `<p class="text-xs text-slate-500 px-4">Missing Index. <a href="${match[1]}" target="_blank" class="text-blue-600 underline">Click here to create it.</a></p>`;
+                        console.error("MISSING INDEX URL:", match[1]);
+                    }
+                }
+
+                if(feed) feed.innerHTML = errHtml;
                 console.error("Messages listener error:", error);
             });
         };
@@ -431,7 +447,7 @@
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const text = e.target.result;
-                const rows = text.split('\\n').map(row => row.split(',').map(c => c.trim()));
+                const rows = text.split(/\r?\n/).map(row => row.split(',').map(c => c.trim()));
                 // Skip header
                 const dataRows = rows.slice(1).filter(r => r.length > 1);
 
@@ -493,12 +509,15 @@
                                 continue;
                             }
 
-                            // Map parent -> student
+                            // Double-Link: Map parent -> student AND student -> parent
                             await updateDoc(doc(db, "users", studentId), {
                                 parent_id: userId
                             });
+                            await updateDoc(doc(db, "users", userId), {
+                                linked_children: arrayUnion(studentId)
+                            });
 
-                            window.logMessage(`Bridged Parent ${email} to Student ${studentId}`);
+                            window.logMessage(`Double-Bridged Parent ${email} and Student ${studentId}`);
                             successCount++;
                         }
                     } catch (err) {
