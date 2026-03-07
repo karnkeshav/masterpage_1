@@ -1,7 +1,18 @@
 import { getInitializedClients } from "./config.js";
 import { guardConsole, bindConsoleLogout } from "./guard.js";
 import { loadCurriculum } from "./curriculum/loader.js";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+// Initialize the secondary app specifically for onboarding
+let secondaryAuth = null;
+try {
+    const secondaryApp = initializeApp(window.__firebase_config, "SecondaryOnboarding");
+    secondaryAuth = getAuth(secondaryApp);
+} catch (e) {
+    console.error("Failed to initialize SecondaryOnboarding instance:", e);
+}
 
 // Global state
 let currentSchoolId = null;
@@ -410,12 +421,11 @@ window.toggleAccordion = (id) => {
     }
 };
 
-let secondaryAuth = null;
 async function getSecondaryAuth() {
     if (!secondaryAuth) {
         const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
         const { getAuth } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-        const secApp = initializeApp(window.__firebase_config, "SecondaryAppForAdmin");
+        const secApp = initializeApp(window.__firebase_config, "SecondaryOnboarding");
         secondaryAuth = getAuth(secApp);
     }
     return secondaryAuth;
@@ -443,12 +453,8 @@ window.showAddModal = async (role, grade = '', section = '') => {
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Parent (Parent UID)</label>
-                <input type="text" id="modal-parent" placeholder="Optional parent UID..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Temporary Password</label>
-                <input type="text" id="modal-password" placeholder="Passkey123" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Parent (Parent Email)</label>
+                <input type="email" id="modal-parent" placeholder="Optional parent email..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
             </div>
         `;
     } else if (role === 'teacher') {
@@ -481,10 +487,6 @@ window.showAddModal = async (role, grade = '', section = '') => {
                     <label class="flex items-center space-x-2"><input type="checkbox" value="English" class="teacher-disc-cb"> <span>English</span></label>
                 </div>
             </div>
-            <div class="mt-4">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Temporary Password</label>
-                <input type="text" id="modal-password" placeholder="Passkey123" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
-            </div>
         `;
     } else if (role === 'vip') {
         extraFields = `
@@ -494,10 +496,6 @@ window.showAddModal = async (role, grade = '', section = '') => {
                     <option value="principal">Principal</option>
                     <option value="admin">Admin</option>
                 </select>
-            </div>
-            <div class="mt-4">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Temporary Password</label>
-                <input type="text" id="modal-password" placeholder="Passkey123" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
             </div>
         `;
     }
@@ -515,8 +513,8 @@ window.showAddModal = async (role, grade = '', section = '') => {
                         <input type="text" id="modal-name" placeholder="John Doe" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
-                        <input type="email" id="modal-email" placeholder="john@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username (appends @ready4exam.internal)</label>
+                        <input type="text" id="modal-username" placeholder="john.doe" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
                     </div>
 
                     ${extraFields}
@@ -553,12 +551,14 @@ window.submitAddModal = async (role) => {
     errorEl.classList.add('hidden');
 
     const name = document.getElementById('modal-name').value.trim();
-    const email = document.getElementById('modal-email').value.trim();
-    const password = document.getElementById('modal-password').value.trim();
+    const username = document.getElementById('modal-username').value.trim();
 
-    if(!name || !email || !password) {
-        return showError("Name, Email, and Password are required.");
+    if(!name || !username) {
+        return showError("Name and Username are required.");
     }
+
+    const email = `${username}@ready4exam.internal`;
+    const password = "Ready4Exam@2024";
 
     let payload = {
         displayName: name,
@@ -569,19 +569,33 @@ window.submitAddModal = async (role) => {
         updated_at: serverTimestamp()
     };
 
-    let parentUID = null;
+    let parentId = null;
 
     if (role === 'student') {
         const g = document.getElementById('modal-grade').value.trim();
         const s = document.getElementById('modal-section').value.trim();
-        parentUID = document.getElementById('modal-parent').value.trim();
+        const parentEmail = document.getElementById('modal-parent').value.trim();
 
         if(!g || !s) return showError("Grade and Section are required.");
 
         payload.grade = g;
         payload.section = s;
         payload.section_id = `${g}-${s}`;
-        if(parentUID) payload.parent_id = parentUID;
+
+        if (parentEmail) {
+            try {
+                const { db } = await getInitializedClients();
+                const parentQuery = query(collection(db, "users"), where("email", "==", parentEmail), where("role", "==", "parent"));
+                const parentSnap = await getDocs(parentQuery);
+                if (parentSnap.empty) {
+                    return showError("Parent email not found. Please add the Parent in the VIP/Staff inventory first.");
+                }
+                parentId = parentSnap.docs[0].id;
+                payload.parent_id = parentId;
+            } catch(e) {
+                return showError("Failed to verify parent email: " + e.message);
+            }
+        }
 
     } else if (role === 'teacher') {
         const checkedSecs = Array.from(document.querySelectorAll('.teacher-sec-cb:checked')).map(cb => cb.value);
@@ -600,21 +614,24 @@ window.submitAddModal = async (role) => {
 
     try {
         // Zero-Manual Flow: Create User via Secondary Auth App
-        const secAuth = await getSecondaryAuth();
-        const { createUserWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        if (!secondaryAuth) {
+            throw new Error("SecondaryOnboarding Auth instance is not initialized.");
+        }
 
-        const userCredential = await createUserWithEmailAndPassword(secAuth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
         const newUid = userCredential.user.uid;
+
+        // Automatically sign out the secondary instance so we don't leak it
+        await signOut(secondaryAuth);
 
         // Save to Firestore using the standard DB (Admin has rules bypass/privileges hopefully)
         const { db } = await getInitializedClients();
         await setDoc(doc(db, "users", newUid), payload);
 
         // Parent double-link
-        if (role === 'student' && parentUID) {
+        if (role === 'student' && parentId) {
             try {
-                await updateDoc(doc(db, "users", parentUID), {
+                await updateDoc(doc(db, "users", parentId), {
                     linked_children: arrayUnion(newUid),
                     updated_at: serverTimestamp()
                 });
@@ -623,9 +640,6 @@ window.submitAddModal = async (role) => {
                 alert("Student created, but linking Parent failed (check Parent UID).");
             }
         }
-
-        // Automatically sign out the secondary instance so we don't leak it
-        await secAuth.signOut();
 
         window.closeAddModal();
     } catch(e) {
