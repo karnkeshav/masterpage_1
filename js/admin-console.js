@@ -587,13 +587,35 @@ window.submitAddModal = async (role) => {
                 const { db } = await getInitializedClients();
                 const parentQuery = query(collection(db, "users"), where("email", "==", parentEmail), where("role", "==", "parent"));
                 const parentSnap = await getDocs(parentQuery);
+
+                let parentCreated = false;
                 if (parentSnap.empty) {
-                    return showError("Parent email not found. Please add the Parent in the VIP/Staff inventory first.");
+                    // Step B: Atomic Onboarding - Create Parent Auth and Firestore Doc
+                    if (!secondaryAuth) {
+                        throw new Error("SecondaryOnboarding Auth instance is not initialized.");
+                    }
+                    const parentCredential = await createUserWithEmailAndPassword(secondaryAuth, parentEmail, password);
+                    parentId = parentCredential.user.uid;
+
+                    await setDoc(doc(db, "users", parentId), {
+                        displayName: "Parent User",
+                        email: parentEmail,
+                        role: "parent",
+                        school_id: currentSchoolId,
+                        linked_children: [],
+                        created_at: serverTimestamp(),
+                        updated_at: serverTimestamp()
+                    });
+
+                    parentCreated = true;
+                } else {
+                    parentId = parentSnap.docs[0].id;
                 }
-                parentId = parentSnap.docs[0].id;
+
                 payload.parent_id = parentId;
+                payload._parentCreated = parentCreated; // Temporary flag for UI feedback
             } catch(e) {
-                return showError("Failed to verify parent email: " + e.message);
+                return showError("Failed to verify/create parent email: " + e.message);
             }
         }
 
@@ -626,6 +648,8 @@ window.submitAddModal = async (role) => {
 
         // Save to Firestore using the standard DB (Admin has rules bypass/privileges hopefully)
         const { db } = await getInitializedClients();
+        const parentCreatedFlag = payload._parentCreated;
+        delete payload._parentCreated; // Remove temporary flag before saving
         await setDoc(doc(db, "users", newUid), payload);
 
         // Parent double-link
@@ -635,10 +659,18 @@ window.submitAddModal = async (role) => {
                     linked_children: arrayUnion(newUid),
                     updated_at: serverTimestamp()
                 });
+
+                if (parentCreatedFlag) {
+                    alert("Success: Student created and Parent account auto-provisioned.");
+                } else {
+                    alert("Success: Student created and linked to existing parent.");
+                }
             } catch(e) {
                 console.error("Failed to link parent during student creation:", e);
                 alert("Student created, but linking Parent failed (check Parent UID).");
             }
+        } else if (role === 'student') {
+             alert("Success: Student created successfully.");
         }
 
         window.closeAddModal();
