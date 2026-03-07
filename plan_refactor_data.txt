@@ -1,0 +1,16 @@
+For the Data & Realtime sync, we need to modify `onSnapshot` logic inside `window.renderInventoryEngine`.
+Instead of `teacherMap` being a flat array, it should group teachers. Wait, the faculty vault needs:
+"Organize the Faculty tab into expandable Subject Cards (Mathematics, Science, Social Science). Science Sub-Disciplines: For the Science card, create three distinct sub-sections: Physics, Chemistry, and Biology."
+Wait, if `teacherMap` groups them, how do we render the Vault 2? We need to replace `tbody-teachers` with nested accordions for Subject Cards.
+
+Wait, the instructions say:
+"Component: Automated Field Capture -> Resulting Functionality"
+"Student9: parent_id, section_id -> Parent gains access; Teacher sees student in 9A roster."
+"Science Teacher: mapped_disciplines: ["physics"] -> Loads the NCERT Physics chapters automatically."
+
+Wait, the prompt says "For the Science card, create three distinct sub-sections: Physics, Chemistry, and Biology".
+Let's build the HTML for Vault 2 dynamically inside `renderInventoryEngine` or `onSnapshot`. Since `onSnapshot` updates data, it's better to update inner HTML of `acc-teachers-content`.
+
+Vault 1: "In the Grade 9 > Section A student view, add a section called 'Subject Teachers'. Logic: This section must query the users collection to find all teachers who have '9A' in their sections array and display them grouped by their assigned disciplines."
+
+Let's write a script to rewrite `window.renderInventoryEngine` and `onSnapshot` handler.

@@ -69,7 +69,7 @@ window.switchTab = (tabId) => {
 window.renderInventoryEngine = async () => {
     const container = document.getElementById('tab-inventory');
 
-    // Generate Accordion HTML structure
+    // Generate Accordion HTML structure for Classes
     let classesAccordionHtml = '';
     const grades = [6, 7, 8, 9, 10, 11, 12];
     const sections = ['A', 'B', 'C'];
@@ -84,7 +84,18 @@ window.renderInventoryEngine = async () => {
                         <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-sec-${g}-${s}"></i>
                     </button>
                     <div id="acc-sec-${g}-${s}" class="hidden p-2 border-t border-slate-100">
-                        <div class="flex justify-end mb-2">
+
+                        <!-- Subject Teachers for this section -->
+                        <div class="mb-4">
+                            <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-widest bg-slate-100 px-2 py-1 rounded">Subject Teachers</h4>
+                            <div id="sec-teachers-${g}-${s}" class="text-xs text-slate-600 space-y-1">
+                                <span class="italic text-slate-400">Loading...</span>
+                            </div>
+                        </div>
+
+                        <!-- Students List -->
+                        <div class="flex justify-between items-end mb-2">
+                            <h4 class="text-[10px] uppercase font-bold text-slate-500 tracking-widest bg-slate-100 px-2 py-1 rounded">Students Roster</h4>
                             <button onclick="window.showAddModal('student', '${g}', '${s}')" class="bg-cbse-blue hover:bg-blue-800 text-white px-3 py-1.5 text-xs rounded-lg font-bold shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add Student</button>
                         </div>
                         <div class="overflow-x-auto rounded-lg border border-slate-100">
@@ -145,13 +156,8 @@ window.renderInventoryEngine = async () => {
                         <div class="flex justify-end mb-4">
                             <button onclick="window.showAddModal('teacher')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs rounded-xl font-bold shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add Teacher</button>
                         </div>
-                        <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                                    <tr><th class="p-4">Name / Email</th><th class="p-4">Discipline</th><th class="p-4">Assigned Section</th><th class="p-4 text-right">Actions</th></tr>
-                                </thead>
-                                <tbody id="tbody-teachers" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
-                            </table>
+                        <div id="faculty-pillars-container">
+                            <div class="text-center text-slate-400 italic p-4 text-xs">Loading Faculty Pillars...</div>
                         </div>
                     </div>
                 </div>
@@ -179,17 +185,11 @@ window.renderInventoryEngine = async () => {
 
             </div>
 
-            <!-- Relational Onboarding -->
-            <div class="mt-6 border-t border-slate-100 pt-6">
-                ${getRelationalOnboardingHTML()}
-            </div>
-
             <!-- Manual Onboarding Modal Container -->
             <div id="modal-container"></div>
         </div>
     `;
 
-    // Listen to real-time updates for all buckets
     if(unsubRegistry) { unsubRegistry(); }
 
     const { db } = await getInitializedClients();
@@ -199,9 +199,9 @@ window.renderInventoryEngine = async () => {
     );
 
     unsubRegistry = onSnapshot(q, (snapshot) => {
-        const studentMap = {}; // grade-section -> [students]
-        const teacherMap = [];
-        const vipMap = [];
+        const studentMap = {};
+        const teacherList = [];
+        const vipList = [];
 
         snapshot.forEach(doc => {
             const data = doc.data();
@@ -209,36 +209,192 @@ window.renderInventoryEngine = async () => {
 
             if (u.role === 'student') {
                 const g = u.grade || 'Unknown';
-                // Extract section correctly. e.g., '9-A' -> 'A', 'A' -> 'A'
                 let s = u.section_id || u.section || 'Unknown';
-                if(s.includes('-')) s = s.split('-')[1];
+                if(s.includes('-')) s = s.split('-')[1]; // handles "9-A"
+                else s = s.replace(g, ''); // handles "9A" -> "A"
 
                 const key = `${g}-${s}`;
                 if(!studentMap[key]) studentMap[key] = [];
                 studentMap[key].push(u);
             }
             else if (u.role === 'teacher') {
-                teacherMap.push(u);
+                teacherList.push(u);
             }
-            else if (u.role === 'principal' || u.role === 'admin') {
-                vipMap.push(u);
+            else if (u.role === 'principal' || u.role === 'admin' || u.role === 'vip') {
+                vipList.push(u);
             }
         });
 
-        // Update VIPs
-        renderBucket('tbody-vips', vipMap, 'vip');
-        // Update Teachers
-        renderBucket('tbody-teachers', teacherMap, 'teacher');
-        // Update Students (iterate through all tables)
+        // 1. Render VIPs
+        renderBucket('tbody-vips', vipList, 'vip');
+
+        // 2. Render Students & Subject Teachers per Class Section
         grades.forEach(g => {
             sections.forEach(s => {
+                const sectionKey = `${g}${s}`; // e.g., "9A"
+                const sectionKeyHyphen = `${g}-${s}`; // e.g., "9-A"
+
+                // Render Students
                 const id = `tbody-student-${g}-${s}`;
                 const users = studentMap[`${g}-${s}`] || [];
                 renderBucket(id, users, 'student');
+
+                // Render Subject Teachers for this section
+                const secTeachersEl = document.getElementById(`sec-teachers-${g}-${s}`);
+                if (secTeachersEl) {
+                    // Find teachers who have this section in their sections array
+                    const classTeachers = teacherList.filter(t => {
+                        const tSecs = t.sections || [];
+                        return tSecs.includes(sectionKey) || tSecs.includes(sectionKeyHyphen);
+                    });
+
+                    if (classTeachers.length === 0) {
+                        secTeachersEl.innerHTML = '<span class="italic text-slate-400">No teachers assigned to this section.</span>';
+                    } else {
+                        // Group by discipline
+                        const grouped = {};
+                        classTeachers.forEach(t => {
+                            const discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : ['Unassigned']);
+                            discs.forEach(d => {
+                                if(!grouped[d]) grouped[d] = [];
+                                grouped[d].push(t.displayName || t.email);
+                            });
+                        });
+
+                        let html = '<div class="grid grid-cols-2 gap-2">';
+                        for(const [disc, names] of Object.entries(grouped)) {
+                            html += `<div class="bg-blue-50 px-2 py-1 border border-blue-100 rounded text-cbse-blue font-medium"><span class="font-bold uppercase tracking-wider text-[9px] block text-slate-400">${disc}</span>${names.join(', ')}</div>`;
+                        }
+                        html += '</div>';
+                        secTeachersEl.innerHTML = html;
+                    }
+                }
             });
         });
+
+        // 3. Render Faculty Pillars
+        renderFacultyPillars(teacherList);
     });
 };
+
+function renderFacultyPillars(teachers) {
+    const container = document.getElementById('faculty-pillars-container');
+    if(!container) return;
+
+    // Grouping structure
+    const mathTeachers = [];
+    const socialTeachers = [];
+    const sciencePillars = { Physics: [], Chemistry: [], Biology: [] };
+    const otherTeachers = [];
+
+    teachers.forEach(t => {
+        const discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : []);
+        let matched = false;
+
+        discs.forEach(d => {
+            const lowerD = d.toLowerCase();
+            if (lowerD === 'mathematics' || lowerD === 'math') {
+                if(!mathTeachers.includes(t)) mathTeachers.push(t);
+                matched = true;
+            } else if (['physics', 'chemistry', 'biology'].includes(lowerD)) {
+                const TitleCase = lowerD.charAt(0).toUpperCase() + lowerD.slice(1);
+                if(!sciencePillars[TitleCase].includes(t)) sciencePillars[TitleCase].push(t);
+                matched = true;
+            } else if (lowerD === 'social science' || lowerD === 'history' || lowerD === 'geography' || lowerD === 'civics') {
+                if(!socialTeachers.includes(t)) socialTeachers.push(t);
+                matched = true;
+            }
+        });
+
+        if (!matched) {
+            otherTeachers.push(t);
+        }
+    });
+
+    const buildTeacherTable = (teacherArray) => {
+        if(teacherArray.length === 0) return '<div class="p-4 text-center text-xs text-slate-400 italic border-t border-slate-100">No teachers assigned.</div>';
+
+        let rows = '';
+        teacherArray.forEach(u => {
+            const name = u.displayName || u.email || 'Unknown';
+            const secs = (u.sections || []).join(', ') || '<span class="italic opacity-50">None</span>';
+            const disc = (u.mapped_disciplines || []).join(', ') || u.mapped_discipline || 'Unassigned';
+
+            rows += `
+                <div class="flex justify-between items-center p-3 border-t border-slate-100 hover:bg-slate-50 text-xs text-slate-700">
+                    <div class="font-bold">${name} <span class="block text-[10px] text-slate-400 font-normal mt-0.5">${disc}</span></div>
+                    <div class="font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">${secs}</div>
+                </div>
+            `;
+        });
+        return rows;
+    };
+
+    container.innerHTML = `
+        <div class="space-y-4">
+            <!-- Mathematics Pillar -->
+            <div class="border border-blue-200 rounded-xl bg-blue-50/30 overflow-hidden shadow-sm">
+                <button onclick="window.toggleAccordion('pillar-math')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-blue-50 transition text-cbse-blue text-sm">
+                    <span><i class="fas fa-calculator mr-2"></i> Mathematics</span>
+                    <i class="fas fa-chevron-down text-blue-300 transition-transform duration-200" id="icon-pillar-math"></i>
+                </button>
+                <div id="pillar-math" class="hidden bg-white">
+                    ${buildTeacherTable(mathTeachers)}
+                </div>
+            </div>
+
+            <!-- Science Pillar (Sub-disciplines) -->
+            <div class="border border-purple-200 rounded-xl bg-purple-50/30 overflow-hidden shadow-sm">
+                <button onclick="window.toggleAccordion('pillar-sci')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-purple-50 transition text-purple-700 text-sm">
+                    <span><i class="fas fa-flask mr-2"></i> Science</span>
+                    <i class="fas fa-chevron-down text-purple-300 transition-transform duration-200" id="icon-pillar-sci"></i>
+                </button>
+                <div id="pillar-sci" class="hidden bg-white p-2 space-y-2 border-t border-purple-100">
+                    <!-- Physics -->
+                    <div class="border border-slate-100 rounded bg-slate-50/50">
+                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Physics</div>
+                        ${buildTeacherTable(sciencePillars.Physics)}
+                    </div>
+                    <!-- Chemistry -->
+                    <div class="border border-slate-100 rounded bg-slate-50/50">
+                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Chemistry</div>
+                        ${buildTeacherTable(sciencePillars.Chemistry)}
+                    </div>
+                    <!-- Biology -->
+                    <div class="border border-slate-100 rounded bg-slate-50/50">
+                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Biology</div>
+                        ${buildTeacherTable(sciencePillars.Biology)}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Science Pillar -->
+            <div class="border border-amber-200 rounded-xl bg-amber-50/30 overflow-hidden shadow-sm">
+                <button onclick="window.toggleAccordion('pillar-ss')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-amber-50 transition text-amber-700 text-sm">
+                    <span><i class="fas fa-globe mr-2"></i> Social Science</span>
+                    <i class="fas fa-chevron-down text-amber-300 transition-transform duration-200" id="icon-pillar-ss"></i>
+                </button>
+                <div id="pillar-ss" class="hidden bg-white">
+                    ${buildTeacherTable(socialTeachers)}
+                </div>
+            </div>
+
+            <!-- Other Subjects -->
+            ${otherTeachers.length > 0 ? `
+            <div class="border border-slate-200 rounded-xl bg-slate-50/30 overflow-hidden shadow-sm">
+                <button onclick="window.toggleAccordion('pillar-oth')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-slate-50 transition text-slate-700 text-sm">
+                    <span><i class="fas fa-book mr-2"></i> Other Subjects</span>
+                    <i class="fas fa-chevron-down text-slate-300 transition-transform duration-200" id="icon-pillar-oth"></i>
+                </button>
+                <div id="pillar-oth" class="hidden bg-white">
+                    ${buildTeacherTable(otherTeachers)}
+                </div>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
 
 window.toggleAccordion = (id) => {
     const el = document.getElementById(id);
@@ -253,6 +409,17 @@ window.toggleAccordion = (id) => {
         }
     }
 };
+
+let secondaryAuth = null;
+async function getSecondaryAuth() {
+    if (!secondaryAuth) {
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+        const { getAuth } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+        const secApp = initializeApp(window.__firebase_config, "SecondaryAppForAdmin");
+        secondaryAuth = getAuth(secApp);
+    }
+    return secondaryAuth;
+}
 
 window.showAddModal = async (role, grade = '', section = '') => {
     const modalContainer = document.getElementById('modal-container');
@@ -279,27 +446,44 @@ window.showAddModal = async (role, grade = '', section = '') => {
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Parent (Parent UID)</label>
                 <input type="text" id="modal-parent" placeholder="Optional parent UID..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
             </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Temporary Password</label>
+                <input type="text" id="modal-password" placeholder="Passkey123" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
+            </div>
         `;
     } else if (role === 'teacher') {
+        // Build Section Grid Checkboxes
+        const gradesArr = [6,7,8,9,10,11,12];
+        const secsArr = ['A','B','C'];
+        let gridHtml = '<div class="grid grid-cols-3 gap-2">';
+        gradesArr.forEach(g => {
+            secsArr.forEach(s => {
+                gridHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${g}${s}" class="teacher-sec-cb"> <span>${g}${s}</span></label>`;
+            });
+        });
+        gridHtml += '</div>';
+
         extraFields = `
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Grade</label>
-                    <select id="modal-grade" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" onchange="window.populateDisciplineDropdown()">
-                        <option value="">Select Grade</option>
-                        ${[6,7,8,9,10,11,12].map(g => `<option value="${g}">${g}</option>`).join('')}
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
-                    <input type="text" id="modal-section" placeholder="e.g. A" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+            <div class="mt-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Class Assignment Grid</label>
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 h-32 overflow-y-auto">
+                    ${gridHtml}
                 </div>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Discipline</label>
-                <select id="modal-discipline" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue disabled:opacity-50">
-                    <option value="">Select Grade first...</option>
-                </select>
+            <div class="mt-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Discipline Selection (Multi)</label>
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <label class="flex items-center space-x-2"><input type="checkbox" value="Physics" class="teacher-disc-cb"> <span>Physics</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" value="Chemistry" class="teacher-disc-cb"> <span>Chemistry</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" value="Biology" class="teacher-disc-cb"> <span>Biology</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" value="Mathematics" class="teacher-disc-cb"> <span>Mathematics</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" value="Social Science" class="teacher-disc-cb"> <span>Social Science</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" value="English" class="teacher-disc-cb"> <span>English</span></label>
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Temporary Password</label>
+                <input type="text" id="modal-password" placeholder="Passkey123" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
             </div>
         `;
     } else if (role === 'vip') {
@@ -311,6 +495,10 @@ window.showAddModal = async (role, grade = '', section = '') => {
                     <option value="admin">Admin</option>
                 </select>
             </div>
+            <div class="mt-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Temporary Password</label>
+                <input type="text" id="modal-password" placeholder="Passkey123" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
+            </div>
         `;
     }
 
@@ -321,7 +509,7 @@ window.showAddModal = async (role, grade = '', section = '') => {
                     <h3 class="text-lg font-black text-slate-800"><i class="fas fa-user-plus mr-2 text-cbse-blue"></i> Add ${roleTitle}</h3>
                     <button onclick="window.closeAddModal()" class="text-slate-400 hover:text-danger-red transition"><i class="fas fa-times text-xl"></i></button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Name / Display Name</label>
                         <input type="text" id="modal-name" placeholder="John Doe" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
@@ -337,7 +525,7 @@ window.showAddModal = async (role, grade = '', section = '') => {
                 </div>
                 <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
                     <button onclick="window.closeAddModal()" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition">Cancel</button>
-                    <button onclick="window.submitAddModal('${role}')" class="px-5 py-2 text-sm font-bold bg-cbse-blue text-white rounded-lg shadow hover:bg-blue-800 transition">Save ${roleTitle}</button>
+                    <button id="modal-save-btn" onclick="window.submitAddModal('${role}')" class="px-5 py-2 text-sm font-bold bg-cbse-blue text-white rounded-lg shadow hover:bg-blue-800 transition">Save ${roleTitle}</button>
                 </div>
             </div>
         </div>
@@ -349,50 +537,27 @@ window.closeAddModal = () => {
     if(mc) mc.innerHTML = '';
 };
 
-window.populateDisciplineDropdown = async () => {
-    const grade = document.getElementById('modal-grade').value;
-    const discDropdown = document.getElementById('modal-discipline');
-
-    if(!grade) {
-        discDropdown.innerHTML = '<option value="">Select Grade first...</option>';
-        discDropdown.disabled = true;
-        return;
-    }
-
-    try {
-        const curriculumData = await loadCurriculum(grade);
-        const subjects = Object.keys(curriculumData);
-        if(subjects.length === 0) {
-            discDropdown.innerHTML = '<option value="">No subjects found for grade</option>';
-            discDropdown.disabled = true;
-            return;
-        }
-
-        let html = '<option value="">Select Discipline</option>';
-        subjects.forEach(sub => {
-            html += `<option value="${sub}">${sub}</option>`;
-        });
-
-        discDropdown.innerHTML = html;
-        discDropdown.disabled = false;
-    } catch(e) {
-        console.error("Failed to load curriculum:", e);
-        discDropdown.innerHTML = '<option value="">Error loading curriculum</option>';
-    }
-};
-
 window.submitAddModal = async (role) => {
     const errorEl = document.getElementById('modal-error');
+    const saveBtn = document.getElementById('modal-save-btn');
+
     const showError = (msg) => {
         errorEl.innerText = msg;
         errorEl.classList.remove('hidden');
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Save";
     };
+
+    saveBtn.disabled = true;
+    saveBtn.innerText = "Creating...";
+    errorEl.classList.add('hidden');
 
     const name = document.getElementById('modal-name').value.trim();
     const email = document.getElementById('modal-email').value.trim();
+    const password = document.getElementById('modal-password').value.trim();
 
-    if(!name || !email) {
-        return showError("Name and Email are required.");
+    if(!name || !email || !password) {
+        return showError("Name, Email, and Password are required.");
     }
 
     let payload = {
@@ -417,28 +582,40 @@ window.submitAddModal = async (role) => {
         payload.section = s;
         payload.section_id = `${g}-${s}`;
         if(parentUID) payload.parent_id = parentUID;
+
     } else if (role === 'teacher') {
-        const g = document.getElementById('modal-grade').value.trim();
-        const s = document.getElementById('modal-section').value.trim();
-        const disc = document.getElementById('modal-discipline').value.trim();
+        const checkedSecs = Array.from(document.querySelectorAll('.teacher-sec-cb:checked')).map(cb => cb.value);
+        const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
 
-        if(!g || !s || !disc) return showError("Grade, Section, and Discipline are required.");
+        if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
+            return showError("At least one Section and one Discipline are required.");
+        }
 
-        payload.mapped_grade = g;
-        payload.mapped_section = `${g}-${s}`;
-        payload.mapped_discipline = disc;
+        payload.sections = checkedSecs;
+        payload.mapped_disciplines = checkedDiscs;
+
     } else if (role === 'vip') {
         payload.role = document.getElementById('modal-role-type').value;
     }
 
     try {
-        const { db } = await getInitializedClients();
-        const newDocRef = await addDoc(collection(db, "users"), payload);
+        // Zero-Manual Flow: Create User via Secondary Auth App
+        const secAuth = await getSecondaryAuth();
+        const { createUserWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
+        const userCredential = await createUserWithEmailAndPassword(secAuth, email, password);
+        const newUid = userCredential.user.uid;
+
+        // Save to Firestore using the standard DB (Admin has rules bypass/privileges hopefully)
+        const { db } = await getInitializedClients();
+        await setDoc(doc(db, "users", newUid), payload);
+
+        // Parent double-link
         if (role === 'student' && parentUID) {
             try {
                 await updateDoc(doc(db, "users", parentUID), {
-                    linked_children: arrayUnion(newDocRef.id),
+                    linked_children: arrayUnion(newUid),
                     updated_at: serverTimestamp()
                 });
             } catch(e) {
@@ -446,6 +623,9 @@ window.submitAddModal = async (role) => {
                 alert("Student created, but linking Parent failed (check Parent UID).");
             }
         }
+
+        // Automatically sign out the secondary instance so we don't leak it
+        await secAuth.signOut();
 
         window.closeAddModal();
     } catch(e) {
@@ -457,6 +637,7 @@ window.submitAddModal = async (role) => {
         }
     }
 };
+
 
 window.logMessage = (msg, isError = false) => {
     const logBox = document.getElementById('mapping-log');
