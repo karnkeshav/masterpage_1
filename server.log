@@ -1,10 +1,6 @@
-127.0.0.1 - - [06/Mar/2026 17:18:57] "GET /app/consoles/admin.html HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:57] "GET /js/firebase-master-config.js HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:57] "GET /css/global.css HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:57] "GET /js/config.js HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:57] "GET /js/admin-console.js HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:57] "GET /js/guard.js HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:57] "GET /js/curriculum/loader.js HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:58] "GET /js/auth-paywall.js HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:58] "GET /js/api.js HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 17:18:58] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 03:41:32] "GET /app/consoles/admin.html HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 03:41:32] "GET /css/global.css HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 03:41:32] "GET /js/config.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 03:41:32] "GET /js/admin-console.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 03:41:32] "GET /js/firebase-master-config.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 03:41:33] "GET /js/curriculum/loader.js HTTP/1.1" 200 -
