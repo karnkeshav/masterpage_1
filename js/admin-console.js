@@ -3,7 +3,7 @@ import { guardConsole, bindConsoleLogout } from "./guard.js";
 import { loadCurriculum } from "./curriculum/loader.js";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Initialize the secondary app specifically for onboarding
 let secondaryAuth = null;
@@ -594,9 +594,21 @@ window.submitAddModal = async (role) => {
                     if (!secondaryAuth) {
                         throw new Error("SecondaryOnboarding Auth instance is not initialized.");
                     }
-                    const parentCredential = await createUserWithEmailAndPassword(secondaryAuth, parentEmail, password);
+
+                    let parentCredential;
+                    try {
+                        parentCredential = await createUserWithEmailAndPassword(secondaryAuth, parentEmail, password);
+                    } catch (e) {
+                        if (e.code === 'auth/email-already-in-use') {
+                            console.log("Parent account exists in Auth, linking to existing identity");
+                            parentCredential = await signInWithEmailAndPassword(secondaryAuth, parentEmail, password);
+                        } else {
+                            throw e;
+                        }
+                    }
                     parentId = parentCredential.user.uid;
 
+                    // Force create/repair the Firestore document
                     await setDoc(doc(db, "users", parentId), {
                         displayName: "Parent User",
                         email: parentEmail,
@@ -640,7 +652,17 @@ window.submitAddModal = async (role) => {
             throw new Error("SecondaryOnboarding Auth instance is not initialized.");
         }
 
-        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        let userCredential;
+        try {
+            userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        } catch (e) {
+            if (e.code === 'auth/email-already-in-use') {
+                console.log("Account exists, linking to existing identity");
+                userCredential = await signInWithEmailAndPassword(secondaryAuth, email, password);
+            } else {
+                throw e;
+            }
+        }
         const newUid = userCredential.user.uid;
 
         // Automatically sign out the secondary instance so we don't leak it
