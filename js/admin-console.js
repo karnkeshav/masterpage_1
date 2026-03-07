@@ -66,44 +66,396 @@ window.switchTab = (tabId) => {
 };
 
 // --- THE INVENTORY NAVIGATION ENGINE ---
-window.renderInventoryEngine = () => {
-    if(unsubRegistry) { unsubRegistry(); unsubRegistry = null; }
-
+window.renderInventoryEngine = async () => {
     const container = document.getElementById('tab-inventory');
 
-    // Level 1: Grade grid
-    let gridHtml = '';
-    for(let g = 6; g <= 12; g++) {
-        gridHtml += `
-            <button onclick="window.loadSectionGrid('${g}')" class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-sm hover:border-cbse-blue hover:shadow-md transition-all text-left group">
-                <div class="w-12 h-12 bg-blue-50 text-cbse-blue rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
-                    <i class="fas fa-layer-group"></i>
+    // Generate Accordion HTML structure
+    let classesAccordionHtml = '';
+    const grades = [6, 7, 8, 9, 10, 11, 12];
+    const sections = ['A', 'B', 'C'];
+
+    grades.forEach(g => {
+        let sectionHtml = '';
+        sections.forEach(s => {
+            sectionHtml += `
+                <div class="mb-2 border border-slate-200 rounded bg-white">
+                    <button onclick="window.toggleAccordion('acc-sec-${g}-${s}')" class="w-full text-left p-2 font-bold flex justify-between items-center text-xs hover:bg-slate-50">
+                        <span>Section ${s}</span>
+                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-sec-${g}-${s}"></i>
+                    </button>
+                    <div id="acc-sec-${g}-${s}" class="hidden p-2 border-t border-slate-100">
+                        <div class="flex justify-end mb-2">
+                            <button onclick="window.showAddModal('student', '${g}', '${s}')" class="bg-cbse-blue hover:bg-blue-800 text-white px-3 py-1.5 text-xs rounded-lg font-bold shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add Student</button>
+                        </div>
+                        <div class="overflow-x-auto rounded-lg border border-slate-100">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                                    <tr><th class="p-2">Name / Email</th><th class="p-2">Linked Parent</th><th class="p-2 text-right">Actions</th></tr>
+                                </thead>
+                                <tbody id="tbody-student-${g}-${s}" class="divide-y divide-slate-50"><tr><td colspan="3" class="p-2 text-center text-slate-400 italic">Loading...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="text-lg font-black text-slate-800">Grade ${g}</h3>
-                <p class="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">View Sections</p>
-            </button>
+            `;
+        });
+
+        classesAccordionHtml += `
+            <div class="mb-2 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
+                <button onclick="window.toggleAccordion('acc-grade-${g}')" class="w-full text-left p-3 font-bold flex justify-between items-center text-sm hover:bg-slate-50">
+                    <span class="text-slate-800"><i class="fas fa-graduation-cap text-cbse-blue mr-2"></i> Grade ${g}</span>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-grade-${g}"></i>
+                </button>
+                <div id="acc-grade-${g}" class="hidden p-3 border-t border-slate-100 bg-slate-50/50">
+                    ${sectionHtml}
+                </div>
+            </div>
         `;
-    }
+    });
 
     container.innerHTML = `
         <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col" id="inventory-main">
-            <div class="flex justify-between items-center mb-8">
+            <div class="flex justify-between items-center mb-6">
                 <div>
                     <h2 class="text-2xl font-black text-slate-800">Inventory Registry</h2>
-                    <p class="text-sm text-slate-500 mt-1">Manage ${currentSchoolId} registry by Grade & Section.</p>
+                    <p class="text-sm text-slate-500 mt-1">Manage ${currentSchoolId} registry via the Master Vaults.</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                ${gridHtml}
+            <div class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+
+                <!-- Vault 1: Academic Classes -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="window.toggleAccordion('acc-classes')" class="w-full text-left p-4 bg-slate-50 font-bold flex justify-between items-center hover:bg-slate-100 transition">
+                        <span class="text-lg text-slate-800"><i class="fas fa-layer-group text-cbse-blue mr-2"></i> Vault 1: Academic Classes</span>
+                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-classes"></i>
+                    </button>
+                    <div id="acc-classes" class="hidden p-4 border-t border-slate-200 bg-slate-50/30">
+                        ${classesAccordionHtml}
+                    </div>
+                </div>
+
+                <!-- Vault 2: Faculty Inventory -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="window.toggleAccordion('acc-teachers')" class="w-full text-left p-4 bg-slate-50 font-bold flex justify-between items-center hover:bg-slate-100 transition">
+                        <span class="text-lg text-slate-800"><i class="fas fa-chalkboard-teacher text-amber-500 mr-2"></i> Vault 2: Faculty Inventory</span>
+                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-teachers"></i>
+                    </button>
+                    <div id="acc-teachers" class="hidden p-4 border-t border-slate-200">
+                        <div class="flex justify-end mb-4">
+                            <button onclick="window.showAddModal('teacher')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs rounded-xl font-bold shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add Teacher</button>
+                        </div>
+                        <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                                    <tr><th class="p-4">Name / Email</th><th class="p-4">Discipline</th><th class="p-4">Assigned Section</th><th class="p-4 text-right">Actions</th></tr>
+                                </thead>
+                                <tbody id="tbody-teachers" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vault 3: VIP Dignitaries -->
+                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
+                    <button onclick="window.toggleAccordion('acc-vips')" class="w-full text-left p-4 bg-slate-50 font-bold flex justify-between items-center hover:bg-slate-100 transition">
+                        <span class="text-lg text-slate-800"><i class="fas fa-star text-purple-500 mr-2"></i> Vault 3: VIP Dignitaries</span>
+                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-vips"></i>
+                    </button>
+                    <div id="acc-vips" class="hidden p-4 border-t border-slate-200">
+                        <div class="flex justify-end mb-4">
+                            <button onclick="window.showAddModal('vip')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-xs rounded-xl font-bold shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add VIP</button>
+                        </div>
+                        <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                                    <tr><th class="p-4">Name / Email</th><th class="p-4">Role</th><th class="p-4">School ID</th><th class="p-4 text-right">Status</th></tr>
+                                </thead>
+                                <tbody id="tbody-vips" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Relational Onboarding moved below grid -->
-            <div class="mt-12 border-t border-slate-100 pt-8">
+            <!-- Relational Onboarding -->
+            <div class="mt-6 border-t border-slate-100 pt-6">
                 ${getRelationalOnboardingHTML()}
+            </div>
+
+            <!-- Manual Onboarding Modal Container -->
+            <div id="modal-container"></div>
+        </div>
+    `;
+
+    // Listen to real-time updates for all buckets
+    if(unsubRegistry) { unsubRegistry(); }
+
+    const { db } = await getInitializedClients();
+    const q = query(
+        collection(db, "users"),
+        where("school_id", "==", currentSchoolId)
+    );
+
+    unsubRegistry = onSnapshot(q, (snapshot) => {
+        const studentMap = {}; // grade-section -> [students]
+        const teacherMap = [];
+        const vipMap = [];
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const u = { id: doc.id, ...data };
+
+            if (u.role === 'student') {
+                const g = u.grade || 'Unknown';
+                // Extract section correctly. e.g., '9-A' -> 'A', 'A' -> 'A'
+                let s = u.section_id || u.section || 'Unknown';
+                if(s.includes('-')) s = s.split('-')[1];
+
+                const key = `${g}-${s}`;
+                if(!studentMap[key]) studentMap[key] = [];
+                studentMap[key].push(u);
+            }
+            else if (u.role === 'teacher') {
+                teacherMap.push(u);
+            }
+            else if (u.role === 'principal' || u.role === 'admin') {
+                vipMap.push(u);
+            }
+        });
+
+        // Update VIPs
+        renderBucket('tbody-vips', vipMap, 'vip');
+        // Update Teachers
+        renderBucket('tbody-teachers', teacherMap, 'teacher');
+        // Update Students (iterate through all tables)
+        grades.forEach(g => {
+            sections.forEach(s => {
+                const id = `tbody-student-${g}-${s}`;
+                const users = studentMap[`${g}-${s}`] || [];
+                renderBucket(id, users, 'student');
+            });
+        });
+    });
+};
+
+window.toggleAccordion = (id) => {
+    const el = document.getElementById(id);
+    const icon = document.getElementById(`icon-${id}`);
+    if(el) {
+        if(el.classList.contains('hidden')) {
+            el.classList.remove('hidden');
+            if(icon) icon.classList.add('rotate-180');
+        } else {
+            el.classList.add('hidden');
+            if(icon) icon.classList.remove('rotate-180');
+        }
+    }
+};
+
+window.showAddModal = async (role, grade = '', section = '') => {
+    const modalContainer = document.getElementById('modal-container');
+
+    let roleTitle = "Student";
+    if(role === 'teacher') roleTitle = "Teacher";
+    if(role === 'vip') roleTitle = "VIP Dignitary";
+
+    let extraFields = '';
+
+    if (role === 'student') {
+        extraFields = `
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Grade</label>
+                    <input type="text" id="modal-grade" value="${grade}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${grade ? 'readonly' : ''}>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
+                    <input type="text" id="modal-section" value="${section}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${section ? 'readonly' : ''}>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Parent (Parent UID)</label>
+                <input type="text" id="modal-parent" placeholder="Optional parent UID..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
+            </div>
+        `;
+    } else if (role === 'teacher') {
+        extraFields = `
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Grade</label>
+                    <select id="modal-grade" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" onchange="window.populateDisciplineDropdown()">
+                        <option value="">Select Grade</option>
+                        ${[6,7,8,9,10,11,12].map(g => `<option value="${g}">${g}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
+                    <input type="text" id="modal-section" placeholder="e.g. A" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Discipline</label>
+                <select id="modal-discipline" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue disabled:opacity-50">
+                    <option value="">Select Grade first...</option>
+                </select>
+            </div>
+        `;
+    } else if (role === 'vip') {
+        extraFields = `
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role Type</label>
+                <select id="modal-role-type" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                    <option value="principal">Principal</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+        `;
+    }
+
+    modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-slate-900/50 flex justify-center items-center z-50 backdrop-blur-sm" id="onboarding-modal">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
+                <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="text-lg font-black text-slate-800"><i class="fas fa-user-plus mr-2 text-cbse-blue"></i> Add ${roleTitle}</h3>
+                    <button onclick="window.closeAddModal()" class="text-slate-400 hover:text-danger-red transition"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Name / Display Name</label>
+                        <input type="text" id="modal-name" placeholder="John Doe" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                        <input type="email" id="modal-email" placeholder="john@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                    </div>
+
+                    ${extraFields}
+
+                    <div id="modal-error" class="hidden text-xs font-bold text-danger-red bg-red-50 p-2 rounded border border-red-100 mt-2"></div>
+                </div>
+                <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
+                    <button onclick="window.closeAddModal()" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition">Cancel</button>
+                    <button onclick="window.submitAddModal('${role}')" class="px-5 py-2 text-sm font-bold bg-cbse-blue text-white rounded-lg shadow hover:bg-blue-800 transition">Save ${roleTitle}</button>
+                </div>
             </div>
         </div>
     `;
+};
+
+window.closeAddModal = () => {
+    const mc = document.getElementById('modal-container');
+    if(mc) mc.innerHTML = '';
+};
+
+window.populateDisciplineDropdown = async () => {
+    const grade = document.getElementById('modal-grade').value;
+    const discDropdown = document.getElementById('modal-discipline');
+
+    if(!grade) {
+        discDropdown.innerHTML = '<option value="">Select Grade first...</option>';
+        discDropdown.disabled = true;
+        return;
+    }
+
+    try {
+        const curriculumData = await loadCurriculum(grade);
+        const subjects = Object.keys(curriculumData);
+        if(subjects.length === 0) {
+            discDropdown.innerHTML = '<option value="">No subjects found for grade</option>';
+            discDropdown.disabled = true;
+            return;
+        }
+
+        let html = '<option value="">Select Discipline</option>';
+        subjects.forEach(sub => {
+            html += `<option value="${sub}">${sub}</option>`;
+        });
+
+        discDropdown.innerHTML = html;
+        discDropdown.disabled = false;
+    } catch(e) {
+        console.error("Failed to load curriculum:", e);
+        discDropdown.innerHTML = '<option value="">Error loading curriculum</option>';
+    }
+};
+
+window.submitAddModal = async (role) => {
+    const errorEl = document.getElementById('modal-error');
+    const showError = (msg) => {
+        errorEl.innerText = msg;
+        errorEl.classList.remove('hidden');
+    };
+
+    const name = document.getElementById('modal-name').value.trim();
+    const email = document.getElementById('modal-email').value.trim();
+
+    if(!name || !email) {
+        return showError("Name and Email are required.");
+    }
+
+    let payload = {
+        displayName: name,
+        email: email,
+        role: role,
+        school_id: currentSchoolId,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
+    };
+
+    let parentUID = null;
+
+    if (role === 'student') {
+        const g = document.getElementById('modal-grade').value.trim();
+        const s = document.getElementById('modal-section').value.trim();
+        parentUID = document.getElementById('modal-parent').value.trim();
+
+        if(!g || !s) return showError("Grade and Section are required.");
+
+        payload.grade = g;
+        payload.section = s;
+        payload.section_id = `${g}-${s}`;
+        if(parentUID) payload.parent_id = parentUID;
+    } else if (role === 'teacher') {
+        const g = document.getElementById('modal-grade').value.trim();
+        const s = document.getElementById('modal-section').value.trim();
+        const disc = document.getElementById('modal-discipline').value.trim();
+
+        if(!g || !s || !disc) return showError("Grade, Section, and Discipline are required.");
+
+        payload.mapped_grade = g;
+        payload.mapped_section = `${g}-${s}`;
+        payload.mapped_discipline = disc;
+    } else if (role === 'vip') {
+        payload.role = document.getElementById('modal-role-type').value;
+    }
+
+    try {
+        const { db } = await getInitializedClients();
+        const newDocRef = await addDoc(collection(db, "users"), payload);
+
+        if (role === 'student' && parentUID) {
+            try {
+                await updateDoc(doc(db, "users", parentUID), {
+                    linked_children: arrayUnion(newDocRef.id),
+                    updated_at: serverTimestamp()
+                });
+            } catch(e) {
+                console.error("Failed to link parent during student creation:", e);
+                alert("Student created, but linking Parent failed (check Parent UID).");
+            }
+        }
+
+        window.closeAddModal();
+    } catch(e) {
+        const errorMsg = e.message.toLowerCase();
+        if (errorMsg.includes("insufficient permissions") || errorMsg.includes("missing or insufficient permissions")) {
+            showError("Admin Role detected but Firestore Rules are blocking the write. Please authorize the Admin bypass in the Firebase Console.");
+        } else {
+            showError("Failed to save: " + e.message);
+        }
+    }
 };
 
 window.logMessage = (msg, isError = false) => {
@@ -159,7 +511,6 @@ window.handleCSVUpload = async (event) => {
                     const targetSection = row[4];
                     const targetDiscipline = row[5];
 
-                    // Verify teacher discipline against curriculum
                     const curriculumData = await loadCurriculum(targetGrade);
                     let hasMapping = false;
                     if (curriculumData["Science"] && curriculumData["Science"][targetDiscipline]) hasMapping = true;
@@ -216,7 +567,6 @@ window.handleCSVUpload = async (event) => {
     reader.readAsText(file);
 };
 
-
 function getRelationalOnboardingHTML() {
     return `
         <div class="flex items-center gap-4 mb-6">
@@ -239,134 +589,12 @@ function getRelationalOnboardingHTML() {
     `;
 }
 
-window.loadSectionGrid = (grade) => {
-    const container = document.getElementById('inventory-main');
-
-    // Level 2: Section grid (Mocking A, B, C for demo, in reality we might fetch these or hardcode typical sections)
-    let sectionHtml = '';
-    ['A', 'B', 'C'].forEach(sec => {
-        sectionHtml += `
-            <button onclick="window.loadSectionInventory('${grade}', '${sec}')" class="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-sm hover:border-success-green hover:shadow-md transition-all text-left group">
-                <div class="w-12 h-12 bg-green-50 text-success-green rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
-                    <i class="fas fa-users-class"></i>
-                </div>
-                <h3 class="text-lg font-black text-slate-800">Section ${sec}</h3>
-                <p class="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">Grade ${grade}</p>
-            </button>
-        `;
-    });
-
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <button onclick="window.renderInventoryEngine()" class="text-xs font-bold text-slate-400 hover:text-cbse-blue mb-2 flex items-center gap-1 uppercase tracking-widest"><i class="fas fa-arrow-left"></i> Back to Grades</button>
-                <h2 class="text-2xl font-black text-slate-800">Grade ${grade} Sections</h2>
-                <p class="text-sm text-slate-500 mt-1">Select a section to view its registry.</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
-            ${sectionHtml}
-        </div>
-    `;
-};
-
-window.loadSectionInventory = async (grade, section) => {
-    const container = document.getElementById('inventory-main');
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <button onclick="window.loadSectionGrid('${grade}')" class="text-xs font-bold text-slate-400 hover:text-cbse-blue mb-2 flex items-center gap-1 uppercase tracking-widest"><i class="fas fa-arrow-left"></i> Back to Sections</button>
-                <h2 class="text-xl font-black text-slate-800">Grade ${grade} - Section ${section}</h2>
-                <p class="text-sm text-slate-500">Live Registry View.</p>
-            </div>
-        </div>
-
-        <div class="space-y-8">
-            <!-- Students Bucket -->
-            <div>
-                <h3 class="text-lg font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2"><i class="fas fa-user-graduate text-cbse-blue mr-2"></i>Students</h3>
-                <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                            <tr><th class="p-4">Name / Email</th><th class="p-4">Linked Parent</th><th class="p-4">Assigned Section</th><th class="p-4 text-right">Actions</th></tr>
-                        </thead>
-                        <tbody id="bucket-students" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Teachers Bucket -->
-            <div>
-                <h3 class="text-lg font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2"><i class="fas fa-chalkboard-teacher text-amber-500 mr-2"></i>Subject Teachers</h3>
-                <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                            <tr><th class="p-4">Name / Email</th><th class="p-4">Discipline</th><th class="p-4">Assigned Section</th><th class="p-4 text-right">Actions</th></tr>
-                        </thead>
-                        <tbody id="bucket-teachers" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- VIP Dignitaries Bucket -->
-            <div>
-                <h3 class="text-lg font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2"><i class="fas fa-star text-purple-500 mr-2"></i>VIP Dignitaries</h3>
-                <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                            <tr><th class="p-4">Name / Email</th><th class="p-4">Role</th><th class="p-4">School ID</th><th class="p-4 text-right">Status</th></tr>
-                        </thead>
-                        <tbody id="bucket-vips" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
-
-    if(unsubRegistry) unsubRegistry();
-
-    const { db } = await getInitializedClients();
-
-    // Query all users for this school to distribute into buckets (since section logic might differ slightly per role)
-    const q = query(
-        collection(db, "users"),
-        where("school_id", "==", currentSchoolId)
-    );
-
-    unsubRegistry = onSnapshot(q, (snapshot) => {
-        const studentMap = new Map();
-        const teacherMap = new Map();
-        const vipMap = new Map();
-
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const u = { id: doc.id, ...data };
-
-            // Unique Filtering logic via Map and Section check
-            if (u.role === 'student' && u.grade == grade && (u.section_id == `${grade}-${section}` || u.section == section || u.section_id == section)) {
-                studentMap.set(u.id, u);
-            }
-            else if (u.role === 'teacher' && u.mapped_grade == grade && (u.mapped_section == `${grade}-${section}` || u.mapped_section == section)) {
-                teacherMap.set(u.id, u);
-            }
-            else if (u.role === 'principal' || u.role === 'admin') {
-                vipMap.set(u.id, u);
-            }
-        });
-
-        renderBucket('bucket-students', Array.from(studentMap.values()), 'student');
-        renderBucket('bucket-teachers', Array.from(teacherMap.values()), 'teacher');
-        renderBucket('bucket-vips', Array.from(vipMap.values()), 'vip');
-    });
-};
-
 function renderBucket(elementId, users, type) {
     const el = document.getElementById(elementId);
     if (!el) return;
 
     if (users.length === 0) {
-        el.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic font-medium">No entries found.</td></tr>`;
+        el.innerHTML = `<tr><td colspan="${type==='student'?3:4}" class="p-4 text-center text-slate-400 italic font-medium">No entries found.</td></tr>`;
         return;
     }
 
@@ -375,14 +603,12 @@ function renderBucket(elementId, users, type) {
 
         if (type === 'student') {
             const parentText = u.parent_id ? `<span class="text-slate-700 font-mono text-[10px] bg-slate-100 px-2 py-1 rounded border border-slate-200">${u.parent_id}</span>` : `<span class="text-danger-red text-xs font-bold">Unlinked</span>`;
-            const sectionText = u.section_id || u.section || '<span class="text-slate-300 italic">Unassigned</span>';
             return `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
-                    <td class="p-4">${parentText}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${sectionText}</td>
-                    <td class="p-4 text-right">
-                        <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-xs bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Edit Mapping</button>
+                    <td class="p-2 font-bold text-slate-700">${nameOrEmail}</td>
+                    <td class="p-2">${parentText}</td>
+                    <td class="p-2 text-right">
+                        <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Link Parent</button>
                     </td>
                 </tr>
             `;
