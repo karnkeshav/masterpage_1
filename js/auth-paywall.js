@@ -53,12 +53,16 @@ export async function authenticateWithCredentials(username, password) {
         while(auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
     }
 
+    // Handle Hardcoded Admin vs Dynamically Created Users
     const userProfile = CREDENTIALS[username];
-    if (!userProfile) throw new Error("Invalid username");
-    if (userProfile.pass !== password) throw new Error("Invalid password");
+    let isHardcoded = !!userProfile;
 
-    // NEW: Synthetic Email for Persistent Identity
-    const email = `${username}@ready4exam.internal`;
+    if (isHardcoded) {
+        if (userProfile.pass !== password) throw new Error("Invalid password");
+    }
+
+    // Use the provided string as email if it includes '@', otherwise append synthetic domain
+    const email = username.includes('@') ? username : `${username}@ready4exam.internal`;
 
     try {
         try {
@@ -72,9 +76,9 @@ export async function authenticateWithCredentials(username, password) {
             // 1. Attempt to sign in
             userCredential = await signInWithEmailAndPassword(auth, email, password);
         } catch (signInError) {
-            // 2. If user not found, auto-provision
-            if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
-                 console.log(LOG, "Auto-provisioning new user:", email);
+            // 2. If user not found AND is a hardcoded credential, auto-provision
+            if (isHardcoded && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
+                 console.log(LOG, "Auto-provisioning hardcoded user:", email);
                  userCredential = await createUserWithEmailAndPassword(auth, email, password);
                  // Update Display Name immediately
                  await updateProfile(userCredential.user, { displayName: username });
@@ -89,14 +93,6 @@ export async function authenticateWithCredentials(username, password) {
         // 3. Store stable UID in session and window
         sessionStorage.setItem('uid', stableUID);
         sessionStorage.setItem('username', username);
-        window.userProfile = {
-            uid: stableUID,
-            displayName: username,
-            role: userProfile.role,
-            tenantType: userProfile.tenantType,
-            tenantId: userProfile.tenantId,
-            school_id: userProfile.school_id
-        };
 
         // 4. Trigger Data Migration if an old anonymous session existed
         if (oldUid && oldUid !== stableUID) {
@@ -104,18 +100,34 @@ export async function authenticateWithCredentials(username, password) {
             await migrateAnonymousData(oldUid, stableUID);
         }
 
-        // 5. Ensure Profile Container Exists with stable UID
-        await ensureUserProfile(stableUID, username, {
-            role: userProfile.role,
-            tenantType: userProfile.tenantType,
-            tenantId: userProfile.tenantId,
-            school_id: userProfile.school_id
-        });
-
-        // 6. Blocking Wait for Firestore Consistency
-        await waitForProfileReady(stableUID);
-
-        return { uid: stableUID, displayName: username, role: userProfile.role };
+        // 5. Ensure Profile Container Exists with stable UID (only for hardcoded)
+        if (isHardcoded) {
+             window.userProfile = {
+                uid: stableUID,
+                displayName: username,
+                role: userProfile.role,
+                tenantType: userProfile.tenantType,
+                tenantId: userProfile.tenantId,
+                school_id: userProfile.school_id
+            };
+            await ensureUserProfile(stableUID, username, {
+                role: userProfile.role,
+                tenantType: userProfile.tenantType,
+                tenantId: userProfile.tenantId,
+                school_id: userProfile.school_id
+            });
+            await waitForProfileReady(stableUID);
+            return { uid: stableUID, displayName: username, role: userProfile.role };
+        } else {
+            // For dynamic users, we fetch their profile from Firestore
+            const userDoc = await getDoc(doc(db, "users", stableUID));
+            if (!userDoc.exists()) {
+                 throw new Error("User profile not found in database.");
+            }
+            const data = userDoc.data();
+            window.userProfile = data;
+            return { uid: stableUID, displayName: data.displayName || username, role: data.role };
+        }
 
     } catch (e) {
         console.error(LOG, "Auth Binding Failed", e);
