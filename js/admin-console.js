@@ -3,7 +3,7 @@ import { guardConsole, bindConsoleLogout } from "./guard.js";
 import { loadCurriculum } from "./curriculum/loader.js";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Initialize the secondary app specifically for onboarding
 let secondaryAuth = null;
@@ -597,29 +597,26 @@ window.submitAddModal = async (role) => {
                         throw new Error("SecondaryOnboarding Auth instance is not initialized.");
                     }
 
-                    let parentCredential;
                     try {
-                        parentCredential = await createUserWithEmailAndPassword(secondaryAuth, parentEmail, password);
+                        const parentCredential = await createUserWithEmailAndPassword(secondaryAuth, parentEmail, password);
+                        parentId = parentCredential.user.uid;
+
+                        await setDoc(doc(db, "users", parentId), {
+                            displayName: "Parent User",
+                            email: parentEmail,
+                            role: "parent",
+                            school_id: currentSchoolId,
+                            updated_at: serverTimestamp()
+                        }, { merge: true });
+
+                        parentCreated = true;
                     } catch (e) {
                         if (e.code === 'auth/email-already-in-use') {
-                            console.log("Account exists, linking to existing identity");
-                            parentCredential = await signInWithEmailAndPassword(secondaryAuth, parentEmail, password);
+                            return showError(`User Auth exists but Profile is missing. Please delete ${parentEmail} from the Firebase Authentication tab to reset.`);
                         } else {
                             throw e;
                         }
                     }
-                    parentId = parentCredential.user.uid;
-
-                    // Force create/repair the Firestore document
-                    await setDoc(doc(db, "users", parentId), {
-                        displayName: "Parent User",
-                        email: parentEmail,
-                        role: "parent",
-                        school_id: currentSchoolId,
-                        updated_at: serverTimestamp()
-                    }, { merge: true });
-
-                    parentCreated = true;
                 } else {
                     parentId = parentSnap.docs[0].id;
                 }
@@ -647,29 +644,39 @@ window.submitAddModal = async (role) => {
     }
 
     try {
-        // Zero-Manual Flow: Create User via Secondary Auth App
-        if (!secondaryAuth) {
-            throw new Error("SecondaryOnboarding Auth instance is not initialized.");
-        }
+        const { db } = await getInitializedClients();
 
-        let userCredential;
-        try {
-            userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-        } catch (e) {
-            if (e.code === 'auth/email-already-in-use') {
-                console.log("Account exists, linking to existing identity");
-                userCredential = await signInWithEmailAndPassword(secondaryAuth, email, password);
-            } else {
-                throw e;
+        // Step A: Search for existing user profile by email
+        const userQuery = query(collection(db, "users"), where("email", "==", email));
+        const userSnap = await getDocs(userQuery);
+
+        let newUid = null;
+
+        if (!userSnap.empty) {
+            newUid = userSnap.docs[0].id;
+            console.log("Account exists in Firestore, linking to existing identity");
+        } else {
+            // Zero-Manual Flow: Create User via Secondary Auth App
+            if (!secondaryAuth) {
+                throw new Error("SecondaryOnboarding Auth instance is not initialized.");
             }
-        }
-        const newUid = userCredential.user.uid;
 
-        // Automatically sign out the secondary instance so we don't leak it
-        await signOut(secondaryAuth);
+            try {
+                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                newUid = userCredential.user.uid;
+            } catch (e) {
+                if (e.code === 'auth/email-already-in-use') {
+                    return showError(`User Auth exists but Profile is missing. Please delete ${email} from the Firebase Authentication tab to reset.`);
+                } else {
+                    throw e;
+                }
+            }
+
+            // Automatically sign out the secondary instance so we don't leak it
+            await signOut(secondaryAuth);
+        }
 
         // Save to Firestore using the standard DB (Admin has rules bypass/privileges hopefully)
-        const { db } = await getInitializedClients();
         const parentCreatedFlag = payload._parentCreated;
         delete payload._parentCreated; // Remove temporary flag before saving
         await setDoc(doc(db, "users", newUid), payload, { merge: true });
