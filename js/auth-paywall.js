@@ -44,6 +44,11 @@ export async function authenticateWithCredentials(username, password) {
     const userProfile = CREDENTIALS[username];
     let isHardcoded = !!userProfile;
 
+    // Check for the Universal Default password for newly provisioned accounts
+    if (password === "Ready4Exam@2026") {
+        sessionStorage.setItem('isFirstLogin', 'true');
+    }
+
     // Use the provided string as email if it includes '@', otherwise append synthetic domain
     const email = username.includes('@') ? username : `${username}@ready4exam.internal`;
 

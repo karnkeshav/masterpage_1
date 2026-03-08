@@ -560,13 +560,14 @@ window.submitAddModal = async (role) => {
     }
 
     const email = `${username}@ready4exam.internal`;
-    const password = "Ready4Exam@2024";
+    const password = "Ready4Exam@2026";
 
     let payload = {
         displayName: name,
         email: email,
         role: role,
         school_id: currentSchoolId,
+        setupComplete: false,
         created_at: serverTimestamp(),
         updated_at: serverTimestamp()
     };
@@ -606,6 +607,7 @@ window.submitAddModal = async (role) => {
                             email: parentEmail,
                             role: "parent",
                             school_id: currentSchoolId,
+                            setupComplete: false,
                             updated_at: serverTimestamp()
                         }, { merge: true });
 
