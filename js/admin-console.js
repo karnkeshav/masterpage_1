@@ -144,7 +144,9 @@ window.renderInventoryEngine = async () => {
                 </div>
             </div>
 
-            <div class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            ${getRelationalOnboardingHTML()}
+
+            <div class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar mt-4">
 
                 <!-- Vault 1: Academic Classes -->
                 <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
@@ -600,7 +602,7 @@ window.submitAddModal = async (role) => {
                         parentCredential = await createUserWithEmailAndPassword(secondaryAuth, parentEmail, password);
                     } catch (e) {
                         if (e.code === 'auth/email-already-in-use') {
-                            console.log("Parent account exists in Auth, linking to existing identity");
+                            console.log("Account exists, linking to existing identity");
                             parentCredential = await signInWithEmailAndPassword(secondaryAuth, parentEmail, password);
                         } else {
                             throw e;
@@ -614,10 +616,8 @@ window.submitAddModal = async (role) => {
                         email: parentEmail,
                         role: "parent",
                         school_id: currentSchoolId,
-                        linked_children: [],
-                        created_at: serverTimestamp(),
                         updated_at: serverTimestamp()
-                    });
+                    }, { merge: true });
 
                     parentCreated = true;
                 } else {
@@ -672,7 +672,7 @@ window.submitAddModal = async (role) => {
         const { db } = await getInitializedClients();
         const parentCreatedFlag = payload._parentCreated;
         delete payload._parentCreated; // Remove temporary flag before saving
-        await setDoc(doc(db, "users", newUid), payload);
+        await setDoc(doc(db, "users", newUid), payload, { merge: true });
 
         // Parent double-link
         if (role === 'student' && parentId) {
