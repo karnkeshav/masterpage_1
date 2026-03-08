@@ -57,10 +57,6 @@ export async function authenticateWithCredentials(username, password) {
     const userProfile = CREDENTIALS[username];
     let isHardcoded = !!userProfile;
 
-    if (isHardcoded) {
-        if (userProfile.pass !== password) throw new Error("Invalid password");
-    }
-
     // Use the provided string as email if it includes '@', otherwise append synthetic domain
     const email = username.includes('@') ? username : `${username}@ready4exam.internal`;
 
@@ -73,7 +69,7 @@ export async function authenticateWithCredentials(username, password) {
 
         let userCredential;
         try {
-            // 1. Attempt to sign in
+            // 1. Attempt to sign in with the provided password
             userCredential = await signInWithEmailAndPassword(auth, email, password);
         } catch (signInError) {
             // 2. If user not found AND is a hardcoded credential, auto-provision
@@ -83,7 +79,7 @@ export async function authenticateWithCredentials(username, password) {
                  // Update Display Name immediately
                  await updateProfile(userCredential.user, { displayName: username });
             } else {
-                throw signInError;
+                throw signInError; // This will bubble up the error (e.g., wrong password for an existing user)
             }
         }
 
