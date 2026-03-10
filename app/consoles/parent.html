@@ -72,7 +72,84 @@
 
             const overallAvg = await fetchChildData(profile.uid);
             renderGrowthChart(overallAvg);
+            listenToIntercom();
         };
+
+        async function listenToIntercom() {
+            const { auth, db } = await getInitializedClients();
+            const feed = document.getElementById('intercom-feed');
+            if (!feed || !auth.currentUser) return;
+
+            const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", auth.currentUser.uid)));
+            if (userDoc.empty) return;
+            const profile = userDoc.docs[0].data();
+
+            const schoolId = profile.school_id;
+            if(!schoolId) return;
+
+            // Try to find the linked student or fallback to prompt requirement.
+            let targetGrade = "9";
+            let targetSection = "A";
+
+            try {
+                if(profile.linked_children && profile.linked_children.length > 0) {
+                    const linkedUid = profile.linked_children[0];
+                    const linkedDoc = await getDocs(query(collection(db, "users"), where("uid", "==", linkedUid)));
+                    if(!linkedDoc.empty) {
+                        const linkedData = linkedDoc.docs[0].data();
+                        if(linkedData.classId) targetGrade = linkedData.classId;
+                        if(linkedData.section) targetSection = linkedData.section;
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not query child profile for intercom.", e);
+            }
+
+            const q = query(
+                collection(db, "messages"),
+                where("school_id", "==", schoolId)
+            );
+
+            onSnapshot(q, (snapshot) => {
+                feed.innerHTML = "";
+                const badge = document.getElementById("parent-inbox-badge");
+                if (badge) {
+                    badge.textContent = "0";
+                    badge.classList.add("hidden");
+                }
+                const docs = [];
+                snapshot.forEach(doc => docs.push(doc));
+                docs.sort((a,b) => {
+                    const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+                    const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+                    return tb - ta; // desc
+                });
+
+                docs.forEach(doc => {
+                    const data = doc.data();
+
+                    if(data.target_grade === targetGrade && data.target_section === targetSection) {
+                        const date = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : 'Just now';
+                        const toast = document.createElement('div');
+                        toast.className = 'bg-blue-50 border-l-4 border-blue-500 p-3 rounded shadow-sm text-xs relative';
+                        toast.innerHTML = `
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="font-bold text-blue-700 uppercase tracking-widest text-[9px]">${data.sender || 'Admin'}</span>
+                                <span class="text-[9px] text-slate-400 font-bold">${date}</span>
+                            </div>
+                            <p class="text-slate-700 font-medium">${data.text}</p>
+                        `;
+                        feed.appendChild(toast);
+
+                        const badge = document.getElementById("parent-inbox-badge");
+                        if (badge) {
+                            badge.classList.remove("hidden");
+                            badge.textContent = parseInt(badge.textContent || "0") + 1;
+                        }
+                    }
+                });
+            });
+        }
 
         async function fetchChildData(parentUid) {
             try {
@@ -468,6 +545,7 @@
                         <span
                             class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Un-dismissible</span>
                     </div>
+                    <div id="intercom-feed" class="p-2 flex flex-col gap-2"></div>
                     <div id="parent-inbox-list" class="space-y-3 max-h-60 overflow-y-auto">
                         <div class="text-xs text-slate-400 text-center py-4 animate-pulse">Loading alerts...</div>
                     </div>
