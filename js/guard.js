@@ -99,11 +99,11 @@ function triggerPasswordReset(profile) {
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">New Secure Password</label>
-                            <input type="password" id="reset-new-password" placeholder="Min. 8 characters" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue transition">
+                            <input type="password" id="newPasswordInput" placeholder="Min. 8 characters" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue transition">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Confirm Password</label>
-                            <input type="password" id="reset-confirm-password" placeholder="Type it again" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue transition">
+                            <input type="password" id="confirmPasswordInput" placeholder="Type it again" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue transition">
                         </div>
                     </div>
 
@@ -117,8 +117,14 @@ function triggerPasswordReset(profile) {
     `;
 
     window.submitPasswordReset = async () => {
-        const pass = document.getElementById('reset-new-password').value;
-        const confirmPass = document.getElementById('reset-confirm-password').value;
+        const newPassword = document.getElementById('newPasswordInput')?.value;
+        const confirmPassword = document.getElementById('confirmPasswordInput')?.value;
+
+        if (!newPassword) {
+            console.error('Password input not found');
+            return;
+        }
+
         const errorEl = document.getElementById('reset-modal-error');
         const saveBtn = document.getElementById('reset-save-btn');
 
@@ -129,8 +135,9 @@ function triggerPasswordReset(profile) {
             saveBtn.innerText = "Update & Access Portal";
         };
 
-        if (pass.length < 8) return showError("Password must be at least 8 characters.");
-        if (pass !== confirmPass) return showError("Passwords do not match.");
+        if (newPassword.length < 8) return showError("Password must be at least 8 characters.");
+        if (newPassword !== confirmPassword) return showError("Passwords do not match.");
+        if (!/[!@#$%^&*]/.test(newPassword)) return showError("Password must contain at least one special character (!@#$%^&*).");
 
         saveBtn.disabled = true;
         saveBtn.innerText = "Encrypting...";
@@ -140,7 +147,7 @@ function triggerPasswordReset(profile) {
             const { auth, db } = await getInitializedClients();
 
             // Action 1: Auth Vault Update
-            await updatePassword(auth.currentUser, pass);
+            await updatePassword(auth.currentUser, newPassword);
 
             // Action 2: Firestore Registry Update
             await updateDoc(doc(db, "users", profile.uid), {
