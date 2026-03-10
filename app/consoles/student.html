@@ -60,6 +60,7 @@
             setupRoomNavigation(grade);
             await loadStudentStats(profile.uid, grade);
             renderInbox();
+            listenToIntercom();
         };
 
         function setupRoomNavigation(grade) {
@@ -600,6 +601,70 @@
             window.location.href = `../study-content.html?grade=${grade}&topic=${encodeURIComponent(topicSlug)}`;
         };
 
+        async function listenToIntercom() {
+            const { auth, db } = await getInitializedClients();
+            const feed = document.getElementById('intercom-feed');
+            if (!feed || !auth.currentUser) return;
+
+            const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", auth.currentUser.uid)));
+            if (userDoc.empty) return;
+            const profile = userDoc.docs[0].data();
+
+            const schoolId = profile.school_id;
+            const targetGrade = profile.classId || "9"; // default
+            const targetSection = profile.section || "A"; // default
+
+            if(!schoolId) return;
+
+            const q = query(
+                collection(db, "messages"),
+                where("school_id", "==", schoolId)
+            );
+
+            onSnapshot(q, (snapshot) => {
+                feed.innerHTML = "";
+                const badge = document.getElementById("inbox-badge");
+                if (badge) {
+                    badge.textContent = "0";
+                    badge.classList.add("hidden");
+                }
+
+                // Sort manually client side
+                const docs = [];
+                snapshot.forEach(doc => docs.push(doc));
+                docs.sort((a,b) => {
+                    const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+                    const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+                    return tb - ta; // desc
+                });
+
+                docs.forEach(doc => {
+                    const data = doc.data();
+
+                    if(data.target_grade === targetGrade && data.target_section === targetSection) {
+                        const date = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : 'Just now';
+                        const toast = document.createElement('div');
+                        toast.className = 'bg-blue-50 border-l-4 border-blue-500 p-3 rounded shadow-sm text-xs relative';
+                        toast.innerHTML = `
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="font-bold text-blue-700 uppercase tracking-widest text-[9px]">${data.sender || 'Admin'}</span>
+                                <span class="text-[9px] text-slate-400 font-bold">${date}</span>
+                            </div>
+                            <p class="text-slate-700 font-medium">${data.text}</p>
+                        `;
+                        // Using appendChild because we iterate desc (newest first). Wait, if we iterate newest first and append, newest is at the top.
+                        feed.appendChild(toast);
+
+                        const badge = document.getElementById("inbox-badge");
+                        if (badge) {
+                            badge.classList.remove("hidden");
+                            badge.textContent = parseInt(badge.textContent || "0") + 1;
+                        }
+                    }
+                });
+            });
+        }
+
         async function renderInbox() {
             const { auth, db } = await getInitializedClients();
             const notificationContainer = document.getElementById('notification-list');
@@ -652,6 +717,7 @@
             </h3>
             <button onclick="toggleInbox()" class="text-white hover:text-red-400 text-xl leading-none">&times;</button>
         </div>
+        <div id="intercom-feed" class="p-2 flex flex-col gap-2"></div>
         <div id="notification-list" class="overflow-y-auto h-[calc(100%-60px)] p-2">
             <div class="p-4 text-center text-slate-400 text-xs mt-10">No messages right now.</div>
         </div>

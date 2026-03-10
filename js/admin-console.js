@@ -1171,7 +1171,7 @@ window.sendMessage = async () => {
             payload.target_email = teacherEmail;
         }
 
-        await addDoc(collection(db, "communications"), payload);
+        await addDoc(collection(db, "messages"), payload);
 
         document.getElementById('msg-content').value = "";
         if(type === 'targeted') document.getElementById('msg-teacher-email').value = "";
@@ -1191,9 +1191,8 @@ window.listenToMessages = async () => {
 
     const { db } = await getInitializedClients();
     const q = query(
-        collection(db, "communications"),
-        where("school_id", "==", currentSchoolId),
-        orderBy("timestamp", "desc")
+        collection(db, "messages"),
+        where("school_id", "==", currentSchoolId)
     );
 
     unsubMessages = onSnapshot(q, (snapshot) => {
@@ -1206,20 +1205,29 @@ window.listenToMessages = async () => {
         }
 
         let html = '';
-        snapshot.forEach(doc => {
+
+        // Convert to array and sort manually since we removed orderBy
+        const docs = [];
+        snapshot.forEach(doc => docs.push(doc));
+        docs.sort((a,b) => {
+            const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+            const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+            return tb - ta;
+        });
+
+        docs.forEach(doc => {
             const d = doc.data();
             const date = d.timestamp?.toDate ? d.timestamp.toDate().toLocaleString() : 'Just now';
-            const isBroadcast = d.target_role === 'parent';
 
             html += `
-                <div class="bg-white p-4 rounded-xl shadow-sm border ${isBroadcast ? 'border-blue-100' : 'border-purple-100'}">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
                     <div class="flex justify-between items-start mb-2">
-                        <span class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${isBroadcast ? 'bg-blue-50 text-cbse-blue' : 'bg-purple-50 text-purple-600'}">
-                            ${isBroadcast ? 'Broadcast to Parents' : 'Targeted: ' + (d.target_email || 'Teacher')}
+                        <span class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-blue-50 text-cbse-blue">
+                            Grade: ${d.target_grade} | Section: ${d.target_section}
                         </span>
                         <span class="text-[10px] text-slate-400 font-bold">${date}</span>
                     </div>
-                    <p class="text-sm text-slate-700 font-medium">${d.content}</p>
+                    <p class="text-sm text-slate-700 font-medium">${d.text}</p>
                 </div>
             `;
         });
