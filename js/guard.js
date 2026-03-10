@@ -146,23 +146,24 @@ function triggerPasswordReset(profile) {
         try {
             const { auth, db } = await getInitializedClients();
 
+            const user = auth.currentUser;
+            if (!user) throw new Error('No active session');
+
             // Action 1: Auth Vault Update
-            await updatePassword(auth.currentUser, newPassword);
+            await updatePassword(user, newPassword);
 
             // Action 2: Firestore Registry Update
-            await updateDoc(doc(db, "users", profile.uid), {
+            console.log('Targeting UID:', user.uid);
+            await updateDoc(doc(db, "users", user.uid), {
                 setupComplete: true
             });
 
-            // Action 3: Cleanup
+            // Action 3: Cleanup and Redirect
             sessionStorage.removeItem('isFirstLogin');
             modalContainer.innerHTML = ''; // Remove modal
 
-            // Update local profile object so it passes the check next time if needed
-            profile.setupComplete = true;
-
-            // Allow User into Dashboard
-            revealApp(profile);
+            // Force reload to clear guard state
+            window.location.reload();
 
         } catch (e) {
             console.error("Password reset failed:", e);
