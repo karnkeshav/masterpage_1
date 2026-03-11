@@ -19,7 +19,8 @@ export { ensureUserInFirestore };
 // Hardcoded Credential Map for "Sovereign Identity"
 const CREDENTIALS = {
     "keshav": { pass: "keshav", role: "owner", tenantType: "owner", tenantId: "global" },
-    "dps.ready4exam": { pass: "keshav", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "dps.ready4exam": { pass: "keaj", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "student": { pass: "student", role: "student", tenantType: "individual", tenantId: "individual_b2c" },
     // Persona Entry Points (Simulated)
     "admin": { pass: "admin12345", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "principal": { pass: "principal", role: "principal", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
@@ -37,12 +38,15 @@ export async function authenticateWithCredentials(username, password) {
     if (auth.currentUser) {
         console.log(LOG, "Terminating active session...");
         await firebaseSignOut(auth);
-        while(auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
+        while (auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
     }
 
     // Handle Hardcoded Admin vs Dynamically Created Users
     const userProfile = CREDENTIALS[username];
     let isHardcoded = !!userProfile;
+    if (userProfile && userProfile.role !== "student" && userProfile.pass !== password) {
+        throw new Error("Invalid password");
+    }
 
     // Check for the Universal Default password for newly provisioned accounts
     if (password === "Ready4Exam@2026") {
@@ -64,9 +68,9 @@ export async function authenticateWithCredentials(username, password) {
             // 1. Attempt to sign in with the provided password
             userCredential = await signInWithEmailAndPassword(auth, email, password);
         } catch (signInError) {
-            // 2. If user not found AND is a hardcoded credential, auto-provision
-            if (isHardcoded && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
-                 console.log(LOG, "Auto-provisioning hardcoded user:", email);
+            // 2. If user not found, auto-provision
+            if ((isHardcoded || username.includes('@')) && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
+                 console.log(LOG, "Auto-provisioning user:", email);
                  userCredential = await createUserWithEmailAndPassword(auth, email, password);
                  // Update Display Name immediately
                  await updateProfile(userCredential.user, { displayName: username });
@@ -77,6 +81,11 @@ export async function authenticateWithCredentials(username, password) {
 
         const user = userCredential.user;
         const stableUID = user.uid;
+
+        // NEW: Set first login flag if default password is used
+        if (password === "Ready4Exam@2026") {
+            sessionStorage.setItem('firstLogin', 'true');
+        }
 
         // 3. Store stable UID in session and window
         sessionStorage.setItem('uid', stableUID);
@@ -144,8 +153,8 @@ export async function routeUser(user) {
 
     if (data.tenantType === "school") {
         if (data.role === "admin" && data.school_id) {
-             window.location.href = `school-landing.html?schoolId=${data.school_id}`;
-             return;
+            window.location.href = `app/consoles/admin.html?schoolId=${data.school_id}`;
+            return;
         }
         window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
         return;
@@ -164,51 +173,51 @@ export async function routeUser(user) {
  * Changed from browserLocalPersistence to browserSessionPersistence to force re-login.
  */
 export async function initializeAuthListener(onReady) {
-  const { auth } = await getInitializedClients();
-  if (!auth) {
-      console.error(LOG, "Auth instance missing");
-      return;
-  }
-  
-  // Set persistence to session so auth is not remembered across browser restarts
-  try {
-      await setPersistence(auth, browserSessionPersistence);
-  } catch (e) {
-      console.warn("Auth persistence failed:", e);
-  }
-
-  onAuthStateChanged(auth, async (user) => {
-    let profile = null;
-    if (user) {
-      // If we have a special student login, ensure profile creation
-      // We can infer credentials if they are active, but ensureUserInFirestore handles the sync.
-      profile = await ensureUserInFirestore(user);
-
-      if (profile) {
-        // Inject Lens for Owner
-        if (profile?.role === "owner") {
-            import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
-        }
-        // IMPORTANT: routeUser(user) is NOT called here automatically.
-        // This ensures index.html stays on the login screen even if a session exists.
-      }
+    const { auth } = await getInitializedClients();
+    if (!auth) {
+        console.error(LOG, "Auth instance missing");
+        return;
     }
-    if (onReady) onReady(user, profile);
-  });
+
+    // Set persistence to session so auth is not remembered across browser restarts
+    try {
+        await setPersistence(auth, browserSessionPersistence);
+    } catch (e) {
+        console.warn("Auth persistence failed:", e);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+        let profile = null;
+        if (user) {
+            // If we have a special student login, ensure profile creation
+            // We can infer credentials if they are active, but ensureUserInFirestore handles the sync.
+            profile = await ensureUserInFirestore(user);
+
+            if (profile) {
+                // Inject Lens for Owner
+                if (profile?.role === "owner") {
+                    import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
+                }
+                // IMPORTANT: routeUser(user) is NOT called here automatically.
+                // This ensures index.html stays on the login screen even if a session exists.
+            }
+        }
+        if (onReady) onReady(user, profile);
+    });
 }
 
 export async function requireAuth(skipUI = false, redirect = false) {
-  const { auth } = await getInitializedClients();
+    const { auth } = await getInitializedClients();
 
-  if (auth.currentUser) {
-    if(redirect) routeUser(auth.currentUser);
-    return auth.currentUser;
-  }
+    if (auth.currentUser) {
+        if (redirect) routeUser(auth.currentUser);
+        return auth.currentUser;
+    }
 
-  if (skipUI) return null;
+    if (skipUI) return null;
 
-  window.location.href = "index.html";
-  throw new Error("Redirecting to Login");
+    window.location.href = "index.html";
+    throw new Error("Redirecting to Login");
 }
 
 export async function checkRole(requiredRole) {
@@ -223,6 +232,6 @@ export async function checkRole(requiredRole) {
 }
 
 export const signOut = async () => {
-  const { auth } = await getInitializedClients();
-  return firebaseSignOut(auth);
+    const { auth } = await getInitializedClients();
+    return firebaseSignOut(auth);
 };
