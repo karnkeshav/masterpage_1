@@ -47,9 +47,8 @@ export async function authenticateWithCredentials(username, password) {
     }
 
     // Check for the Universal Default password for newly provisioned accounts
-    if (password === "Ready4Exam@2026") {
-        sessionStorage.setItem('isFirstLogin', 'true');
-    }
+    // Note: firstLogin flag is set later (after successful auth) to avoid
+    // duplicate flags that cause double password-change prompts.
 
     // Use the provided string as email if it includes '@', otherwise append synthetic domain
     const email = username.includes('@') ? username : `${username}@ready4exam.internal`;
@@ -101,7 +100,8 @@ export async function authenticateWithCredentials(username, password) {
         const user = userCredential.user;
         const stableUID = user.uid;
 
-        // NEW: Set first login flag if default password is used
+        // Set first login flag if default password is used
+        // Single flag used by guard.js to trigger password change prompt
         if (password === "Ready4Exam@2026") {
             sessionStorage.setItem('firstLogin', 'true');
         }
