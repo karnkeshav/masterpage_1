@@ -171,7 +171,7 @@ export async function routeUser(user) {
     }
 
     if (data.tenantType === "school") {
-        if (data.role === "school_master" && data.school_id) {
+        if ((data.role === "school_master" || data.role === "gateway") && data.school_id) {
             window.location.href = `school-landing.html?schoolId=${data.school_id}`;
             return;
         }
