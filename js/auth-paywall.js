@@ -100,9 +100,11 @@ export async function authenticateWithCredentials(username, password) {
         const user = userCredential.user;
         const stableUID = user.uid;
 
-        // Set first login flag if default password is used
-        // Single flag used by guard.js to trigger password change prompt
-        if (password === "Ready4Exam@2026") {
+        // Set first login flag if default password is used by a dynamic (non-hardcoded) user.
+        // Hardcoded CREDENTIALS users must NOT get the password change prompt because
+        // changing their Firebase password would desync from the hardcoded password,
+        // making future logins impossible.
+        if (!isHardcoded && password === "Ready4Exam@2026") {
             sessionStorage.setItem('firstLogin', 'true');
         }
 
