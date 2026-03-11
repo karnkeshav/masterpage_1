@@ -16,15 +16,16 @@ const LOG = "[AUTH]";
 // Re-export ensureUserInFirestore for backward compatibility with index.html
 export { ensureUserInFirestore };
 
-// Hardcoded Credential Map for "Sovereign Identity"
 const CREDENTIALS = {
     "keshav": { pass: "keshav", role: "owner", tenantType: "owner", tenantId: "global" },
-    "dps.ready4exam": { pass: "keaj", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student": { pass: "student", role: "student", tenantType: "individual", tenantId: "individual_b2c" },
+    "dps.ready4exam": { pass: "keshav", role: "gateway", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "student": { pass: "Ready4Exam@2026", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     // Persona Entry Points (Simulated)
-    "admin": { pass: "admin12345", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "admin": { pass: "Ready4Exam@2026", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "principal": { pass: "principal", role: "principal", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    };
+    "teacher": { pass: "teacher", role: "teacher", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "parent": { pass: "parent", role: "parent", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
+};
 
 export async function authenticateWithCredentials(username, password) {
     const { auth, db } = await getInitializedClients();
@@ -152,6 +153,10 @@ export async function routeUser(user) {
     }
 
     if (data.tenantType === "school") {
+        if (data.role === "gateway") {
+            window.location.href = `school-landing.html?schoolId=${data.school_id}`;
+            return;
+        }
         if (data.role === "admin" && data.school_id) {
             window.location.href = `app/consoles/admin.html?schoolId=${data.school_id}`;
             return;
