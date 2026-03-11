@@ -59,7 +59,9 @@ export async function guardConsole(requiredRole) {
 
         // First-Login Reset Handshake
         const isFirstLogin = sessionStorage.getItem('isFirstLogin') === 'true';
-        if (profile.setupComplete === false || isFirstLogin) {
+        const isMaster = user.email === "dps.ready4exam@ready4exam.internal" || profile.email === "dps.ready4exam@ready4exam.internal";
+
+        if (!isMaster && (profile.setupComplete === false || isFirstLogin)) {
             console.warn("Guard: First-Login Reset Handshake Triggered.");
             triggerPasswordReset(profile);
             return;

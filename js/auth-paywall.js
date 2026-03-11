@@ -137,16 +137,22 @@ export async function routeUser(user) {
     const data = snap.data();
 
     // Deterministic Routing Table
-    if (data.tenantType === "owner") {
+    if (data.role === "owner" || data.tenantType === "owner") {
         window.location.href = "owner-console.html";
         return;
     }
 
+    if (data.role === "school_master" && data.school_id) {
+        window.location.href = `school-landing.html?schoolId=${data.school_id}`;
+        return;
+    }
+
+    if (data.role === "admin" && data.school_id) {
+        window.location.href = `app/consoles/admin.html?schoolId=${data.school_id}`;
+        return;
+    }
+
     if (data.tenantType === "school") {
-        if (data.role === "admin" && data.school_id) {
-             window.location.href = `school-landing.html?schoolId=${data.school_id}`;
-             return;
-        }
         window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
         return;
     }
