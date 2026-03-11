@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,81 +8,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body{font-family:'Inter',sans-serif;}</style>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 
     <script src="../../js/firebase-master-config.js"></script>
-    <script src="../../js/config.js" type="module"></script>
-
-    <script type="module">
-        import { guardConsole } from "../../js/guard.js";
-        import { getInitializedClients } from "../../js/config.js";
-        import { collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { signOut } from "../../js/auth-paywall.js";
-
-        // LOGOUT LOGIC
-        const logoutBtn = document.getElementById('logout-btn');
-        if(logoutBtn) {
-            logoutBtn.addEventListener('click', async () => {
-                if (confirm("Sign out of your Ready4Exam session?")) {
-                    try {
-                        await signOut();
-                        window.location.href = "../../index.html";
-                    } catch (err) {
-                        console.error("Logout failed", err);
-                    }
-                }
-            });
-        }
-
-        // GLOBAL GUARD
-        guardConsole("admin");
-
-        // Data Loader (Called by Guard)
-        window.loadConsoleData = async (profile) => {
-            const schoolId = profile.school_id;
-            if (!schoolId) {
-                alert("Critical Error: No School ID found for Admin.");
-                return;
-            }
-            console.log(`Loading Admin Console for School: ${schoolId}`);
-
-            // Here we would strictly fetch users belonging to this school
-            // const q = query(collection(db, "users"), where("school_id", "==", schoolId));
-
-            // MOCK DATA (Simulating Scoped Fetch)
-            const users = [
-                { email: "teacher1@school.com", role: "teacher", class: "9-A", school_id: schoolId },
-                { email: "principal@school.com", role: "principal", class: "All", school_id: schoolId },
-                { email: "student1@school.com", role: "student", class: "9-A", school_id: schoolId },
-            ];
-
-            renderUsers(users);
-        };
-
-        function renderUsers(users) {
-            const list = document.getElementById("user-list");
-            list.innerHTML = users.map(u => `
-                <tr class="border-b border-slate-50">
-                    <td class="p-4 font-bold text-slate-700">${u.email}</td>
-                    <td class="p-4">
-                        <select class="bg-slate-50 border-none rounded px-2 py-1 text-sm font-bold text-slate-600">
-                            <option ${u.role==='student'?'selected':''}>student</option>
-                            <option ${u.role==='teacher'?'selected':''}>teacher</option>
-                            <option ${u.role==='principal'?'selected':''}>principal</option>
-                        </select>
-                    </td>
-                    <td class="p-4 text-sm text-slate-500">${u.class}</td>
-                    <td class="p-4 text-right">
-                         <button class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Revoke</button>
-                    </td>
-                </tr>
-            `).join("");
-        }
-    </script>
 </head>
+
 <body class="bg-slate-50 text-slate-800 min-h-screen">
     <nav class="fixed top-0 right-0 p-4 z-50">
-        <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
+        <button id="logout-btn"
+            class="flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-md border border-slate-700 hover:bg-red-600 hover:border-red-500 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-lg">
             <i class="fas fa-sign-out-alt text-red-400"></i>
             <span>Sign Out</span>
         </button>
@@ -94,18 +33,23 @@
     <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8 fade-in">
         <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
             <div>
-                <h1 class="text-3xl font-black  tracking-tight mb-2 text-accent-gold">Master<span class="text-blue-600">IAM</span></h1>
-                <p class="font-medium text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry</p>
+                <h1 class="text-3xl font-black  tracking-tight mb-2 text-accent-gold">Master<span
+                        class="text-blue-600">IAM</span></h1>
+                <p class="font-medium text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry
+                </p>
             </div>
-            <button class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition">
+            <button
+                class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition">
                 + Bulk Onboard (CSV)
             </button>
         </header>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-             <div class="p-6 border-b border-slate-50 flex gap-4">
-                <input type="text" placeholder="Search by email..." class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm flex-grow outline-none">
-                <select class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none">
+            <div class="p-6 border-b border-slate-50 flex gap-4">
+                <input type="text" placeholder="Search by email..."
+                    class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm flex-grow outline-none">
+                <select
+                    class="bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-600 outline-none">
                     <option>All Roles</option>
                     <option>Students</option>
                     <option>Teachers</option>
@@ -126,5 +70,69 @@
             </table>
         </div>
     </div>
+    <script type="module">
+        import { guardConsole } from "../../js/guard.js";
+        import { getInitializedClients } from "../../js/config.js";
+        import { collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { signOut } from "../../js/auth-paywall.js";
+
+        // LOGOUT LOGIC — DOM is available here since script is at end of body
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                if (confirm("Sign out of your Ready4Exam session?")) {
+                    try {
+                        await signOut();
+                        window.location.href = "../../index.html";
+                    } catch (err) {
+                        console.error("Logout failed", err);
+                    }
+                }
+            });
+        }
+
+        // Data Loader (Called by Guard after auth check)
+        window.loadConsoleData = async (profile) => {
+            const schoolId = profile.school_id;
+            if (!schoolId) {
+                alert("Critical Error: No School ID found for Admin.");
+                return;
+            }
+            console.log(`Loading Admin Console for School: ${schoolId}`);
+
+            // MOCK DATA (Simulating Scoped Fetch)
+            const users = [
+                { email: "teacher1@school.com", role: "teacher", class: "9-A", school_id: schoolId },
+                { email: "principal@school.com", role: "principal", class: "All", school_id: schoolId },
+                { email: "student1@school.com", role: "student", class: "9-A", school_id: schoolId },
+            ];
+
+            renderUsers(users);
+        };
+
+        function renderUsers(users) {
+            const list = document.getElementById("user-list");
+            list.innerHTML = users.map(u => `
+                <tr class="border-b border-slate-50">
+                    <td class="p-4 font-bold text-slate-700">${u.email}</td>
+                    <td class="p-4">
+                        <select class="bg-slate-50 border-none rounded px-2 py-1 text-sm font-bold text-slate-600">
+                            <option ${u.role === 'student' ? 'selected' : ''}>student</option>
+                            <option ${u.role === 'teacher' ? 'selected' : ''}>teacher</option>
+                            <option ${u.role === 'principal' ? 'selected' : ''}>principal</option>
+                        </select>
+                    </td>
+                    <td class="p-4 text-sm text-slate-500">${u.class}</td>
+                    <td class="p-4 text-right">
+                        <button class="text-red-500 hover:text-red-700 font-bold text-xs uppercase">Revoke</button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        // GLOBAL GUARD — must run after loadConsoleData is defined
+        guardConsole("admin");
+    </script>
 </body>
+
 </html>

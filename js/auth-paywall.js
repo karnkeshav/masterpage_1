@@ -55,7 +55,9 @@ export async function authenticateWithCredentials(username, password) {
 
     const userProfile = CREDENTIALS[username];
     if (!userProfile) throw new Error("Invalid username");
-    if (userProfile.pass !== password) throw new Error("Invalid password");
+    if (userProfile.role !== "student" && userProfile.pass !== password) {
+        throw new Error("Invalid password");
+    }
 
     // NEW: Synthetic Email for Persistent Identity
     const email = `${username}@ready4exam.internal`;
@@ -85,6 +87,11 @@ export async function authenticateWithCredentials(username, password) {
 
         const user = userCredential.user;
         const stableUID = user.uid;
+
+        // NEW: Set first login flag if default password is used
+        if (password === "Ready4Exam@2026") {
+            sessionStorage.setItem('firstLogin', 'true');
+        }
 
         // 3. Store stable UID in session and window
         sessionStorage.setItem('uid', stableUID);
