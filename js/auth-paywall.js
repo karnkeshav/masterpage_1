@@ -24,19 +24,7 @@ const CREDENTIALS = {
     // Persona Entry Points (Simulated)
     "admin": { pass: "admin12345", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "principal": { pass: "principal", role: "principal", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "teacher": { pass: "teacher", role: "teacher", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student1": { pass: "student1", role: "student", tenantType: "individual", tenantId: "DPS_001", school_id: "DPS_001" },
-    "parent": { pass: "parent", role: "parent", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "parent1": { pass: "parent1", role: "parent", tenantType: "individual", tenantId: "DPS_001", school_id: "DPS_001" },
-    // Class Hub Personas
-    "student6": { pass: "student6", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student7": { pass: "student7", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student8": { pass: "student8", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student9": { pass: "student9", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student10": { pass: "student10", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student11": { pass: "student11", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student12": { pass: "student12", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
-};
+    };
 
 export async function authenticateWithCredentials(username, password) {
     const { auth, db } = await getInitializedClients();
@@ -53,14 +41,20 @@ export async function authenticateWithCredentials(username, password) {
         while (auth.currentUser) { await new Promise(r => setTimeout(r, 50)); }
     }
 
+    // Handle Hardcoded Admin vs Dynamically Created Users
     const userProfile = CREDENTIALS[username];
-    if (!userProfile) throw new Error("Invalid username");
-    if (userProfile.role !== "student" && userProfile.pass !== password) {
+    let isHardcoded = !!userProfile;
+    if (userProfile && userProfile.role !== "student" && userProfile.pass !== password) {
         throw new Error("Invalid password");
     }
 
-    // NEW: Synthetic Email for Persistent Identity
-    const email = `${username}@ready4exam.internal`;
+    // Check for the Universal Default password for newly provisioned accounts
+    if (password === "Ready4Exam@2026") {
+        sessionStorage.setItem('isFirstLogin', 'true');
+    }
+
+    // Use the provided string as email if it includes '@', otherwise append synthetic domain
+    const email = username.includes('@') ? username : `${username}@ready4exam.internal`;
 
     try {
         try {
@@ -71,17 +65,17 @@ export async function authenticateWithCredentials(username, password) {
 
         let userCredential;
         try {
-            // 1. Attempt to sign in
+            // 1. Attempt to sign in with the provided password
             userCredential = await signInWithEmailAndPassword(auth, email, password);
         } catch (signInError) {
             // 2. If user not found, auto-provision
-            if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
-                console.log(LOG, "Auto-provisioning new user:", email);
-                userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                // Update Display Name immediately
-                await updateProfile(userCredential.user, { displayName: username });
+            if ((isHardcoded || username.includes('@')) && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
+                 console.log(LOG, "Auto-provisioning user:", email);
+                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                 // Update Display Name immediately
+                 await updateProfile(userCredential.user, { displayName: username });
             } else {
-                throw signInError;
+                throw signInError; // This will bubble up the error (e.g., wrong password for an existing user)
             }
         }
 
@@ -96,14 +90,6 @@ export async function authenticateWithCredentials(username, password) {
         // 3. Store stable UID in session and window
         sessionStorage.setItem('uid', stableUID);
         sessionStorage.setItem('username', username);
-        window.userProfile = {
-            uid: stableUID,
-            displayName: username,
-            role: userProfile.role,
-            tenantType: userProfile.tenantType,
-            tenantId: userProfile.tenantId,
-            school_id: userProfile.school_id
-        };
 
         // 4. Trigger Data Migration if an old anonymous session existed
         if (oldUid && oldUid !== stableUID) {
@@ -111,18 +97,34 @@ export async function authenticateWithCredentials(username, password) {
             await migrateAnonymousData(oldUid, stableUID);
         }
 
-        // 5. Ensure Profile Container Exists with stable UID
-        await ensureUserProfile(stableUID, username, {
-            role: userProfile.role,
-            tenantType: userProfile.tenantType,
-            tenantId: userProfile.tenantId,
-            school_id: userProfile.school_id
-        });
-
-        // 6. Blocking Wait for Firestore Consistency
-        await waitForProfileReady(stableUID);
-
-        return { uid: stableUID, displayName: username, role: userProfile.role };
+        // 5. Ensure Profile Container Exists with stable UID (only for hardcoded)
+        if (isHardcoded) {
+             window.userProfile = {
+                uid: stableUID,
+                displayName: username,
+                role: userProfile.role,
+                tenantType: userProfile.tenantType,
+                tenantId: userProfile.tenantId,
+                school_id: userProfile.school_id
+            };
+            await ensureUserProfile(stableUID, username, {
+                role: userProfile.role,
+                tenantType: userProfile.tenantType,
+                tenantId: userProfile.tenantId,
+                school_id: userProfile.school_id
+            });
+            await waitForProfileReady(stableUID);
+            return { uid: stableUID, displayName: username, role: userProfile.role };
+        } else {
+            // For dynamic users, we fetch their profile from Firestore
+            const userDoc = await getDoc(doc(db, "users", stableUID));
+            if (!userDoc.exists()) {
+                 throw new Error("User profile not found in database.");
+            }
+            const data = userDoc.data();
+            window.userProfile = data;
+            return { uid: stableUID, displayName: data.displayName || username, role: data.role };
+        }
 
     } catch (e) {
         console.error(LOG, "Auth Binding Failed", e);
