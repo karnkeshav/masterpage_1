@@ -60,7 +60,11 @@ export async function guardConsole(requiredRole) {
         const firstLoginFlag = sessionStorage.getItem('firstLogin') === 'true';
         const isMaster = user.email === "dps.ready4exam@ready4exam.internal" || profile.email === "dps.ready4exam@ready4exam.internal";
 
-        if (!isMaster && (profile.setupComplete === false || firstLoginFlag) && profile.setupComplete !== true) {
+        // Only trigger password change if the firstLogin session flag is set (i.e., user
+        // just logged in with the default password Ready4Exam@2026). Do NOT trigger based
+        // on setupComplete === false alone, as that causes repeated prompts if the Firestore
+        // write races or the page reloads before setupComplete is updated.
+        if (!isMaster && firstLoginFlag && profile.setupComplete !== true) {
             if (profile.role === 'student') {
                 showFirstLoginOverlay(user, profile);
             } else {
