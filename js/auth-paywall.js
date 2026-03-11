@@ -17,14 +17,9 @@ const LOG = "[AUTH]";
 export { ensureUserInFirestore };
 
 const CREDENTIALS = {
-    "keshav": { pass: "keshav", role: "owner", tenantType: "owner", tenantId: "global" },
-    "dps.ready4exam": { pass: "Desktop@1", role: "gateway", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "student": { pass: "Ready4Exam@2026", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    // Persona Entry Points (Simulated)
-    "admin": { pass: "Ready4Exam@2026", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "principal": { pass: "principal", role: "principal", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "teacher": { pass: "teacher", role: "teacher", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "parent": { pass: "parent", role: "parent", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
+    "keshav":         { pass: "keshav",     role: "owner",         tenantType: "owner",  tenantId: "global" },
+    "dps.ready4exam": { pass: "keshav",     role: "school_master", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "admin":          { pass: "admin12345",  role: "admin",        tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
 };
 
 export async function authenticateWithCredentials(username, password) {
@@ -175,23 +170,9 @@ export async function routeUser(user) {
         return;
     }
 
-    if (data.role === "school_master" && data.school_id) {
-        window.location.href = `school-landing.html?schoolId=${data.school_id}`;
-        return;
-    }
-
-    if (data.role === "admin" && data.school_id) {
-        window.location.href = `app/consoles/admin.html?schoolId=${data.school_id}`;
-        return;
-    }
-
     if (data.tenantType === "school") {
-        if (data.role === "gateway") {
+        if (data.role === "school_master" && data.school_id) {
             window.location.href = `school-landing.html?schoolId=${data.school_id}`;
-            return;
-        }
-        if (data.role === "admin" && data.school_id) {
-            window.location.href = `app/consoles/admin.html?schoolId=${data.school_id}`;
             return;
         }
         window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
