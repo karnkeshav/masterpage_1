@@ -45,7 +45,9 @@ export async function authenticateWithCredentials(username, password) {
     // Handle Hardcoded Admin vs Dynamically Created Users
     const userProfile = CREDENTIALS[username];
     let isHardcoded = !!userProfile;
-    if (userProfile && userProfile.role !== "student" && userProfile.pass !== password) {
+    
+    // If it's a hardcoded user, verify the password immediately
+    if (isHardcoded && userProfile.pass !== password) {
         throw new Error("Invalid password");
     }
 
