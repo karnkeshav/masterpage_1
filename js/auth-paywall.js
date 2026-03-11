@@ -71,14 +71,35 @@ export async function authenticateWithCredentials(username, password) {
             // 1. Attempt to sign in with the provided password
             userCredential = await signInWithEmailAndPassword(auth, email, password);
         } catch (signInError) {
-            // 2. If user not found, auto-provision
-            if ((isHardcoded || username.includes('@')) && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
-                 console.log(LOG, "Auto-provisioning user:", email);
-                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                 // Update Display Name immediately
-                 await updateProfile(userCredential.user, { displayName: username });
+            const notFound = signInError.code === 'auth/user-not-found';
+            const wrongCred = signInError.code === 'auth/invalid-credential';
+
+            if (isHardcoded && (notFound || wrongCred)) {
+                // Hardcoded user: Firebase entry might be stale (old password).
+                // Force re-provision: if email exists, we cannot delete via client SDK,
+                // so try create and if already-in-use, surface a clear error.
+                try {
+                    console.log(LOG, "Auto-provisioning hardcoded user:", email);
+                    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(userCredential.user, { displayName: username });
+                } catch (createError) {
+                    if (createError.code === 'auth/email-already-in-use') {
+                        // Firebase has the user but with a different password (stale credential).
+                        // Instruct to clear via Firebase console.
+                        throw new Error(
+                            `Account exists with a different password. ` +
+                            `Please delete user "${email}" from Firebase Authentication console and try again.`
+                        );
+                    }
+                    throw createError;
+                }
+            } else if (!isHardcoded && (notFound || wrongCred)) {
+                // Dynamic user (from Firebase only) — auto-provision on first login
+                console.log(LOG, "Auto-provisioning dynamic user:", email);
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: username });
             } else {
-                throw signInError; // This will bubble up the error (e.g., wrong password for an existing user)
+                throw signInError;
             }
         }
 
