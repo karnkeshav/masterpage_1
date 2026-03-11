@@ -82,7 +82,9 @@ export async function ensureUserProfile(uid, username, additionalData = {}) {
             // Fallback inference from username if no explicit data
             if (!profile.role) {
                 const lowerUser = username.toLowerCase();
-                if (lowerUser.includes("dps.ready4exam") || lowerUser.includes("admin")) {
+                if (lowerUser.includes("dps.ready4exam")) {
+                    profile = { ...profile, role: 'school_master', school_id: 'DPS_001', tenantType: 'school' };
+                } else if (lowerUser.includes("admin")) {
                     profile = { ...profile, role: 'admin', school_id: 'DPS_001', tenantType: 'school' };
                 } else if (lowerUser.includes("teacher")) {
                     profile = { ...profile, role: 'teacher', school_id: 'DPS_001', tenantType: 'school' };
@@ -99,9 +101,17 @@ export async function ensureUserProfile(uid, username, additionalData = {}) {
 
             await setDoc(ref, profile);
         } else {
-            // EXISTING PROFILE: Update lastLogin only
+            // EXISTING PROFILE: Update lastLogin AND sync critical fields
             console.log("Updating existing profile for:", uid);
-            await updateDoc(ref, { lastLogin: serverTimestamp() });
+            const existingData = snap.data();
+            const updates = { lastLogin: serverTimestamp() };
+
+            if (additionalData.role && additionalData.role !== existingData.role) updates.role = additionalData.role;
+            if (additionalData.tenantType && additionalData.tenantType !== existingData.tenantType) updates.tenantType = additionalData.tenantType;
+            if (additionalData.tenantId && additionalData.tenantId !== existingData.tenantId) updates.tenantId = additionalData.tenantId;
+            if (additionalData.school_id && additionalData.school_id !== existingData.school_id) updates.school_id = additionalData.school_id;
+
+            await updateDoc(ref, updates);
         }
     } catch (e) {
         console.error("Profile Ensure Failed", e);
