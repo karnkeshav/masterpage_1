@@ -58,18 +58,15 @@ export async function guardConsole(requiredRole) {
         }
 
         const firstLoginFlag = sessionStorage.getItem('firstLogin') === 'true';
-        if (profile.role === 'student' && (profile.setupComplete === false || (firstLoginFlag && profile.setupComplete !== true))) {
-            showFirstLoginOverlay(user, profile);
-            return;
-        }
-
-        // First-Login Reset Handshake
-        const isFirstLogin = sessionStorage.getItem('isFirstLogin') === 'true';
         const isMaster = user.email === "dps.ready4exam@ready4exam.internal" || profile.email === "dps.ready4exam@ready4exam.internal";
 
-        if (!isMaster && (profile.setupComplete === false || isFirstLogin)) {
-            console.warn("Guard: First-Login Reset Handshake Triggered.");
-            triggerPasswordReset(profile);
+        if (!isMaster && (profile.setupComplete === false || firstLoginFlag) && profile.setupComplete !== true) {
+            if (profile.role === 'student') {
+                showFirstLoginOverlay(user, profile);
+            } else {
+                console.warn("Guard: First-Login Reset Handshake Triggered.");
+                triggerPasswordReset(profile);
+            }
             return;
         }
 
@@ -167,7 +164,8 @@ function triggerPasswordReset(profile) {
             });
 
             // Action 3: Cleanup and Redirect
-            sessionStorage.removeItem('isFirstLogin');
+            sessionStorage.removeItem('firstLogin');
+            sessionStorage.removeItem('isFirstLogin'); // legacy cleanup
             modalContainer.innerHTML = ''; // Remove modal
 
             // Force reload to clear guard state
@@ -314,6 +312,7 @@ function showFirstLoginOverlay(user, profile) {
 
             // 3. Clear session flags & Reload
             sessionStorage.removeItem('firstLogin');
+            sessionStorage.removeItem('isFirstLogin'); // legacy cleanup
             window.location.reload();
 
         } catch (err) {
