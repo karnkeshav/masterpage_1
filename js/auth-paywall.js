@@ -18,7 +18,7 @@ export { ensureUserInFirestore };
 
 const CREDENTIALS = {
     "keshav": { pass: "keshav", role: "owner", tenantType: "owner", tenantId: "global" },
-    "dps.ready4exam": { pass: "keshav", role: "gateway", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "dps.ready4exam": { pass: "Desktop@1", role: "gateway", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     "student": { pass: "Ready4Exam@2026", role: "student", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
     // Persona Entry Points (Simulated)
     "admin": { pass: "Ready4Exam@2026", role: "admin", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
