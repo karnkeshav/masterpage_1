@@ -684,7 +684,7 @@ loginForm.addEventListener("submit", async (e) => {
 
           // Target URL format:
           // quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}&subject=${encodeURIComponent(subject)}
-          const targetUrl = `./app/quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(topic)}&grade=${grade}&difficulty=${window.currentDifficulty}&subject=${encodeURIComponent(subj)}`;
+          const targetUrl = `./app/quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(topic)}&grade=${grade}&difficulty=${window.currentDifficulty}&subject=${encodeURIComponent(subj)}&mode=guest`;
           window.location.href = targetUrl;
       } catch (e) {
           console.error("Error starting quiz", e);

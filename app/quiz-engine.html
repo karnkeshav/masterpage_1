@@ -142,29 +142,29 @@ function changeDifficulty(level){
 <script type="module">
     import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
 
-    // Sovereign Guard for Quiz Engine
+    const urlParams = new URLSearchParams(window.location.search);
+    const isGuestMode = urlParams.get("mode") === "guest";
+
     initializeAuthListener(async (user) => {
-        if (!user) {
+        if (!user && !isGuestMode) {
             window.location.href = "../index.html";
             return;
         }
+        if (!user && isGuestMode) {
+            // Guest mode: show guest label, don't redirect
+            const welcomeEl = document.getElementById("user-welcome");
+            if (welcomeEl) {
+                welcomeEl.textContent = "Guest Preview";
+                welcomeEl.classList.remove("hidden");
+            }
+            return;
+        }
+        // Authenticated user flow (unchanged)
         const profile = await ensureUserInFirestore(user);
         if (!profile) {
             window.location.href = "../index.html";
             return;
         }
-
-        // Identity-Based Context Injection
-        // We override the classId from URL if available in profile (strict mode)
-        // But for flexibility in prototype, we might trust URL but validate against profile if we wanted strict enforcement.
-        // Prompt: "load curriculum data based on the board and grade found in the user’s identity record"
-
-        const urlParams = new URLSearchParams(window.location.search);
-        // If profile has a specific grade, we could enforce it.
-        // let grade = urlParams.get("class") || "9";
-        // if (profile.paidClasses) { ... }
-
-        // Ensure user info is available for saveResult (which uses getAuthUser/profile via session)
         document.getElementById("user-welcome").textContent = `Scholar: ${profile.displayName}`;
     });
 </script>
