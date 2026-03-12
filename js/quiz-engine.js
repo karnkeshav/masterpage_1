@@ -150,19 +150,23 @@ async function loadQuiz() {
         UI.showStatus("Preparing worksheet...", "text-blue-600 font-bold");
 
         // --- FORTRESS PHILOSOPHY: GATEKEEPER ---
-        // Block 'Advanced' if 'Medium' mastery < 85%
-        if (quizState.difficulty === "Advanced" && quizState.quizMode === "standard") {
+        // Block 'Advanced' if 'Medium' mastery < 85% (Skip if Guest Mode)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isGuestMode = urlParams.get("mode") === "guest";
+        if (quizState.difficulty === "Advanced" && quizState.quizMode === "standard" && !isGuestMode) {
             const { auth } = getInitializedClients();
-            const mastery = await getChapterMastery(auth.currentUser.uid, quizState.topicSlug);
-            if (mastery < 85) {
-                // VISUAL INTELLIGENCE: Peel Back Animation
-                UI.triggerPeelBack("quiz-content");
+            if (auth.currentUser) {
+                const mastery = await getChapterMastery(auth.currentUser.uid, quizState.topicSlug);
+                if (mastery < 85) {
+                    // VISUAL INTELLIGENCE: Peel Back Animation
+                    UI.triggerPeelBack("quiz-content");
 
-                alert(`🔒 LOCKED: You scored ${mastery}% on Medium.\nYou need 85% mastery to unlock Advanced questions.`);
-                // Redirect back
-                const subject = quizState.subject || "Physics";
-                window.location.href = `curriculum.html?grade=${quizState.classId}&subject=${encodeURIComponent(subject)}`;
-                return;
+                    alert(`🔒 LOCKED: You scored ${mastery}% on Medium.\nYou need 85% mastery to unlock Advanced questions.`);
+                    // Redirect back
+                    const subject = quizState.subject || "Physics";
+                    window.location.href = `curriculum.html?grade=${quizState.classId}&subject=${encodeURIComponent(subject)}`;
+                    return;
+                }
             }
         }
 
@@ -293,16 +297,22 @@ async function handleSubmit() {
         }, 1000);
     }
 
-    saveResult({
-        ...quizState,
-        score: stats.correct,
-        total: stats.total,
-        topic: quizState.topicSlug,
-        latency_vector: quizState.latency,
-        quiz_mode: quizState.quizMode,
-        session_id: sessionId,  // links to the mistake_notebook document
-        typeStats               // real per-type counts for proficiency profile
-    });
+    const urlParams = new URLSearchParams(window.location.search);
+    const isGuestMode = urlParams.get("mode") === "guest";
+    if (!isGuestMode) {
+        saveResult({
+            ...quizState,
+            score: stats.correct,
+            total: stats.total,
+            topic: quizState.topicSlug,
+            latency_vector: quizState.latency,
+            quiz_mode: quizState.quizMode,
+            session_id: sessionId,  // links to the mistake_notebook document
+            typeStats               // real per-type counts for proficiency profile
+        });
+    } else {
+        console.log("Guest mode - skipping saveResult to Firestore");
+    }
 }
 
 /* -----------------------------------

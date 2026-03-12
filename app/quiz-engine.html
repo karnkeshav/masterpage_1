@@ -144,14 +144,23 @@ function changeDifficulty(level){
 
     // Sovereign Guard for Quiz Engine
     initializeAuthListener(async (user) => {
-        if (!user) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isGuestMode = urlParams.get("mode") === "guest";
+
+        if (!user && !isGuestMode) {
             window.location.href = "../index.html";
             return;
         }
-        const profile = await ensureUserInFirestore(user);
-        if (!profile) {
-            window.location.href = "../index.html";
-            return;
+
+        let profile = null;
+        if (user) {
+            profile = await ensureUserInFirestore(user);
+            if (!profile && !isGuestMode) {
+                window.location.href = "../index.html";
+                return;
+            }
+        } else {
+            document.getElementById("user-welcome") && (document.getElementById("user-welcome").textContent = "Guest");
         }
 
         // Identity-Based Context Injection
