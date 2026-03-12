@@ -1,12 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
 
 <title>Ready4Exam — Board-Aligned Academic Portal</title>
 
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -14,7 +12,7 @@
   gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
 </script>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="js/firebase-master-config.js"></script>
@@ -63,7 +61,13 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
-</style>
+
+        .animate-marquee { animation: marquee 60s linear infinite; }
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen">
 
@@ -81,10 +85,10 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10">
     <div class="flex-1 text-center lg:text-left">
       <h1 class="text-4xl lg:text-6xl font-black mb-4 leading-tight fade-in">
-        Master Your Exams <br/><span class="text-gold">With Precision</span>
+        Master Your Exams <br><span class="text-gold">With Precision</span>
       </h1>
       <p class="text-white/80 text-lg mb-8 max-w-xl mx-auto lg:mx-0 fade-in" style="animation-delay: 0.2s;">
-        Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools & students.
+        Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.
       </p>
     </div>
 
@@ -97,11 +101,11 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
       <form id="sovereign-login-form" class="space-y-4">
           <div>
               <label class="block text-xs font-bold text-white/70 uppercase mb-1">Username</label>
-              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required>
+              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required="">
           </div>
           <div>
               <label class="block text-xs font-bold text-white/70 uppercase mb-1">Password</label>
-              <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" required>
+              <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" required="">
           </div>
           <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
           <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2">
@@ -109,7 +113,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           </button>
       </form>
       <div class="mt-6 text-center border-t border-white/10 pt-4">
-          <p class="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Owner • School Admin • Students & Parents</p>
+          <p class="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Owner • School Admin • Students &amp; Parents</p>
       </div>
     </div>
   </div>
@@ -132,14 +136,14 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           <div class="flex gap-2">
             <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="CBSE" onclick="selectBoard('CBSE', this)">CBSE</button>
             <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="SCERT" onclick="selectBoard('SCERT', this)">SCERT (TS)</button>
-            <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="OTHER" onclick="selectBoard('OTHER', this)">Other</button>
+
           </div>
         </div>
 
         <!-- Class -->
         <div class="flex flex-col gap-2">
           <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
-          <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled onchange="loadSubjects()">
+          <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadSubjects()">
             <option value="">Select Board first...</option>
           </select>
         </div>
@@ -147,7 +151,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
         <!-- Subject -->
         <div class="flex flex-col gap-2">
           <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
-          <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled onchange="loadChapters()">
+          <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadChapters()">
             <option value="">Select Class first...</option>
           </select>
         </div>
@@ -155,7 +159,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
         <!-- Chapter -->
         <div class="flex flex-col gap-2">
           <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
-          <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled onchange="checkChapter()">
+          <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="checkChapter()">
             <option value="">Select Subject first...</option>
           </select>
         </div>
@@ -173,7 +177,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           </div>
         </div>
         <div class="flex-1 w-full">
-          <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled onclick="startQuiz()">
+          <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" onclick="startQuiz()">
             <i class="fas fa-play-circle"></i> Start Quiz
           </button>
           <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
@@ -183,7 +187,7 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
       <!-- Other Board Fallback -->
       <div id="other-board-msg" class="hidden mt-6 text-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
           <p class="text-sm text-cbse-blue font-medium mb-2">We are actively building for more boards!</p>
-          <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding &darr;</a>
+          <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding ↓</a>
       </div>
 
     </div>
@@ -194,8 +198,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 <section class="py-16 px-4 bg-slate-50 border-b border-slate-200">
   <div class="max-w-6xl mx-auto">
     <div class="text-center mb-12">
-      <h2 class="text-3xl font-black text-cbse-blue mb-2">Platform Features</h2>
-      <p class="text-slate-500">Everything you need for structured academic progression.</p>
+      <h2 class="text-3xl font-black text-cbse-blue mb-2">Unlock Your Full Dashboard</h2>
+      <p class="text-slate-500">What Awaits After Registration &amp; Subscription.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -209,8 +213,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
         <p class="text-sm text-slate-600 mb-6">Track average mastery, view subject progress, and monitor your professional journey line.</p>
         <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center justify-around h-32 relative overflow-hidden">
            <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-              <path class="text-slate-200" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              <path class="text-success-green" stroke-width="3" stroke-dasharray="80, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="text-slate-200" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+              <path class="text-success-green" stroke-width="3" stroke-dasharray="80, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
            </svg>
            <div class="flex flex-col gap-2 w-1/2">
               <div class="h-2 bg-blue-200 rounded-full w-full"></div>
@@ -218,7 +222,11 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
               <div class="h-2 bg-amber-200 rounded-full w-5/6"></div>
            </div>
         </div>
+
+      <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
       </div>
+    </div>
 
       <!-- Parent Dashboard -->
       <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
@@ -234,10 +242,14 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
             </div>
             <div class="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-slate-100">
                 <span class="text-[10px] font-bold text-slate-500">Weak Area</span>
-                <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">Force & Laws</span>
+                <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">Force &amp; Laws</span>
             </div>
         </div>
+
+      <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after subscription</span>
       </div>
+    </div>
 
       <!-- Knowledge Hub -->
       <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
@@ -272,56 +284,168 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
       </div>
 
     </div>
+      <div class="text-center mt-10">
+        <a href="mailto:ready4urexam@gmail.com" class="inline-flex items-center gap-2 bg-slate-900 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:bg-slate-800 transition transform hover:scale-105">
+          <i class="fas fa-user-plus"></i> Get Started — Subscribe Today
+        </a>
+      </div>
+
   </div>
 </section>
 
 <!-- Section 4: Testimonials -->
 <section class="py-16 px-4 bg-white border-b border-slate-200 overflow-hidden">
-  <div class="max-w-6xl mx-auto">
+  <div class="max-w-6xl mx-auto overflow-hidden relative">
     <div class="text-center mb-10">
       <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Community Love</span>
       <h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2>
     </div>
 
     <!-- Horizontal scroll container -->
-    <div class="flex overflow-x-auto snap-x scrollbar-hide gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0">
-
-      <div class="min-w-[280px] md:min-w-[320px] snap-center bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+    <div class="flex gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 animate-marquee hover:[animation-play-state:paused]">
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
         <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Advanced questions are really tough, but they prepared me perfectly for the boards."</p>
+        <p class="text-slate-600 text-sm italic mb-4">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</p>
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-cbse-blue font-bold text-xs">S</div>
-          <div><p class="text-xs font-bold text-heading">Class 10 Student</p><p class="text-[10px] text-slate-400">CBSE Board</p></div>
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 10</p></div>
         </div>
       </div>
 
-      <div class="min-w-[280px] md:min-w-[320px] snap-center bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
         <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Very good one. The interface is so simple to use. Finally, I can track my son's progress."</p>
+        <p class="text-slate-600 text-sm italic mb-4">"The instant feedback and mistake notebook are game-changers. I don't repeat the same errors in exams anymore."</p>
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-xs">P</div>
-          <div><p class="text-xs font-bold text-heading">Parent</p><p class="text-[10px] text-slate-400">Telangana</p></div>
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🎓</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 9</p></div>
         </div>
       </div>
 
-      <div class="min-w-[280px] md:min-w-[320px] snap-center bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
         <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Finally found a place with real Case-Study questions that match the new pattern."</p>
+        <p class="text-slate-600 text-sm italic mb-4">"The advanced questions mirror the actual board exams perfectly. This is the ultimate prep tool for final revisions."</p>
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs">T</div>
-          <div><p class="text-xs font-bold text-heading">Science Teacher</p><p class="text-[10px] text-slate-400">Hyderabad</p></div>
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 12</p></div>
         </div>
       </div>
 
-      <div class="min-w-[280px] md:min-w-[320px] snap-center bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
         <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The Heatmap in the Principal console lets me identify struggling sections instantly."</p>
+        <p class="text-slate-600 text-sm italic mb-4">"The parent console gives me peace of mind. I can see exactly where my daughter needs help without constantly asking her."</p>
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-xs">P</div>
-          <div><p class="text-xs font-bold text-heading">School Principal</p><p class="text-[10px] text-slate-400">Partner School</p></div>
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍👧</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
         </div>
       </div>
 
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"Tracking progress has never been easier. The platform clearly identifies weak areas so we know what to focus on."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍👦</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The curriculum alignment is spot-on. I use the platform's case-based questions directly in my classroom discussions."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🏫</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Science Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The quality of questions is outstanding. It challenges the top students while providing a foundational path for those struggling."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🏫</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Math Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"Adopting Ready4Exam has transformed our institutional approach. The heatmap analytics allow us to target interventions effectively."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">🏫</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- School Principal</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 10</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The instant feedback and mistake notebook are game-changers. I don't repeat the same errors in exams anymore."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🎓</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 9</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The advanced questions mirror the actual board exams perfectly. This is the ultimate prep tool for final revisions."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 12</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The parent console gives me peace of mind. I can see exactly where my daughter needs help without constantly asking her."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍👧</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"Tracking progress has never been easier. The platform clearly identifies weak areas so we know what to focus on."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍👦</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The curriculum alignment is spot-on. I use the platform's case-based questions directly in my classroom discussions."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🏫</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Science Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The quality of questions is outstanding. It challenges the top students while providing a foundational path for those struggling."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🏫</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- Math Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"Adopting Ready4Exam has transformed our institutional approach. The heatmap analytics allow us to target interventions effectively."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">🏫</div>
+          <div><p class="text-xs font-bold text-heading uppercase">- School Principal</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -340,11 +464,11 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Which Board?</label>
-            <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+            <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required="" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Which Class?</label>
-            <input type="text" id="reqClass" placeholder="e.g. Class 8" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+            <input type="text" id="reqClass" placeholder="e.g. Class 8" required="" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
           </div>
         </div>
         <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition text-sm flex items-center justify-center gap-2">
@@ -419,8 +543,6 @@ loginForm.addEventListener("submit", async (e) => {
       const classSel = document.getElementById('class-select');
       const subjSel = document.getElementById('subject-select');
       const chapSel = document.getElementById('chapter-select');
-      const otherMsg = document.getElementById('other-board-msg');
-      const selectsDiv = classSel.parentElement.parentElement;
       const startBtn = document.getElementById('start-quiz-btn');
 
       // Reset
@@ -431,11 +553,8 @@ loginForm.addEventListener("submit", async (e) => {
       subjSel.disabled = true;
       chapSel.disabled = true;
       startBtn.disabled = true;
-      otherMsg.classList.add('hidden');
 
-      if (board === 'OTHER') {
-          otherMsg.classList.remove('hidden');
-      } else if (board === 'CBSE') {
+      if (board === 'CBSE') {
           [6,7,8,9,10,11,12].forEach(c => {
               classSel.innerHTML += `<option value="${c}">Class ${c}</option>`;
           });
@@ -503,7 +622,7 @@ loginForm.addEventListener("submit", async (e) => {
           sections[secName].forEach((chap, idx) => {
               const opt = document.createElement('option');
               // Store table_id and chapter_title as JSON in value to retrieve later
-              opt.value = JSON.stringify({ table_id: chap.table_id, title: chap.chapter_title });
+              opt.value = JSON.stringify({ table_id: chap.table_id || "", title: chap.chapter_title });
               opt.textContent = chap.chapter_title;
               optGroup.appendChild(opt);
               hasChapters = true;
@@ -525,11 +644,10 @@ loginForm.addEventListener("submit", async (e) => {
   window.checkChapter = function() {
       const chapVal = document.getElementById('chapter-select').value;
       const startBtn = document.getElementById('start-quiz-btn');
-      const msg = document.getElementById('quiz-msg');
-      msg.classList.add('hidden');
 
       if (!chapVal) {
           startBtn.disabled = true;
+          startBtn.innerHTML = '<i class="fas fa-play"></i> Start Quiz';
           return;
       }
 
@@ -537,13 +655,16 @@ loginForm.addEventListener("submit", async (e) => {
           const chapData = JSON.parse(chapVal);
           if (!chapData.table_id || chapData.table_id.trim() === "") {
               startBtn.disabled = true;
-              msg.textContent = "Quiz coming soon for this chapter!";
-              msg.classList.remove('hidden');
+              startBtn.innerHTML = '<i class="fas fa-lock"></i> Coming Soon';
+              startBtn.classList.add('opacity-50');
           } else {
               startBtn.disabled = false;
+              startBtn.innerHTML = '<i class="fas fa-play"></i> Start Quiz';
+              startBtn.classList.remove('opacity-50');
           }
       } catch(e) {
           startBtn.disabled = true;
+          startBtn.innerHTML = '<i class="fas fa-play"></i> Start Quiz';
       }
   }
 
@@ -557,13 +678,13 @@ loginForm.addEventListener("submit", async (e) => {
       try {
           const chapData = JSON.parse(chapVal);
           const tableId = chapData.table_id;
-          const topic = encodeURIComponent(chapData.title);
-          const subjectEnc = encodeURIComponent(subj);
+          const topic = chapData.title; // Do not encode early for the topic to ensure standard format
 
-          if (!tableId) return;
+          if (!tableId || tableId.trim() === "") return;
 
-          // app/quiz-engine.html?table={chapter.table_id}&topic={encodeURIComponent(chapter.chapter_title)}&grade={grade}&difficulty={difficulty}&subject={encodeURIComponent(subject)}
-          const targetUrl = `./app/quiz-engine.html?table=${tableId}&topic=${topic}&grade=${grade}&difficulty=${window.currentDifficulty}&subject=${subjectEnc}`;
+          // Target URL format:
+          // quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}&subject=${encodeURIComponent(subject)}
+          const targetUrl = `./app/quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(topic)}&grade=${grade}&difficulty=${window.currentDifficulty}&subject=${encodeURIComponent(subj)}`;
           window.location.href = targetUrl;
       } catch (e) {
           console.error("Error starting quiz", e);
@@ -580,5 +701,4 @@ loginForm.addEventListener("submit", async (e) => {
   };
 </script>
 
-</body>
-</html>
+</body></html>

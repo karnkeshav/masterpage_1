@@ -78,7 +78,7 @@ def verify_school_portal():
             page1.click("#start-quiz-btn")
             page1.wait_for_timeout(1000)
 
-            if len(nav_url) > 0 and 'board=' in nav_url[0]:
+            if len(nav_url) > 0 and 'table=' in nav_url[0]:
                  print(" -> [PASS] Start Quiz navigates with correct default params: " + nav_url[0])
             else:
                  print(" -> [FAIL] Start Quiz did not navigate correctly: " + str(nav_url))
