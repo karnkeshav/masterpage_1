@@ -16,9 +16,21 @@ def verify_owner():
         # TEST 1: Owner Console
         context1 = browser.new_context(viewport={'width': 1280, 'height': 800})
         # Mock auth
-        context1.route("**/cbse/class-9/js/auth-paywall.js", lambda route: route.fulfill(
+        context1.route("**/js/auth-paywall.js", lambda route: route.fulfill(
             status=200, content_type="application/javascript", body=AUTH_MOCK_OWNER
         ))
+
+        # Override initial loading logic to show the app
+        context1.add_init_script("""
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const loadingEl = document.getElementById("loading");
+                    const appEl = document.getElementById("app");
+                    if (loadingEl) loadingEl.classList.add("hidden");
+                    if (appEl) appEl.classList.remove("hidden");
+                }, 100);
+            });
+        """)
 
         page1 = context1.new_page()
         try:

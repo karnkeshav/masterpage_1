@@ -151,7 +151,15 @@
         import { initializeAuthListener, signOut } from "./js/auth-paywall.js";
         import { getInitializedClients } from "./js/config.js";
         import { recordFinancialEvent, fetchB2CUsers } from "./js/api.js";
-        import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        function generateSchoolId(name, district) {
+            const suffix = Math.floor(1000 + Math.random() * 9000);
+            const base = (name + '-' + district + '-' + suffix).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            return base + '.ready4exam';
+        }
 
         // Handle Logout
         document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -210,10 +218,32 @@
             btn.disabled = true;
             btn.textContent = "Provisioning...";
 
+            let secAuth = null;
+            let createdUser = null;
+            const tempPassword = "Ready4Exam@2026";
+
             try {
-                const { db } = getInitializedClients();
+                const { db } = await getInitializedClients();
+                const schoolName = document.getElementById("s-name").value;
+                const district = document.getElementById("s-district").value;
+                const schoolId = generateSchoolId(schoolName, district);
+
+                // Initialize SecondaryOnboarding Auth
+                let secApp = getApps().find(a => a.name === "SecondaryOnboarding");
+                if (!secApp) {
+                    secApp = initializeApp(window.__firebase_config, "SecondaryOnboarding");
+                }
+                secAuth = getAuth(secApp);
+
+                // Create Auth User
+                const userEmail = `${schoolId}@ready4exam.internal`;
+                const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, tempPassword);
+                createdUser = userCredential.user;
+                const newUid = createdUser.uid;
+
+                // Write School Data
                 const schoolData = {
-                    name: document.getElementById("s-name").value,
+                    name: schoolName,
                     logo_url: document.getElementById("s-logo").value,
                     board: document.getElementById("s-board").value,
                     max_licenses: parseInt(document.getElementById("s-licenses").value),
@@ -224,18 +254,44 @@
                     principal_email: document.getElementById("s-email").value,
                     principal_phone: document.getElementById("s-phone").value,
                     created_at: serverTimestamp(),
-                    status: "active"
+                    status: "active",
+                    school_id: schoolId
                 };
 
-                const docRef = await addDoc(collection(db, "schools"), schoolData);
-                await recordFinancialEvent(docRef.id, "LICENSE_ACTIVATION", schoolData.max_licenses * 500, `Provisioning ${schoolData.max_licenses} licenses.`);
+                await setDoc(doc(db, "schools", schoolId), schoolData);
 
-                alert("School Provisioned Successfully!");
+                // Write School Master User Document
+                await setDoc(doc(db, "users", newUid), {
+                    displayName: "School Master",
+                    email: userEmail,
+                    role: "school_master",
+                    tenantType: "school",
+                    school_id: schoolId,
+                    setupComplete: true,
+                    created_at: serverTimestamp()
+                });
+
+                await recordFinancialEvent(schoolId, "LICENSE_ACTIVATION", schoolData.max_licenses * 500, `Provisioning ${schoolData.max_licenses} licenses.`);
+
+                alert(`School Provisioned Successfully!\n\nID: ${schoolId}\nEmail: ${userEmail}\nPassword: ${tempPassword}`);
                 e.target.reset();
                 loadSchools();
             } catch (err) {
+                // Self-healing: Delete orphaned Auth user if Firestore write fails
+                if (createdUser) {
+                    try {
+                        await createdUser.delete();
+                        console.log("Rolled back orphaned Auth user.");
+                    } catch (deleteErr) {
+                        console.error("Failed to rollback Auth user:", deleteErr);
+                    }
+                }
                 alert("Error: " + err.message);
             } finally {
+                // Sign out secondary auth so we don't leak it or switch contexts
+                if (secAuth) {
+                    await signOutSecondary(secAuth);
+                }
                 btn.disabled = false;
                 btn.textContent = originalText;
             }
@@ -245,7 +301,7 @@
         window.loadSchools = async () => {
             const list = document.getElementById("school-list");
             try {
-                const { db } = getInitializedClients();
+                const { db } = await getInitializedClients();
                 const q = query(collection(db, "schools"), orderBy("created_at", "desc"));
                 const snap = await getDocs(q);
 
