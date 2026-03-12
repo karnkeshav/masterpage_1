@@ -1,6 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    match /quiz_scores/{scoreId} {
+        allow read: if isLoggedIn();
+        allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
+    }
+
 
     match /quiz_scores/{scoreId} {
         allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
