@@ -155,8 +155,10 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        function generateSchoolId(name) {
-            return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '.') + '.ready4exam';
+        function generateSchoolId(name, district) {
+            const suffix = Math.random().toString(36).substring(2, 6);
+            const base = (name + '-' + district + '-' + suffix).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            return base + '.ready4exam';
         }
 
         // Handle Logout
@@ -217,22 +219,23 @@
             btn.textContent = "Provisioning...";
 
             try {
-                const { db } = getInitializedClients();
+                const { db } = await getInitializedClients();
                 const schoolName = document.getElementById("s-name").value;
-                const schoolId = generateSchoolId(schoolName);
+                const district = document.getElementById("s-district").value;
+                const schoolId = generateSchoolId(schoolName, district);
 
                 // Initialize SecondaryOnboarding Auth
                 const { getApps } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-                let secApp = getApps().find(app => app.name === "SecondaryOnboarding");
+                const { app } = await getInitializedClients();
+                let secApp = getApps().find(a => a.name === "SecondaryOnboarding");
                 if (!secApp) {
-                    secApp = initializeApp(window.__firebase_config, "SecondaryOnboarding");
+                    secApp = initializeApp(app.options, "SecondaryOnboarding");
                 }
                 const secAuth = getAuth(secApp);
 
                 // Create Auth User
                 const userEmail = `${schoolId}@ready4exam.internal`;
-                const tempPassword = crypto.randomUUID().slice(0, 16);  // Generate random password
-                const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, tempPassword);
+                const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, 'keshav');
                 const newUid = userCredential.user.uid;
 
                 // Write School Data
@@ -285,7 +288,7 @@
         window.loadSchools = async () => {
             const list = document.getElementById("school-list");
             try {
-                const { db } = getInitializedClients();
+                const { db } = await getInitializedClients();
                 const q = query(collection(db, "schools"), orderBy("created_at", "desc"));
                 const snap = await getDocs(q);
 

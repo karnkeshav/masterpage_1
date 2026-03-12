@@ -895,14 +895,25 @@ function renderBucket(elementId, users, type) {
 }
 
 window.promptLinkParent = async (studentId) => {
-    const parentId = prompt("Enter the Parent UID to link to this student:");
-    if(!parentId) return;
-    window.linkParentToStudent(studentId, parentId);
+    const parentEmail = prompt("Enter the Parent Email to link to this student:");
+    if(!parentEmail) return;
+    window.linkParentToStudent(studentId, parentEmail);
 };
 
-window.linkParentToStudent = async (studentUid, parentUid) => {
+window.linkParentToStudent = async (studentUid, parentEmail) => {
     try {
         const { db } = await getInitializedClients();
+
+        // Query for parent by email
+        const parentQuery = query(collection(db, "users"), where("email", "==", parentEmail));
+        const parentSnap = await getDocs(parentQuery);
+
+        if (parentSnap.empty) {
+            alert("Parent not found with that email.");
+            return;
+        }
+
+        const parentUid = parentSnap.docs[0].id;
 
         // Double-Link
         await updateDoc(doc(db, "users", studentUid), {
