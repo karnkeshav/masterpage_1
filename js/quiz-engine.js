@@ -297,22 +297,16 @@ async function handleSubmit() {
         }, 1000);
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const isGuestMode = urlParams.get("mode") === "guest";
-    if (!isGuestMode) {
-        saveResult({
-            ...quizState,
-            score: stats.correct,
-            total: stats.total,
-            topic: quizState.topicSlug,
-            latency_vector: quizState.latency,
-            quiz_mode: quizState.quizMode,
-            session_id: sessionId,  // links to the mistake_notebook document
-            typeStats               // real per-type counts for proficiency profile
-        });
-    } else {
-        console.log("Guest mode - skipping saveResult to Firestore");
-    }
+    saveResult({
+        ...quizState,
+        score: stats.correct,
+        total: stats.total,
+        topic: quizState.topicSlug,
+        latency_vector: quizState.latency,
+        quiz_mode: quizState.quizMode,
+        session_id: sessionId,  // links to the mistake_notebook document
+        typeStats               // real per-type counts for proficiency profile
+    });
 }
 
 /* -----------------------------------
@@ -358,24 +352,26 @@ function wireGoogleLogin() {
 ----------------------------------- */
 async function init() {
     UI.initializeElements();
-    parseUrlParameters(); // Sets the Header
+    parseUrlParameters();
     attachDomEvents();
     UI.attachAnswerListeners(handleAnswerSelection);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const isGuestMode = urlParams.get("mode") === "guest";
 
     try {
         await initializeServices();
         wireGoogleLogin();
 
-        // Check Auth & Access
         await initializeAuthListener(async user => {
             if (user) {
                 UI.updateAuthUI(user);
-
-                // BYPASS: No paywall for authenticated students (as requested)
-                // Just load the quiz
                 questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
                 await loadQuiz();
-
+            } else if (isGuestMode) {
+                // Guest mode: skip paywall, load quiz directly
+                questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
+                await loadQuiz();
             } else {
                 UI.showView("paywall-screen");
             }
