@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ... existing rules (implied from task description, as I don't have the original firestore.rules file) ...
+
+    // Student Notifications (teacher-assigned tests, system alerts)
+    match /student_notifications/{docId} {
+        allow read: if request.auth != null && (
+            resource.data.student_id == request.auth.uid ||
+            get(/databases/$(database)/documents/users/$(resource.data.student_id)).data.parent_id == request.auth.uid
+        );
+        allow create: if request.auth != null;
+        allow delete: if request.auth != null && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner');
+    }
+  }
+}

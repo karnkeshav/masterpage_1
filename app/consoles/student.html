@@ -37,7 +37,7 @@
     <script type="module">
         import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
         import { getInitializedClients } from "../../js/config.js";
-        import { collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, getDocs, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
         import { loadCurriculum } from "../../js/curriculum/loader.js";
 
@@ -613,9 +613,9 @@
             const feed = document.getElementById('intercom-feed');
             if (!feed || !auth.currentUser) return;
 
-            const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", auth.currentUser.uid)));
-            if (userDoc.empty) return;
-            const profile = userDoc.docs[0].data();
+            const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            if (!userSnap.exists()) return;
+            const profile = userSnap.data();
 
             const schoolId = profile.school_id;
             const targetGrade = profile.classId || "9"; // default
@@ -669,6 +669,8 @@
                         }
                     }
                 });
+            }, (error) => {
+                console.warn("Intercom listener error:", error.message);
             });
         }
 
@@ -709,6 +711,8 @@
                         badge.classList.add('hidden');
                     }
                 }
+            }, (error) => {
+                console.warn("Inbox listener error:", error.message);
             });
         }
     </script>

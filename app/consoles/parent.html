@@ -39,7 +39,7 @@
         import { guardConsole } from "../../js/guard.js";
         import { signOut } from "../../js/auth-paywall.js";
         import { getInitializedClients } from "../../js/config.js";
-        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, getDocs, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // LOGOUT LOGIC
         const logoutBtn = document.getElementById('logout-nav-btn');
@@ -80,9 +80,9 @@
             const feed = document.getElementById('intercom-feed');
             if (!feed || !auth.currentUser) return;
 
-            const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", auth.currentUser.uid)));
-            if (userDoc.empty) return;
-            const profile = userDoc.docs[0].data();
+            const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            if (!userSnap.exists()) return;
+            const profile = userSnap.data();
 
             const schoolId = profile.school_id;
             if(!schoolId) return;
