@@ -544,6 +544,13 @@
 
             } catch (e) {
                 console.error("Dashboard Sync Failed:", e);
+                const gridContainer = document.getElementById("grid-container");
+                if (gridContainer) {
+                    gridContainer.innerHTML = `<div class="p-8 text-center text-red-500 font-bold col-span-full">
+                        Dashboard sync failed: ${e.message}.
+                        <br><button onclick="location.reload()" class="mt-2 text-cbse-blue underline cursor-pointer">Retry</button>
+                    </div>`;
+                }
             } finally {
                 document.getElementById("hub-sync-status").classList.add("hidden");
             }
