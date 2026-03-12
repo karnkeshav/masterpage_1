@@ -152,7 +152,7 @@
         import { getInitializedClients } from "./js/config.js";
         import { recordFinancialEvent, fetchB2CUsers } from "./js/api.js";
         import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         function generateSchoolId(name, district) {
@@ -218,6 +218,10 @@
             btn.disabled = true;
             btn.textContent = "Provisioning...";
 
+            let secAuth = null;
+            let createdUser = null;
+            const tempPassword = "Ready4Exam@2026";
+
             try {
                 const { db } = await getInitializedClients();
                 const schoolName = document.getElementById("s-name").value;
@@ -225,19 +229,18 @@
                 const schoolId = generateSchoolId(schoolName, district);
 
                 // Initialize SecondaryOnboarding Auth
-                const { getApps } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
                 const { app } = await getInitializedClients();
                 let secApp = getApps().find(a => a.name === "SecondaryOnboarding");
                 if (!secApp) {
                     secApp = initializeApp(app.options, "SecondaryOnboarding");
                 }
-                const secAuth = getAuth(secApp);
+                secAuth = getAuth(secApp);
 
                 // Create Auth User
                 const userEmail = `${schoolId}@ready4exam.internal`;
-                const userPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-                const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, userPassword);
-                const newUid = userCredential.user.uid;
+                const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, tempPassword);
+                createdUser = userCredential.user;
+                const newUid = createdUser.uid;
 
                 // Write School Data
                 const schoolData = {
@@ -269,17 +272,27 @@
                     created_at: serverTimestamp()
                 });
 
-                // Sign out secondary auth so we don't leak it or switch contexts
-                await signOutSecondary(secAuth);
-
                 await recordFinancialEvent(schoolId, "LICENSE_ACTIVATION", schoolData.max_licenses * 500, `Provisioning ${schoolData.max_licenses} licenses.`);
 
-                alert("School Provisioned Successfully!");
+                alert(`School Provisioned Successfully!\n\nID: ${schoolId}\nEmail: ${userEmail}\nPassword: ${tempPassword}`);
                 e.target.reset();
                 loadSchools();
             } catch (err) {
+                // Self-healing: Delete orphaned Auth user if Firestore write fails
+                if (createdUser) {
+                    try {
+                        await createdUser.delete();
+                        console.log("Rolled back orphaned Auth user.");
+                    } catch (deleteErr) {
+                        console.error("Failed to rollback Auth user:", deleteErr);
+                    }
+                }
                 alert("Error: " + err.message);
             } finally {
+                // Sign out secondary auth so we don't leak it or switch contexts
+                if (secAuth) {
+                    await signOutSecondary(secAuth);
+                }
                 btn.disabled = false;
                 btn.textContent = originalText;
             }
