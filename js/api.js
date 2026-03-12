@@ -128,8 +128,22 @@ export async function ensureUserInFirestore(user) {
         if (!snap.exists()) {
             return null;
         } else {
-            await updateDoc(ref, { lastLogin: serverTimestamp() });
-            return snap.data();
+            const data = snap.data();
+            const updates = { lastLogin: serverTimestamp() };
+
+            // Self-heal: Ensure uid field exists in document data
+            if (!data.uid) {
+                updates.uid = user.uid;
+            }
+            // Self-heal: Ensure classId is set if grade exists but classId doesn't
+            if (data.grade && !data.classId) {
+                updates.classId = data.grade;
+            }
+
+            await updateDoc(ref, updates);
+
+            // Return data with uid guaranteed
+            return { ...data, uid: user.uid, classId: data.classId || data.grade || data.classId };
         }
     } catch (e) {
         console.warn(LOG, "Sync failed", e);

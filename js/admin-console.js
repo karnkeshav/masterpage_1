@@ -582,6 +582,7 @@ window.submitAddModal = async (role) => {
         if(!g || !s) return showError("Grade and Section are required.");
 
         payload.grade = g;
+        payload.classId = g;
         payload.section = s;
         payload.section_id = `${g}-${s}`;
 
@@ -681,6 +682,7 @@ window.submitAddModal = async (role) => {
         // Save to Firestore using the standard DB (Admin has rules bypass/privileges hopefully)
         const parentCreatedFlag = payload._parentCreated;
         delete payload._parentCreated; // Remove temporary flag before saving
+        payload.uid = newUid;
         await setDoc(doc(db, "users", newUid), payload, { merge: true });
 
         // Parent double-link
