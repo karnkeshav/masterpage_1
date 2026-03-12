@@ -387,8 +387,10 @@
 
         function addToState(type, subject, chapter, item) {
             if (!state[type][subject]) state[type][subject] = {};
-            if (!state[type][subject][chapter]) state[type][subject][chapter] = [];
-            state[type][subject][chapter].push(item);
+            if (!state[type][subject][chapter]) state[type][subject][chapter] = {};
+            const diff = item.difficulty || 'simple';
+            if (!state[type][subject][chapter][diff]) state[type][subject][chapter][diff] = [];
+            state[type][subject][chapter][diff].push(item);
         }
 
         function renderConsole(container) {
@@ -602,6 +604,7 @@
             let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
             names.forEach(ch => {
                 // Now chapters[ch] is an object keyed by difficulty: { simple: [...], medium: [...] }
+                const escapedCh = ch.replace(/"/g, '&quot;').replace(/'/g, "\\'");
                 let count = 0;
                 Object.values(chapters[ch]).forEach(diffArray => count += diffArray.length);
 
