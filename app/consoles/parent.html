@@ -39,7 +39,7 @@
         import { guardConsole } from "../../js/guard.js";
         import { signOut } from "../../js/auth-paywall.js";
         import { getInitializedClients } from "../../js/config.js";
-        import { collection, query, where, getDocs, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // LOGOUT LOGIC
         const logoutBtn = document.getElementById('logout-nav-btn');
@@ -66,11 +66,7 @@
                 welcomeEl.textContent = profile.displayName || "Guardian";
             }
 
-            // Hardcode child UID to display student9's data per requirement
-            const childUid = "I5t4hWd27sXg8p7w2W0fKjA4m8u1"; // Replace with actual student9 UID if known, simulating query for student9 
-            // In a real scenario we use profile.linked_children, but here we query based on the prompt "student9 who is in 9th standard"
-
-            const overallAvg = await fetchChildData(profile.uid);
+            const overallAvg = await fetchChildData(profile);
             renderGrowthChart(overallAvg);
             listenToIntercom();
         };
@@ -94,9 +90,9 @@
             try {
                 if(profile.linked_children && profile.linked_children.length > 0) {
                     const linkedUid = profile.linked_children[0];
-                    const linkedDoc = await getDocs(query(collection(db, "users"), where("uid", "==", linkedUid)));
-                    if(!linkedDoc.empty) {
-                        const linkedData = linkedDoc.docs[0].data();
+                    const linkedSnap = await getDoc(doc(db, "users", linkedUid));
+                    if(linkedSnap.exists()) {
+                        const linkedData = linkedSnap.data();
                         if(linkedData.classId) targetGrade = linkedData.classId;
                         if(linkedData.section) targetSection = linkedData.section;
                     }
@@ -148,37 +144,47 @@
                         }
                     }
                 });
+            }, (error) => {
+                console.warn("Parent intercom listener error:", error.message);
             });
         }
 
-        async function fetchChildData(parentUid) {
+        async function fetchChildData(parentProfile) {
             try {
                 const { db } = await getInitializedClients();
+                const parentUid = parentProfile.uid;
 
-                let targetUid = "I5t4hWd27sXg8p7w2W0fKjA4m8u1"; // Fallback to a known mock UID or just empty
-                let childName = "Student 9";
+                let targetUid = null;
+                let childName = "Student";
 
-                try {
-                    const usersRef = collection(db, "users");
-                    const qUser = query(usersRef, where("email", "==", "student9@ready4exam.com"));
-                    const userDocs = await getDocs(qUser);
-
-                    if (!userDocs.empty) {
-                        targetUid = userDocs.docs[0].id;
-                        if (userDocs.docs[0].data().displayName) childName = userDocs.docs[0].data().displayName;
+                // Step 1: Use linked_children from parent profile
+                if (parentProfile.linked_children && parentProfile.linked_children.length > 0) {
+                    targetUid = parentProfile.linked_children[0]; // First linked child
+                    // Fetch child's display name using direct document read (document ID = UID)
+                    try {
+                        const childSnap = await getDoc(doc(db, "users", targetUid));
+                        if (childSnap.exists()) {
+                            const childData = childSnap.data();
+                            childName = childData.displayName || "Student";
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch child profile:", e);
                     }
-                } catch (e) {
-                    console.warn("Could not query users directly due to rules. Using fallback UID.", e);
                 }
 
-                // Update UI with Target Child Name
+
+
+                if (!targetUid) {
+                    console.error("No linked student found for parent.");
+                    document.getElementById("matrix-body").innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500 text-xs">No linked student found. Please contact admin.</td></tr>`;
+                    document.getElementById("sync-wall-container").innerHTML = `<div class="text-sm text-slate-500 italic p-4 text-center">No student linked to this parent account.</div>`;
+                    return 0;
+                }
+
+                // Update UI with child name
                 const contextBadge = document.getElementById("context-badge");
                 if (contextBadge) {
-                    contextBadge.innerHTML = `<i class="fas fa-child mr-1"></i> ${childName} (Class 9)`;
-                }
-
-                if (targetUid === parentUid) {
-                    console.warn("Targeting parent's own UID for demo purposes since no student UID linked.");
+                    contextBadge.innerHTML = `<i class="fas fa-child mr-1"></i> ${childName}`;
                 }
 
                 let snapshot;
@@ -641,60 +647,12 @@
                                 </tr>
                             </thead>
                             <tbody id="matrix-body" class="font-medium">
-                                <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                                    <td class="py-3 px-2">
-                                        <div class="text-slate-800 font-bold">Structure of Atom</div>
-                                        <div class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Science
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-2 text-center">
-                                        <div
-                                            class="inline-block px-2 py-1 bg-green-50 text-success-green rounded font-black border border-green-100">
-                                            98%</div>
-                                    </td>
-                                    <td class="py-3 px-2 text-center">
-                                        <div
-                                            class="inline-block px-2 py-1 bg-green-50 text-success-green rounded font-black border border-green-100">
-                                            95%</div>
-                                    </td>
-                                    <td class="py-3 px-2 text-center">
-                                        <div class="inline-block px-2 py-1 bg-amber-50 text-warning-yellow rounded font-black border border-amber-100"
-                                            title="Amber: Retake Required">72%</div>
-                                    </td>
-                                    <td class="py-3 px-2 text-right">
-                                        <button
-                                            class="text-[10px] text-cbse-blue font-bold hover:underline transition"><i
-                                                class="fas fa-history"></i> Historical Deep-Dive</button>
-                                        <div class="text-[9px] text-slate-400 mt-1">2 attempts • Last 14 Oct</div>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-slate-50 transition border-b border-slate-50">
-                                    <td class="py-3 px-2">
-                                        <div class="text-slate-800 font-bold">Lines and Angles</div>
-                                        <div class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">
-                                            Mathematics</div>
-                                    </td>
-                                    <td class="py-3 px-2 text-center">
-                                        <div
-                                            class="inline-block px-2 py-1 bg-green-50 text-success-green rounded font-black border border-green-100">
-                                            96%</div>
-                                    </td>
-                                    <td class="py-3 px-2 text-center">
-                                        <div class="inline-block px-2 py-1 bg-red-50 text-danger-red rounded font-black border border-red-100"
-                                            title="Red: Critical Gap">45%</div>
-                                    </td>
-                                    <td class="py-3 px-2 text-center">
-                                        <span class="text-slate-300 text-xs font-bold">—</span>
-                                    </td>
-                                    <td class="py-3 px-2 text-right">
-                                        <button
-                                            class="text-[10px] text-cbse-blue font-bold hover:underline transition"><i
-                                                class="fas fa-history"></i> Historical Deep-Dive</button>
-                                        <div class="text-[9px] text-danger-red mt-1 font-bold"><i
-                                                class="fas fa-exclamation-circle"></i> Critical Gap Found</div>
-                                    </td>
-                                </tr>
-                            </tbody>
+    <tr>
+        <td colspan="5" class="py-4 text-center text-slate-400 text-xs animate-pulse">
+            Loading student data...
+        </td>
+    </tr>
+</tbody>
                         </table>
                     </div>
                 </div>
