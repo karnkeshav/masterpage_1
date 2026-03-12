@@ -1,12 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head> 
-<meta charset="utf-8"/>
+<!DOCTYPE html><html lang="en" class="dark"><head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
 
 <title>Ready4Exam — Board-Aligned Academic Portal</title>
 
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -14,7 +12,7 @@
   gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
 </script>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="js/firebase-master-config.js"></script>
@@ -177,108 +175,215 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 .whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
 @media(min-width:1024px){ .whatsapp-float{ bottom: 30px; right: 30px; } }
 </style>
-</head>
+<style>
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            display: flex;
+            width: 200%;
+            animation: marquee 30s linear infinite;
+        }
+        .animate-marquee:hover {
+            animation-play-state: paused;
+        }
+    </style></head>
 
-<body>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-hidden">
 
-<header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
-  <div class="flex justify-between items-center">
-    <div>
-      <h1 class="text-xl font-black text-gold text-accent-gold">Ready4<span class="text-white">Exam</span></h1>
-    </div>
-  </div>
+
+
+<div class="flex h-screen w-full flex-col lg:flex-row">
+<!-- Left Panel (60%) -->
+<div class="relative flex h-full w-full flex-col p-8 lg:w-[60%] overflow-y-auto border-r border-slate-200 dark:border-slate-800 bg-gradient-to-br from-primary/20 via-background-dark to-background-dark">
+<!-- Header -->
+<header class="flex items-center justify-between w-full mb-12">
+<div class="flex items-center gap-3">
+<div class="size-8 text-primary">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-2xl font-bold tracking-tight">Sovereign</h2>
+</div>
+<button class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-6 bg-primary text-white text-sm font-bold transition-all hover:brightness-110 active:scale-95" id="login-modal">
+                    Login
+                </button>
 </header>
-
-<div class="split-layout">
-
-  <aside class="left-panel shadow-2xl z-10">
-    <div class="fade-in h-full flex flex-col justify-center items-center z-10 relative">
-
-      <div class="mb-8 text-center">
-        <h1 class="text-5xl font-black text-gold mb-2">Ready4<span class="text-white">Exam</span></h1>
-        <p class="text-white text-sm opacity-80 uppercase tracking-widest">Sovereign Academic Operating System</p>
-      </div>
-
-      <div class="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl w-full max-w-sm shadow-2xl">
-          <h2 class="text-white font-bold text-xl mb-6 text-center">Identity Gateway</h2>
-
-          <form id="sovereign-login-form" class="space-y-4">
-              <div>
-                  <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Identity ID</label>
-                  <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required>
-              </div>
-              <div>
-                  <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Secure Passkey</label>
-                  <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold transition" placeholder="••••••••" required>
-              </div>
-              <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
-              <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-4 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20">
-                  Authenticate & Bind
-              </button>
-          </form>
-
-          <div class="mt-6 text-center border-t border-white/10 pt-4">
-              <p class="text-[10px] text-white/50">Restricted Access • Institutional Use Only</p>
-          </div>
-      </div>
-    </div>
-  </aside>
-
-  <main class="right-panel">
-
-    <div class="w-full max-w-md mx-auto mb-6 lg:mb-0 flex-grow relative overflow-hidden pointer-events-none h-48 lg:h-auto">
-      <div class="text-center mb-2">
-        <span class="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Community Love</span>
-      </div>
-
-      <div class="scroll-wrapper h-full">
-        <div class="scroll-content space-y-4 pb-4">
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Advanced questions are really tough, but they prepared me perfectly."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 10</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Very good one. The interface is so simple to use."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Telangana</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Finally found a place with real Case-Study questions."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Teacher, CBSE</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Helped me find my weak areas in Science instantly."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 9</div>
-          </div>
-           <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Excellent platform for board prep."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Hyderabad</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Advanced questions are really tough, but they prepared me perfectly."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Student, Class 10</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Very good one. The interface is so simple to use."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Parent, Telangana</div>
-          </div>
-          <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-            <p class="text-slate-600 text-xs italic">"Finally found a place with real Case-Study questions."</p>
-            <div class="text-[10px] text-slate-400 font-bold mt-1 text-right">- Teacher, CBSE</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="w-full max-w-md mx-auto mt-auto lg:pb-8 flex flex-col items-center justify-center">
-      <div class="text-center p-6">
-          <p class="text-slate-400 text-sm font-medium">Please authenticate to access your institution's portal.</p>
-      </div>
-    </div>
-
-    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-  <p>© 2025 Ready4Exam Academic Portal.</p>
+<!-- Hero Section & Widget -->
+<div class="flex flex-col flex-1 justify-center max-w-2xl mx-auto w-full">
+<div class="mb-8">
+<h1 class="text-4xl lg:text-6xl font-extrabold tracking-tight mb-4 leading-tight">
+                        Master Your Exams <br><span class="text-primary">With Precision</span>
+</h1>
+<p class="text-slate-500 dark:text-slate-400 text-lg">
+                        Access high-end educational resources and premium exam preparation tools tailored for your success.
+                    </p>
+</div>
+<!-- Sovereign Selection Widget -->
+<div class="bg-white dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-2xl">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+<h3 class="text-xl font-bold">Selection Widget</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Board</label>
+<select class="form-select bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary" id="board-btn">
+<option>Select Board</option>
+<option>International Baccalaureate</option>
+<option>Cambridge A-Levels</option>
+<option>CBSE / ICSE</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Class</label>
+<select class="form-select bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary" id="class-grid">
+<option>Select Class</option>
+<option>Grade 10</option>
+<option>Grade 11</option>
+<option>Grade 12</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Subject</label>
+<select class="form-select bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary">
+<option>Select Subject</option>
+<option>Advanced Mathematics</option>
+<option>Quantum Physics</option>
+<option>Organic Chemistry</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Difficulty</label>
+<select class="form-select bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary">
+<option>Standard</option>
+<option>Advanced</option>
+<option>Elite</option>
+</select>
+</div>
+</div>
+<button class="w-full bg-primary hover:brightness-110 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2 group">
+                        Start Quiz
+                        <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+<!-- Group CTA -->
+<div class="mt-12 p-6 rounded-xl border border-dashed border-primary/40 bg-primary/5 flex items-center justify-between">
+<div>
+<h4 class="font-bold text-lg">Join a Group of 10</h4>
+<p class="text-sm text-slate-500">Collaborative learning for intensive exam prep.</p>
+</div>
+<a class="bg-background-dark dark:bg-white text-white dark:text-background-dark px-6 py-2 rounded-lg font-bold text-sm hover:scale-105 transition-transform" href="mailto:ready4urexam@gmail.com">
+                        ready4urexam@gmail.com
+                    </a>
+</div>
+</div>
+<!-- Footer Small -->
+<footer class="mt-auto pt-8 flex justify-between text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+<span>© 2024 Sovereign EdTech</span>
+<div class="flex gap-4">
+<a class="hover:text-primary" href="#">Privacy</a>
+<a class="hover:text-primary" href="#">Terms</a>
+</div>
 </footer>
-  </main>
+</div>
+<!-- Right Panel (40%) -->
+<div class="hidden lg:flex h-full w-[40%] flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden">
+<div class="flex flex-col h-full">
+<!-- Visual Previews -->
+<div class="flex-1 p-8 flex flex-col gap-8 justify-center">
+<!-- Student Console -->
+<div class="relative group">
+<div class="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+<div class="relative bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
+<div class="bg-slate-100 dark:bg-slate-900 rounded-lg h-48 w-full bg-cover bg-center flex flex-col justify-end p-4" data-alt="Student dashboard interface with charts and learning modules" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAu45yWbHU5uJ4m3IQiNvfG9Wp61yBuKMuFkHuIGBU4gPp9MxHyikOqiHS5QcZnKeEWeFfzizli__-Xjp31Un280AAQ7cAhM-hSdZiC_YKueCHRBZByprRZeBsw9MAtdbYhoBAWjLUWikqvp_dJZk_ctFN5aRVaz0PUXmKX1XglX5Lwae53iTIvM10NdbagY2wkwwU2SmaBz8ahOptzRu8BMK46rqp2mqtDvK6g7F6I_6DNO77Ti0b69vvGxoye_XUtFA_V8wNIWIGr')">
+<div class="backdrop-blur-md bg-white/10 p-3 rounded-lg border border-white/20">
+<p class="text-xs font-bold text-white uppercase tracking-tighter">Student Console</p>
+<h5 class="text-white text-sm font-medium">Personalized Learning Path</h5>
+</div>
+</div>
+</div>
+</div>
+<!-- Parent Console -->
+<div class="relative group">
+<div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+<div class="relative bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
+<div class="bg-slate-100 dark:bg-slate-900 rounded-lg h-48 w-full bg-cover bg-center flex flex-col justify-end p-4" data-alt="Parental monitoring dashboard with analytics and progress reports" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBf1X-2p9JZL7u7R6W_JWHa8mARyDZX-63xuc7yjO05nEsoKU-HIc3FJxQJ_XTT0DS8_Dt691g_ANX3ievTPczVd6UfyUTOvfAklaX_6gDT3TbunsoZa9KNIk8ZKOnrUKpne2Zr10L0t-BEM693RNRXgwkRjDFWlAXcj3TH2QY6-HtTMnGaAF3fa6-yM68fqk4D-cPHKCILpRLkarC_01cKckBk70KDMepnByQn3gtCap2ggqywH4ZTAngPKVn5nG7iuGpSkroBTG5U')">
+<div class="backdrop-blur-md bg-white/10 p-3 rounded-lg border border-white/20">
+<p class="text-xs font-bold text-white uppercase tracking-tighter">Parent Console</p>
+<h5 class="text-white text-sm font-medium">Real-time Performance Analytics</h5>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Testimonial Marquee -->
+<div class="bg-primary/10 dark:bg-primary/5 py-10 border-t border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="px-8 mb-4 flex items-center justify-between">
+<h3 class="text-sm font-bold uppercase tracking-widest text-primary">Community Love</h3>
+<div class="flex gap-1 text-primary">
+<span class="material-symbols-outlined text-sm">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+</div>
+</div>
+<div class="relative flex items-center overflow-hidden">
+<div class="animate-marquee whitespace-nowrap flex gap-6 px-6">
+<!-- Card 1 -->
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
+<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Profile photo of a satisfied student" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBmCGMvBw8uRH2aqw0hXZGiGlpD5GAq34tuWXJ3oIGn7EB5s37p4mhDOi3C_vLcBRCqJUhjdD0xp7CXAKJ3xrLn3j_eL-IXaNHo6ycAay8sABU_AqLZcZRCwrSTvkZqlYvzGHFpvLQTfphVRIaCwt_Hq-7HBvjvSu-tuqhlnb1w07WPuYJ8LCoxBPTlCQi61zJTjMhgDKtAKAp-muKgwRuRHsGld1cUHceRmPSBDZjKDTxJ-2vmwiHy_SdcgDH-lj5OuFYKJ-r8XYAW')"></div>
+<div>
+<p class="text-xs font-medium italic">"The best prep tool for IB students!"</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase">- Alex M.</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
+<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Profile photo of a happy parent" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBTEH5BVCLjf7QGBahxv2z9sTr0XpjYR_CmonudtADLNbf_-hJlpxYItv9WbmFGLDaPH1jgdTUwZELHsB8Zxntfq4c-ssaRGB6Auz4t5kSyPiB4IO6u4t4FYJiGtPrh0DzdYkn4CMO6ckAL_PCnE_mB-Wz7y5SuYlixGqXgDv0G_KwpjU1blY2zfOKRb6KapxF02GfLPezzIQShBRTQcOu3e1fSaRN2bqwaAAQumcreQekCoEX53eREL-96r0-e0tqb2F_XVyoN6G6Y')"></div>
+<div>
+<p class="text-xs font-medium italic">"Finally, I can track my son's progress."</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase">- Sarah J.</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
+<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Profile photo of a high school teacher" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAfUK_uZlLZs0M_NYjSglTABSPpZu-8scw_v6Kphxjum84Qd0yZwicFBvnViwSdpjL02rJ8ECEOyrFwy7QNI_L9V22Zvfb1xy9FfMKZMGq1CQho7S7-NVGlh9aXV7vGWCDppoea_OZHCIXZXpg5Dk6grWyyUvI2bKwO5IH7bSPtLBYv-WFgOihiMjX7iAdP4jMylLgVGvsBjJXEXiPyYSuAzvgO9wIP1A-050mZYHIo11PTVZqT18EXtdyuSZ11dkM06lGHs5t08GsS')"></div>
+<div>
+<p class="text-xs font-medium italic">"Unmatched difficulty levels."</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase">- Prof. David</p>
+</div>
+</div>
+<!-- Duplicates for seamless loop -->
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
+<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Portrait of a smiling young male student" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAxXHjAmIECApgkeRj6Lt_dufqTjHaeRRLYtCe8SAtyXv3muAfTHc0jkuzQmQZ5dvlz2deJlDM-19u9ct4EmQw3FPhT2XYGjOnbRUIJdTQFdx1Nul5uFaQG9SOXN5MBp3Dl7r23iK8e4T00KMlIVHwA5rVWC9oS3HLbW70Pw3kn2eB1EJQO7SC9i1ostoammaGccVoUCcuEgaei06KgsifyC-j1IjKiY1ZtNize8JSVLfTBIU1dTpyI8TUpX6otctTutRCh-N30YmCb')"></div>
+<div>
+<p class="text-xs font-medium italic">"The best prep tool for IB students!"</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase">- Alex M.</p>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
+<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Portrait of a smiling young woman" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDu4ex7Ja4ngVFsJiymweTPLzoyXJNQJyhUuVg4a9DAq95AnY3em-rvWc2oXtHyX1wLDu01mWyeecuoLRp2jdquyLIu1gRC3dEj4PzdAAt8qx7pV4_o0Ss1aaeq-wIAsUNasRCTFgJJobt6r8iW-8U-uW6MSoXl4EYZU2gMvEgvv1vKvodqXMa8H3hBWBoR0zNXVjvZJ4hHnrh1CvUAlhNvAaTFDopMgsj-gPo8YT4hOfuoT_SxbrvZxoI-UvxNfkXd78E-9zv2yCzT')"></div>
+<div>
+<p class="text-xs font-medium italic">"Finally, I can track my son's progress."</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase">- Sarah J.</p>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
+<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Portrait of an older professional man" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA7qBlTQI8wooqAq9YUH5Oi1VxyrrJuRVCT-S_iEASDhaHeViKmi7wkeyEXN2cjnDcwoA3VBp8HxMnvpNzQs7ISQSIcBfmyejvs00z7xPYh_-pnC8Pe4zwyvkYixlJ4_In4c-zvcWKgrVCXzfaRAtoNvt3s-_MYlpv4hzLafhOCUbBGdjIio3WzwW6FFkty--BqZkEWQ96eyUT9qrpSLM9DRpW4caO-ak_oB1sRgKtnPf90Il5YDid6GBbDAOtWVfwVb1cwGwRNs8qe')"></div>
+<div>
+<p class="text-xs font-medium italic">"Unmatched difficulty levels."</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase">- Prof. David</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20need%20help%20regarding%20the%20platform." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
@@ -297,19 +402,17 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
     <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg mb-5 text-left">
       <h4 class="text-cbse-blue font-bold text-[10px] uppercase tracking-wide mb-1">⚡ Fast Track Promise</h4>
       <p class="text-slate-600 text-[11px] leading-relaxed">
-        If we receive <span class="text-red-500 font-bold">5 requests</span> for the same Class & Board, we deploy within <span class="text-heading font-bold">24 hours</span>. Otherwise, you join the Phase 2 waitlist.
+        If we receive <span class="text-red-500 font-bold">5 requests</span> for the same Class &amp; Board, we deploy within <span class="text-heading font-bold">24 hours</span>. Otherwise, you join the Phase 2 waitlist.
       </p>
     </div>
     <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
       <div>
         <label class="block text-[10px] font-bold text-slate-500 mb-1">Which Board?</label>
-        <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required
-               class="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
+        <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required="" class="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
       </div>
       <div>
         <label class="block text-[10px] font-bold text-slate-500 mb-1">Which Class?</label>
-        <input type="text" id="reqClass" placeholder="e.g. Class 8" required
-               class="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
+        <input type="text" id="reqClass" placeholder="e.g. Class 8" required="" class="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
       </div>
       <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-900/20 hover:bg-blue-900 transition text-xs uppercase tracking-wide">
         Send Request via Email
@@ -422,5 +525,82 @@ buttons.forEach(btn => {
 });
 </script>
 
-</body>
-</html>
+
+
+
+<div id="login-modal-overlay" class="modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+  <div class="relative w-full max-w-md p-6">
+    <button id="close-login-modal" class="absolute top-4 right-4 text-white/50 hover:text-white text-2xl font-bold">×</button>
+
+          <h2 class="text-white font-bold text-xl mb-6 text-center">Identity Gateway</h2>
+
+          <form id="sovereign-login-form" class="space-y-4">
+              <div>
+                  <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Identity ID</label>
+                  <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required="">
+              </div>
+              <div>
+                  <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Secure Passkey</label>
+                  <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold transition" placeholder="••••••••" required="">
+              </div>
+              <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
+              <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-4 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20">
+                  Authenticate &amp; Bind
+              </button>
+          </form>
+
+          <div class="mt-6 text-center border-t border-white/10 pt-4">
+              <p class="text-[10px] text-white/50">Restricted Access • Institutional Use Only</p>
+          </div>
+
+  </div>
+</div>
+
+<script id="custom-ui-logic">
+  document.addEventListener('DOMContentLoaded', () => {
+    // Login Modal Toggle Logic
+    const loginBtn = document.getElementById('login-modal');
+    const modalOverlay = document.getElementById('login-modal-overlay');
+    const closeBtn = document.getElementById('close-login-modal');
+
+    if(loginBtn && modalOverlay) {
+      loginBtn.addEventListener('click', () => {
+        modalOverlay.classList.remove('hidden');
+      });
+    }
+
+    if(closeBtn && modalOverlay) {
+      closeBtn.addEventListener('click', () => {
+        modalOverlay.classList.add('hidden');
+      });
+    }
+
+    // Selection Widget Logic
+    const startQuizBtns = document.querySelectorAll('button');
+    let startQuizBtn;
+    startQuizBtns.forEach(btn => {
+      if(btn.textContent.includes('Start Quiz')) {
+        startQuizBtn = btn;
+      }
+    });
+
+    if(startQuizBtn) {
+      startQuizBtn.id = 'start-quiz-btn';
+      startQuizBtn.addEventListener('click', () => {
+        const selects = document.querySelectorAll('.form-select');
+        const board = selects[0] ? selects[0].value : 'Unknown';
+        const classVal = selects[1] ? selects[1].value.replace('Grade ', '') : '9';
+        const subject = selects[2] ? selects[2].value : 'Unknown';
+        const level = selects[3] ? selects[3].value : 'Simple';
+
+        const targetUrl = "./app/quiz-engine.html?board=" + encodeURIComponent(board) +
+                          "&class=" + encodeURIComponent(classVal) +
+                          "&subject=" + encodeURIComponent(subject) +
+                          "&difficulty=" + encodeURIComponent(level);
+
+        window.location.href = targetUrl;
+      });
+    }
+  });
+</script>
+</body></html>
