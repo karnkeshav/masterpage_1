@@ -64,7 +64,12 @@
         </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden relative">
+
+    <div id="loading" class="flex items-center justify-center min-h-[50vh]">
+        <div class="animate-pulse font-bold text-slate-400">Verifying Teacher Access...</div>
+    </div>
+
+    <div id="app" class="hidden flex flex-1 overflow-hidden relative">
 
         <!-- Sidebar Navigation -->
         <aside class="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-6 min-h-[calc(100vh-76px)] hidden lg:block shadow-sm z-10 relative">
@@ -111,7 +116,7 @@
         import { initializeAuthListener } from "../../js/auth-paywall.js";
         import { bindConsoleLogout, guardConsole } from "../../js/guard.js";
         import { loadCurriculum, getGradeFromURL } from "../../js/curriculum/loader.js";
-        import { collection, query, where, onSnapshot, getDocs, setDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, getDocs, setDoc, addDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
 
         // === GLOBAL STATE DECLARATIONS ===
@@ -138,7 +143,29 @@
         // Initialize Application
         async function init(user) {
             currentUser = user;
-            document.getElementById('user-welcome').innerText = user?.uid || "OIWRdguAeQicl2jcf5R19a3bD9V2";
+            document.getElementById('user-welcome').innerText = user?.displayName || "Teacher";
+            window.teacherProfile = user;
+
+            // Populate dropdowns from teacher profile
+            const sections = user?.sections || ['9A'];
+            const disciplines = user?.mapped_disciplines || ['Chemistry'];
+
+            const sectionSelect = document.getElementById('section-select');
+            sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('');
+
+            const discSelect = document.getElementById('discipline-select');
+            discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${d}</option>`).join('');
+
+            // Derive grades from sections (e.g., "9A" -> "9")
+            const grades = [...new Set(sections.map(s => s.replace(/[A-Z]/g, '')))];
+            const gradeSelect = document.getElementById('grade-select');
+            gradeSelect.innerHTML = grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('');
+
+            // Set initial context
+            currentContext.grade = grades[0] || '9';
+            currentContext.section = sections[0] || '9A';
+            currentContext.discipline = disciplines[0] || 'Chemistry';
+
 
             const viewport = document.getElementById('tab-viewport');
             UI.showSkeleton(viewport, 3);
@@ -158,10 +185,28 @@
                 currentContext.grade = grade;
                 const curriculumData = await loadCurriculum(grade);
 
-                // Fetch mock or real scores
-                const scoresQuery = query(collection(db, "quiz_scores"));
-                const scoresSnap = await getDocs(scoresQuery);
-                studentScores = scoresSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                // Fetch scores for students in this section
+                const studentsQuery = query(collection(db, "users"),
+                    where("section_id", "==", `${currentContext.grade}-${currentContext.section.replace(currentContext.grade, '')}`),
+                    where("role", "==", "student")
+                );
+                const studentsSnap = await getDocs(studentsQuery);
+                const studentUids = studentsSnap.docs.map(d => d.id);
+                const studentNames = {};
+                studentsSnap.docs.forEach(d => { studentNames[d.id] = d.data().displayName || d.data().email || d.id; });
+
+                // Store for use in heatmap and remedial
+                window.sectionStudents = { uids: studentUids, names: studentNames };
+
+                // Fetch scores for these students (in batches of 10 for Firestore 'in' query limit)
+                studentScores = [];
+                for (let i = 0; i < studentUids.length; i += 10) {
+                    const batch = studentUids.slice(i, i + 10);
+                    if (batch.length === 0) continue;
+                    const scoresQuery = query(collection(db, "quiz_scores"), where("user_id", "in", batch));
+                    const scoresSnap = await getDocs(scoresQuery);
+                    scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
+                }
 
                 // Configure Context
                 updateActiveChapters(curriculumData);
@@ -192,17 +237,26 @@
         };
 
         function updateActiveChapters(curriculumData) {
-            if (curriculumData && curriculumData["Science"]) {
-                const chaps = curriculumData["Science"][currentContext.discipline] || [];
-                activeChapters = chaps.map(c => ({
-                    id: c.chapter_title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-                    title: c.chapter_title
-                }));
-                if(activeChapters.length > 0) {
-                    selectedChapterId = activeChapters[0].id;
+            if (!curriculumData) { activeChapters = []; return; }
+
+            const disc = currentContext.discipline;
+            let chaps = [];
+
+            // Search all subjects for the discipline
+            for (const [subject, subDiscs] of Object.entries(curriculumData)) {
+                if (subDiscs[disc]) {
+                    chaps = subDiscs[disc];
+                    break;
                 }
-            } else {
-                activeChapters = [];
+            }
+
+            activeChapters = chaps.map(c => ({
+                id: c.chapter_title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+                title: c.chapter_title
+            }));
+
+            if (activeChapters.length > 0) {
+                selectedChapterId = activeChapters[0].id;
             }
         }
 
@@ -242,18 +296,55 @@
         async function markChapterFinished(chapterId) {
             if (!db) return;
             const docId = getControlDocId(chapterId);
+            const chapterTitle = activeChapters.find(c => c.id === chapterId)?.title || chapterId;
+
             try {
+                // 1. Write chapter_control (include school_id!)
                 await setDoc(doc(db, "chapter_control", docId), {
                     chapter_slug: chapterId,
+                    chapter_title: chapterTitle,
                     grade: currentContext.grade,
                     section: currentContext.section,
                     discipline: currentContext.discipline,
+                    school_id: window.teacherProfile?.school_id || '',
                     taught_date: serverTimestamp(),
-                    status: 'finished'
+                    status: 'finished',
+                    teacher_uid: currentUser?.uid || ''
                 });
+
+                // 2. Create student_notifications for each student in the section
+                const studentsQuery = query(collection(db, "users"),
+                    where("section_id", "==", `${currentContext.grade}-${currentContext.section.replace(currentContext.grade, '')}`),
+                    where("role", "==", "student")
+                );
+                const studentsSnap = await getDocs(studentsQuery);
+
+                const notifPromises = [];
+                studentsSnap.docs.forEach(studentDoc => {
+                    const studentData = studentDoc.data();
+                    notifPromises.push(addDoc(collection(db, "student_notifications"), {
+                        student_id: studentDoc.id,
+                        parent_id: studentData.parent_id || null,
+                        type: "TEST_ASSIGNED",
+                        topicSlug: chapterId,
+                        chapter_title: chapterTitle,
+                        discipline: currentContext.discipline,
+                        grade: currentContext.grade,
+                        section: currentContext.section,
+                        text: `Your teacher has completed "${chapterTitle}" in class. Please take the Simple test as early as possible.`,
+                        sender_name: currentUser?.displayName || "Teacher",
+                        priority: "teacher",
+                        timestamp: serverTimestamp(),
+                        school_id: window.teacherProfile?.school_id || ''
+                    }));
+                });
+
+                await Promise.all(notifPromises);
+                console.log(`Notifications sent to ${studentsSnap.size} students for ${chapterTitle}`);
+
             } catch (error) {
-                // Fail silently
                 console.warn("Handshake trigger failed", error);
+                alert("Failed to mark chapter: " + error.message);
             }
         }
 
@@ -523,6 +614,8 @@
                 </li>
             `).join('');
 
+            const isSync = !!completedChapters[selectedChapterId];
+
             document.getElementById('tab-viewport').innerHTML = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
@@ -534,11 +627,7 @@
                             ${optionsHtml}
                         </select>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            `;
-
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                         <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                             <div class="bg-danger-red p-6 text-white flex justify-between items-center">
                                 <div>
@@ -571,7 +660,6 @@
                             </div>
                             ${isSync ? '<span class="text-green-600 animate-pulse text-xl">📡</span>' : ''}
                         </div>
-
                         <div class="bg-cbse-blue rounded-3xl shadow-sm border border-blue-900 overflow-hidden flex flex-col">
                             <div class="p-6 border-b border-white/10 relative overflow-hidden">
                                 <div class="absolute -right-4 -top-4 text-white/10 text-6xl transform rotate-12"><i class="fas fa-trophy"></i></div>
@@ -584,7 +672,6 @@
                                 </ul>
                             </div>
                         </div>
-
                     </div>
                 </div>
             `;
@@ -625,17 +712,5 @@
         });
 
     </script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-    <header class="bg-cbse-blue p-4 px-6 text-white flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center gap-4">
-            <a href="../../index.html" class="w-8 h-8 bg-white text-cbse-blue rounded-lg flex items-center justify-center font-bold">🏠</a>
-            <h2 class="font-black tracking-tight">Faculty<span class="text-accent-gold">Console</span></h2>
-        </div>
-        <button id="logout-btn" class="text-xs font-bold bg-white/10 px-3 py-1 rounded-lg">Logout 🚪</button>
-    </header>
-
-    <main id="main-content" class="max-w-6xl mx-auto p-6 md:p-10">
-        </main>
 </body>
 </html>

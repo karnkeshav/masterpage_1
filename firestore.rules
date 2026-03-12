@@ -1,6 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    match /quiz_scores/{scoreId} {
+        allow read: if isLoggedIn();
+        allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
+    }
+
 
     // ... existing rules (implied from task description, as I don't have the original firestore.rules file) ...
 
