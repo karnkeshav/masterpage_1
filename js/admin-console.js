@@ -905,7 +905,7 @@ window.linkParentToStudent = async (studentUid, parentEmail) => {
         const { db } = await getInitializedClients();
 
         // Query for parent by email
-        const parentQuery = query(collection(db, "users"), where("email", "==", parentEmail));
+        const parentQuery = query(collection(db, "users"), where("email", "==", parentEmail), where("role", "==", "parent"));
         const parentSnap = await getDocs(parentQuery);
 
         if (parentSnap.empty) {

@@ -229,10 +229,9 @@
                 const schoolId = generateSchoolId(schoolName, district);
 
                 // Initialize SecondaryOnboarding Auth
-                const { app } = await getInitializedClients();
                 let secApp = getApps().find(a => a.name === "SecondaryOnboarding");
                 if (!secApp) {
-                    secApp = initializeApp(app.options, "SecondaryOnboarding");
+                    secApp = initializeApp(window.__firebase_config, "SecondaryOnboarding");
                 }
                 secAuth = getAuth(secApp);
 
