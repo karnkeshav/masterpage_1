@@ -48,6 +48,33 @@ def verify_school_portal():
 
             page1.route("**/*", intercept_route)
 
+            # Since the button is disabled by default until selections are made,
+            # we need to make the selections to enable it, OR force click it.
+            # Our widget logic requires real selections to build the URL.
+
+            # Select CBSE
+            page1.click("button[data-board='CBSE']")
+
+            # Select Class 10
+            page1.select_option("#class-select", "10")
+            page1.wait_for_timeout(500)
+
+            # Select Science
+            page1.select_option("#subject-select", "Science")
+            page1.wait_for_timeout(500)
+
+            # Select the first available chapter that has a value
+            page1.evaluate('''() => {
+               const chapSel = document.getElementById('chapter-select');
+               for(let i=0; i<chapSel.options.length; i++) {
+                   if(chapSel.options[i].value && JSON.parse(chapSel.options[i].value).table_id) {
+                       chapSel.selectedIndex = i;
+                       window.checkChapter();
+                       break;
+                   }
+               }
+            }''')
+
             page1.click("#start-quiz-btn")
             page1.wait_for_timeout(1000)
 

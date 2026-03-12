@@ -1,10 +1,12 @@
-<!DOCTYPE html><html lang="en" class="dark"><head>
-<meta charset="utf-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
 
 <title>Ready4Exam — Board-Aligned Academic Portal</title>
 
-<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -12,9 +14,9 @@
   gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
 </script>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="js/firebase-master-config.js"></script>
 
 <script>
@@ -28,7 +30,7 @@ tailwind.config = {
         'heading':'#0f172a'
       },
       backgroundImage:{
-        'hero-grad':'linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%)'
+        'hero-grad':'linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #133b6a 100%)'
       }
     }
   }
@@ -41,128 +43,6 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 .fade-in { animation:fade .5s ease-out forwards; opacity:0; }
 @keyframes fade { to{opacity:1} }
 
-/* --- COMPONENT STYLES --- */
-.board-btn {
-  flex:1; padding:.8rem 1.2rem; border-radius:14px;
-  font-weight:800; font-size:.9rem; letter-spacing:.05em;
-  background:#f1f5f9; color:#475569; transition:.25s; border: 1px solid transparent;
-}
-.board-btn:hover { background: #e2e8f0; }
-.board-btn.active {
-  background:#133b6a; color:white;
-  box-shadow:0 10px 25px rgba(19,59,106,.35);
-  border-color: #133b6a;
-}
-
-.class-card {
-  background:white; padding:1.2rem 1rem; border-radius:16px;
-  border:1px solid rgba(0,0,0,.05);
-  box-shadow:0 4px 12px rgba(0,0,0,.05);
-  transition:.2s cubic-bezier(.4,0,.2,1);
-  display: flex; flex-direction: column; justify-content: center; align-items: center;
-}
-.class-card:hover { transform:translateY(-4px); border-color:#133b6a; box-shadow:0 10px 20px rgba(19,59,106,.1); }
-
-/* --- TESTIMONIAL SCROLL ANIMATION --- */
-.scroll-wrapper {
-  overflow: hidden;
-  position: relative;
-  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-}
-.scroll-content {
-  animation: scrollVertical 25s linear infinite;
-}
-@keyframes scrollVertical {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
-}
-
-/* --- SPLIT LAYOUT LOGIC --- */
-.left-panel {
-  width: 100%;
-  background-image: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #16a34a 100%) !important; 
-  padding: 2.5rem 1.5rem; 
-  border-radius: 0 0 30px 30px;
-  position: relative; overflow: hidden;
-}
-.right-panel { width: 100%; padding: 2rem 1.5rem; padding-bottom: 80px; }
-
-/* Laptop (LG) Logic */
-@media (min-width: 1024px) {
-  body { height: 100vh; overflow: hidden; display: flex; }
-  .split-layout { width: 100%; height: 100%; display: flex; }
-
-  /* Left Panel (Hero) - 60% */
-  .left-panel {
-    width: 60%; height: 100%;
-    padding: 3rem 4rem; /* Adjusted padding for better fit */
-    display: flex; flex-direction: column;
-    /* justify-content: space-between; Removed to allow better stacking */
-    border-radius: 0;
-  }
-
-  /* Right Panel (Curriculum) - 40% */
-  .right-panel {
-    width: 40%; height: 100%;
-    background: #f8fafc;
-    position: relative;
-    display: flex; flex-direction: column;
-    justify-content: space-between;
-    padding: 2rem;
-  }
-
-  #site-footer {
-    position: absolute; bottom: 0; left: 0; width: 100%;
-    background: transparent; color: #64748b; border-top: 1px solid #e2e8f0;
-  }
-  #site-footer p { color: #133b6a; }
-
-  .mobile-header { display: none; }
-
-  .hero-image {
-    position: absolute; top: 0; right: 0; height: auto; width: 45%;
-    max-height: 100%; object-fit: contain; object-position: top right;
-    z-index: 0; opacity: 0.9;
-  }
-}
-
-/* Mobile Image Logic */
-@media (max-width: 1023px) {
-  body { height: auto; overflow-y: auto; flex-direction: column; }
-  .split-layout { flex-direction: column; }
-  .mobile-header { display: block; position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); background: rgba(19,59,106,0.95); padding: 1rem; }
-  #site-footer { background: #133b6a; color: white; margin-top: auto; }
-
-  .hero-image {
-    position: absolute; top: 10%; right: -10%; height: auto; width: 60%;
-    max-height: 50%; object-fit: contain; object-position: top right;
-    z-index: 0; opacity: 0.8;
-  }
-
-  .right-panel { display: block; }
-}
-
-/* --- MODAL & WHATSAPP --- */
-.modal-backdrop {
-  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(15, 23, 42, 0.8); z-index: 100; align-items: center; justify-content: center;
-  padding: 20px; backdrop-filter: blur(5px);
-}
-.modal-content {
-  background: white; border-radius: 24px; width: 100%; max-width: 450px;
-  padding: 2rem; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: slideUp 0.3s ease-out;
-}
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-.portal-btn {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 100%; padding: 1.5rem; border-radius: 16px; border: 2px solid #e2e8f0;
-  transition: all 0.2s; cursor: pointer; text-align: center;
-}
-.portal-btn:hover { border-color: #133b6a; background: #f0f9ff; transform: translateY(-2px); }
-.portal-btn i { font-size: 2rem; margin-bottom: 0.5rem; color: #133b6a; }
-
 .whatsapp-float {
   position: fixed; bottom: 80px; right: 20px;
   background-color: #25d366; color: white;
@@ -174,434 +54,319 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 }
 .whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
 @media(min-width:1024px){ .whatsapp-float{ bottom: 30px; right: 30px; } }
+
+/* Hide scrollbar for horizontal scroll */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
 </style>
-<style>
-        @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-        .animate-marquee {
-            display: flex;
-            width: 200%;
-            animation: marquee 30s linear infinite;
-        }
-        .animate-marquee:hover {
-            animation-play-state: paused;
-        }
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen">
 
-        .snap-x { scroll-snap-type: x mandatory; }
-        .snap-center { scroll-snap-align: center; }
-        ::-webkit-scrollbar { display: none; }
-
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style></head>
-
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased h-screen overflow-hidden flex flex-col">
-<header class="flex items-center bg-background-light dark:bg-background-dark p-4 border-b border-slate-200 dark:border-slate-800 justify-between shrink-0">
-<div class="text-primary flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-<span class="material-symbols-outlined">arrow_back</span>
-</div>
-<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight flex-1 text-center">Identity Gateway</h2>
-<div class="size-10"></div>
-</header>
-<main class="flex-1 overflow-y-auto lg:flex lg:overflow-hidden lg:gap-6 lg:p-6">
-<div class="lg:flex-1 lg:overflow-y-auto flex flex-col gap-6 p-4">
-<section class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
-<div class="flex items-center gap-3 mb-5">
-<span class="material-symbols-outlined text-primary">fingerprint</span>
-<h3 class="text-lg font-semibold tracking-tight">System Access</h3>
-</div>
-<form id="sovereign-login-form"><div class="space-y-4">
-<div class="flex flex-col gap-2">
-<label class="text-sm font-medium text-slate-500 dark:text-slate-400">Identity ID</label>
-<input class="form-input w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary h-12 px-4 text-base" placeholder="EDU-XXXX-XXXX" type="text" id="username">
-</div>
-<div class="flex flex-col gap-2">
-<label class="text-sm font-medium text-slate-500 dark:text-slate-400">Secure Passkey</label>
-<div class="relative">
-<input class="form-input w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary h-12 px-4 pr-12 text-base" placeholder="Enter passkey" type="password" id="password">
-<button class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-<span class="material-symbols-outlined text-xl">visibility</span>
-</button>
-</div>
-</div>
-<button class="w-full bg-primary hover:bg-primary/90 text-white font-semibold h-12 rounded-lg transition-colors shadow-lg shadow-primary/20 mt-2" type="submit">
-                        Authenticate &amp; Bind
-                    </button>
-</div><div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded mt-2"></div></form>
-</section>
-<section class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
-<div class="flex items-center gap-3 mb-5">
-<span class="material-symbols-outlined text-primary">hub</span>
-<h3 class="text-lg font-semibold tracking-tight">Selection Engine</h3>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div class="flex flex-col gap-2">
-<label class="text-xs font-bold uppercase tracking-wider text-slate-400">Board</label>
-<select class="form-select rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 h-14 px-4 text-sm font-medium">
-<option>Central Board</option>
-<option>State Board</option>
-<option>International</option>
-</select>
-</div>
-<div class="flex flex-col gap-2">
-<label class="text-xs font-bold uppercase tracking-wider text-slate-400">Class</label>
-<select class="form-select rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 h-14 px-4 text-sm font-medium">
-<option>Grade 10</option>
-<option>Grade 11</option>
-<option>Grade 12</option>
-</select>
-</div>
-<div class="flex flex-col gap-2">
-<label class="text-xs font-bold uppercase tracking-wider text-slate-400">Subject</label>
-<select class="form-select rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 h-14 px-4 text-sm font-medium">
-<option>Mathematics</option>
-<option>Physics</option>
-<option>Chemistry</option>
-</select>
-</div>
-<div class="flex flex-col gap-2">
-<label class="text-xs font-bold uppercase tracking-wider text-slate-400">Level</label>
-<select class="form-select rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 h-14 px-4 text-sm font-medium">
-<option>Standard</option>
-<option>Advanced</option>
-<option>Expert</option>
-</select>
-</div>
-</div>
-<button class="w-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold h-12 rounded-lg transition-colors mt-6 flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-600" id="start-quiz-btn">
-<span class="material-symbols-outlined">play_circle</span>
-                    Start Quiz
-                </button>
-<div class="mt-4 text-center">
-<a class="text-xs font-medium text-primary hover:underline" href="mailto:ready4urexam@gmail.com">Board not listed? Request Institutional Onboarding</a>
-</div>
-</section>
-</div>
-<div class="lg:w-[400px] lg:border-l lg:border-slate-200 lg:dark:border-slate-800 lg:bg-slate-50 lg:dark:bg-slate-900/50 flex flex-col p-4 pt-0 lg:pt-6">
-<h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest px-4 mb-4">Console Previews</h3>
-<div class="flex overflow-x-auto snap-x scroll-smooth gap-4 pb-6 lg:flex-col lg:overflow-y-auto lg:snap-none lg:pb-0 px-4 -mx-4 lg:mx-0">
-<div class="min-w-[85vw] lg:min-w-0 snap-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col">
-<div class="h-32 bg-gradient-to-br from-primary to-blue-400 relative p-4 flex flex-col justify-end" data-alt="Blue abstract geometric pattern with glowing accents">
-<div class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit text-[10px] font-bold text-white uppercase tracking-tighter mb-2">Student Interface</div>
-<h4 class="text-white font-bold text-lg">Alex Johnson</h4>
-<p class="text-white/80 text-xs">Active Class: Mathematics-10A</p>
-</div>
-<div class="p-4 space-y-3">
-<div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700">
-<span class="text-xs text-slate-500">Overall Progress</span>
-<span class="text-xs font-bold text-primary">78%</span>
-</div>
-<div class="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-<div class="h-full bg-primary w-[78%]"></div>
-</div>
-<div class="grid grid-cols-2 gap-2 mt-4">
-<div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-center">
-<div class="text-[10px] text-slate-400">Quizzes</div>
-<div class="text-sm font-bold">12/15</div>
-</div>
-<div class="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-center">
-<div class="text-[10px] text-slate-400">Tokens</div>
-<div class="text-sm font-bold">2,450</div>
-</div>
-</div>
-</div>
-</div>
-<div class="min-w-[85vw] lg:min-w-0 snap-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col">
-<div class="h-32 bg-gradient-to-br from-indigo-600 to-purple-400 relative p-4 flex flex-col justify-end" data-alt="Deep purple and indigo soft gradient curves">
-<div class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit text-[10px] font-bold text-white uppercase tracking-tighter mb-2">Parent Console</div>
-<h4 class="text-white font-bold text-lg">Sarah Johnson</h4>
-<p class="text-white/80 text-xs">Monitoring 1 Ward</p>
-</div>
-<div class="p-4 space-y-3">
-<div class="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg">
-<span class="material-symbols-outlined text-indigo-500">notifications_active</span>
-<div class="flex-1">
-<p class="text-[10px] font-bold uppercase text-indigo-400">Latest Update</p>
-<p class="text-xs font-medium">Alex completed Algebra II Quiz</p>
-</div>
-</div>
-<div class="space-y-2 pt-2">
-<div class="flex items-center justify-between text-xs">
-<span>Weekly engagement</span>
-<span class="text-green-500 font-bold">+12%</span>
-</div>
-<div class="flex gap-1 h-8 items-end">
-<div class="flex-1 bg-indigo-200 dark:bg-indigo-900 h-[60%] rounded-t-sm"></div>
-<div class="flex-1 bg-indigo-200 dark:bg-indigo-900 h-[40%] rounded-t-sm"></div>
-<div class="flex-1 bg-indigo-200 dark:bg-indigo-900 h-[80%] rounded-t-sm"></div>
-<div class="flex-1 bg-indigo-500 h-[95%] rounded-t-sm"></div>
-<div class="flex-1 bg-slate-200 dark:bg-slate-700 h-[20%] rounded-t-sm"></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</main>
-<nav class="shrink-0 flex gap-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pb-safe pt-2">
-<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
-<div class="flex h-8 items-center justify-center">
-<span class="material-symbols-outlined">home</span>
-</div>
-<p class="text-[10px] font-medium leading-none">Home</p>
-</a>
-<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary" href="#">
-<div class="flex h-8 items-center justify-center">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">fingerprint</span>
-</div>
-<p class="text-[10px] font-medium leading-none">Gateway</p>
-</a>
-<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
-<div class="flex h-8 items-center justify-center">
-<span class="material-symbols-outlined">school</span>
-</div>
-<p class="text-[10px] font-medium leading-none">Courses</p>
-</a>
-<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
-<div class="flex h-8 items-center justify-center">
-<span class="material-symbols-outlined">settings</span>
-</div>
-<p class="text-[10px] font-medium leading-none">Settings</p>
-</a>
-</nav>
-
-
-
-
-<div class="flex h-screen w-full flex-col lg:flex-row">
-<!-- Left Panel (60%) -->
-<div class="relative flex h-full w-full flex-col p-8 lg:w-[60%] overflow-y-auto border-r border-slate-200 dark:border-slate-800 bg-gradient-to-br from-primary/20 via-background-dark to-background-dark">
 <!-- Header -->
-<header class="flex items-center justify-between w-full mb-12">
-<div class="flex items-center gap-3">
-<div class="size-8 text-primary">
-<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
-</svg>
-</div>
-<h2 class="text-2xl font-bold tracking-tight">Sovereign</h2>
-</div>
-<button class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-6 bg-primary text-white text-sm font-bold transition-all hover:brightness-110 active:scale-95" id="login-modal">
-                    Login
-                </button>
+<header class="bg-cbse-blue shadow-md py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
+  <div class="flex justify-between items-center w-full max-w-7xl mx-auto">
+    <div>
+      <h1 class="text-xl font-black text-gold text-accent-gold">Ready4<span class="text-white">Exam</span></h1>
+    </div>
+  </div>
 </header>
-<!-- Hero Section & Widget -->
-<div class="flex flex-col flex-1 justify-center max-w-2xl mx-auto w-full">
-<div class="mb-8">
-<h1 class="text-4xl lg:text-6xl font-extrabold tracking-tight mb-4 leading-tight">
-                        Master Your Exams <br><span class="text-primary">With Precision</span>
-</h1>
-<p class="text-slate-500 dark:text-slate-400 text-lg">
-                        Access high-end educational resources and premium exam preparation tools tailored for your success.
-                    </p>
-</div>
-<!-- Sovereign Selection Widget -->
-<div class="bg-white dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-2xl">
-<div class="flex items-center gap-3 mb-6">
-<span class="material-symbols-outlined text-primary">verified_user</span>
-<h3 class="text-xl font-bold">Selection Widget</h3>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-<div class="flex flex-col gap-2">
-<label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Board</label>
-<select class="form-select bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary" id="board-btn">
-<option>Select Board</option>
-<option>International Baccalaureate</option>
-<option>Cambridge A-Levels</option>
-<option>CBSE / ICSE</option>
-</select>
-</div>
-<div class="flex flex-col gap-2">
-<label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Class</label>
-<select class="form-select bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary" id="class-grid">
-<option>Select Class</option>
-<option>Grade 10</option>
-<option>Grade 11</option>
-<option>Grade 12</option>
-</select>
-</div>
-<div class="flex flex-col gap-2">
-<label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Subject</label>
-<select class="form-select bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary">
-<option>Select Subject</option>
-<option>Advanced Mathematics</option>
-<option>Quantum Physics</option>
-<option>Organic Chemistry</option>
-</select>
-</div>
-<div class="flex flex-col gap-2">
-<label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Difficulty</label>
-<select class="form-select bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary">
-<option>Standard</option>
-<option>Advanced</option>
-<option>Elite</option>
-</select>
-</div>
-</div>
-<button class="w-full bg-primary hover:brightness-110 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2 group">
-                        Start Quiz
-                        <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
-</button>
-</div>
-<!-- Group CTA -->
-<div class="mt-12 p-6 rounded-xl border border-dashed border-primary/40 bg-primary/5 flex items-center justify-between">
-<div>
-<h4 class="font-bold text-lg">Join a Group of 10</h4>
-<p class="text-sm text-slate-500">Collaborative learning for intensive exam prep.</p>
-</div>
-<a class="bg-background-dark dark:bg-white text-white dark:text-background-dark px-6 py-2 rounded-lg font-bold text-sm hover:scale-105 transition-transform" href="mailto:ready4urexam@gmail.com">
-                        ready4urexam@gmail.com
-                    </a>
-</div>
-</div>
-<!-- Footer Small -->
-<footer class="mt-auto pt-8 flex justify-between text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-<span>© 2024 Sovereign EdTech</span>
-<div class="flex gap-4">
-<a class="hover:text-primary" href="#">Privacy</a>
-<a class="hover:text-primary" href="#">Terms</a>
-</div>
+
+<!-- Section 1: Hero & Login -->
+<section class="bg-hero-grad text-white py-12 lg:py-20 px-4 relative overflow-hidden">
+  <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10">
+    <div class="flex-1 text-center lg:text-left">
+      <h1 class="text-4xl lg:text-6xl font-black mb-4 leading-tight fade-in">
+        Master Your Exams <br/><span class="text-gold">With Precision</span>
+      </h1>
+      <p class="text-white/80 text-lg mb-8 max-w-xl mx-auto lg:mx-0 fade-in" style="animation-delay: 0.2s;">
+        Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools & students.
+      </p>
+    </div>
+
+    <div class="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl fade-in" style="animation-delay: 0.3s;">
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <i class="fas fa-fingerprint text-gold text-2xl"></i>
+        <h2 class="text-white font-bold text-xl">Login</h2>
+      </div>
+
+      <form id="sovereign-login-form" class="space-y-4">
+          <div>
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Username</label>
+              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required>
+          </div>
+          <div>
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Password</label>
+              <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" required>
+          </div>
+          <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
+          <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2">
+              Log In
+          </button>
+      </form>
+      <div class="mt-6 text-center border-t border-white/10 pt-4">
+          <p class="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Owner • School Admin • Students & Parents</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: Quick Quiz Selection Widget -->
+<section class="py-16 px-4 bg-white border-b border-slate-200">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-10">
+      <h2 class="text-3xl font-black text-cbse-blue mb-2">Try a Quiz Now</h2>
+      <p class="text-slate-500">Select your curriculum to start practicing instantly.</p>
+    </div>
+
+    <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+        <!-- Board -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
+          <div class="flex gap-2">
+            <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="CBSE" onclick="selectBoard('CBSE', this)">CBSE</button>
+            <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="SCERT" onclick="selectBoard('SCERT', this)">SCERT (TS)</button>
+            <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="OTHER" onclick="selectBoard('OTHER', this)">Other</button>
+          </div>
+        </div>
+
+        <!-- Class -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
+          <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled onchange="loadSubjects()">
+            <option value="">Select Board first...</option>
+          </select>
+        </div>
+
+        <!-- Subject -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
+          <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled onchange="loadChapters()">
+            <option value="">Select Class first...</option>
+          </select>
+        </div>
+
+        <!-- Chapter -->
+        <div class="flex flex-col gap-2">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
+          <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled onchange="checkChapter()">
+            <option value="">Select Subject first...</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Difficulty & Start -->
+      <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
+        <div class="flex-1 w-full">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
+          <div class="flex gap-2">
+            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">Simple</button>
+            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Medium" onclick="selectDifficulty('Medium', this)">Medium</button>
+            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Advanced" onclick="selectDifficulty('Advanced', this)">Advanced</button>
+          </div>
+        </div>
+        <div class="flex-1 w-full">
+          <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled onclick="startQuiz()">
+            <i class="fas fa-play-circle"></i> Start Quiz
+          </button>
+          <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
+        </div>
+      </div>
+
+      <!-- Other Board Fallback -->
+      <div id="other-board-msg" class="hidden mt-6 text-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
+          <p class="text-sm text-cbse-blue font-medium mb-2">We are actively building for more boards!</p>
+          <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding &darr;</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: Platform Features -->
+<section class="py-16 px-4 bg-slate-50 border-b border-slate-200">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-black text-cbse-blue mb-2">Platform Features</h2>
+      <p class="text-slate-500">Everything you need for structured academic progression.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Student Dashboard -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center gap-3 mb-4 text-cbse-blue">
+          <div class="bg-blue-50 p-2 rounded-lg"><i class="fas fa-chart-pie text-xl"></i></div>
+          <h3 class="text-lg font-bold">Student Dashboard</h3>
+        </div>
+        <p class="text-sm text-slate-600 mb-6">Track average mastery, view subject progress, and monitor your professional journey line.</p>
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center justify-around h-32 relative overflow-hidden">
+           <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+              <path class="text-slate-200" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="text-success-green" stroke-width="3" stroke-dasharray="80, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+           </svg>
+           <div class="flex flex-col gap-2 w-1/2">
+              <div class="h-2 bg-blue-200 rounded-full w-full"></div>
+              <div class="h-2 bg-purple-200 rounded-full w-3/4"></div>
+              <div class="h-2 bg-amber-200 rounded-full w-5/6"></div>
+           </div>
+        </div>
+      </div>
+
+      <!-- Parent Dashboard -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center gap-3 mb-4 text-indigo-600">
+          <div class="bg-indigo-50 p-2 rounded-lg"><i class="fas fa-user-friends text-xl"></i></div>
+          <h3 class="text-lg font-bold">Parent Console</h3>
+        </div>
+        <p class="text-sm text-slate-600 mb-6">Real-time performance tracking via the Sync Wall and direct Command Nudges.</p>
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 h-32 flex flex-col gap-3 justify-center">
+            <div class="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-slate-100">
+                <span class="text-[10px] font-bold text-slate-500">Recent Attempt</span>
+                <span class="text-xs font-black text-green-600">92%</span>
+            </div>
+            <div class="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-slate-100">
+                <span class="text-[10px] font-bold text-slate-500">Weak Area</span>
+                <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">Force & Laws</span>
+            </div>
+        </div>
+      </div>
+
+      <!-- Knowledge Hub -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center gap-3 mb-4 text-purple-600">
+          <div class="bg-purple-50 p-2 rounded-lg"><i class="fas fa-book-open text-xl"></i></div>
+          <h3 class="text-lg font-bold">Knowledge Hub</h3>
+        </div>
+        <p class="text-sm text-slate-600 mb-6">Structured navigation through Mathematics, Science, and Social Science curriculums.</p>
+        <div class="flex gap-2 h-32">
+            <div class="flex-1 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-400 text-2xl"><i class="fas fa-calculator"></i></div>
+            <div class="flex-1 bg-purple-50 border border-purple-100 rounded-xl flex items-center justify-center text-purple-400 text-2xl"><i class="fas fa-flask"></i></div>
+            <div class="flex-1 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-amber-400 text-2xl"><i class="fas fa-landmark"></i></div>
+        </div>
+      </div>
+
+      <!-- Mistake Notebook -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
+        <div class="flex items-center gap-3 mb-4 text-red-600">
+          <div class="bg-red-50 p-2 rounded-lg"><i class="fas fa-book-dead text-xl"></i></div>
+          <h3 class="text-lg font-bold">Mistake Notebook</h3>
+        </div>
+        <p class="text-sm text-slate-600 mb-6">Two-Tier Diagnostic Console to analyze error patterns and build behavioral profiles.</p>
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 h-32 flex flex-col justify-center gap-2">
+            <div class="flex gap-2">
+                <span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">Recall: Strong</span>
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">Logic: Med</span>
+            </div>
+            <div class="flex gap-2">
+                <span class="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full">App: Weak</span>
+            </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Section 4: Testimonials -->
+<section class="py-16 px-4 bg-white border-b border-slate-200 overflow-hidden">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-10">
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Community Love</span>
+      <h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2>
+    </div>
+
+    <!-- Horizontal scroll container -->
+    <div class="flex overflow-x-auto snap-x scrollbar-hide gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0">
+
+      <div class="min-w-[280px] md:min-w-[320px] snap-center bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"Advanced questions are really tough, but they prepared me perfectly for the boards."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-cbse-blue font-bold text-xs">S</div>
+          <div><p class="text-xs font-bold text-heading">Class 10 Student</p><p class="text-[10px] text-slate-400">CBSE Board</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[280px] md:min-w-[320px] snap-center bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"Very good one. The interface is so simple to use. Finally, I can track my son's progress."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-xs">P</div>
+          <div><p class="text-xs font-bold text-heading">Parent</p><p class="text-[10px] text-slate-400">Telangana</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[280px] md:min-w-[320px] snap-center bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"Finally found a place with real Case-Study questions that match the new pattern."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs">T</div>
+          <div><p class="text-xs font-bold text-heading">Science Teacher</p><p class="text-[10px] text-slate-400">Hyderabad</p></div>
+        </div>
+      </div>
+
+      <div class="min-w-[280px] md:min-w-[320px] snap-center bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+        <p class="text-slate-600 text-sm italic mb-4">"The Heatmap in the Principal console lets me identify struggling sections instantly."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-xs">P</div>
+          <div><p class="text-xs font-bold text-heading">School Principal</p><p class="text-[10px] text-slate-400">Partner School</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Section 5: Request Curriculum -->
+<section id="request-section" class="py-16 px-4 bg-slate-50">
+  <div class="max-w-xl mx-auto text-center">
+    <div class="bg-gold/20 text-gold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">🚀</div>
+    <h2 class="text-2xl font-black text-heading mb-3">Don't see your board listed?</h2>
+    <p class="text-sm text-slate-500 mb-6 leading-relaxed">
+      Gather <span class="text-red-500 font-bold">10 students</span> from your board and we'll build the entire curriculum for you. Fast Track deployment within <span class="text-heading font-bold">24 hours</span>.
+    </p>
+
+    <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-left">
+      <form onsubmit="handleRequestSubmit(event)" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Which Board?</label>
+            <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Which Class?</label>
+            <input type="text" id="reqClass" placeholder="e.g. Class 8" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition text-sm flex items-center justify-center gap-2">
+          <i class="fas fa-paper-plane"></i> Request Institutional Onboarding
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
+  <p>© 2025 Ready4Exam Academic Portal.</p>
 </footer>
-</div>
-<!-- Right Panel (40%) -->
-<div class="hidden lg:flex h-full w-[40%] flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden">
-<div class="flex flex-col h-full">
-<!-- Visual Previews -->
-<div class="flex-1 p-8 flex flex-col gap-8 justify-center">
-<!-- Student Console -->
-<div class="relative group">
-<div class="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-<div class="relative bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-<div class="bg-slate-100 dark:bg-slate-900 rounded-lg h-48 w-full bg-cover bg-center flex flex-col justify-end p-4" data-alt="Student dashboard interface with charts and learning modules" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAu45yWbHU5uJ4m3IQiNvfG9Wp61yBuKMuFkHuIGBU4gPp9MxHyikOqiHS5QcZnKeEWeFfzizli__-Xjp31Un280AAQ7cAhM-hSdZiC_YKueCHRBZByprRZeBsw9MAtdbYhoBAWjLUWikqvp_dJZk_ctFN5aRVaz0PUXmKX1XglX5Lwae53iTIvM10NdbagY2wkwwU2SmaBz8ahOptzRu8BMK46rqp2mqtDvK6g7F6I_6DNO77Ti0b69vvGxoye_XUtFA_V8wNIWIGr')">
-<div class="backdrop-blur-md bg-white/10 p-3 rounded-lg border border-white/20">
-<p class="text-xs font-bold text-white uppercase tracking-tighter">Student Console</p>
-<h5 class="text-white text-sm font-medium">Personalized Learning Path</h5>
-</div>
-</div>
-</div>
-</div>
-<!-- Parent Console -->
-<div class="relative group">
-<div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-<div class="relative bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-<div class="bg-slate-100 dark:bg-slate-900 rounded-lg h-48 w-full bg-cover bg-center flex flex-col justify-end p-4" data-alt="Parental monitoring dashboard with analytics and progress reports" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBf1X-2p9JZL7u7R6W_JWHa8mARyDZX-63xuc7yjO05nEsoKU-HIc3FJxQJ_XTT0DS8_Dt691g_ANX3ievTPczVd6UfyUTOvfAklaX_6gDT3TbunsoZa9KNIk8ZKOnrUKpne2Zr10L0t-BEM693RNRXgwkRjDFWlAXcj3TH2QY6-HtTMnGaAF3fa6-yM68fqk4D-cPHKCILpRLkarC_01cKckBk70KDMepnByQn3gtCap2ggqywH4ZTAngPKVn5nG7iuGpSkroBTG5U')">
-<div class="backdrop-blur-md bg-white/10 p-3 rounded-lg border border-white/20">
-<p class="text-xs font-bold text-white uppercase tracking-tighter">Parent Console</p>
-<h5 class="text-white text-sm font-medium">Real-time Performance Analytics</h5>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Testimonial Marquee -->
-<div class="bg-primary/10 dark:bg-primary/5 py-10 border-t border-slate-200 dark:border-slate-800 overflow-hidden">
-<div class="px-8 mb-4 flex items-center justify-between">
-<h3 class="text-sm font-bold uppercase tracking-widest text-primary">Community Love</h3>
-<div class="flex gap-1 text-primary">
-<span class="material-symbols-outlined text-sm">star</span>
-<span class="material-symbols-outlined text-sm">star</span>
-<span class="material-symbols-outlined text-sm">star</span>
-<span class="material-symbols-outlined text-sm">star</span>
-<span class="material-symbols-outlined text-sm">star</span>
-</div>
-</div>
-<div class="relative flex items-center overflow-hidden">
-<div class="animate-marquee whitespace-nowrap flex gap-6 px-6">
-<!-- Card 1 -->
-<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
-<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Profile photo of a satisfied student" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBmCGMvBw8uRH2aqw0hXZGiGlpD5GAq34tuWXJ3oIGn7EB5s37p4mhDOi3C_vLcBRCqJUhjdD0xp7CXAKJ3xrLn3j_eL-IXaNHo6ycAay8sABU_AqLZcZRCwrSTvkZqlYvzGHFpvLQTfphVRIaCwt_Hq-7HBvjvSu-tuqhlnb1w07WPuYJ8LCoxBPTlCQi61zJTjMhgDKtAKAp-muKgwRuRHsGld1cUHceRmPSBDZjKDTxJ-2vmwiHy_SdcgDH-lj5OuFYKJ-r8XYAW')"></div>
-<div>
-<p class="text-xs font-medium italic">"The best prep tool for IB students!"</p>
-<p class="text-[10px] font-bold text-slate-500 uppercase">- Alex M.</p>
-</div>
-</div>
-<!-- Card 2 -->
-<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
-<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Profile photo of a happy parent" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBTEH5BVCLjf7QGBahxv2z9sTr0XpjYR_CmonudtADLNbf_-hJlpxYItv9WbmFGLDaPH1jgdTUwZELHsB8Zxntfq4c-ssaRGB6Auz4t5kSyPiB4IO6u4t4FYJiGtPrh0DzdYkn4CMO6ckAL_PCnE_mB-Wz7y5SuYlixGqXgDv0G_KwpjU1blY2zfOKRb6KapxF02GfLPezzIQShBRTQcOu3e1fSaRN2bqwaAAQumcreQekCoEX53eREL-96r0-e0tqb2F_XVyoN6G6Y')"></div>
-<div>
-<p class="text-xs font-medium italic">"Finally, I can track my son's progress."</p>
-<p class="text-[10px] font-bold text-slate-500 uppercase">- Sarah J.</p>
-</div>
-</div>
-<!-- Card 3 -->
-<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
-<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Profile photo of a high school teacher" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAfUK_uZlLZs0M_NYjSglTABSPpZu-8scw_v6Kphxjum84Qd0yZwicFBvnViwSdpjL02rJ8ECEOyrFwy7QNI_L9V22Zvfb1xy9FfMKZMGq1CQho7S7-NVGlh9aXV7vGWCDppoea_OZHCIXZXpg5Dk6grWyyUvI2bKwO5IH7bSPtLBYv-WFgOihiMjX7iAdP4jMylLgVGvsBjJXEXiPyYSuAzvgO9wIP1A-050mZYHIo11PTVZqT18EXtdyuSZ11dkM06lGHs5t08GsS')"></div>
-<div>
-<p class="text-xs font-medium italic">"Unmatched difficulty levels."</p>
-<p class="text-[10px] font-bold text-slate-500 uppercase">- Prof. David</p>
-</div>
-</div>
-<!-- Duplicates for seamless loop -->
-<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
-<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Portrait of a smiling young male student" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAxXHjAmIECApgkeRj6Lt_dufqTjHaeRRLYtCe8SAtyXv3muAfTHc0jkuzQmQZ5dvlz2deJlDM-19u9ct4EmQw3FPhT2XYGjOnbRUIJdTQFdx1Nul5uFaQG9SOXN5MBp3Dl7r23iK8e4T00KMlIVHwA5rVWC9oS3HLbW70Pw3kn2eB1EJQO7SC9i1ostoammaGccVoUCcuEgaei06KgsifyC-j1IjKiY1ZtNize8JSVLfTBIU1dTpyI8TUpX6otctTutRCh-N30YmCb')"></div>
-<div>
-<p class="text-xs font-medium italic">"The best prep tool for IB students!"</p>
-<p class="text-[10px] font-bold text-slate-500 uppercase">- Alex M.</p>
-</div>
-</div>
-<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
-<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Portrait of a smiling young woman" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDu4ex7Ja4ngVFsJiymweTPLzoyXJNQJyhUuVg4a9DAq95AnY3em-rvWc2oXtHyX1wLDu01mWyeecuoLRp2jdquyLIu1gRC3dEj4PzdAAt8qx7pV4_o0Ss1aaeq-wIAsUNasRCTFgJJobt6r8iW-8U-uW6MSoXl4EYZU2gMvEgvv1vKvodqXMa8H3hBWBoR0zNXVjvZJ4hHnrh1CvUAlhNvAaTFDopMgsj-gPo8YT4hOfuoT_SxbrvZxoI-UvxNfkXd78E-9zv2yCzT')"></div>
-<div>
-<p class="text-xs font-medium italic">"Finally, I can track my son's progress."</p>
-<p class="text-[10px] font-bold text-slate-500 uppercase">- Sarah J.</p>
-</div>
-</div>
-<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 min-w-[300px] flex items-center gap-4">
-<div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Portrait of an older professional man" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA7qBlTQI8wooqAq9YUH5Oi1VxyrrJuRVCT-S_iEASDhaHeViKmi7wkeyEXN2cjnDcwoA3VBp8HxMnvpNzQs7ISQSIcBfmyejvs00z7xPYh_-pnC8Pe4zwyvkYixlJ4_In4c-zvcWKgrVCXzfaRAtoNvt3s-_MYlpv4hzLafhOCUbBGdjIio3WzwW6FFkty--BqZkEWQ96eyUT9qrpSLM9DRpW4caO-ak_oB1sRgKtnPf90Il5YDid6GBbDAOtWVfwVb1cwGwRNs8qe')"></div>
-<div>
-<p class="text-xs font-medium italic">"Unmatched difficulty levels."</p>
-<p class="text-[10px] font-bold text-slate-500 uppercase">- Prof. David</p>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
 
 <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20need%20help%20regarding%20the%20platform." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
   <i class="fab fa-whatsapp"></i>
 </a>
 
-<div id="requestModal" class="modal-backdrop">
-  <div class="modal-content">
-    <button onclick="closeRequestModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-      <i class="fas fa-times"></i>
-    </button>
-    <div class="text-center mb-5">
-      <div class="bg-gold/20 text-gold w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">🚀</div>
-      <h3 class="text-lg font-black text-heading">Request Curriculum</h3>
-    </div>
-    <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg mb-5 text-left">
-      <h4 class="text-cbse-blue font-bold text-[10px] uppercase tracking-wide mb-1">⚡ Fast Track Promise</h4>
-      <p class="text-slate-600 text-[11px] leading-relaxed">
-        If we receive <span class="text-red-500 font-bold">5 requests</span> for the same Class &amp; Board, we deploy within <span class="text-heading font-bold">24 hours</span>. Otherwise, you join the Phase 2 waitlist.
-      </p>
-    </div>
-    <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
-      <div>
-        <label class="block text-[10px] font-bold text-slate-500 mb-1">Which Board?</label>
-        <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required="" class="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
-      </div>
-      <div>
-        <label class="block text-[10px] font-bold text-slate-500 mb-1">Which Class?</label>
-        <input type="text" id="reqClass" placeholder="e.g. Class 8" required="" class="w-full px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue">
-      </div>
-      <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-900/20 hover:bg-blue-900 transition text-xs uppercase tracking-wide">
-        Send Request via Email
-      </button>
-    </form>
-  </div>
-</div>
-
+<!-- AUTH LOGIC -->
 <script type="module">
 import { authenticateWithCredentials, routeUser, initializeAuthListener } from "./js/auth-paywall.js";
 
-// 1. Initialize Auth Listener to check for existing session
 initializeAuthListener(async (user, profile) => {
     if (user && profile) {
         console.log("User already logged in, routing...");
@@ -609,7 +374,6 @@ initializeAuthListener(async (user, profile) => {
     }
 });
 
-// 2. Handle Sovereign Login
 const loginForm = document.getElementById("sovereign-login-form");
 const errorBox = document.getElementById("login-error");
 
@@ -620,12 +384,11 @@ loginForm.addEventListener("submit", async (e) => {
     const btn = loginForm.querySelector("button");
 
     btn.disabled = true;
-    btn.textContent = "Verifying Identity...";
+    btn.textContent = "Verifying...";
     errorBox.classList.add("hidden");
 
     try {
         await authenticateWithCredentials(u, p);
-        // Explicitly route the user — do not rely solely on onAuthStateChanged
         const { getInitializedClients } = await import("./js/config.js");
         const { auth } = await getInitializedClients();
         if (auth.currentUser) {
@@ -633,123 +396,189 @@ loginForm.addEventListener("submit", async (e) => {
         }
     } catch (err) {
         console.error(err);
-        errorBox.textContent = "Identity Verification Failed: Invalid ID or Passkey.";
+        errorBox.textContent = "Login failed. Please check your credentials.";
         errorBox.classList.remove("hidden");
         btn.disabled = false;
-        btn.textContent = "Authenticate & Bind";
+        btn.textContent = "Log In";
     }
 });
+</script>
 
-// Expose handleRequestSubmit globally
-window.handleRequestSubmit = function(e) {
-  e.preventDefault();
-  const board = document.getElementById("reqBoard").value;
-  const cls = document.getElementById("reqClass").value;
-  const subject = `Curriculum Request: ${board} - ${cls}`;
-  const body = `Hi Ready4Exam Team,%0D%0A%0D%0AI request content for:%0D%0A- Board: ${board}%0D%0A- Class: ${cls}%0D%0A%0D%0ACount me as one of the 5 students for the Fast Track deployment!`;
-  window.location.href = `mailto:ready4urexam@gmail.com?subject=${encodeURIComponent(subject)}&body=${body}`;
-  closeRequestModal();
-};
+<!-- WIDGET LOGIC -->
+<script type="module">
+  window.currentCurriculum = null;
+  window.currentBoard = '';
+  window.currentDifficulty = 'Simple';
+  window.loadedSubjectsData = null;
 
-const buttons = document.querySelectorAll(".board-btn");
-const grid = document.getElementById("class-grid");
-const content = document.getElementById("content-area");
-const coming = document.getElementById("coming-soon");
-const note = document.getElementById("board-note");
-const modal = document.getElementById("requestModal");
+  window.selectBoard = function(board, btnElem) {
+      document.querySelectorAll('.board-btn').forEach(b => b.dataset.selected = 'false');
+      btnElem.dataset.selected = 'true';
+      window.currentBoard = board;
 
-window.openRequestModal = function() { modal.style.display = "flex"; }
-window.closeRequestModal = function() { modal.style.display = "none"; }
-modal.addEventListener('click', (e) => { if (e.target === modal) closeRequestModal(); });
+      const classSel = document.getElementById('class-select');
+      const subjSel = document.getElementById('subject-select');
+      const chapSel = document.getElementById('chapter-select');
+      const otherMsg = document.getElementById('other-board-msg');
+      const selectsDiv = classSel.parentElement.parentElement;
+      const startBtn = document.getElementById('start-quiz-btn');
 
-function resetPortal() {
-    buttons.forEach(b => b.classList.remove("active"));
-    content.classList.add("hidden");
-    grid.innerHTML = "";
-    coming.classList.add("hidden");
-    note.textContent = "";
-}
+      // Reset
+      classSel.innerHTML = '<option value="">Select Class...</option>';
+      subjSel.innerHTML = '<option value="">Select Class first...</option>';
+      chapSel.innerHTML = '<option value="">Select Subject first...</option>';
+      classSel.disabled = true;
+      subjSel.disabled = true;
+      chapSel.disabled = true;
+      startBtn.disabled = true;
+      otherMsg.classList.add('hidden');
 
-buttons.forEach(btn => {
-  btn.onclick = () => {
-    resetPortal();
-    btn.classList.add("active");
-    content.classList.remove("hidden");
-    const board = btn.dataset.board;
-    gtag('event', 'board_selected', { board });
-
-    if (board === "CBSE") {
-      note.textContent = "NCERT Aligned (6-12)";
-      [6,7,8,9,10,11,12].forEach(c => {
-        grid.innerHTML += `
-        <a href="./app/class-hub.html?grade=${c}" class="class-card text-center group" onclick="gtag('event','class_opened',{board:'CBSE',class:${c}})">
-          <h3 class="text-base font-black text-heading mb-1">Class ${c}</h3>
-          <div class="text-[10px] text-cbse-blue font-bold opacity-0 group-hover:opacity-100 transition">ENTER &rarr;</div>
-        </a>`;
-      });
-    }
-    if (board === "SCERT") {
-      note.textContent = "Telangana State Board";
-      grid.innerHTML = `
-        <a href="./scert/telangana-9/index.html" class="class-card text-center col-span-2 group" onclick="gtag('event','scert_opened',{state:'Telangana'})">
-          <h3 class="text-base font-black text-heading mb-1">Class 9 Telangana</h3>
-          <p class="text-[10px] text-slate-400">Official Demo</p>
-          <div class="text-[10px] text-cbse-blue font-bold mt-2 opacity-0 group-hover:opacity-100 transition">START DEMO &rarr;</div>
-        </a>`;
-    }
-    if (board === "ICSE") { coming.classList.remove("hidden"); }
+      if (board === 'OTHER') {
+          otherMsg.classList.remove('hidden');
+      } else if (board === 'CBSE') {
+          [6,7,8,9,10,11,12].forEach(c => {
+              classSel.innerHTML += `<option value="${c}">Class ${c}</option>`;
+          });
+          classSel.disabled = false;
+      } else if (board === 'SCERT') {
+          classSel.innerHTML += `<option value="9">Class 9</option>`;
+          classSel.disabled = false;
+      }
   }
-});
+
+  window.loadSubjects = async function() {
+      const grade = document.getElementById('class-select').value;
+      const subjSel = document.getElementById('subject-select');
+      const chapSel = document.getElementById('chapter-select');
+
+      subjSel.innerHTML = '<option value="">Loading...</option>';
+      subjSel.disabled = true;
+      chapSel.innerHTML = '<option value="">Select Subject first...</option>';
+      chapSel.disabled = true;
+      document.getElementById('start-quiz-btn').disabled = true;
+
+      if (!grade) {
+          subjSel.innerHTML = '<option value="">Select Class first...</option>';
+          return;
+      }
+
+      try {
+          if (window.currentBoard === 'SCERT') {
+              const module = await import('./scert/telangana-9/js/curriculum.js');
+              window.loadedSubjectsData = module.curriculum || module.default;
+          } else {
+              const { loadCurriculum } = await import('./js/curriculum/loader.js');
+              window.loadedSubjectsData = await loadCurriculum(grade);
+          }
+
+          subjSel.innerHTML = '<option value="">Select Subject...</option>';
+          Object.keys(window.loadedSubjectsData).forEach(subj => {
+              subjSel.innerHTML += `<option value="${subj}">${subj}</option>`;
+          });
+          subjSel.disabled = false;
+
+      } catch (e) {
+          console.error(e);
+          subjSel.innerHTML = '<option value="">Error loading data</option>';
+      }
+  }
+
+  window.loadChapters = function() {
+      const subj = document.getElementById('subject-select').value;
+      const chapSel = document.getElementById('chapter-select');
+
+      chapSel.innerHTML = '<option value="">Select Chapter...</option>';
+      chapSel.disabled = true;
+      document.getElementById('start-quiz-btn').disabled = true;
+
+      if (!subj || !window.loadedSubjectsData[subj]) return;
+
+      const sections = window.loadedSubjectsData[subj];
+      let hasChapters = false;
+
+      Object.keys(sections).forEach(secName => {
+          const optGroup = document.createElement('optgroup');
+          optGroup.label = secName;
+
+          sections[secName].forEach((chap, idx) => {
+              const opt = document.createElement('option');
+              // Store table_id and chapter_title as JSON in value to retrieve later
+              opt.value = JSON.stringify({ table_id: chap.table_id, title: chap.chapter_title });
+              opt.textContent = chap.chapter_title;
+              optGroup.appendChild(opt);
+              hasChapters = true;
+          });
+          chapSel.appendChild(optGroup);
+      });
+
+      if (hasChapters) {
+          chapSel.disabled = false;
+      }
+  }
+
+  window.selectDifficulty = function(diff, btnElem) {
+      document.querySelectorAll('.diff-btn').forEach(b => b.dataset.selected = 'false');
+      btnElem.dataset.selected = 'true';
+      window.currentDifficulty = diff;
+  }
+
+  window.checkChapter = function() {
+      const chapVal = document.getElementById('chapter-select').value;
+      const startBtn = document.getElementById('start-quiz-btn');
+      const msg = document.getElementById('quiz-msg');
+      msg.classList.add('hidden');
+
+      if (!chapVal) {
+          startBtn.disabled = true;
+          return;
+      }
+
+      try {
+          const chapData = JSON.parse(chapVal);
+          if (!chapData.table_id || chapData.table_id.trim() === "") {
+              startBtn.disabled = true;
+              msg.textContent = "Quiz coming soon for this chapter!";
+              msg.classList.remove('hidden');
+          } else {
+              startBtn.disabled = false;
+          }
+      } catch(e) {
+          startBtn.disabled = true;
+      }
+  }
+
+  window.startQuiz = function() {
+      const grade = document.getElementById('class-select').value;
+      const subj = document.getElementById('subject-select').value;
+      const chapVal = document.getElementById('chapter-select').value;
+
+      if (!grade || !subj || !chapVal) return;
+
+      try {
+          const chapData = JSON.parse(chapVal);
+          const tableId = chapData.table_id;
+          const topic = encodeURIComponent(chapData.title);
+          const subjectEnc = encodeURIComponent(subj);
+
+          if (!tableId) return;
+
+          // app/quiz-engine.html?table={chapter.table_id}&topic={encodeURIComponent(chapter.chapter_title)}&grade={grade}&difficulty={difficulty}&subject={encodeURIComponent(subject)}
+          const targetUrl = `./app/quiz-engine.html?table=${tableId}&topic=${topic}&grade=${grade}&difficulty=${window.currentDifficulty}&subject=${subjectEnc}`;
+          window.location.href = targetUrl;
+      } catch (e) {
+          console.error("Error starting quiz", e);
+      }
+  }
+
+  window.handleRequestSubmit = function(e) {
+    e.preventDefault();
+    const board = document.getElementById("reqBoard").value;
+    const cls = document.getElementById("reqClass").value;
+    const subject = `Curriculum Request: ${board} - ${cls}`;
+    const body = `Hi Ready4Exam Team,%0D%0A%0D%0AI request content for:%0D%0A- Board: ${board}%0D%0A- Class: ${cls}%0D%0A%0D%0ACount me as one of the 10 students for the Fast Track deployment!`;
+    window.location.href = `mailto:ready4urexam@gmail.com?subject=${encodeURIComponent(subject)}&body=${body}`;
+  };
 </script>
 
-
-
-
-
-
-<script id="custom-ui-logic">
-  document.addEventListener('DOMContentLoaded', () => {
-    // Login Modal Toggle Logic (if modal still exists)
-    const loginBtn = document.getElementById('login-modal');
-    const modalOverlay = document.getElementById('login-modal-overlay');
-    const closeBtn = document.getElementById('close-login-modal');
-
-    if(loginBtn && modalOverlay) {
-      loginBtn.addEventListener('click', () => {
-        modalOverlay.classList.remove('hidden');
-      });
-    }
-
-    if(closeBtn && modalOverlay) {
-      closeBtn.addEventListener('click', () => {
-        modalOverlay.classList.add('hidden');
-      });
-    }
-
-    // Selection Widget Logic
-    const startQuizBtn = document.getElementById('start-quiz-btn');
-
-    if(startQuizBtn) {
-      startQuizBtn.addEventListener('click', () => {
-        const selects = document.querySelectorAll('.form-select');
-        const board = selects[0] ? selects[0].value : 'Unknown';
-        const classVal = selects[1] ? selects[1].value.replace('Grade ', '') : '9';
-        const subject = selects[2] ? selects[2].value : 'Unknown';
-        const level = selects[3] ? selects[3].value : 'Simple';
-
-        console.log('Button clicked! Target:', "./app/quiz-engine.html?board=" + encodeURIComponent(board));
-        const targetUrl = "./app/quiz-engine.html?board=" + encodeURIComponent(board) +
-                          "&class=" + encodeURIComponent(classVal) +
-                          "&subject=" + encodeURIComponent(subject) +
-                          "&difficulty=" + encodeURIComponent(level);
-
-        window.location.href = targetUrl;
-      });
-    } else {
-        console.error('Start Quiz button not found in DOM.');
-    }
-  });
-</script>
-<a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20need%20help%20regarding%20the%20platform." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
-  <i class="fab fa-whatsapp"></i>
-</a></body></html>
+</body>
+</html>
