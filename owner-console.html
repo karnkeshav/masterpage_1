@@ -235,7 +235,8 @@
 
                 // Create Auth User
                 const userEmail = `${schoolId}@ready4exam.internal`;
-                const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, 'keshav');
+                const userPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+                const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, userPassword);
                 const newUid = userCredential.user.uid;
 
                 // Write School Data
