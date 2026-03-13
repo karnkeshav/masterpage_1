@@ -10,6 +10,8 @@
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
+
+
 </script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
@@ -172,8 +174,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
           <div class="flex gap-2">
             <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">Simple</button>
-            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Medium" onclick="selectDifficulty('Medium', this)">Medium</button>
-            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Advanced" onclick="selectDifficulty('Advanced', this)">Advanced</button>
+            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Medium" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Medium</button>
+            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Advanced" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Advanced</button>
           </div>
         </div>
         <div class="flex-1 w-full">
@@ -211,16 +213,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           <h3 class="text-lg font-bold">Student Dashboard</h3>
         </div>
         <p class="text-sm text-slate-600 mb-6">Track average mastery, view subject progress, and monitor your professional journey line.</p>
-        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center justify-around h-32 relative overflow-hidden">
-           <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-              <path class="text-slate-200" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
-              <path class="text-success-green" stroke-width="3" stroke-dasharray="80, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
-           </svg>
-           <div class="flex flex-col gap-2 w-1/2">
-              <div class="h-2 bg-blue-200 rounded-full w-full"></div>
-              <div class="h-2 bg-purple-200 rounded-full w-3/4"></div>
-              <div class="h-2 bg-amber-200 rounded-full w-5/6"></div>
-           </div>
+        <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+          <img src="images/dashboard-subject-navigator.png" alt="Subject Navigator Dashboard" class="w-full h-auto rounded-xl">
         </div>
 
       <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -235,15 +229,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           <h3 class="text-lg font-bold">Parent Console</h3>
         </div>
         <p class="text-sm text-slate-600 mb-6">Real-time performance tracking via the Sync Wall and direct Command Nudges.</p>
-        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 h-32 flex flex-col gap-3 justify-center">
-            <div class="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-slate-100">
-                <span class="text-[10px] font-bold text-slate-500">Recent Attempt</span>
-                <span class="text-xs font-black text-green-600">92%</span>
-            </div>
-            <div class="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-slate-100">
-                <span class="text-[10px] font-bold text-slate-500">Weak Area</span>
-                <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">Force &amp; Laws</span>
-            </div>
+        <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+          <img src="images/dashboard-parent-console.png" alt="Parent Console Dashboard" class="w-full h-auto rounded-xl">
         </div>
 
       <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -258,10 +245,11 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           <h3 class="text-lg font-bold">Knowledge Hub</h3>
         </div>
         <p class="text-sm text-slate-600 mb-6">Structured navigation through Mathematics, Science, and Social Science curriculums.</p>
-        <div class="flex gap-2 h-32">
-            <div class="flex-1 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-400 text-2xl"><i class="fas fa-calculator"></i></div>
-            <div class="flex-1 bg-purple-50 border border-purple-100 rounded-xl flex items-center justify-center text-purple-400 text-2xl"><i class="fas fa-flask"></i></div>
-            <div class="flex-1 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-amber-400 text-2xl"><i class="fas fa-landmark"></i></div>
+        <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+          <img src="images/dashboard-study-guide.png" alt="Study Guide Dashboard" class="w-full h-auto rounded-xl">
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
         </div>
       </div>
 
@@ -272,14 +260,11 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           <h3 class="text-lg font-bold">Mistake Notebook</h3>
         </div>
         <p class="text-sm text-slate-600 mb-6">Two-Tier Diagnostic Console to analyze error patterns and build behavioral profiles.</p>
-        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 h-32 flex flex-col justify-center gap-2">
-            <div class="flex gap-2">
-                <span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">Recall: Strong</span>
-                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full">Logic: Med</span>
-            </div>
-            <div class="flex gap-2">
-                <span class="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full">App: Weak</span>
-            </div>
+        <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+          <img src="images/dashboard-performance.png" alt="Performance Dashboard" class="w-full h-auto rounded-xl">
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
         </div>
       </div>
 
@@ -525,6 +510,19 @@ loginForm.addEventListener("submit", async (e) => {
         btn.disabled = false;
         btn.textContent = "Log In";
     }
+});
+
+// Clear login fields on page load to prevent prefilled text
+window.addEventListener('DOMContentLoaded', () => {
+    const u = document.getElementById('username');
+    const p = document.getElementById('password');
+    if (u) u.value = '';
+    if (p) p.value = '';
+    // Also clear after a short delay to beat browser autofill timing
+    setTimeout(() => {
+        if (u) u.value = '';
+        if (p) p.value = '';
+    }, 200);
 });
 </script>
 
