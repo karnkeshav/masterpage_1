@@ -1,0 +1,6 @@
+127.0.0.1 - - [07/Mar/2026 04:48:48] "GET /app/consoles/admin.html HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 04:48:48] "GET /css/global.css HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 04:48:48] "GET /js/firebase-master-config.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 04:48:48] "GET /js/admin-console.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 04:48:48] "GET /js/config.js HTTP/1.1" 200 -
+127.0.0.1 - - [07/Mar/2026 04:48:49] "GET /js/curriculum/loader.js HTTP/1.1" 200 -
