@@ -875,8 +875,8 @@ function renderBucket(elementId, users, type) {
             return `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${u.mapped_discipline || 'Unassigned'}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${u.mapped_section || 'Unassigned'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${(u.mapped_disciplines || []).join(', ') || 'Unassigned'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${(u.sections || []).join(', ') || 'Unassigned'}</td>
                     <td class="p-4 text-right">
                         <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
                     </td>

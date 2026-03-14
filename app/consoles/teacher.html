@@ -572,7 +572,7 @@
                     `;
                 });
             }
-            const cols = Math.min(10, Math.ceil(Math.sqrt(studentCount)));
+            const cols = Math.max(1, Math.min(10, Math.ceil(Math.sqrt(studentCount))));
 
             let syncText = heatmapTaughtDate && heatmapTaughtDate.toDate ? `Sync Activated: ${heatmapTaughtDate.toDate().toLocaleDateString()}` : "Sync Not Activated";
 
