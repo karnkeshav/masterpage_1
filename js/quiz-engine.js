@@ -150,23 +150,19 @@ async function loadQuiz() {
         UI.showStatus("Preparing worksheet...", "text-blue-600 font-bold");
 
         // --- FORTRESS PHILOSOPHY: GATEKEEPER ---
-        // Block 'Advanced' if 'Medium' mastery < 85% (Skip if Guest Mode)
-        const urlParams = new URLSearchParams(window.location.search);
-        const isGuestMode = urlParams.get("mode") === "guest";
-        if (quizState.difficulty === "Advanced" && quizState.quizMode === "standard" && !isGuestMode) {
+        // Block 'Advanced' if 'Medium' mastery < 85%
+        if (quizState.difficulty === "Advanced" && quizState.quizMode === "standard") {
             const { auth } = getInitializedClients();
-            if (auth.currentUser) {
-                const mastery = await getChapterMastery(auth.currentUser.uid, quizState.topicSlug);
-                if (mastery < 85) {
-                    // VISUAL INTELLIGENCE: Peel Back Animation
-                    UI.triggerPeelBack("quiz-content");
+            const mastery = await getChapterMastery(auth.currentUser.uid, quizState.topicSlug);
+            if (mastery < 85) {
+                // VISUAL INTELLIGENCE: Peel Back Animation
+                UI.triggerPeelBack("quiz-content");
 
-                    alert(`🔒 LOCKED: You scored ${mastery}% on Medium.\nYou need 85% mastery to unlock Advanced questions.`);
-                    // Redirect back
-                    const subject = quizState.subject || "Physics";
-                    window.location.href = `curriculum.html?grade=${quizState.classId}&subject=${encodeURIComponent(subject)}`;
-                    return;
-                }
+                alert(`🔒 LOCKED: You scored ${mastery}% on Medium.\nYou need 85% mastery to unlock Advanced questions.`);
+                // Redirect back
+                const subject = quizState.subject || "Physics";
+                window.location.href = `curriculum.html?grade=${quizState.classId}&subject=${encodeURIComponent(subject)}`;
+                return;
             }
         }
 
@@ -352,26 +348,24 @@ function wireGoogleLogin() {
 ----------------------------------- */
 async function init() {
     UI.initializeElements();
-    parseUrlParameters();
+    parseUrlParameters(); // Sets the Header
     attachDomEvents();
     UI.attachAnswerListeners(handleAnswerSelection);
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const isGuestMode = urlParams.get("mode") === "guest";
 
     try {
         await initializeServices();
         wireGoogleLogin();
 
+        // Check Auth & Access
         await initializeAuthListener(async user => {
             if (user) {
                 UI.updateAuthUI(user);
+
+                // BYPASS: No paywall for authenticated students (as requested)
+                // Just load the quiz
                 questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
                 await loadQuiz();
-            } else if (isGuestMode) {
-                // Guest mode: skip paywall, load quiz directly
-                questionsPromise = fetchQuestions(quizState.topicSlug, quizState.difficulty);
-                await loadQuiz();
+
             } else {
                 UI.showView("paywall-screen");
             }
