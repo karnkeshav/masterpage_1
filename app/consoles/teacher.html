@@ -150,6 +150,8 @@
         import { collection, query, where, onSnapshot, getDocs, setDoc, addDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
 
+        const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
         // === GLOBAL STATE DECLARATIONS ===
         let db;
         let studentScores = [];
@@ -194,7 +196,7 @@
             if (sidebar) {
                 sidebar.innerHTML = `
                     <div class="p-4 border-b border-slate-200 bg-slate-50">
-                        <h3 class="font-black text-slate-800 text-sm">${name}</h3>
+                        <h3 class="font-black text-slate-800 text-sm">${esc(name)}</h3>
                         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">${scores.length} attempt(s)</p>
                     </div>
                     <div class="flex-1 overflow-y-auto">${detailHtml}</div>
@@ -219,12 +221,11 @@
 
         async function fetchSectionStudents() {
             if (!db) return;
-            const schoolId = window.teacherProfile?.school_id;
             const constraints = [
                 where("section_id", "==", getSectionId()),
-                where("role", "==", "student")
+                where("role", "==", "student"),
+                where("school_id", "==", window.teacherProfile?.school_id || '')
             ];
-            if (schoolId) constraints.push(where("school_id", "==", schoolId));
 
             const studentsQuery = query(collection(db, "users"), ...constraints);
             const studentsSnap = await getDocs(studentsQuery);
@@ -239,7 +240,7 @@
             for (let i = 0; i < studentUids.length; i += 10) {
                 const batch = studentUids.slice(i, i + 10);
                 if (batch.length === 0) continue;
-                const scoresQuery = query(collection(db, "quiz_scores"), where("user_id", "in", batch));
+                const scoresQuery = query(collection(db, "quiz_scores"), where("user_id", "in", batch), where("school_id", "==", window.teacherProfile?.school_id || ''));
                 const scoresSnap = await getDocs(scoresQuery);
                 scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
             }
@@ -257,8 +258,8 @@
             window.teacherProfile = user;
 
             // Populate dropdowns from teacher profile
-            const sections = user?.sections || ['9A'];
-            const disciplines = user?.mapped_disciplines || ['Chemistry'];
+            const sections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || '9'}${user.mapped_section}`] : ['9A']);
+            const disciplines = user?.mapped_disciplines || (user?.mapped_discipline ? [user.mapped_discipline] : ['Chemistry']);
 
             const sectionSelect = document.getElementById('section-select');
             sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('');
@@ -313,7 +314,7 @@
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <h2 class="text-2xl font-black text-slate-800">System Initialization Failed</h2>
-                        <p class="text-slate-500 mt-2 font-medium max-w-md">${error.message}</p>
+                        <p class="text-slate-500 mt-2 font-medium max-w-md">${esc(error.message)}</p>
                         <button onclick="window.retryHandshake()" class="mt-6 bg-danger-red text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-red-700 transition flex items-center gap-2">
                             <i class="fas fa-sync-alt"></i> Retry Handshake
                         </button>
@@ -433,12 +434,11 @@
                 });
 
                 // 2. Create student_notifications for each student in the section
-                const schoolId = window.teacherProfile?.school_id;
                 const constraints = [
                     where("section_id", "==", getSectionId()),
-                    where("role", "==", "student")
+                    where("role", "==", "student"),
+                    where("school_id", "==", window.teacherProfile?.school_id || '')
                 ];
-                if (schoolId) constraints.push(where("school_id", "==", schoolId));
 
                 const studentsQuery = query(collection(db, "users"), ...constraints);
                 const studentsSnap = await getDocs(studentsQuery);
@@ -575,7 +575,7 @@
         };
 
         function renderSectionHeatmap() {
-            let optionsHtml = activeChapters.map(c => `<option value="${c.id}" ${c.id === selectedChapterId ? 'selected' : ''}>${c.title}</option>`).join('');
+            let optionsHtml = activeChapters.map(c => `<option value="${c.id}" ${c.id === selectedChapterId ? 'selected' : ''}>${esc(c.title)}</option>`).join('');
 
             const students = window.sectionStudents || { uids: [], names: {} };
             const studentCount = students.uids.length;
@@ -594,7 +594,7 @@
                     const name = students.names[uid] || `Student ${i + 1}`;
 
                     gridHtml += `
-                        <button title="${name}" onclick="window.showStudentDetail('${uid}')"
+                        <button title="${esc(name)}" onclick="window.showStudentDetail('${uid}')"
                             class="w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center font-black text-xs ${colorClass}">
                             ${i + 1}
                         </button>
@@ -725,7 +725,7 @@
         }
 
         function renderRemedialQueue() {
-            let optionsHtml = activeChapters.map(c => `<option value="${c.id}" ${c.id === selectedChapterId ? 'selected' : ''}>${c.title}</option>`).join('');
+            let optionsHtml = activeChapters.map(c => `<option value="${c.id}" ${c.id === selectedChapterId ? 'selected' : ''}>${esc(c.title)}</option>`).join('');
 
             const { B, strugglers, top10 } = calculateRemedialQueue();
 
@@ -737,7 +737,7 @@
                         <tr class="hover:bg-red-50/30 transition group">
                             <td class="p-4 font-bold text-slate-800 flex items-center gap-3">
                                 <span class="w-2 h-2 rounded-full bg-danger-red block animate-pulse"></span>
-                                ${s.name}
+                                ${esc(s.name)}
                             </td>
                             <td class="p-4 text-center font-bold text-slate-500">${s.section}</td>
                             <td class="p-4 text-center">
@@ -758,7 +758,7 @@
                     <div class="flex items-center gap-3">
                         <div class="w-6 text-center text-blue-300 font-black text-sm">#${idx + 1}</div>
                         <div>
-                            <div class="font-bold text-white text-sm">${s.name}</div>
+                            <div class="font-bold text-white text-sm">${esc(s.name)}</div>
                             <div class="text-[10px] text-blue-300 font-bold tracking-widest uppercase mt-0.5">${s.section} • ${s.attempts} Attempt(s)</div>
                         </div>
                     </div>
