@@ -121,75 +121,121 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   </div>
 </section>
 
-<!-- Section 2: Quick Quiz Selection Widget -->
+<!-- Section 2: Quiz + Request Side-by-Side -->
 <section class="py-16 px-4 bg-white border-b border-slate-200">
-  <div class="max-w-4xl mx-auto">
-    <div class="text-center mb-10">
-      <h2 class="text-3xl font-black text-cbse-blue mb-2">Try a Quiz Now</h2>
-      <p class="text-slate-500">Select your curriculum to start practicing instantly.</p>
-    </div>
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
 
-    <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- LEFT: Try a Quiz Now (60%) -->
+      <div class="lg:col-span-3">
+        <div class="text-center mb-10">
+          <h2 class="text-3xl font-black text-cbse-blue mb-2">Try a Quiz Now</h2>
+          <p class="text-slate-500">Select your curriculum to start practicing instantly.</p>
+        </div>
 
-        <!-- Board -->
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
-          <div class="flex gap-2">
-            <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="CBSE" onclick="selectBoard('CBSE', this)">CBSE</button>
-            <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="SCERT" onclick="selectBoard('SCERT', this)">SCERT (TS)</button>
+        <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+            <!-- Board -->
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
+              <div class="flex gap-2">
+                <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="CBSE" onclick="selectBoard('CBSE', this)">CBSE</button>
+                <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="SCERT" onclick="selectBoard('SCERT', this)">SCERT (TS)</button>
+              </div>
+            </div>
+
+            <!-- Class -->
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
+              <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadSubjects()">
+                <option value="">Select Board first...</option>
+              </select>
+            </div>
+
+            <!-- Subject -->
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
+              <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadChapters()">
+                <option value="">Select Class first...</option>
+              </select>
+            </div>
+
+            <!-- Chapter -->
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
+              <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="checkChapter()">
+                <option value="">Select Subject first...</option>
+              </select>
+            </div>
 
           </div>
-        </div>
 
-        <!-- Class -->
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
-          <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadSubjects()">
-            <option value="">Select Board first...</option>
-          </select>
-        </div>
-
-        <!-- Subject -->
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
-          <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadChapters()">
-            <option value="">Select Class first...</option>
-          </select>
-        </div>
-
-        <!-- Chapter -->
-        <div class="flex flex-col gap-2">
-          <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
-          <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="checkChapter()">
-            <option value="">Select Subject first...</option>
-          </select>
-        </div>
-
-      </div>
-
-      <!-- Difficulty & Start -->
-      <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
-        <div class="flex-1 w-full">
-          <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
-          <div class="flex gap-2">
-            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">Simple</button>
-            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Medium" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Medium</button>
-            <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Advanced" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Advanced</button>
+          <!-- Difficulty & Start -->
+          <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
+            <div class="flex-1 w-full">
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
+              <div class="flex gap-2">
+                <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">Simple</button>
+                <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Medium" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Medium</button>
+                <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Advanced" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Advanced</button>
+              </div>
+            </div>
+            <div class="flex-1 w-full">
+              <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" onclick="startQuiz()">
+                <i class="fas fa-play-circle"></i> Start Quiz
+              </button>
+              <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
+            </div>
           </div>
-        </div>
-        <div class="flex-1 w-full">
-          <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" onclick="startQuiz()">
-            <i class="fas fa-play-circle"></i> Start Quiz
-          </button>
-          <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
+
+          <!-- Other Board Fallback -->
+          <div id="other-board-msg" class="hidden mt-6 text-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
+            <p class="text-sm text-cbse-blue font-medium mb-2">We are actively building for more boards!</p>
+            <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding ↓</a>
+          </div>
+
         </div>
       </div>
 
-      <!-- Other Board Fallback -->
-      <div id="other-board-msg" class="hidden mt-6 text-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
-          <p class="text-sm text-cbse-blue font-medium mb-2">We are actively building for more boards!</p>
-          <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding ↓</a>
+      <!-- RIGHT: Don't see your board? (40%) -->
+      <div id="request-section" class="lg:col-span-2">
+        <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm h-full flex flex-col justify-center">
+
+          <!-- Heading -->
+          <div class="text-center mb-6">
+            <div class="bg-gold/20 text-gold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">🚀</div>
+            <h2 class="text-2xl font-black text-heading mb-2">Don't see your board?</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">
+              Gather <span class="text-red-500 font-bold">10 students</span> and we'll deploy your curriculum in <span class="text-heading font-bold">24 hours</span>.
+            </p>
+          </div>
+
+          <!-- Form -->
+          <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Board</label>
+              <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Class</label>
+              <input type="text" id="reqClass" placeholder="e.g. Class 8" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">WhatsApp / Email</label>
+              <input type="text" id="reqContact" placeholder="e.g. 9876543210" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+            </div>
+            <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition text-sm flex items-center justify-center gap-2">
+              <i class="fas fa-paper-plane"></i> Request Onboarding
+            </button>
+          </form>
+
+          <!-- WhatsApp fallback -->
+          <p class="text-center mt-4 text-[11px] text-slate-400">
+            or <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20want%20to%20request%20a%20new%20board." class="text-green-600 font-bold hover:underline"><i class="fab fa-whatsapp"></i> message us on WhatsApp</a>
+          </p>
+
+        </div>
       </div>
 
     </div>
@@ -435,34 +481,6 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
   </div>
 </section>
 
-<!-- Section 5: Request Curriculum -->
-<section id="request-section" class="py-16 px-4 bg-slate-50">
-  <div class="max-w-xl mx-auto text-center">
-    <div class="bg-gold/20 text-gold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">🚀</div>
-    <h2 class="text-2xl font-black text-heading mb-3">Don't see your board listed?</h2>
-    <p class="text-sm text-slate-500 mb-6 leading-relaxed">
-      Gather <span class="text-red-500 font-bold">10 students</span> from your board and we'll build the entire curriculum for you. Fast Track deployment within <span class="text-heading font-bold">24 hours</span>.
-    </p>
-
-    <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-left">
-      <form onsubmit="handleRequestSubmit(event)" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Which Board?</label>
-            <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required="" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Which Class?</label>
-            <input type="text" id="reqClass" placeholder="e.g. Class 8" required="" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
-          </div>
-        </div>
-        <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition text-sm flex items-center justify-center gap-2">
-          <i class="fas fa-paper-plane"></i> Request Institutional Onboarding
-        </button>
-      </form>
-    </div>
-  </div>
-</section>
 
 <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
   <p>© 2025 Ready4Exam Academic Portal.</p>
@@ -693,8 +711,9 @@ window.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const board = document.getElementById("reqBoard").value;
     const cls = document.getElementById("reqClass").value;
+    const contact = document.getElementById("reqContact").value;
     const subject = `Curriculum Request: ${board} - ${cls}`;
-    const body = `Hi Ready4Exam Team,%0D%0A%0D%0AI request content for:%0D%0A- Board: ${board}%0D%0A- Class: ${cls}%0D%0A%0D%0ACount me as one of the 10 students for the Fast Track deployment!`;
+    const body = `Hi Ready4Exam Team,%0D%0A%0D%0AI request content for:%0D%0A- Board: ${board}%0D%0A- Class: ${cls}%0D%0A- Contact: ${contact}%0D%0A%0D%0ACount me as one of the 10 students for the Fast Track deployment!`;
     window.location.href = `mailto:ready4urexam@gmail.com?subject=${encodeURIComponent(subject)}&body=${body}`;
   };
 </script>
