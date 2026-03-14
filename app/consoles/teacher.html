@@ -208,6 +208,7 @@
 
 
         function filterSectionsForGrade(grade) {
+        function filterSectionsForGrade(grade) {
             const profile = window.teacherProfile;
             const allSections = profile?.sections || (profile?.mapped_section ? [`${profile?.mapped_grade || '9'}${profile.mapped_section}`] : ['9A']);
             const filtered = allSections.filter(s => s.replace(/[A-Z]/g, '') === grade);
