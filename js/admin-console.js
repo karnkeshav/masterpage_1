@@ -771,6 +771,12 @@ window.handleCSVUpload = async (event) => {
                     const targetSection = row[4];
                     const targetDiscipline = row[5];
 
+                    if (!targetSection) {
+                        window.logMessage(`Skipped ${email}: No section provided for teacher assignment.`, true);
+                        errorCount++;
+                        return; // Skip this row
+                    }
+
                     const curriculumData = await loadCurriculum(targetGrade);
                     let hasMapping = false;
                     if (curriculumData["Science"] && curriculumData["Science"][targetDiscipline]) hasMapping = true;

@@ -352,7 +352,10 @@
         }
 
         const getControlDocId = (slug) => {
-            return `${currentContext.grade}_${currentContext.section}_${currentSubject}_${currentContext.discipline.toLowerCase()}_${slug}`;
+            return {
+                newId: `${currentContext.grade}_${currentContext.section}_${currentSubject}_${currentContext.discipline.toLowerCase()}_${slug}`,
+                oldId: `${currentContext.grade}_${currentContext.section}_science_${currentContext.discipline.toLowerCase()}_${slug}`
+            };
         };
 
         function attachFirebaseListeners() {
@@ -363,30 +366,48 @@
 
             // Re-attach listeners for current chapters
             activeChapters.forEach(chap => {
-                const docId = getControlDocId(chap.id);
-                const unsub = onSnapshot(doc(db, "chapter_control", docId), (docSnap) => {
-                    if (!docSnap.exists()) {
-                        completedChapters[chap.id] = null;
+                const ids = getControlDocId(chap.id);
+                // First try the new ID
+                const unsubNew = onSnapshot(doc(db, "chapter_control", ids.newId), (docSnapNew) => {
+                    if (docSnapNew.exists()) {
+                        completedChapters[chap.id] = docSnapNew.data().taught_date;
+                        updateHeatmapAndCurriculum(chap.id, docSnapNew.data().taught_date);
                     } else {
-                        completedChapters[chap.id] = docSnap.data().taught_date;
-                    }
-                    if(activeTab === 'curriculum') renderCurriculumHub();
-
-                    if (chap.id === selectedChapterId) {
-                        heatmapTaughtDate = docSnap.exists() ? docSnap.data().taught_date : null;
-                        if(activeTab === 'analytics') renderSectionHeatmap();
+                        // Fallback to old ID if new ID doesn't exist
+                        const unsubOld = onSnapshot(doc(db, "chapter_control", ids.oldId), (docSnapOld) => {
+                            if (docSnapOld.exists()) {
+                                completedChapters[chap.id] = docSnapOld.data().taught_date;
+                                updateHeatmapAndCurriculum(chap.id, docSnapOld.data().taught_date);
+                            } else {
+                                completedChapters[chap.id] = null;
+                                updateHeatmapAndCurriculum(chap.id, null);
+                            }
+                        }, (error) => {
+                            console.error(`Fallback listener error for chapter ${chap.id}:`, error);
+                            completedChapters[chap.id] = null;
+                            updateHeatmapAndCurriculum(chap.id, null);
+                        });
+                        chapterListeners.push(unsubOld);
                     }
                 }, (error) => {
                     console.error(`Listener error for chapter ${chap.id}:`, error);
                     completedChapters[chap.id] = null;
                 });
-                chapterListeners.push(unsub);
+                chapterListeners.push(unsubNew);
             });
+
+            function updateHeatmapAndCurriculum(chapId, taughtDate) {
+                if(activeTab === 'curriculum') renderCurriculumHub();
+                if (chapId === selectedChapterId) {
+                    heatmapTaughtDate = taughtDate;
+                    if(activeTab === 'analytics') renderSectionHeatmap();
+                }
+            }
         }
 
         async function markChapterFinished(chapterId) {
             if (!db) return;
-            const docId = getControlDocId(chapterId);
+            const docId = getControlDocId(chapterId).newId; // Always write to new schema
             const chapterTitle = activeChapters.find(c => c.id === chapterId)?.title || chapterId;
 
             try {
