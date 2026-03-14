@@ -771,8 +771,8 @@ window.handleCSVUpload = async (event) => {
                     const targetSection = row[4];
                     const targetDiscipline = row[5];
 
-                    if (!targetSection) {
-                        window.logMessage(`Skipped ${email}: No section provided for teacher assignment.`, true);
+                    if (!targetSection || !targetDiscipline) {
+                        window.logMessage(`Skipped ${email}: Missing target section or discipline for teacher assignment.`, true);
                         errorCount++;
                         return; // Skip this row
                     }
@@ -881,8 +881,8 @@ function renderBucket(elementId, users, type) {
             return `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${(u.mapped_disciplines || []).join(', ') || 'Unassigned'}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${(u.sections || []).join(', ') || 'Unassigned'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${(u.mapped_disciplines || [u.mapped_discipline]).filter(Boolean).join(', ') || 'Unassigned'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${(u.sections || [u.mapped_section]).filter(Boolean).join(', ') || 'Unassigned'}</td>
                     <td class="p-4 text-right">
                         <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
                     </td>
