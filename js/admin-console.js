@@ -771,6 +771,12 @@ window.handleCSVUpload = async (event) => {
                     const targetSection = row[4];
                     const targetDiscipline = row[5];
 
+                    if (!targetSection || !targetDiscipline) {
+                        window.logMessage(`Skipped ${email}: Missing target section or discipline for teacher assignment.`, true);
+                        errorCount++;
+                        continue; // Skip this row
+                    }
+
                     const curriculumData = await loadCurriculum(targetGrade);
                     let hasMapping = false;
                     if (curriculumData["Science"] && curriculumData["Science"][targetDiscipline]) hasMapping = true;
@@ -782,9 +788,8 @@ window.handleCSVUpload = async (event) => {
 
                     if(hasMapping) {
                         await updateDoc(doc(db, "users", userId), {
-                            mapped_grade: targetGrade,
-                            mapped_section: targetSection,
-                            mapped_discipline: targetDiscipline,
+                            mapped_disciplines: arrayUnion(targetDiscipline),
+                            sections: arrayUnion(`${targetGrade}${targetSection}`),
                             updated_at: serverTimestamp()
                         });
                         window.logMessage(`Mapped Teacher ${email} to ${targetGrade}-${targetSection} ${targetDiscipline}`);
@@ -876,8 +881,8 @@ function renderBucket(elementId, users, type) {
             return `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${u.mapped_discipline || 'Unassigned'}</td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${u.mapped_section || 'Unassigned'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${(u.mapped_disciplines || [u.mapped_discipline]).filter(Boolean).join(', ') || 'Unassigned'}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${(u.sections || [u.mapped_section]).filter(Boolean).join(', ') || 'Unassigned'}</td>
                     <td class="p-4 text-right">
                         <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
                     </td>
@@ -951,9 +956,8 @@ window.assignTeacherToSection = async (teacherUid, grade, section, discipline) =
     try {
         const { db } = await getInitializedClients();
         await updateDoc(doc(db, "users", teacherUid), {
-            mapped_grade: grade,
-            mapped_section: section,
-            mapped_discipline: discipline,
+            mapped_disciplines: arrayUnion(discipline),
+            sections: arrayUnion(`${grade}${section}`),
             updated_at: serverTimestamp()
         });
         alert(`Teacher assigned to Grade ${grade}-${section} for ${discipline}`);
