@@ -1,0 +1,7 @@
+--- js/guard.js
++++ js/guard.js
+@@ -58,3 +58,3 @@
+
+         const firstLoginFlag = sessionStorage.getItem('firstLogin') === 'true';
+-        const isMaster = user.email === "dps.ready4exam@ready4exam.internal" || profile.email === "dps.ready4exam@ready4exam.internal" || profile.role === 'owner' || profile.role === 'school_master';
++        const isMaster = user.email === "dps.ready4exam@ready4exam.internal" || profile.email === "dps.ready4exam@ready4exam.internal" || profile.role === 'owner' || profile.role === 'school_master' || profile.role === 'admin';
