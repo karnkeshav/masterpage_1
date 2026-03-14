@@ -7,6 +7,24 @@
 
     <link href="../../css/global.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
+            colors: {
+              'cbse-blue': '#1a3e6a',
+              'cbse-light': '#f8fafc',
+              'accent-gold': '#d4a373',
+              'success-green': '#059669',
+              'danger-red': '#dc2626',
+              'warning-yellow': '#ca8a04'
+            }
+          }
+        }
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -87,8 +105,21 @@
             </nav>
         </aside>
 
+        <!-- Mobile Tab Bar -->
+        <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around py-2 z-40 shadow-lg">
+            <button onclick="window.switchTab('curriculum')" class="flex flex-col items-center text-xs font-bold text-slate-500 hover:text-cbse-blue">
+                <i class="fas fa-book-open text-lg mb-1"></i> Curriculum
+            </button>
+            <button onclick="window.switchTab('analytics')" class="flex flex-col items-center text-xs font-bold text-slate-500 hover:text-cbse-blue">
+                <i class="fas fa-chart-pie text-lg mb-1"></i> Analytics
+            </button>
+            <button onclick="window.switchTab('remedial')" class="flex flex-col items-center text-xs font-bold text-slate-500 hover:text-cbse-blue">
+                <i class="fas fa-user-nurse text-lg mb-1"></i> Remedial
+            </button>
+        </nav>
+
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto bg-slate-50/50 p-6">
+        <main class="flex-1 overflow-y-auto bg-slate-50/50 p-6 pb-16 lg:pb-6">
             <div class="max-w-6xl mx-auto space-y-6">
 
                 <!-- Breadcrumb -->
@@ -113,10 +144,10 @@
     <!-- Application Script (Vanilla JS) -->
     <script type="module">
         import { getInitializedClients } from "../../js/config.js";
-        import { initializeAuthListener } from "../../js/auth-paywall.js";
+
         import { bindConsoleLogout, guardConsole } from "../../js/guard.js";
         import { loadCurriculum, getGradeFromURL } from "../../js/curriculum/loader.js";
-        import { collection, query, where, onSnapshot, getDocs, setDoc, addDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, getDocs, setDoc, addDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
 
         // === GLOBAL STATE DECLARATIONS ===
@@ -127,6 +158,7 @@
         let currentUser = null;
         let activeTab = 'curriculum';
         let currentContext = { grade: '9', section: '9A', discipline: 'Chemistry' };
+        let currentSubject = 'science';
         let activeChapters = [];
         let completedChapters = {};
         let chapterListeners = [];
@@ -137,7 +169,86 @@
         // UI Event Handlers Exposure
         window.switchTab = switchTab;
         window.markChapterFinished = markChapterFinished;
+
+        window.showStudentDetail = (uid) => {
+            const name = window.sectionStudents?.names[uid] || uid;
+            const scores = studentScores.filter(s =>
+                s.user_id === uid && (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId)
+            );
+
+            let detailHtml = '';
+            if (scores.length === 0) {
+                detailHtml = `<div class="p-6 text-center text-slate-400"><p class="font-bold">No scores yet</p><p class="text-xs mt-1">This student hasn't attempted this chapter.</p></div>`;
+            } else {
+                detailHtml = scores.map((s, i) => `
+                    <div class="p-4 border-b border-slate-100">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-400">Attempt ${i + 1}</span>
+                            <span class="font-black text-slate-800">${s.score ?? s.percentage ?? 'N/A'}%</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const sidebar = document.querySelector('#tab-viewport .w-80');
+            if (sidebar) {
+                sidebar.innerHTML = `
+                    <div class="p-4 border-b border-slate-200 bg-slate-50">
+                        <h3 class="font-black text-slate-800 text-sm">${name}</h3>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">${scores.length} attempt(s)</p>
+                    </div>
+                    <div class="flex-1 overflow-y-auto">${detailHtml}</div>
+                `;
+            }
+        };
         window.retryHandshake = retryHandshake;
+
+
+
+        function filterSectionsForGrade(grade) {
+            const allSections = window.teacherProfile?.sections || ['9A'];
+            const filtered = allSections.filter(s => s.replace(/[A-Z]/g, '') === grade);
+            const sectionSelect = document.getElementById('section-select');
+            sectionSelect.innerHTML = filtered.map(s =>
+                `<option value="${s}" class="text-slate-800">${s}</option>`
+            ).join('');
+            if (filtered.length > 0) {
+                currentContext.section = filtered[0];
+            }
+        }
+
+        async function fetchSectionStudents() {
+            if (!db) return;
+            const schoolId = window.teacherProfile?.school_id;
+            const constraints = [
+                where("section_id", "==", getSectionId()),
+                where("role", "==", "student")
+            ];
+            if (schoolId) constraints.push(where("school_id", "==", schoolId));
+
+            const studentsQuery = query(collection(db, "users"), ...constraints);
+            const studentsSnap = await getDocs(studentsQuery);
+            const studentUids = studentsSnap.docs.map(d => d.id);
+            const studentNames = {};
+            studentsSnap.docs.forEach(d => {
+                studentNames[d.id] = d.data().displayName || d.data().email || d.id;
+            });
+            window.sectionStudents = { uids: studentUids, names: studentNames };
+
+            studentScores = [];
+            for (let i = 0; i < studentUids.length; i += 10) {
+                const batch = studentUids.slice(i, i + 10);
+                if (batch.length === 0) continue;
+                const scoresQuery = query(collection(db, "quiz_scores"), where("user_id", "in", batch));
+                const scoresSnap = await getDocs(scoresQuery);
+                scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
+            }
+        }
+
+        function getSectionId() {
+            const letter = currentContext.section.replace(/^\d+/, '');
+            return `${currentContext.grade}-${letter}`;
+        }
 
         // Initialize Application
         async function init(user) {
@@ -184,28 +295,8 @@
                 currentContext.grade = grade;
                 const curriculumData = await loadCurriculum(grade);
 
-                // Fetch scores for students in this section
-                const studentsQuery = query(collection(db, "users"),
-                    where("section_id", "==", `${currentContext.grade}-${currentContext.section.replace(currentContext.grade, '')}`),
-                    where("role", "==", "student")
-                );
-                const studentsSnap = await getDocs(studentsQuery);
-                const studentUids = studentsSnap.docs.map(d => d.id);
-                const studentNames = {};
-                studentsSnap.docs.forEach(d => { studentNames[d.id] = d.data().displayName || d.data().email || d.id; });
-
-                // Store for use in heatmap and remedial
-                window.sectionStudents = { uids: studentUids, names: studentNames };
-
-                // Fetch scores for these students (in batches of 10 for Firestore 'in' query limit)
-                studentScores = [];
-                for (let i = 0; i < studentUids.length; i += 10) {
-                    const batch = studentUids.slice(i, i + 10);
-                    if (batch.length === 0) continue;
-                    const scoresQuery = query(collection(db, "quiz_scores"), where("user_id", "in", batch));
-                    const scoresSnap = await getDocs(scoresQuery);
-                    scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
-                }
+                filterSectionsForGrade(currentContext.grade);
+                await fetchSectionStudents();
 
                 // Configure Context
                 updateActiveChapters(curriculumData);
@@ -245,6 +336,7 @@
             for (const [subject, subDiscs] of Object.entries(curriculumData)) {
                 if (subDiscs[disc]) {
                     chaps = subDiscs[disc];
+                    currentSubject = subject.toLowerCase().replace(/\s+/g, '_');
                     break;
                 }
             }
@@ -260,7 +352,7 @@
         }
 
         const getControlDocId = (slug) => {
-            return `${currentContext.grade}_${currentContext.section}_science_${currentContext.discipline.toLowerCase()}_${slug}`;
+            return `${currentContext.grade}_${currentContext.section}_${currentSubject}_${currentContext.discipline.toLowerCase()}_${slug}`;
         };
 
         function attachFirebaseListeners() {
@@ -285,7 +377,7 @@
                         if(activeTab === 'analytics') renderSectionHeatmap();
                     }
                 }, (error) => {
-                    // Empty error handler
+                    console.error(`Listener error for chapter ${chap.id}:`, error);
                     completedChapters[chap.id] = null;
                 });
                 chapterListeners.push(unsub);
@@ -312,10 +404,14 @@
                 });
 
                 // 2. Create student_notifications for each student in the section
-                const studentsQuery = query(collection(db, "users"),
-                    where("section_id", "==", `${currentContext.grade}-${currentContext.section.replace(currentContext.grade, '')}`),
+                const schoolId = window.teacherProfile?.school_id;
+                const constraints = [
+                    where("section_id", "==", getSectionId()),
                     where("role", "==", "student")
-                );
+                ];
+                if (schoolId) constraints.push(where("school_id", "==", schoolId));
+
+                const studentsQuery = query(collection(db, "users"), ...constraints);
                 const studentsSnap = await getDocs(studentsQuery);
 
                 const notifPromises = [];
@@ -452,20 +548,31 @@
         function renderSectionHeatmap() {
             let optionsHtml = activeChapters.map(c => `<option value="${c.id}" ${c.id === selectedChapterId ? 'selected' : ''}>${c.title}</option>`).join('');
 
-            // Mocks 40 students
+            const students = window.sectionStudents || { uids: [], names: {} };
+            const studentCount = students.uids.length;
             let gridHtml = '';
-            for(let i=0; i<40; i++) {
-                // Determine mock existence
-                const seed = i * 7 + (selectedChapterId.length || 1);
-                const hasScore = (seed % 3) !== 0; // randomly exists
-                const colorClass = hasScore ? 'bg-success-green shadow-[0_0_12px_rgba(5,150,105,0.4)] border border-green-400 text-white' : 'bg-slate-200 border border-slate-300 text-slate-500';
 
-                gridHtml += `
-                    <button title="Seat ${i+1}" class="w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center font-black text-xs ${colorClass}">
-                        ${i+1}
-                    </button>
-                `;
+            if (studentCount === 0) {
+                gridHtml = '<div class="col-span-full text-center text-slate-400 italic font-bold py-8">No students found in this section.</div>';
+            } else {
+                students.uids.forEach((uid, i) => {
+                    const hasScore = studentScores.some(s =>
+                        s.user_id === uid && (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId)
+                    );
+                    const colorClass = hasScore
+                        ? 'bg-success-green shadow-[0_0_12px_rgba(5,150,105,0.4)] border border-green-400 text-white'
+                        : 'bg-slate-200 border border-slate-300 text-slate-500';
+                    const name = students.names[uid] || `Student ${i + 1}`;
+
+                    gridHtml += `
+                        <button title="${name}" onclick="window.showStudentDetail('${uid}')"
+                            class="w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center font-black text-xs ${colorClass}">
+                            ${i + 1}
+                        </button>
+                    `;
+                });
             }
+            const cols = Math.min(10, Math.ceil(Math.sqrt(studentCount)));
 
             let syncText = heatmapTaughtDate && heatmapTaughtDate.toDate ? `Sync Activated: ${heatmapTaughtDate.toDate().toLocaleDateString()}` : "Sync Not Activated";
 
@@ -501,7 +608,7 @@
                             </div>
                             <div>
                                 <h2 class="text-xl font-black text-slate-800">Section Heatmap</h2>
-                                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">40-Student Grid</p>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">${studentCount}-Student Grid</p>
                             </div>
                         </div>
 
@@ -521,7 +628,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-10 grid-rows-4 gap-3 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner">
+                        <div class="grid gap-3 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner" style="grid-template-columns: repeat(${cols}, 1fr);">
                             ${gridHtml}
                         </div>
 
@@ -535,38 +642,55 @@
         }
 
         function calculateRemedialQueue() {
-            // Task 2: The B+1 Remedial Engine
+            const students = window.sectionStudents || { uids: [], names: {} };
 
-            // We simulate 160 students attempts since studentScores array might be empty due to db rules/mocks
-            const simStudents = Array.from({ length: 160 }, (_, i) => {
-                const rng = Math.abs(Math.sin(selectedChapterId.length + (i * 17)));
-                let attempts = 1;
-                if (rng > 0.95) attempts = 5;
-                else if (rng > 0.8) attempts = 4;
-                else if (rng > 0.4) attempts = 3;
-                else if (rng > 0.1) attempts = 2;
+            if (students.uids.length === 0 || studentScores.length === 0) {
+                return { B: 0, strugglers: [], top10: [] };
+            }
 
-                let score = Math.floor(40 + rng * 60);
-                if (attempts >= 4) score = Math.max(30, score - 20);
+            // Group scores by student for the selected chapter
+            const studentMap = {};
+            studentScores.forEach(s => {
+                const matchesChapter = (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId);
+                if (!matchesChapter) return;
 
-                return {
-                    id: `STU${1000 + i}`,
-                    name: `Student ${1000 + i}`,
-                    section: ['9A', '9B', '8C', '8D'][i % 4],
-                    attempts,
-                    score: Math.min(100, score)
-                };
+                const uid = s.user_id;
+                if (!studentMap[uid]) {
+                    studentMap[uid] = {
+                        id: uid,
+                        name: students.names[uid] || uid,
+                        section: currentContext.section,
+                        attempts: 0,
+                        totalScore: 0
+                    };
+                }
+                studentMap[uid].attempts++;
+                studentMap[uid].totalScore += (s.score ?? s.percentage ?? 0);
             });
 
-            // Calculate Benchmark (B)
-            const sortedAttempts = [...simStudents].map(s => s.attempts).sort((a, b) => a - b);
-            const p70Index = Math.floor(160 * 0.70);
-            let B = sortedAttempts[p70Index] || 3;
+            const realStudents = Object.values(studentMap).map(s => ({
+                ...s,
+                score: s.attempts > 0 ? Math.round(s.totalScore / s.attempts) : 0
+            }));
+
+            if (realStudents.length === 0) {
+                return { B: 0, strugglers: [], top10: [] };
+            }
+
+            // Calculate Benchmark (B) at P70
+            const sortedAttempts = realStudents.map(s => s.attempts).sort((a, b) => a - b);
+            const p70Index = Math.floor(realStudents.length * 0.70);
+            const B = sortedAttempts[p70Index] || 1;
 
             // Filter Strugglers (B+1)
-            const strugglers = [...simStudents].filter(s => s.attempts > B).sort((a, b) => a.score - b.score).slice(0, 20);
+            const strugglers = realStudents
+                .filter(s => s.attempts > B)
+                .sort((a, b) => a.score - b.score)
+                .slice(0, 20);
 
-            const top10 = [...simStudents].sort((a, b) => b.score - a.score || a.attempts - b.attempts).slice(0, 10);
+            const top10 = [...realStudents]
+                .sort((a, b) => b.score - a.score || a.attempts - b.attempts)
+                .slice(0, 10);
 
             return { B, strugglers, top10 };
         }
@@ -620,7 +744,7 @@
                     <div class="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                         <div>
                             <h2 class="text-xl font-black text-slate-800">Dynamic Benchmarking & Remedial Queue</h2>
-                            <p class="text-sm text-slate-500">Processing 160 active students across Grade ${currentContext.grade}.</p>
+                            <p class="text-sm text-slate-500">Processing ${window.sectionStudents?.uids?.length || 0} students in ${currentContext.grade}-${currentContext.section}.</p>
                         </div>
                         <select onchange="window.handleSelectChapter(event)" class="bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm font-bold px-4 py-2 outline-none focus:ring-2 focus:ring-cbse-blue cursor-pointer shadow-sm">
                             ${optionsHtml}
@@ -680,16 +804,19 @@
 
         document.getElementById('grade-select').addEventListener('change', async (e) => {
             currentContext.grade = e.target.value;
+            filterSectionsForGrade(currentContext.grade);
             document.getElementById('header-class').innerText = `${currentContext.grade}-${currentContext.section}`;
             const curr = await loadCurriculum(currentContext.grade);
             updateActiveChapters(curr);
+            await fetchSectionStudents();
             attachFirebaseListeners();
             renderTab();
         });
 
-        document.getElementById('section-select').addEventListener('change', (e) => {
+        document.getElementById('section-select').addEventListener('change', async (e) => {
             currentContext.section = e.target.value;
             document.getElementById('header-class').innerText = `${currentContext.grade}-${currentContext.section}`;
+            await fetchSectionStudents();
             attachFirebaseListeners();
             renderTab();
         });

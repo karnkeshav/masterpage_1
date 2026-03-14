@@ -782,9 +782,8 @@ window.handleCSVUpload = async (event) => {
 
                     if(hasMapping) {
                         await updateDoc(doc(db, "users", userId), {
-                            mapped_grade: targetGrade,
-                            mapped_section: targetSection,
-                            mapped_discipline: targetDiscipline,
+                            sections: arrayUnion(`${targetGrade}${targetSection}`),
+                            mapped_disciplines: arrayUnion(targetDiscipline),
                             updated_at: serverTimestamp()
                         });
                         window.logMessage(`Mapped Teacher ${email} to ${targetGrade}-${targetSection} ${targetDiscipline}`);
@@ -951,9 +950,8 @@ window.assignTeacherToSection = async (teacherUid, grade, section, discipline) =
     try {
         const { db } = await getInitializedClients();
         await updateDoc(doc(db, "users", teacherUid), {
-            mapped_grade: grade,
-            mapped_section: section,
-            mapped_discipline: discipline,
+            sections: arrayUnion(`${grade}${section}`),
+            mapped_disciplines: arrayUnion(discipline),
             updated_at: serverTimestamp()
         });
         alert(`Teacher assigned to Grade ${grade}-${section} for ${discipline}`);
