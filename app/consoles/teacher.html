@@ -367,33 +367,41 @@
             // Re-attach listeners for current chapters
             activeChapters.forEach(chap => {
                 const ids = getControlDocId(chap.id);
+                let unsubOld = null; // Track inner listener
+
                 // First try the new ID
                 const unsubNew = onSnapshot(doc(db, "chapter_control", ids.newId), (docSnapNew) => {
                     if (docSnapNew.exists()) {
+                        if (unsubOld) { unsubOld(); unsubOld = null; }
                         completedChapters[chap.id] = docSnapNew.data().taught_date;
                         updateHeatmapAndCurriculum(chap.id, docSnapNew.data().taught_date);
                     } else {
                         // Fallback to old ID if new ID doesn't exist
-                        const unsubOld = onSnapshot(doc(db, "chapter_control", ids.oldId), (docSnapOld) => {
-                            if (docSnapOld.exists()) {
-                                completedChapters[chap.id] = docSnapOld.data().taught_date;
-                                updateHeatmapAndCurriculum(chap.id, docSnapOld.data().taught_date);
-                            } else {
+                        if (!unsubOld) {
+                            unsubOld = onSnapshot(doc(db, "chapter_control", ids.oldId), (docSnapOld) => {
+                                if (docSnapOld.exists()) {
+                                    completedChapters[chap.id] = docSnapOld.data().taught_date;
+                                    updateHeatmapAndCurriculum(chap.id, docSnapOld.data().taught_date);
+                                } else {
+                                    completedChapters[chap.id] = null;
+                                    updateHeatmapAndCurriculum(chap.id, null);
+                                }
+                            }, (error) => {
+                                console.error(`Fallback listener error for chapter ${chap.id}:`, error);
                                 completedChapters[chap.id] = null;
                                 updateHeatmapAndCurriculum(chap.id, null);
-                            }
-                        }, (error) => {
-                            console.error(`Fallback listener error for chapter ${chap.id}:`, error);
-                            completedChapters[chap.id] = null;
-                            updateHeatmapAndCurriculum(chap.id, null);
-                        });
-                        chapterListeners.push(unsubOld);
+                            });
+                        }
                     }
                 }, (error) => {
                     console.error(`Listener error for chapter ${chap.id}:`, error);
                     completedChapters[chap.id] = null;
                 });
-                chapterListeners.push(unsubNew);
+
+                chapterListeners.push(() => {
+                    unsubNew();
+                    if (unsubOld) unsubOld();
+                });
             });
 
             function updateHeatmapAndCurriculum(chapId, taughtDate) {

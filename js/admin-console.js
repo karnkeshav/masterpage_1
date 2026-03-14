@@ -774,7 +774,7 @@ window.handleCSVUpload = async (event) => {
                     if (!targetSection || !targetDiscipline) {
                         window.logMessage(`Skipped ${email}: Missing target section or discipline for teacher assignment.`, true);
                         errorCount++;
-                        return; // Skip this row
+                        continue; // Skip this row
                     }
 
                     const curriculumData = await loadCurriculum(targetGrade);
