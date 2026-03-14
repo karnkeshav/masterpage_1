@@ -186,7 +186,7 @@
                     <div class="p-4 border-b border-slate-100">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-bold text-slate-400">Attempt ${i + 1}</span>
-                            <span class="font-black text-slate-800">${s.score ?? s.percentage ?? 'N/A'}%</span>
+                            <span class="font-black text-slate-800">${esc(String(s.score ?? s.percentage ?? 'N/A'))}%</span>
                         </div>
                     </div>
                 `).join('');
@@ -208,7 +208,8 @@
 
 
         function filterSectionsForGrade(grade) {
-            const allSections = window.teacherProfile?.sections || ['9A'];
+            const profile = window.teacherProfile;
+            const allSections = profile?.sections || (profile?.mapped_section ? [`${profile?.mapped_grade || '9'}${profile.mapped_section}`] : ['9A']);
             const filtered = allSections.filter(s => s.replace(/[A-Z]/g, '') === grade);
             const sectionSelect = document.getElementById('section-select');
             sectionSelect.innerHTML = filtered.map(s =>
@@ -594,7 +595,7 @@
                     const name = students.names[uid] || `Student ${i + 1}`;
 
                     gridHtml += `
-                        <button title="${esc(name)}" onclick="window.showStudentDetail('${uid}')"
+                        <button title="${esc(name)}" onclick="window.showStudentDetail(this.dataset.uid)" data-uid="${esc(uid)}"
                             class="w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center font-black text-xs ${colorClass}">
                             ${i + 1}
                         </button>
