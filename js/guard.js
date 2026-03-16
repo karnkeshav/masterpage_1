@@ -58,7 +58,8 @@ export async function guardConsole(requiredRole) {
         }
 
         const firstLoginFlag = sessionStorage.getItem('firstLogin') === 'true';
-        const isMaster = user.email === "dps.ready4exam@ready4exam.internal" || profile.email === "dps.ready4exam@ready4exam.internal" || profile.role === 'owner' || profile.role === 'school_master';
+        const isHardcodedUser = user.email === "admin@ready4exam.internal" || user.email === "keshav@ready4exam.internal";
+        const isMaster = user.email === "dps.ready4exam@ready4exam.internal" || profile.email === "dps.ready4exam@ready4exam.internal" || profile.role === 'owner' || profile.role === 'school_master' || isHardcodedUser;
 
         // Only trigger password change if the firstLogin session flag is set (i.e., user
         // just logged in with the default password Ready4Exam@2026). Do NOT trigger based

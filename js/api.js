@@ -78,7 +78,6 @@ export async function ensureUserProfile(uid, username, additionalData = {}) {
             if (additionalData.tenantType) profile.tenantType = additionalData.tenantType;
             if (additionalData.tenantId) profile.tenantId = additionalData.tenantId;
             if (additionalData.classId) profile.classId = additionalData.classId;
-            if (additionalData.setupComplete !== undefined) profile.setupComplete = additionalData.setupComplete;
 
             // Fallback inference from username if no explicit data
             if (!profile.role) {
@@ -111,7 +110,6 @@ export async function ensureUserProfile(uid, username, additionalData = {}) {
             if (additionalData.tenantType && additionalData.tenantType !== existingData.tenantType) updates.tenantType = additionalData.tenantType;
             if (additionalData.tenantId && additionalData.tenantId !== existingData.tenantId) updates.tenantId = additionalData.tenantId;
             if (additionalData.school_id && additionalData.school_id !== existingData.school_id) updates.school_id = additionalData.school_id;
-            if (additionalData.setupComplete !== undefined && additionalData.setupComplete !== existingData.setupComplete) updates.setupComplete = additionalData.setupComplete;
 
             await updateDoc(ref, updates);
         }

@@ -19,7 +19,7 @@ export { ensureUserInFirestore };
 const CREDENTIALS = {
     "keshav":         { pass: "keshav",     role: "owner",         tenantType: "owner",  tenantId: "global" },
     "dps.ready4exam": { pass: "keshav",     role: "school_master", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "admin":          { pass: "Ready4Exam@2026", role: "admin",    tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
+    "admin":          { pass: "admin12345",  role: "admin",        tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
 };
 
 export async function authenticateWithCredentials(username, password) {
@@ -132,8 +132,7 @@ export async function authenticateWithCredentials(username, password) {
                 role: userProfile.role,
                 tenantType: userProfile.tenantType,
                 tenantId: userProfile.tenantId,
-                school_id: userProfile.school_id,
-                setupComplete: true
+                school_id: userProfile.school_id
             });
             await waitForProfileReady(stableUID);
             return { uid: stableUID, displayName: username, role: userProfile.role };
