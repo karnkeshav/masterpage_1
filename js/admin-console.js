@@ -258,7 +258,11 @@ window.renderInventoryEngine = async () => {
                     // Find teachers who have this section in their sections array
                     const classTeachers = teacherList.filter(t => {
                         const tSecs = t.sections || [];
-                        return tSecs.includes(sectionKey) || tSecs.includes(sectionKeyHyphen);
+                        // Check array field (new format)
+                        if (tSecs.includes(sectionKey) || tSecs.includes(sectionKeyHyphen)) return true;
+                        // Fallback: check singular fields (old format)
+                        if (t.mapped_grade == g && t.mapped_section == s) return true;
+                        return false;
                     });
 
                     if (classTeachers.length === 0) {
@@ -945,7 +949,7 @@ window.linkParentToStudent = async (studentUid, parentEmail) => {
 
 window.promptAssignTeacher = async (teacherId) => {
     const grade = prompt("Enter Grade (e.g., 9):");
-    const section = prompt("Enter Section (e.g., A):");
+    const section = prompt("Enter Section letter (e.g., A):");
     const discipline = prompt("Enter Discipline (e.g., Science):");
 
     if(!grade || !section || !discipline) return;
