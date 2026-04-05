@@ -757,7 +757,8 @@ window.handleCSVUpload = async (event) => {
             try {
                 let email = row[0];
                 if (email.endsWith('@ready4exam.internal')) {
-                    email = 'ready4exam+' + email.replace('@ready4exam.internal', '') + '@gmail.com';
+                    const localPart = email.split('@')[0];
+                    email = `ready4exam+${localPart}@gmail.com`;
                 }
                 const role = row[1];
 

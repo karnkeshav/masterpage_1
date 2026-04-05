@@ -113,6 +113,9 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
           <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2">
               Log In
           </button>
+          <button type="button" id="forgot-password-btn" class="text-xs text-white/60 hover:text-gold underline mt-2 block mx-auto">
+              Forgot Password?
+          </button>
       </form>
       <div class="mt-6 text-center border-t border-white/10 pt-4">
           <p class="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Owner • School Admin • Students &amp; Parents</p>
@@ -493,6 +496,8 @@ body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap
 <!-- AUTH LOGIC -->
 <script type="module">
 import { authenticateWithCredentials, routeUser, initializeAuthListener } from "./js/auth-paywall.js";
+import { getInitializedClients } from "./js/config.js";
+import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 initializeAuthListener(async (user, profile) => {
     if (user && profile) {
@@ -527,6 +532,40 @@ loginForm.addEventListener("submit", async (e) => {
         errorBox.classList.remove("hidden");
         btn.disabled = false;
         btn.textContent = "Log In";
+    }
+});
+
+
+document.getElementById("forgot-password-btn").addEventListener("click", async () => {
+    const username = document.getElementById("username").value.trim();
+    if (!username) {
+        errorBox.textContent = "Please enter your username to reset your password.";
+        errorBox.classList.remove("hidden");
+        return;
+    }
+
+    errorBox.classList.add("hidden");
+    const btn = document.getElementById("forgot-password-btn");
+    const originalText = btn.textContent;
+    btn.textContent = "Sending...";
+    btn.disabled = true;
+
+    try {
+        const { auth } = await getInitializedClients();
+        const email = username.includes('@') ? username : `ready4exam+${username}@gmail.com`;
+        await sendPasswordResetEmail(auth, email);
+
+        errorBox.classList.remove("hidden", "bg-red-900/20", "text-red-400");
+        errorBox.classList.add("bg-green-900/20", "text-green-400");
+        errorBox.textContent = "Password reset email sent! Check your inbox.";
+    } catch (err) {
+        console.error(err);
+        errorBox.classList.remove("hidden", "bg-green-900/20", "text-green-400");
+        errorBox.classList.add("bg-red-900/20", "text-red-400");
+        errorBox.textContent = err.code === 'auth/user-not-found' ? "User not found." : "Failed to send reset email. " + err.message;
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
     }
 });
 
