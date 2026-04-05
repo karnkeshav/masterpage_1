@@ -519,7 +519,7 @@ window.showAddModal = async (role, grade = '', section = '') => {
                         <input type="text" id="modal-name" placeholder="John Doe" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username (appends @ready4exam.internal)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username (appends +alias@gmail.com)</label>
                         <input type="text" id="modal-username" placeholder="john.doe" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
                     </div>
 
@@ -563,7 +563,7 @@ window.submitAddModal = async (role) => {
         return showError("Name and Username are required.");
     }
 
-    const email = `${username}@ready4exam.internal`;
+    const email = `ready4exam+${username}@gmail.com`;
     const password = "Ready4Exam@2026";
 
     let payload = {
@@ -755,7 +755,10 @@ window.handleCSVUpload = async (event) => {
         for (let i = 0; i < dataRows.length; i++) {
             const row = dataRows[i];
             try {
-                const email = row[0];
+                let email = row[0];
+                if (email.endsWith('@ready4exam.internal')) {
+                    email = 'ready4exam+' + email.replace('@ready4exam.internal', '') + '@gmail.com';
+                }
                 const role = row[1];
 
                 const q = query(collection(db, "users"), where("email", "==", email), where("school_id", "==", currentSchoolId));
