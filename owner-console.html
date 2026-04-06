@@ -236,7 +236,7 @@
                 secAuth = getAuth(secApp);
 
                 // Create Auth User
-                const userEmail = `${schoolId}@ready4exam.internal`;
+                const userEmail = `ready4exam+${schoolId}@gmail.com`;
                 const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, tempPassword);
                 createdUser = userCredential.user;
                 const newUid = createdUser.uid;
