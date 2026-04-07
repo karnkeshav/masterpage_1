@@ -51,7 +51,7 @@ export async function authenticateWithCredentials(username, password) {
     // duplicate flags that cause double password-change prompts.
 
     // Use the provided string as email if it includes '@', otherwise append synthetic domain
-    const email = username.includes('@') ? username : `ready4exam+${username}@gmail.com`;
+    const email = username.includes('@') ? username : `ready4urexam+${username}@gmail.com`;
 
     try {
         try {

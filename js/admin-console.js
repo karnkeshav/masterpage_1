@@ -563,7 +563,7 @@ window.submitAddModal = async (role) => {
         return showError("Name and Username are required.");
     }
 
-    const email = `ready4exam+${username}@gmail.com`;
+    const email = `ready4urexam+${username}@gmail.com`;
     const password = "Ready4Exam@2026";
 
     let payload = {
@@ -758,7 +758,7 @@ window.handleCSVUpload = async (event) => {
                 let email = row[0];
                 if (email.endsWith('@ready4exam.internal')) {
                     const localPart = email.split('@')[0];
-                    email = `ready4exam+${localPart}@gmail.com`;
+                    email = `ready4urexam+${localPart}@gmail.com`;
                 }
                 const role = row[1];
 

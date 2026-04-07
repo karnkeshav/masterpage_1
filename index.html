@@ -552,7 +552,7 @@ document.getElementById("forgot-password-btn").addEventListener("click", async (
 
     try {
         const { auth } = await getInitializedClients();
-        const email = username.includes('@') ? username : `ready4exam+${username}@gmail.com`;
+        const email = username.includes('@') ? username : `ready4urexam+${username}@gmail.com`;
         await sendPasswordResetEmail(auth, email);
 
         errorBox.classList.remove("hidden", "bg-red-900/20", "text-red-400");
