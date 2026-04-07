@@ -87,11 +87,10 @@ export async function authenticateWithCredentials(username, password) {
                     }
                     throw createError;
                 }
-            } else if (!isHardcoded && (notFound || wrongCred)) {
-                // Dynamic user (from Firebase only) — auto-provision on first login
-                console.log(LOG, "Auto-provisioning dynamic user:", email);
-                userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await updateProfile(userCredential.user, { displayName: username });
+            } else if (!isHardcoded && notFound) {
+                throw new Error("Account not found. Please contact your school admin to create your account.");
+            } else if (!isHardcoded && wrongCred) {
+                throw new Error("Invalid password. Please try again or use Forgot Password to reset.");
             } else {
                 throw signInError;
             }

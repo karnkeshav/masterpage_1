@@ -6,19 +6,15 @@ service cloud.firestore {
     }
 
     match /quiz_scores/{scoreId} {
-        allow read: if isLoggedIn();
         allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
-    }
-
-
-    match /quiz_scores/{scoreId} {
-        allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
-        allow read: if request.auth != null;
+        allow read: if isLoggedIn();
+        allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
     }
 
     match /mistake_notebook/{docId} {
-        allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
-        allow read: if request.auth != null;
+        allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
+        allow read: if isLoggedIn();
+        allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
     }
 
     match /student_notifications/{docId} {
