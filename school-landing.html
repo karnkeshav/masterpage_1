@@ -80,6 +80,9 @@
                         class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition shadow-lg shadow-slate-200">
                         Enter Console
                     </button>
+                    <button type="button" id="forgot-password-btn" class="text-xs text-slate-400 hover:text-slate-600 underline mt-3 block mx-auto">
+                        Forgot Password?
+                    </button>
                 </div>
             </div>
         </div>
@@ -234,6 +237,27 @@
             document.getElementById("login-modal").classList.add("hidden");
         };
 
+
+        document.getElementById("forgot-password-btn").addEventListener("click", async () => {
+            const username = document.getElementById("login-user").value.trim();
+            if (!username) {
+                alert("Please enter your username first.");
+                return;
+            }
+            const email = username.includes('@') ? username : `ready4urexam+${username}@gmail.com`;
+            try {
+                const { getInitializedClients } = await import("../js/config.js");
+                const { auth } = await getInitializedClients();
+                await sendPasswordResetEmail(auth, email);
+                alert("Password reset email sent! Check the inbox for ready4urexam@gmail.com.");
+            } catch (err) {
+                if (err.code === 'auth/user-not-found') {
+                    alert("User not found. Please contact your school admin.");
+                } else {
+                    alert("Failed to send reset email: " + err.message);
+                }
+            }
+        });
         window.executeStakeholderLogin = async () => {
             const user = document.getElementById("login-user").value;
             const pass = document.getElementById("login-pass").value;
