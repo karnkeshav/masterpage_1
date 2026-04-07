@@ -17,9 +17,9 @@ const LOG = "[AUTH]";
 export { ensureUserInFirestore };
 
 const CREDENTIALS = {
-    "keshav":         { pass: "keshav",     role: "owner",         tenantType: "owner",  tenantId: "global" },
-    "dps.ready4exam": { pass: "keshav",     role: "school_master", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
-    "admin":          { pass: "admin12345",  role: "admin",        tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
+    "keshav":         { role: "owner",         tenantType: "owner",  tenantId: "global" },
+    "dps.ready4exam": { role: "school_master", tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" },
+    "admin":          { role: "admin",        tenantType: "school", tenantId: "DPS_001", school_id: "DPS_001" }
 };
 
 export async function authenticateWithCredentials(username, password) {
@@ -41,10 +41,7 @@ export async function authenticateWithCredentials(username, password) {
     const userProfile = CREDENTIALS[username];
     let isHardcoded = !!userProfile;
     
-    // If it's a hardcoded user, verify the password immediately
-    if (isHardcoded && userProfile.pass !== password) {
-        throw new Error("Invalid password");
-    }
+
 
     // Check for the Universal Default password for newly provisioned accounts
     // Note: firstLogin flag is set later (after successful auth) to avoid
@@ -68,25 +65,14 @@ export async function authenticateWithCredentials(username, password) {
             const notFound = signInError.code === 'auth/user-not-found';
             const wrongCred = signInError.code === 'auth/invalid-credential';
 
-            if (isHardcoded && (notFound || wrongCred)) {
-                // Hardcoded user: Firebase entry might be stale (old password).
-                // Force re-provision: if email exists, we cannot delete via client SDK,
-                // so try create and if already-in-use, surface a clear error.
-                try {
-                    console.log(LOG, "Auto-provisioning hardcoded user:", email);
-                    userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    await updateProfile(userCredential.user, { displayName: username });
-                } catch (createError) {
-                    if (createError.code === 'auth/email-already-in-use') {
-                        // Firebase has the user but with a different password (stale credential).
-                        // Instruct to clear via Firebase console.
-                        throw new Error(
-                            `Account exists with a different password. ` +
-                            `Please delete user "${email}" from Firebase Authentication console and try again.`
-                        );
-                    }
-                    throw createError;
-                }
+            if (isHardcoded && notFound) {
+                // First-time setup: auto-provision hardcoded user in Firebase Auth
+                console.log(LOG, "Auto-provisioning hardcoded user:", email);
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: username });
+            } else if (isHardcoded && wrongCred) {
+                // User exists in Firebase Auth but password doesn't match
+                throw new Error("Wrong password. Reset it from Firebase Console → Authentication → Users, or use Forgot Password.");
             } else if (!isHardcoded && notFound) {
                 throw new Error("Account not found. Please contact your school admin to create your account.");
             } else if (!isHardcoded && wrongCred) {
