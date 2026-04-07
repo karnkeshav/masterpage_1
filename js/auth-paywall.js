@@ -65,18 +65,23 @@ export async function authenticateWithCredentials(username, password) {
             const notFound = signInError.code === 'auth/user-not-found';
             const wrongCred = signInError.code === 'auth/invalid-credential';
 
-            if (isHardcoded && notFound) {
-                // First-time setup: auto-provision hardcoded user in Firebase Auth
-                console.log(LOG, "Auto-provisioning hardcoded user:", email);
-                userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await updateProfile(userCredential.user, { displayName: username });
-            } else if (isHardcoded && wrongCred) {
-                // User exists in Firebase Auth but password doesn't match
-                throw new Error("Wrong password. Reset it from Firebase Console → Authentication → Users, or use Forgot Password.");
-            } else if (!isHardcoded && notFound) {
-                throw new Error("Account not found. Please contact your school admin to create your account.");
-            } else if (!isHardcoded && wrongCred) {
-                throw new Error("Invalid password. Please try again or use Forgot Password to reset.");
+            if (isHardcoded && (notFound || wrongCred)) {
+                // Firebase v9+ returns invalid-credential for BOTH non-existent and wrong password.
+                // Try to create the account. If it already exists, it's truly a wrong password.
+                try {
+                    console.log(LOG, "Auto-provisioning hardcoded user:", email);
+                    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(userCredential.user, { displayName: username });
+                } catch (createError) {
+                    if (createError.code === 'auth/email-already-in-use') {
+                        throw new Error(
+                            "Wrong password. Reset it from Firebase Console → Authentication → Users, or use Forgot Password."
+                        );
+                    }
+                    throw createError;
+                }
+            } else if (!isHardcoded && (notFound || wrongCred)) {
+                throw new Error("Account not found or wrong password. Contact your school admin or use Forgot Password.");
             } else {
                 throw signInError;
             }
