@@ -44,8 +44,8 @@ export async function migrateAnonymousData(oldUid, newUid) {
         }
 
         // 3. Delete old profile
-        await deleteDoc(doc(db, "users", oldUid));
-        console.log("[MIGRATE] Old profile deleted.");
+        // await deleteDoc(doc(db, "users", oldUid));
+        // console.log("[MIGRATE] Old profile deleted.");
 
     } catch (e) {
         console.error("[MIGRATE] Failed:", e);
