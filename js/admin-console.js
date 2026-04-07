@@ -1,9 +1,9 @@
 import { getInitializedClients } from "./config.js";
 import { guardConsole, bindConsoleLogout } from "./guard.js";
 import { loadCurriculum } from "./curriculum/loader.js";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Initialize the secondary app specifically for onboarding
 let secondaryAuth = null;
@@ -18,706 +18,34 @@ try {
 let currentSchoolId = null;
 let unsubMessages = null;
 let unsubRegistry = null;
+let allStudentMap = {};
+let allTeacherList = [];
+let allVipList = [];
+let schoolGrades = [6, 7, 8, 9, 10, 11, 12];
+let schoolSections = ['A', 'B', 'C'];
+let schoolDisciplines = ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 'Social Science', 'English', 'Hindi', 'Sanskrit'];
+
 
 // The Loading Lock: Defined before guardConsole
+
 window.loadConsoleData = async (profile) => {
-    currentSchoolId = profile.school_id;
-    if (!currentSchoolId) {
-        alert("Critical Error: No School ID found for Admin.");
-        return;
-    }
-    console.log(`Loading Admin Console for School: ${currentSchoolId}`);
-
-    const welcomeEl = document.getElementById('user-welcome');
-    if (welcomeEl) welcomeEl.innerText = profile.email || "Admin User";
-
-    // Hide loading, show app
-    const loadingEl = document.getElementById('loading');
-    const appEl = document.getElementById('app');
-    if(loadingEl) loadingEl.classList.add('hidden');
-    if(appEl) appEl.classList.remove('hidden');
-
-    // Initial render
-    window.switchTab('inventory');
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    guardConsole("admin");
-    bindConsoleLogout("logout-nav-btn", "../../index.html");
-});
-
-window.switchTab = (tabId) => {
-    ['inventory', 'observability', 'messaging'].forEach(t => {
-        const btn = document.getElementById(`tab-btn-${t}`);
-        if (!btn) return;
-
-        if (t === tabId) {
-            btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm bg-cbse-blue text-white shadow-blue-900/20";
-            const i = btn.querySelector('i');
-            if(i) i.classList.add('text-accent-gold');
-        } else {
-            btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm shadow-sm text-slate-500 hover:bg-slate-50 border border-transparent hover:border-slate-200";
-            const i = btn.querySelector('i');
-            if(i) i.classList.remove('text-accent-gold');
-        }
-    });
-
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-
-    // Show selected tab content
-    const activeContent = document.getElementById(`tab-${tabId}`);
-    if (activeContent) {
-        activeContent.classList.remove('hidden');
-
-        if (tabId === 'inventory') window.renderInventoryEngine();
-        if (tabId === 'observability') window.renderObservability();
-        if (tabId === 'messaging') window.renderMessaging();
-    }
-};
-
-// --- THE INVENTORY NAVIGATION ENGINE ---
-window.renderInventoryEngine = async () => {
-    const container = document.getElementById('tab-inventory');
-
-    // Generate Accordion HTML structure for Classes
-    let classesAccordionHtml = '';
-    const grades = [6, 7, 8, 9, 10, 11, 12];
-    const sections = ['A', 'B', 'C'];
-
-    grades.forEach(g => {
-        let sectionHtml = '';
-        sections.forEach(s => {
-            sectionHtml += `
-                <div class="mb-2 border border-slate-200 rounded bg-white">
-                    <button onclick="window.toggleAccordion('acc-sec-${g}-${s}')" class="w-full text-left p-2 font-bold flex justify-between items-center text-xs hover:bg-slate-50">
-                        <span>Section ${s}</span>
-                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-sec-${g}-${s}"></i>
-                    </button>
-                    <div id="acc-sec-${g}-${s}" class="hidden p-2 border-t border-slate-100">
-
-                        <!-- Subject Teachers for this section -->
-                        <div class="mb-4">
-                            <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-widest bg-slate-100 px-2 py-1 rounded">Subject Teachers</h4>
-                            <div id="sec-teachers-${g}-${s}" class="text-xs text-slate-600 space-y-1">
-                                <span class="italic text-slate-400">Loading...</span>
-                            </div>
-                        </div>
-
-                        <!-- Students List -->
-                        <div class="flex justify-between items-end mb-2">
-                            <h4 class="text-[10px] uppercase font-bold text-slate-500 tracking-widest bg-slate-100 px-2 py-1 rounded">Students Roster</h4>
-                            <button onclick="window.showAddModal('student', '${g}', '${s}')" class="bg-cbse-blue hover:bg-blue-800 text-white px-3 py-1.5 text-xs rounded-lg font-bold shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add Student</button>
-                        </div>
-                        <div class="overflow-x-auto rounded-lg border border-slate-100">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                                    <tr><th class="p-2">Name / Email</th><th class="p-2">Linked Parent</th><th class="p-2 text-right">Actions</th></tr>
-                                </thead>
-                                <tbody id="tbody-student-${g}-${s}" class="divide-y divide-slate-50"><tr><td colspan="3" class="p-2 text-center text-slate-400 italic">Loading...</td></tr></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        classesAccordionHtml += `
-            <div class="mb-2 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('acc-grade-${g}')" class="w-full text-left p-3 font-bold flex justify-between items-center text-sm hover:bg-slate-50">
-                    <span class="text-slate-800"><i class="fas fa-graduation-cap text-cbse-blue mr-2"></i> Grade ${g}</span>
-                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-grade-${g}"></i>
-                </button>
-                <div id="acc-grade-${g}" class="hidden p-3 border-t border-slate-100 bg-slate-50/50">
-                    ${sectionHtml}
-                </div>
-            </div>
-        `;
-    });
-
-    container.innerHTML = `
-        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 h-full flex flex-col" id="inventory-main">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-2xl font-black text-slate-800">Inventory Registry</h2>
-                    <p class="text-sm text-slate-500 mt-1">Manage ${currentSchoolId} registry via the Master Vaults.</p>
-                </div>
-            </div>
-
-            ${getRelationalOnboardingHTML()}
-
-            <div class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar mt-4">
-
-                <!-- Vault 1: Academic Classes -->
-                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                    <button onclick="window.toggleAccordion('acc-classes')" class="w-full text-left p-4 bg-slate-50 font-bold flex justify-between items-center hover:bg-slate-100 transition">
-                        <span class="text-lg text-slate-800"><i class="fas fa-layer-group text-cbse-blue mr-2"></i> Vault 1: Academic Classes</span>
-                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-classes"></i>
-                    </button>
-                    <div id="acc-classes" class="hidden p-4 border-t border-slate-200 bg-slate-50/30">
-                        ${classesAccordionHtml}
-                    </div>
-                </div>
-
-                <!-- Vault 2: Faculty Inventory -->
-                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                    <button onclick="window.toggleAccordion('acc-teachers')" class="w-full text-left p-4 bg-slate-50 font-bold flex justify-between items-center hover:bg-slate-100 transition">
-                        <span class="text-lg text-slate-800"><i class="fas fa-chalkboard-teacher text-amber-500 mr-2"></i> Vault 2: Faculty Inventory</span>
-                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-teachers"></i>
-                    </button>
-                    <div id="acc-teachers" class="hidden p-4 border-t border-slate-200">
-                        <div class="flex justify-end mb-4">
-                            <button onclick="window.showAddModal('teacher')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs rounded-xl font-bold shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add Teacher</button>
-                        </div>
-                        <div id="faculty-pillars-container">
-                            <div class="text-center text-slate-400 italic p-4 text-xs">Loading Faculty Pillars...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Vault 3: VIP Dignitaries -->
-                <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-                    <button onclick="window.toggleAccordion('acc-vips')" class="w-full text-left p-4 bg-slate-50 font-bold flex justify-between items-center hover:bg-slate-100 transition">
-                        <span class="text-lg text-slate-800"><i class="fas fa-star text-purple-500 mr-2"></i> Vault 3: VIP Dignitaries</span>
-                        <i class="fas fa-chevron-down text-slate-400 transition-transform duration-200" id="icon-acc-vips"></i>
-                    </button>
-                    <div id="acc-vips" class="hidden p-4 border-t border-slate-200">
-                        <div class="flex justify-end mb-4">
-                            <button onclick="window.showAddModal('vip')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-xs rounded-xl font-bold shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add VIP</button>
-                        </div>
-                        <div class="overflow-hidden border border-slate-100 rounded-xl bg-white shadow-sm">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                                    <tr><th class="p-4">Name / Email</th><th class="p-4">Role</th><th class="p-4">School ID</th><th class="p-4 text-right">Status</th></tr>
-                                </thead>
-                                <tbody id="tbody-vips" class="divide-y divide-slate-50"><tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Loading...</td></tr></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Manual Onboarding Modal Container -->
-            <div id="modal-container"></div>
-        </div>
-    `;
-
-    if(unsubRegistry) { unsubRegistry(); }
-
-    const { db } = await getInitializedClients();
-    const q = query(
-        collection(db, "users"),
-        where("school_id", "==", currentSchoolId)
-    );
-
-    unsubRegistry = onSnapshot(q, (snapshot) => {
-        const studentMap = {};
-        const teacherList = [];
-        const vipList = [];
-
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const u = { id: doc.id, ...data };
-
-            if (u.role === 'student') {
-                const g = u.grade || 'Unknown';
-                let s = u.section_id || u.section || 'Unknown';
-                if(s.includes('-')) s = s.split('-')[1]; // handles "9-A"
-                else s = s.replace(g, ''); // handles "9A" -> "A"
-
-                const key = `${g}-${s}`;
-                if(!studentMap[key]) studentMap[key] = [];
-                studentMap[key].push(u);
-            }
-            else if (u.role === 'teacher') {
-                teacherList.push(u);
-            }
-            else if (u.role === 'principal' || u.role === 'admin' || u.role === 'vip') {
-                vipList.push(u);
-            }
-        });
-
-        // 1. Render VIPs
-        renderBucket('tbody-vips', vipList, 'vip');
-
-        // 2. Render Students & Subject Teachers per Class Section
-        grades.forEach(g => {
-            sections.forEach(s => {
-                const sectionKey = `${g}${s}`; // e.g., "9A"
-                const sectionKeyHyphen = `${g}-${s}`; // e.g., "9-A"
-
-                // Render Students
-                const id = `tbody-student-${g}-${s}`;
-                const users = studentMap[`${g}-${s}`] || [];
-                renderBucket(id, users, 'student');
-
-                // Render Subject Teachers for this section
-                const secTeachersEl = document.getElementById(`sec-teachers-${g}-${s}`);
-                if (secTeachersEl) {
-                    // Find teachers who have this section in their sections array
-                    const classTeachers = teacherList.filter(t => {
-                        const tSecs = t.sections || [];
-                        // Check array field (new format)
-                        if (tSecs.includes(sectionKey) || tSecs.includes(sectionKeyHyphen)) return true;
-                        // Fallback: check singular fields (old format)
-                        if (t.mapped_grade == g && t.mapped_section == s) return true;
-                        return false;
-                    });
-
-                    if (classTeachers.length === 0) {
-                        secTeachersEl.innerHTML = '<span class="italic text-slate-400">No teachers assigned to this section.</span>';
-                    } else {
-                        // Group by discipline
-                        const grouped = {};
-                        classTeachers.forEach(t => {
-                            const discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : ['Unassigned']);
-                            discs.forEach(d => {
-                                if(!grouped[d]) grouped[d] = [];
-                                grouped[d].push(t.displayName || t.email);
-                            });
-                        });
-
-                        let html = '<div class="grid grid-cols-2 gap-2">';
-                        for(const [disc, names] of Object.entries(grouped)) {
-                            html += `<div class="bg-blue-50 px-2 py-1 border border-blue-100 rounded text-cbse-blue font-medium"><span class="font-bold uppercase tracking-wider text-[9px] block text-slate-400">${disc}</span>${names.join(', ')}</div>`;
-                        }
-                        html += '</div>';
-                        secTeachersEl.innerHTML = html;
-                    }
-                }
-            });
-        });
-
-        // 3. Render Faculty Pillars
-        renderFacultyPillars(teacherList);
-    });
-};
-
-function renderFacultyPillars(teachers) {
-    const container = document.getElementById('faculty-pillars-container');
-    if(!container) return;
-
-    // Grouping structure
-    const mathTeachers = [];
-    const socialTeachers = [];
-    const sciencePillars = { Physics: [], Chemistry: [], Biology: [] };
-    const otherTeachers = [];
-
-    teachers.forEach(t => {
-        const discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : []);
-        let matched = false;
-
-        discs.forEach(d => {
-            const lowerD = d.toLowerCase();
-            if (lowerD === 'mathematics' || lowerD === 'math') {
-                if(!mathTeachers.includes(t)) mathTeachers.push(t);
-                matched = true;
-            } else if (['physics', 'chemistry', 'biology'].includes(lowerD)) {
-                const TitleCase = lowerD.charAt(0).toUpperCase() + lowerD.slice(1);
-                if(!sciencePillars[TitleCase].includes(t)) sciencePillars[TitleCase].push(t);
-                matched = true;
-            } else if (lowerD === 'social science' || lowerD === 'history' || lowerD === 'geography' || lowerD === 'civics') {
-                if(!socialTeachers.includes(t)) socialTeachers.push(t);
-                matched = true;
-            }
-        });
-
-        if (!matched) {
-            otherTeachers.push(t);
-        }
-    });
-
-    const buildTeacherTable = (teacherArray) => {
-        if(teacherArray.length === 0) return '<div class="p-4 text-center text-xs text-slate-400 italic border-t border-slate-100">No teachers assigned.</div>';
-
-        let rows = '';
-        teacherArray.forEach(u => {
-            const name = u.displayName || u.email || 'Unknown';
-            const secs = (u.sections || []).join(', ') || '<span class="italic opacity-50">None</span>';
-            const disc = (u.mapped_disciplines || []).join(', ') || u.mapped_discipline || 'Unassigned';
-
-            rows += `
-                <div class="flex justify-between items-center p-3 border-t border-slate-100 hover:bg-slate-50 text-xs text-slate-700">
-                    <div class="font-bold">${name} <span class="block text-[10px] text-slate-400 font-normal mt-0.5">${disc}</span></div>
-                    <div class="font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">${secs}</div>
-                </div>
-            `;
-        });
-        return rows;
-    };
-
-    container.innerHTML = `
-        <div class="space-y-4">
-            <!-- Mathematics Pillar -->
-            <div class="border border-blue-200 rounded-xl bg-blue-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('pillar-math')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-blue-50 transition text-cbse-blue text-sm">
-                    <span><i class="fas fa-calculator mr-2"></i> Mathematics</span>
-                    <i class="fas fa-chevron-down text-blue-300 transition-transform duration-200" id="icon-pillar-math"></i>
-                </button>
-                <div id="pillar-math" class="hidden bg-white">
-                    ${buildTeacherTable(mathTeachers)}
-                </div>
-            </div>
-
-            <!-- Science Pillar (Sub-disciplines) -->
-            <div class="border border-purple-200 rounded-xl bg-purple-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('pillar-sci')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-purple-50 transition text-purple-700 text-sm">
-                    <span><i class="fas fa-flask mr-2"></i> Science</span>
-                    <i class="fas fa-chevron-down text-purple-300 transition-transform duration-200" id="icon-pillar-sci"></i>
-                </button>
-                <div id="pillar-sci" class="hidden bg-white p-2 space-y-2 border-t border-purple-100">
-                    <!-- Physics -->
-                    <div class="border border-slate-100 rounded bg-slate-50/50">
-                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Physics</div>
-                        ${buildTeacherTable(sciencePillars.Physics)}
-                    </div>
-                    <!-- Chemistry -->
-                    <div class="border border-slate-100 rounded bg-slate-50/50">
-                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Chemistry</div>
-                        ${buildTeacherTable(sciencePillars.Chemistry)}
-                    </div>
-                    <!-- Biology -->
-                    <div class="border border-slate-100 rounded bg-slate-50/50">
-                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Biology</div>
-                        ${buildTeacherTable(sciencePillars.Biology)}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Social Science Pillar -->
-            <div class="border border-amber-200 rounded-xl bg-amber-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('pillar-ss')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-amber-50 transition text-amber-700 text-sm">
-                    <span><i class="fas fa-globe mr-2"></i> Social Science</span>
-                    <i class="fas fa-chevron-down text-amber-300 transition-transform duration-200" id="icon-pillar-ss"></i>
-                </button>
-                <div id="pillar-ss" class="hidden bg-white">
-                    ${buildTeacherTable(socialTeachers)}
-                </div>
-            </div>
-
-            <!-- Other Subjects -->
-            ${otherTeachers.length > 0 ? `
-            <div class="border border-slate-200 rounded-xl bg-slate-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('pillar-oth')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-slate-50 transition text-slate-700 text-sm">
-                    <span><i class="fas fa-book mr-2"></i> Other Subjects</span>
-                    <i class="fas fa-chevron-down text-slate-300 transition-transform duration-200" id="icon-pillar-oth"></i>
-                </button>
-                <div id="pillar-oth" class="hidden bg-white">
-                    ${buildTeacherTable(otherTeachers)}
-                </div>
-            </div>
-            ` : ''}
-        </div>
-    `;
-}
-
-
-window.toggleAccordion = (id) => {
-    const el = document.getElementById(id);
-    const icon = document.getElementById(`icon-${id}`);
-    if(el) {
-        if(el.classList.contains('hidden')) {
-            el.classList.remove('hidden');
-            if(icon) icon.classList.add('rotate-180');
-        } else {
-            el.classList.add('hidden');
-            if(icon) icon.classList.remove('rotate-180');
-        }
-    }
-};
-
-async function getSecondaryAuth() {
-    if (!secondaryAuth) {
-        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-        const { getAuth } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-        const secApp = initializeApp(window.__firebase_config, "SecondaryOnboarding");
-        secondaryAuth = getAuth(secApp);
-    }
-    return secondaryAuth;
-}
-
-window.showAddModal = async (role, grade = '', section = '') => {
-    const modalContainer = document.getElementById('modal-container');
-
-    let roleTitle = "Student";
-    if(role === 'teacher') roleTitle = "Teacher";
-    if(role === 'vip') roleTitle = "VIP Dignitary";
-
-    let extraFields = '';
-
-    if (role === 'student') {
-        extraFields = `
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Grade</label>
-                    <input type="text" id="modal-grade" value="${grade}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${grade ? 'readonly' : ''}>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
-                    <input type="text" id="modal-section" value="${section}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${section ? 'readonly' : ''}>
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Parent (Parent Email)</label>
-                <input type="email" id="modal-parent" placeholder="Optional parent email..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
-            </div>
-        `;
-    } else if (role === 'teacher') {
-        // Build Section Grid Checkboxes
-        const gradesArr = [6,7,8,9,10,11,12];
-        const secsArr = ['A','B','C'];
-        let gridHtml = '<div class="grid grid-cols-3 gap-2">';
-        gradesArr.forEach(g => {
-            secsArr.forEach(s => {
-                gridHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${g}${s}" class="teacher-sec-cb"> <span>${g}${s}</span></label>`;
-            });
-        });
-        gridHtml += '</div>';
-
-        extraFields = `
-            <div class="mt-4">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Class Assignment Grid</label>
-                <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 h-32 overflow-y-auto">
-                    ${gridHtml}
-                </div>
-            </div>
-            <div class="mt-4">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Discipline Selection (Multi)</label>
-                <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-3">
-                    <label class="flex items-center space-x-2"><input type="checkbox" value="Physics" class="teacher-disc-cb"> <span>Physics</span></label>
-                    <label class="flex items-center space-x-2"><input type="checkbox" value="Chemistry" class="teacher-disc-cb"> <span>Chemistry</span></label>
-                    <label class="flex items-center space-x-2"><input type="checkbox" value="Biology" class="teacher-disc-cb"> <span>Biology</span></label>
-                    <label class="flex items-center space-x-2"><input type="checkbox" value="Mathematics" class="teacher-disc-cb"> <span>Mathematics</span></label>
-                    <label class="flex items-center space-x-2"><input type="checkbox" value="Social Science" class="teacher-disc-cb"> <span>Social Science</span></label>
-                    <label class="flex items-center space-x-2"><input type="checkbox" value="English" class="teacher-disc-cb"> <span>English</span></label>
-                </div>
-            </div>
-        `;
-    } else if (role === 'vip') {
-        extraFields = `
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role Type</label>
-                <select id="modal-role-type" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
-                    <option value="principal">Principal</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
-        `;
-    }
-
-    modalContainer.innerHTML = `
-        <div class="fixed inset-0 bg-slate-900/50 flex justify-center items-center z-50 backdrop-blur-sm" id="onboarding-modal">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
-                <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                    <h3 class="text-lg font-black text-slate-800"><i class="fas fa-user-plus mr-2 text-cbse-blue"></i> Add ${roleTitle}</h3>
-                    <button onclick="window.closeAddModal()" class="text-slate-400 hover:text-danger-red transition"><i class="fas fa-times text-xl"></i></button>
-                </div>
-                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Name / Display Name</label>
-                        <input type="text" id="modal-name" placeholder="John Doe" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username (appends +alias@gmail.com)</label>
-                        <input type="text" id="modal-username" placeholder="john.doe" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
-                    </div>
-
-                    ${extraFields}
-
-                    <div id="modal-error" class="hidden text-xs font-bold text-danger-red bg-red-50 p-2 rounded border border-red-100 mt-2"></div>
-                </div>
-                <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
-                    <button onclick="window.closeAddModal()" class="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 transition">Cancel</button>
-                    <button id="modal-save-btn" onclick="window.submitAddModal('${role}')" class="px-5 py-2 text-sm font-bold bg-cbse-blue text-white rounded-lg shadow hover:bg-blue-800 transition">Save ${roleTitle}</button>
-                </div>
-            </div>
-        </div>
-    `;
-};
-
-window.closeAddModal = () => {
-    const mc = document.getElementById('modal-container');
-    if(mc) mc.innerHTML = '';
-};
-
-window.submitAddModal = async (role) => {
-    const errorEl = document.getElementById('modal-error');
-    const saveBtn = document.getElementById('modal-save-btn');
-
-    const showError = (msg) => {
-        errorEl.innerText = msg;
-        errorEl.classList.remove('hidden');
-        saveBtn.disabled = false;
-        saveBtn.innerText = "Save";
-    };
-
-    saveBtn.disabled = true;
-    saveBtn.innerText = "Creating...";
-    errorEl.classList.add('hidden');
-
-    const name = document.getElementById('modal-name').value.trim();
-    const username = document.getElementById('modal-username').value.trim();
-
-    if(!name || !username) {
-        return showError("Name and Username are required.");
-    }
-
-    const email = `ready4urexam+${username}@gmail.com`;
-    const password = "Ready4Exam@2026";
-
-    let payload = {
-        displayName: name,
-        email: email,
-        role: role,
-        school_id: currentSchoolId,
-        setupComplete: false,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp()
-    };
-
-    let parentId = null;
-
-    if (role === 'student') {
-        const g = document.getElementById('modal-grade').value.trim();
-        const s = document.getElementById('modal-section').value.trim();
-        const parentEmail = document.getElementById('modal-parent').value.trim();
-
-        if(!g || !s) return showError("Grade and Section are required.");
-
-        payload.grade = g;
-        payload.classId = g;
-        payload.section = s;
-        payload.section_id = `${g}-${s}`;
-
-        if (parentEmail) {
-            try {
-                const { db } = await getInitializedClients();
-                const parentQuery = query(collection(db, "users"), where("email", "==", parentEmail), where("role", "==", "parent"));
-                const parentSnap = await getDocs(parentQuery);
-
-                let parentCreated = false;
-                if (parentSnap.empty) {
-                    // Step B: Atomic Onboarding - Create Parent Auth and Firestore Doc
-                    if (!secondaryAuth) {
-                        throw new Error("SecondaryOnboarding Auth instance is not initialized.");
-                    }
-
-                    try {
-                        const parentCredential = await createUserWithEmailAndPassword(secondaryAuth, parentEmail, password);
-                        parentId = parentCredential.user.uid;
-
-                        await setDoc(doc(db, "users", parentId), {
-                            displayName: "Parent User",
-                            email: parentEmail,
-                            role: "parent",
-                            school_id: currentSchoolId,
-                            setupComplete: false,
-                            updated_at: serverTimestamp()
-                        }, { merge: true });
-
-                        parentCreated = true;
-                    } catch (e) {
-                        if (e.code === 'auth/email-already-in-use') {
-                            return showError(`User Auth exists but Profile is missing. Please delete ${parentEmail} from the Firebase Authentication tab to reset.`);
-                        } else {
-                            throw e;
-                        }
-                    }
-                } else {
-                    parentId = parentSnap.docs[0].id;
-                }
-
-                payload.parent_id = parentId;
-                payload._parentCreated = parentCreated; // Temporary flag for UI feedback
-            } catch(e) {
-                return showError("Failed to verify/create parent email: " + e.message);
-            }
-        }
-
-    } else if (role === 'teacher') {
-        const checkedSecs = Array.from(document.querySelectorAll('.teacher-sec-cb:checked')).map(cb => cb.value);
-        const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
-
-        if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
-            return showError("At least one Section and one Discipline are required.");
-        }
-
-        payload.sections = checkedSecs;
-        payload.mapped_disciplines = checkedDiscs;
-
-    } else if (role === 'vip') {
-        payload.role = document.getElementById('modal-role-type').value;
-    }
-
     try {
+        currentSchoolId = profile.school_id;
+        if (!currentSchoolId) throw new Error("No school ID found in profile");
+
         const { db } = await getInitializedClients();
-
-        // Step A: Search for existing user profile by email
-        const userQuery = query(collection(db, "users"), where("email", "==", email));
-        const userSnap = await getDocs(userQuery);
-
-        let newUid = null;
-
-        if (!userSnap.empty) {
-            newUid = userSnap.docs[0].id;
-            console.log("Account exists in Firestore, linking to existing identity");
-        } else {
-            // Zero-Manual Flow: Create User via Secondary Auth App
-            if (!secondaryAuth) {
-                throw new Error("SecondaryOnboarding Auth instance is not initialized.");
-            }
-
-            try {
-                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-                newUid = userCredential.user.uid;
-            } catch (e) {
-                if (e.code === 'auth/email-already-in-use') {
-                    return showError(`User Auth exists but Profile is missing. Please delete ${email} from the Firebase Authentication tab to reset.`);
-                } else {
-                    throw e;
-                }
-            }
-
-            // Automatically sign out the secondary instance so we don't leak it
-            await signOut(secondaryAuth);
+        const schoolDoc = await getDoc(doc(db, "schools", currentSchoolId));
+        if (schoolDoc.exists()) {
+            const data = schoolDoc.data();
+            if (data.grades && data.grades.length > 0) schoolGrades = data.grades;
+            if (data.sections && data.sections.length > 0) schoolSections = data.sections;
+            if (data.disciplines && data.disciplines.length > 0) schoolDisciplines = data.disciplines;
         }
 
-        // Save to Firestore using the standard DB (Admin has rules bypass/privileges hopefully)
-        const parentCreatedFlag = payload._parentCreated;
-        delete payload._parentCreated; // Remove temporary flag before saving
-        payload.uid = newUid;
-        await setDoc(doc(db, "users", newUid), payload, { merge: true });
-
-        // Parent double-link
-        if (role === 'student' && parentId) {
-            try {
-                await updateDoc(doc(db, "users", parentId), {
-                    linked_children: arrayUnion(newUid),
-                    updated_at: serverTimestamp()
-                });
-
-                if (parentCreatedFlag) {
-                    alert("Success: Student created and Parent account auto-provisioned.");
-                } else {
-                    alert("Success: Student created and linked to existing parent.");
-                }
-            } catch(e) {
-                console.error("Failed to link parent during student creation:", e);
-                alert("Student created, but linking Parent failed (check Parent UID).");
-            }
-        } else if (role === 'student') {
-             alert("Success: Student created successfully.");
-        }
-
-        window.closeAddModal();
+        document.getElementById('school-name-display').innerText = `School ID: ${currentSchoolId}`;
+        window.switchTab('inventory'); // Default tab
     } catch(e) {
-        const errorMsg = e.message.toLowerCase();
-        if (errorMsg.includes("insufficient permissions") || errorMsg.includes("missing or insufficient permissions")) {
-            showError("Admin Role detected but Firestore Rules are blocking the write. Please authorize the Admin bypass in the Firebase Console.");
-        } else {
-            showError("Failed to save: " + e.message);
-        }
+        document.getElementById('app').innerHTML = `<div class="text-danger-red font-bold p-8">Initialization Error: ${e.message}</div>`;
     }
 };
 
@@ -765,14 +93,51 @@ window.handleCSVUpload = async (event) => {
                 const q = query(collection(db, "users"), where("email", "==", email), where("school_id", "==", currentSchoolId));
                 const snap = await getDocs(q);
 
+                let userId;
                 if (snap.empty) {
-                    window.logMessage(`Skipped ${email}: User not found in school.`, true);
-                    errorCount++;
-                    continue;
-                }
+                    if (role === 'student') {
+                        // Create user instead of skipping
+                        const targetGrade = row[2];
+                        const targetSection = row[3];
 
-                const userDoc = snap.docs[0];
-                const userId = userDoc.id;
+                        if (!secondaryAuth) {
+                            window.logMessage(`Skipped ${email}: Secondary auth not initialized.`, true);
+                            errorCount++;
+                            continue;
+                        }
+
+                        const tempPassword = "Ready4Exam@2026";
+                        try {
+                            const userCred = await createUserWithEmailAndPassword(secondaryAuth, email, tempPassword);
+                            userId = userCred.user.uid;
+                            await setDoc(doc(db, "users", userId), {
+                                displayName: email.split('@')[0],
+                                email: email,
+                                role: 'student',
+                                school_id: currentSchoolId,
+                                classId: targetGrade || '9',
+                                section: targetSection || 'A',
+                                setupComplete: false,
+                                tenantType: "school",
+                                created_at: serverTimestamp()
+                            });
+                            window.logMessage(`Provisioned new student ${email} into ${targetGrade}${targetSection}`);
+                            successCount++;
+                            continue; // Move to next row since creation is handled
+                        } catch (err) {
+                            window.logMessage(`Failed to provision ${email}: ${err.message}`, true);
+                            errorCount++;
+                            continue;
+                        }
+                    } else {
+                        window.logMessage(`Skipped ${email}: User not found in school and role != student.`, true);
+                        errorCount++;
+                        continue;
+                    }
+                } else {
+                    const userDoc = snap.docs[0];
+                    userId = userDoc.id;
+                }
 
                 if (role === 'teacher') {
                     const targetGrade = row[3] || '9';
@@ -862,6 +227,35 @@ function getRelationalOnboardingHTML() {
     `;
 }
 
+
+window.deleteUser = async (userId, displayName) => {
+    if(confirm(`Are you sure you want to permanently delete ${displayName}? This will only remove their Firestore profile. Firebase Auth deletion must be done manually.`)) {
+        try {
+            const { db } = await getInitializedClients();
+            await deleteDoc(doc(db, "users", userId));
+            if(window.logMessage) window.logMessage(`Deleted user profile for ${displayName}`);
+            alert(`User profile deleted successfully.`);
+        } catch(e) {
+            console.error(e);
+            alert("Failed to delete user profile: " + e.message);
+        }
+    }
+};
+
+window.resetUserPassword = async (email, displayName) => {
+    if(confirm(`Send a password reset email to ${email} (${displayName})?`)) {
+        try {
+            const { auth } = await getInitializedClients();
+            await sendPasswordResetEmail(auth, email);
+            if(window.logMessage) window.logMessage(`Password reset email sent to ${email}`);
+            alert(`Password reset email sent successfully to ${email}.`);
+        } catch(e) {
+            console.error(e);
+            alert("Failed to send reset email: " + e.message);
+        }
+    }
+};
+
 function renderBucket(elementId, users, type) {
     const el = document.getElementById(elementId);
     if (!el) return;
@@ -902,7 +296,12 @@ function renderBucket(elementId, users, type) {
                     <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
                     <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest bg-purple-100 text-purple-700">${u.role}</span></td>
                     <td class="p-4 text-xs font-bold text-slate-500">${u.school_id}</td>
-                    <td class="p-4 text-right"><span class="text-success-green font-bold text-xs"><i class="fas fa-check-circle"></i> Active</span></td>
+                    <td class="p-4 text-right">                        <div class="flex gap-2 justify-end">
+                            <button onclick="window.showEditModal('${u.id}', `${encodeURIComponent(JSON.stringify(u))}`)" class="text-[10px] bg-slate-100 border border-slate-200 text-slate-600 px-2 py-1 rounded hover:bg-slate-200 font-bold transition">Edit</button>
+                            <button onclick="window.resetUserPassword('${u.email}', '${u.displayName}')" class="text-[10px] bg-blue-50 border border-blue-200 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 font-bold transition">Reset Pwd</button>
+                            <button onclick="window.deleteUser('${u.id}', '${u.displayName}')" class="text-[10px] bg-red-50 border border-red-200 text-red-600 px-2 py-1 rounded hover:bg-red-100 font-bold transition">Delete</button>
+                            <span class="text-success-green font-bold text-xs"><i class="fas fa-check-circle"></i> Active</span>
+                        </div></td>
                 </tr>
             `;
         }
