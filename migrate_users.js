@@ -25,29 +25,37 @@ async function run() {
         const usersSnapshot = await db.collection('users').get();
         let migratedCount = 0;
 
-        for (const doc of usersSnapshot.docs) {
+                for (const doc of usersSnapshot.docs) {
             const userData = doc.data();
             const email = userData.email;
 
-            if (email && email.endsWith('@ready4exam.internal')) {
-                const username = email.replace('@ready4exam.internal', '');
-                const newEmail = `ready4exam+${username}@gmail.com`;
+            if (email) {
+                let username = null;
+                if (email.endsWith('@ready4exam.internal')) {
+                    username = email.replace('@ready4exam.internal', '');
+                } else if (email.startsWith('ready4exam+') && email.endsWith('@gmail.com')) {
+                    username = email.substring('ready4exam+'.length, email.indexOf('@gmail.com'));
+                }
 
-                console.log(`Migrating ${email} to ${newEmail}`);
+                if (username !== null) {
+                    const newEmail = `ready4urexam+${username}@gmail.com`;
 
-                await doc.ref.update({ email: newEmail });
+                    console.log(`Migrating ${email} to ${newEmail}`);
 
-                try {
-                    const updatePayload = { email: newEmail };
+                    await doc.ref.update({ email: newEmail });
 
-                    if (!['keshav', 'dps.ready4exam', 'admin'].includes(username)) {
-                        updatePayload.password = '123456';
+                    try {
+                        const updatePayload = { email: newEmail };
+
+                        if (!['keshav', 'dps.ready4exam', 'admin'].includes(username)) {
+                            updatePayload.password = '123456';
+                        }
+
+                        await auth.updateUser(doc.id, updatePayload);
+                        migratedCount++;
+                    } catch (err) {
+                        console.error(`Error updating Auth for ${doc.id}: ${err.message}`);
                     }
-
-                    await auth.updateUser(doc.id, updatePayload);
-                    migratedCount++;
-                } catch (err) {
-                    console.error(`Error updating Auth for ${doc.id}: ${err.message}`);
                 }
             }
         }
