@@ -591,6 +591,7 @@ window.submitAddModal = async (role) => {
         email: email,
         role: role,
         school_id: currentSchoolId,
+        tenantType: "school",
         setupComplete: false,
         created_at: serverTimestamp(),
         updated_at: serverTimestamp()
@@ -630,9 +631,12 @@ window.submitAddModal = async (role) => {
                         await setDoc(doc(db, "users", parentId), {
                             displayName: "Parent User",
                             email: parentEmail,
+                            uid: parentId,
                             role: "parent",
                             school_id: currentSchoolId,
+                            tenantType: "school",
                             setupComplete: false,
+                            created_at: serverTimestamp(),
                             updated_at: serverTimestamp()
                         }, { merge: true });
 
@@ -939,7 +943,12 @@ function renderBucket(elementId, users, type) {
                     <td class="p-2 font-bold text-slate-700">${nameOrEmail}</td>
                     <td class="p-2">${parentText}</td>
                     <td class="p-2 text-right">
-                        <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Link Parent</button>
+                        <div class="flex gap-1 justify-end flex-wrap items-center">
+                            <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Link Parent</button>
+                            <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
+                            <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -950,7 +959,12 @@ function renderBucket(elementId, users, type) {
                     <td class="p-4 text-xs font-bold text-slate-500">${(u.mapped_disciplines || [u.mapped_discipline]).filter(Boolean).join(', ') || 'Unassigned'}</td>
                     <td class="p-4 text-xs font-bold text-slate-500">${(u.sections || [u.mapped_section]).filter(Boolean).join(', ') || 'Unassigned'}</td>
                     <td class="p-4 text-right">
-                        <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
+                        <div class="flex gap-1 justify-end flex-wrap items-center">
+                            <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
+                            <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
+                            <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1061,14 +1075,49 @@ window.deleteUser = async (userId, displayName) => {
 
 window.resetUserPassword = async (email, displayName) => {
     if (!email) { alert("No email found for this user."); return; }
-    if (!confirm(`Send password reset email for "${displayName}" to ${email}?`)) return;
+
+    const action = confirm(
+        `Reset password for "${displayName}"?\n\n` +
+        `This will:\n` +
+        `1. Send a Firebase password reset email to ${email}\n` +
+        `2. Reset their setupComplete flag so they get prompted to change password on next login\n\n` +
+        `NOTE: The reset email arrives in the ready4urexam@gmail.com inbox (Gmail ignores +tags). Check Spam/Promotions if not found.`
+    );
+    if (!action) return;
+
     try {
-        const { auth } = await getInitializedClients();
+        const { auth, db } = await getInitializedClients();
+
+        // Step 1: Send Firebase password reset email
+        console.log("[RESET] Sending password reset email to:", email);
         await sendPasswordResetEmail(auth, email);
-        alert(`Password reset email sent to ${email}. Check ready4urexam@gmail.com inbox.`);
+        console.log("[RESET] sendPasswordResetEmail succeeded for:", email);
+
+        // Step 2: Reset setupComplete in Firestore so guard triggers password change on next login
+        const userQuery = query(collection(db, "users"), where("email", "==", email));
+        const userSnap = await getDocs(userQuery);
+
+        if (!userSnap.empty) {
+            const userDocRef = userSnap.docs[0].ref;
+            await updateDoc(userDocRef, {
+                setupComplete: false,
+                updated_at: serverTimestamp()
+            });
+            console.log("[RESET] setupComplete reset to false for:", email);
+        }
+
+        alert(
+            `Password reset email sent to ${email}.\n\n` +
+            `CHECK: ready4urexam@gmail.com inbox → Spam/Promotions folder.\n\n` +
+            `Additionally, setupComplete has been reset. If the user logs in with their current password, they will be prompted to set a new one.`
+        );
     } catch(e) {
-        console.error("Reset failed:", e);
-        alert("Failed to send reset email: " + e.message);
+        console.error("[RESET] Failed:", e);
+        if (e.code === 'auth/user-not-found') {
+            alert(`Failed: No Firebase Auth account found for ${email}. The user may need to be re-created.`);
+        } else {
+            alert("Failed to send reset email: " + e.message + "\n\nCheck browser console for details.");
+        }
     }
 };
 
