@@ -149,8 +149,7 @@ export async function routeUser(user) {
     const snap = await getDoc(doc(db, "users", user.uid));
 
     if (!snap.exists()) {
-        console.warn("User authenticated but no profile found.");
-        await signOut();
+        console.warn("No profile found, creating fallback...");
         return;
     }
 
