@@ -163,6 +163,7 @@
     <script type="module">
         import { getInitializedClients } from "./js/config.js";
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { authenticateWithCredentials, signOut } from "./js/auth-paywall.js";
 
         const params = new URLSearchParams(location.search);
@@ -246,7 +247,6 @@
             }
             const email = username.includes('@') ? username : `ready4urexam+${username}@gmail.com`;
             try {
-                const { getInitializedClients } = await import("../js/config.js");
                 const { auth } = await getInitializedClients();
                 await sendPasswordResetEmail(auth, email);
                 alert("Password reset email sent! Check the inbox for ready4urexam@gmail.com.");
