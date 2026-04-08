@@ -602,7 +602,10 @@ window.submitAddModal = async (role) => {
     if (role === 'student') {
         const g = document.getElementById('modal-grade').value.trim();
         const s = document.getElementById('modal-section').value.trim();
-        const parentEmail = document.getElementById('modal-parent').value.trim();
+        const parentEmailInput = document.getElementById('modal-parent').value.trim();
+        const parentEmail = parentEmailInput ? (parentEmailInput.includes('@')
+            ? parentEmailInput
+            : `ready4urexam+${parentEmailInput}@gmail.com`) : "";
 
         if(!g || !s) return showError("Grade and Section are required.");
 
@@ -946,8 +949,8 @@ function renderBucket(elementId, users, type) {
                         <div class="flex gap-1 justify-end flex-wrap items-center">
                             <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Link Parent</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
-                            <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\\'")}')") class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\\'")}')") class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -962,8 +965,8 @@ function renderBucket(elementId, users, type) {
                         <div class="flex gap-1 justify-end flex-wrap items-center">
                             <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
-                            <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\\'")}')") class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\\'")}')") class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>

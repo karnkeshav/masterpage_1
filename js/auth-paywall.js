@@ -185,6 +185,7 @@ export async function routeUser(user) {
         window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
         return;
     }
+
     await signOut();
 }
 
