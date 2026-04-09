@@ -75,7 +75,13 @@
 
         window.routeToLibrary = (subject) => {
             const gradeBadge = document.getElementById("context-badge").textContent;
-            const grade = gradeBadge.replace("Grade ", "").trim() || "9";
+            const grade = gradeBadge.replace("Grade ", "").trim();
+
+            if (!grade) {
+                console.error("Grade not found in context badge.");
+                return;
+            }
+
             window.location.href = `../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
         };
 

@@ -39,8 +39,10 @@
         bindConsoleLogout("logout-nav-btn", "../index.html");
 
         const params = new URLSearchParams(window.location.search);
-        const grade = params.get("grade"); // Let it be null if not in URL, we will use profile
-        const preSelectedSubject = params.get("subject");
+        const activeGrade = params.get('grade'); // Let it be null if not in URL, we will use profile
+        const grade = activeGrade;
+        const activeSubject = params.get('subject');
+        const preSelectedSubject = activeSubject;
 
         // Init
         initializeAuthListener(async (user) => {
@@ -50,12 +52,24 @@
                 const displayName = profile?.displayName || user.email.split('+')[1]?.split('@')[0] || "Scholar";
                 const userGrade = grade || profile?.classId || "9";
 
-                document.getElementById("user-welcome").textContent = displayName;
+                document.getElementById("user-welcome").textContent = profile.displayName || "Student";
                 document.getElementById("context-badge").textContent = `Grade ${userGrade}`;
 
                 // Pass the loaded curriculum to the renderer
                 const curriculum = await loadCurriculum(userGrade);
-                renderLibrary(curriculum);
+
+                if (!curriculum || (preSelectedSubject && !curriculum[preSelectedSubject])) {
+                    document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">No chapters found for ${preSelectedSubject || "the curriculum"} in Grade ${userGrade}.</div>`;
+                    return;
+                }
+
+                if (preSelectedSubject) {
+                    const specificCurriculum = {};
+                    specificCurriculum[preSelectedSubject] = curriculum[preSelectedSubject];
+                    renderLibrary(specificCurriculum);
+                } else {
+                    renderLibrary(curriculum);
+                }
             } else {
                 window.location.href = "../index.html";
             }
@@ -90,7 +104,8 @@
                 chapters.forEach(chapter => {
                     const card = document.createElement("a");
                     // Link to the Dynamic Content Page
-                    card.href = `study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;
+                    const urlGrade = grade || document.getElementById("context-badge").textContent.replace("Grade ", "").trim();
+                    card.href = `study-content.html?grade=${urlGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;
                     card.className = "group block bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden";
                     card.innerHTML = `
                         <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity text-cbse-blue">
