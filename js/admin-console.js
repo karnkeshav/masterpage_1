@@ -714,6 +714,7 @@ window.submitAddModal = async (role) => {
                 }
 
                 payload.selected_subjects = selectedSubjects;
+                payload.mapped_disciplines = selectedSubjects; // Keep for Knowledge Hub rendering
             }
         }
 
