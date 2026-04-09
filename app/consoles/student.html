@@ -74,12 +74,11 @@
         }
 
         window.routeToLibrary = (subject) => {
-            const profile = window.currentUserProfile || window.userProfile || {};
-            const grade = profile.classId || profile.grade;
+            const gradeBadge = document.getElementById("context-badge").textContent;
+            const grade = gradeBadge.replace("Grade ", "").trim();
 
             if (!grade || grade === "undefined") {
-                console.error("Grade not found in user profile.");
-                alert("Error: Grade not found in your user profile. Please contact support.");
+                console.error("Grade not found in context badge.");
                 return;
             }
 

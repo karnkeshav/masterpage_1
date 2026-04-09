@@ -93,16 +93,16 @@
                 if (matchingSubject) {
                     const specificCurriculum = {};
                     specificCurriculum[matchingSubject] = curriculum[matchingSubject];
-                    renderLibrary(specificCurriculum);
+                    renderLibrary(specificCurriculum, userGrade);
                 } else {
-                    renderLibrary(curriculum);
+                    renderLibrary(curriculum, userGrade);
                 }
             } else {
                 window.location.href = "../index.html";
             }
         });
 
-        function renderLibrary(curriculum) {
+        function renderLibrary(curriculum, resolvedGrade) {
             const container = document.getElementById("library-container");
             container.innerHTML = "";
 
@@ -134,7 +134,7 @@
                     const chapterTitle = typeof chapterItem === 'string' ? chapterItem : (chapterItem.chapter_title || chapterItem);
                     const card = document.createElement("a");
                     // Link to the Dynamic Content Page
-                    const urlGrade = grade || (window.userProfile && (window.userProfile.classId || window.userProfile.grade));
+                    const urlGrade = resolvedGrade;
                     card.href = `study-content.html?grade=${urlGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterTitle)}`;
                     card.className = "group block bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden";
                     card.innerHTML = `
