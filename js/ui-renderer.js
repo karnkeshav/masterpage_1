@@ -429,11 +429,14 @@ export function triggerPeelBack(elementId) {
 
 export async function renderBoardInsights(grade, subject, chapter, container) {
     if (!container) return;
+
     container.classList.remove("hidden");
     container.innerHTML = `
         <div class="mt-8 border-t border-slate-200 pt-8">
             <h3 class="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                <span class="w-10 h-10 rounded-xl bg-cbse-blue text-white flex items-center justify-center text-lg shadow-sm"><i class="fas fa-award"></i></span>
+                <span class="w-10 h-10 rounded-xl bg-cbse-blue text-white flex items-center justify-center text-lg shadow-sm">
+                    <i class="fas fa-award"></i>
+                </span>
                 Board Pattern Insights
             </h3>
             <div id="pyq-list" class="space-y-6">
@@ -441,47 +444,68 @@ export async function renderBoardInsights(grade, subject, chapter, container) {
             </div>
         </div>
     `;
+
     const listEl = container.querySelector("#pyq-list");
+
     try {
         const { getInitializedClients } = await import("./config.js");
         const { db } = await getInitializedClients();
         const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-        const qSnap = await getDocs(collection(db, \`PYQ_Bank/\${grade}/Subjects/\${subject}/Chapters/\${chapter}/Questions\`));
+
+        const path = `PYQ_Bank/${grade}/Subjects/${subject}/Chapters/${chapter}/Questions`;
+        const qSnap = await getDocs(collection(db, path));
+
         if (qSnap.empty) {
-            listEl.innerHTML = \`<div class="p-8 text-center text-slate-500 italic bg-white rounded-2xl border border-slate-100 shadow-sm">No Board Questions recorded for this topic yet.</div>\`;
+            listEl.innerHTML = `
+                <div class="p-8 text-center text-slate-500 italic bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    No Board Questions recorded for this topic yet.
+                </div>`;
             return;
         }
-        let html = "";
+
+        const cards = [];
+
         qSnap.forEach(doc => {
             const data = doc.data();
+            const qId = doc.id;
             const year = data.year || "Unknown Year";
             const marks = data.marks || "Unknown Marks";
             const text = data.text_en || data.question_text || data.text || "";
             const solution = data.answer_en || data.solution || "";
-            const qId = doc.id;
-            html += \`
+
+            // Helper to generate the solution HTML safely
+            const solutionHtml = solution ? `
+                <button onclick="document.getElementById('sol-${qId}').classList.toggle('hidden')" 
+                        class="text-xs font-bold text-cbse-blue hover:text-blue-700 transition flex items-center gap-1">
+                    <i class="fas fa-eye"></i> View Expert Solution
+                </button>
+                <div id="sol-${qId}" class="hidden mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-700">
+                    <div class="font-bold text-[10px] uppercase text-slate-400 mb-2 tracking-wider">Expert Solution</div>
+                    ${cleanKatexMarkers(solution)}
+                </div>` : '';
+
+            cards.push(`
                 <div class="pyq-card-v1 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition">
                     <div class="flex items-center gap-2 mb-3">
-                        <span class="badge-year bg-accent-gold text-white text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">\${year}</span>
-                        <span class="badge-marks bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">\${marks} Marks</span>
+                        <span class="badge-year bg-accent-gold text-white text-[10px] font-black px-2 py-1 rounded uppercase tracking-wider">${year}</span>
+                        <span class="badge-marks bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${marks} Marks</span>
                     </div>
-                    <div class="text-sm text-slate-800 font-medium mb-4">\${cleanKatexMarkers(text)}</div>
-                    \${solution ? \`
-                        <button onclick="const el = document.getElementById('sol-\${qId}'); el.classList.toggle('hidden');" class="text-xs font-bold text-cbse-blue hover:text-blue-700 transition flex items-center gap-1">
-                            <i class="fas fa-eye"></i> View Expert Solution
-                        </button>
-                        <div id="sol-\${qId}" class="hidden mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-700">
-                            <div class="font-bold text-[10px] uppercase text-slate-400 mb-2 tracking-wider">Expert Solution</div>
-                            \${cleanKatexMarkers(solution)}
-                        </div>
-                    \` : ''}
+                    <div class="text-sm text-slate-800 font-medium mb-4">${cleanKatexMarkers(text)}</div>
+                    ${solutionHtml}
                 </div>
-            \`;
+            `);
         });
-        listEl.innerHTML = html;
-        if (window.MathJax) { window.MathJax.typesetPromise ? window.MathJax.typesetPromise([listEl]) : window.MathJax.typeset([listEl]); }
+
+        listEl.innerHTML = cards.join('');
+
+        // MathJax Typesetting
+        if (window.MathJax) {
+            const typesetter = window.MathJax.typesetPromise || window.MathJax.typeset;
+            if (typesetter) typesetter.call(window.MathJax, [listEl]);
+        }
+
     } catch (e) {
         console.error("PYQ Fetch Error:", e);
-        listEl.innerHTML = \`<div class="p-4 text-center text-red-500">Failed to load insights.</div>\`;
+        listEl.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load insights.</div>`;
     }
 }
