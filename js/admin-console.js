@@ -467,6 +467,21 @@ window.showAddModal = async (role, grade = '', section = '') => {
     let extraFields = '';
 
     if (role === 'student') {
+        let discHtml = '';
+        if (grade === '11' || grade === '12') {
+            schoolDisciplines.forEach(d => {
+                discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="student-disc-cb"> <span>${d}</span></label>`;
+            });
+            discHtml = `
+                <div class="col-span-2 mt-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Subjects / Disciplines (Grades 11/12)</label>
+                    <div class="grid grid-cols-2 gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        ${discHtml}
+                    </div>
+                </div>
+            `;
+        }
+
         extraFields = `
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -477,20 +492,9 @@ window.showAddModal = async (role, grade = '', section = '') => {
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
                     <input type="text" id="modal-section" value="${section}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${section ? 'readonly' : ''}>
                 </div>
+                ${discHtml}
             </div>
-            <div id="stream-container" class="${(grade == '11' || grade == '12') ? '' : 'hidden'}">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stream Selection</label>
-                <select id="modal-stream" onchange="window.updateSubjectOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue mb-3">
-                    <option value="">Select Stream</option>
-                    <option value="Science">Science</option>
-                    <option value="Commerce">Commerce</option>
-                    <option value="Humanities">Humanities</option>
-                </select>
-                <div id="subject-selection-container" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm">
-                    <!-- Dynamic subjects will go here -->
-                </div>
-            </div>
-            <div>
+            <div class="mt-4">
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Parent (Parent Email)</label>
                 <input type="email" id="modal-parent" placeholder="Optional parent email..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
             </div>
@@ -678,6 +682,15 @@ window.submitAddModal = async (role) => {
     if (role === 'student') {
         const g = document.getElementById('modal-grade').value.trim();
         const s = document.getElementById('modal-section').value.trim();
+
+        let mapped_disciplines = [];
+        if (g === '11' || g === '12') {
+            const cbNodes = document.querySelectorAll('.student-disc-cb:checked');
+            cbNodes.forEach(n => mapped_disciplines.push(n.value));
+        }
+        if (mapped_disciplines.length > 0) {
+            payload.mapped_disciplines = mapped_disciplines;
+        }
         const parentEmailInput = document.getElementById('modal-parent').value.trim();
         const parentEmail = parentEmailInput ? (parentEmailInput.includes('@')
             ? parentEmailInput
