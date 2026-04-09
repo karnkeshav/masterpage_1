@@ -1077,12 +1077,17 @@ window.deleteStudent = async (studentUid, name) => {
             const parentId = studentData.parent_id;
 
             if (parentId) {
+            if (parentId) {
                 // Remove student from parent's linked_children array
-                const parentRef = doc(db, 'users', parentId);
-                await updateDoc(parentRef, {
-                    linked_children: arrayRemove(studentUid),
-                    updated_at: serverTimestamp()
-                });
+                try {
+                    const parentRef = doc(db, 'users', parentId);
+                    await updateDoc(parentRef, {
+                        linked_children: arrayRemove(studentUid),
+                        updated_at: serverTimestamp()
+                    });
+                } catch (unlinkErr) {
+                    console.warn("Could not unlink from parent (may already be deleted):", unlinkErr);
+                }
             }
         }
 
