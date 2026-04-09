@@ -38,3 +38,24 @@ export function getGradeFromURL() {
     const params = new URLSearchParams(window.location.search);
     return params.get("grade") || "9";
 }
+
+/**
+ * Flattens nested subject data into a single array of chapters.
+ * @param {Array|Object} subjectData - The curriculum data for a specific subject.
+ * @returns {Array} - A flat array of chapters.
+ */
+export function flattenSubject(subjectData) {
+    if (Array.isArray(subjectData)) {
+        return subjectData;
+    }
+    if (typeof subjectData === 'object' && subjectData !== null) {
+        let flatArray = [];
+        for (const key in subjectData) {
+            if (Array.isArray(subjectData[key])) {
+                flatArray = flatArray.concat(subjectData[key]);
+            }
+        }
+        return flatArray;
+    }
+    return [];
+}

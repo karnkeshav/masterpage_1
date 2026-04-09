@@ -118,6 +118,7 @@ async function loadContent(grade, subject, chapter, user) {
     if (subDiscipline && !data.discipline) data.discipline = subDiscipline;
 
     renderDynamicContent(container, data, subject);
+    UI.renderBoardInsights(grade, subject, chapter, document.getElementById('board-insight-container'));
 
     // Critical: Typeset MathJax
     if (window.MathJax) {

@@ -63,12 +63,86 @@
 
             renderKnowledgeHub(profile);
             setupRoomNavigation(grade);
+            await generateKnowledgeHub(profile, grade);
             await loadStudentStats(profile.uid, grade);
             renderInbox();
             listenToIntercom();
         };
 
-        function setupRoomNavigation(grade) {
+
+        async function generateKnowledgeHub(profile, grade) {
+            const container = document.getElementById("knowledge-hub-links");
+            if (!container) return;
+
+            let curriculum = null;
+            try {
+                curriculum = await loadCurriculum(grade);
+            } catch(e) {
+                console.error("Curriculum load failed for knowledge hub:", e);
+                container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">Curriculum Coming Soon</div>`;
+                return;
+            }
+
+            if (!curriculum || Object.keys(curriculum).length === 0) {
+                container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">Curriculum Coming Soon</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            let subjectsToRender = [];
+
+            if (profile.mapped_disciplines && Array.isArray(profile.mapped_disciplines) && profile.mapped_disciplines.length > 0) {
+                // Filter mapping to ensure it exists in curriculum (case-insensitive)
+                const curriculumKeys = Object.keys(curriculum).map(k => k.toLowerCase());
+                subjectsToRender = profile.mapped_disciplines.filter(d => curriculumKeys.includes(d.toLowerCase()));
+            } else {
+                // Default triad
+                subjectsToRender = ["Mathematics", "Science", "Social Science"].filter(d => {
+                    const curriculumKeys = Object.keys(curriculum).map(k => k.toLowerCase());
+                    return curriculumKeys.includes(d.toLowerCase());
+                });
+            }
+
+            if (subjectsToRender.length === 0) {
+                container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">No assigned subjects available.</div>`;
+                return;
+            }
+
+            subjectsToRender.forEach(subject => {
+                const theme = getSubjectTheme(subject);
+                const html = `
+                    <a href="#" onclick="routeToLibrary('${subject}'); return false;"
+                        class="block glass-panel p-5 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition group relative overflow-hidden border-l-4 ${theme.borderColor}">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl ${theme.bgColor} ${theme.textColor} flex items-center justify-center text-xl">
+                                <i class="${theme.icon}"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800">${subject}</h4>
+                                <p class="text-[10px] text-slate-500 font-medium">${theme.tagline}</p>
+                            </div>
+                            <i class="fas fa-chevron-right ml-auto text-slate-300 group-hover:${theme.hoverColor} transition"></i>
+                        </div>
+                    </a>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function getSubjectTheme(subject) {
+            const s = subject.toLowerCase();
+            if (s.includes("physics")) return { icon: "fas fa-atom", borderColor: "border-purple-500", bgColor: "bg-purple-50", textColor: "text-purple-600", hoverColor: "text-purple-500", tagline: "Laws of the universe." };
+            if (s.includes("biology")) return { icon: "fas fa-dna", borderColor: "border-green-500", bgColor: "bg-green-50", textColor: "text-green-600", hoverColor: "text-green-500", tagline: "The science of life." };
+            if (s.includes("chemistry")) return { icon: "fas fa-flask", borderColor: "border-teal-500", bgColor: "bg-teal-50", textColor: "text-teal-600", hoverColor: "text-teal-500", tagline: "Matter and its interactions." };
+            if (s.includes("math")) return { icon: "fas fa-calculator", borderColor: "border-blue-500", bgColor: "bg-blue-50", textColor: "text-blue-600", hoverColor: "text-blue-500", tagline: "Build your foundation." };
+            if (s.includes("science")) return { icon: "fas fa-atom", borderColor: "border-purple-500", bgColor: "bg-purple-50", textColor: "text-purple-600", hoverColor: "text-purple-500", tagline: "Explore the universe." };
+            if (s.includes("social")) return { icon: "fas fa-globe-americas", borderColor: "border-amber-500", bgColor: "bg-amber-50", textColor: "text-amber-600", hoverColor: "text-amber-500", tagline: "Understand the world." };
+            if (s.includes("english")) return { icon: "fas fa-book", borderColor: "border-indigo-500", bgColor: "bg-indigo-50", textColor: "text-indigo-600", hoverColor: "text-indigo-500", tagline: "Master the language." };
+
+            return { icon: "fas fa-book-open", borderColor: "border-slate-500", bgColor: "bg-slate-50", textColor: "text-slate-600", hoverColor: "text-slate-500", tagline: "Explore knowledge." };
+        }
+
+function setupRoomNavigation(grade) {
             // Header Start Button
             document.getElementById("start-new-quiz-btn").href = `../curriculum.html?grade=${grade}`;
             document.getElementById("btn-mistakes").href = `../mistake-book.html`;
@@ -138,7 +212,7 @@
             const gradeBadge = document.getElementById("context-badge").textContent;
             const grade = gradeBadge.replace("Grade ", "").trim();
 
-            if (!grade) {
+            if (!grade || grade === "undefined") {
                 console.error("Grade not found in context badge.");
                 return;
             }
@@ -1038,7 +1112,6 @@
                 </h3>
 
                 <div class="space-y-4" id="knowledge-hub-links">
-                    <!-- Dynamic subject links will be injected here -->
                 </div>
             </div>
 
