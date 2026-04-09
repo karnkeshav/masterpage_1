@@ -149,7 +149,8 @@ export async function routeUser(user) {
     const snap = await getDoc(doc(db, "users", user.uid));
 
     if (!snap.exists()) {
-        console.warn("No profile found, creating fallback...");
+        console.warn("User authenticated but no profile found.");
+        await signOut();
         return;
     }
 
@@ -178,10 +179,6 @@ export async function routeUser(user) {
     // Fallback: Route by school_id if tenantType is missing (handles legacy data)
     if (!data.tenantType && data.school_id && data.role) {
         console.warn("[AUTH] routeUser: Missing tenantType, falling back to school_id routing. Role:", data.role);
-        if ((data.role === "school_master" || data.role === "gateway") && data.school_id) {
-            window.location.href = `school-landing.html?schoolId=${data.school_id}`;
-            return;
-        }
         window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
         return;
     }
