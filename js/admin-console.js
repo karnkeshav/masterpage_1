@@ -486,7 +486,7 @@ window.showAddModal = async (role, grade = '', section = '') => {
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Grade</label>
-                    <input type="text" id="modal-grade" value="${grade}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${grade ? 'readonly' : ''}>
+                    <input type="text" id="modal-grade" value="${grade}" oninput="window.toggleStreamField()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${grade ? 'readonly' : ''}>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
@@ -572,6 +572,70 @@ window.showAddModal = async (role, grade = '', section = '') => {
     `;
 };
 
+window.toggleStreamField = () => {
+    const gradeInput = document.getElementById('modal-grade');
+    const streamContainer = document.getElementById('stream-container');
+    if (!gradeInput || !streamContainer) return;
+
+    const val = String(gradeInput.value).trim();
+    if (val === '11' || val === '12') {
+        streamContainer.classList.remove('hidden');
+        window.updateSubjectOptions();
+    } else {
+        streamContainer.classList.add('hidden');
+    }
+};
+
+window.updateSubjectOptions = () => {
+    const stream = document.getElementById('modal-stream')?.value;
+    const container = document.getElementById('subject-selection-container');
+    if (!container) return;
+
+    if (!stream) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    container.classList.remove('hidden');
+    let html = '';
+
+    if (stream === 'Science') {
+        html += `
+            <p class="font-bold text-slate-700 mb-1">Mandatory Subjects:</p>
+            <p class="text-xs text-slate-500 mb-3">Physics, Chemistry, English</p>
+            <p class="font-bold text-slate-700 mb-1">Options:</p>
+            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="checkbox" value="Mathematics" class="student-subject-cb"> <span>Mathematics</span></label>
+            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="checkbox" value="Biology" class="student-subject-cb"> <span>Biology</span></label>
+        `;
+    } else if (stream === 'Commerce') {
+        html += `
+            <p class="font-bold text-slate-700 mb-1">Mandatory Subjects:</p>
+            <p class="text-xs text-slate-500 mb-3">Accountancy, Business Studies, Economics, English</p>
+            <p class="font-bold text-slate-700 mb-1">Options (Select one or none):</p>
+            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="radio" name="commerce-opt" value="Mathematics" class="student-subject-radio"> <span>Mathematics</span></label>
+            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="radio" name="commerce-opt" value="Applied Mathematics" class="student-subject-radio"> <span>Applied Mathematics</span></label>
+            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="radio" name="commerce-opt" value="" class="student-subject-radio" checked> <span>No Maths</span></label>
+        `;
+    } else if (stream === 'Humanities') {
+        html += `
+            <p class="font-bold text-slate-700 mb-1">Mandatory Subjects:</p>
+            <p class="text-xs text-slate-500 mb-3">English</p>
+            <p class="font-bold text-slate-700 mb-1">Options (Multi-select):</p>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="History" class="student-subject-cb"> <span>History</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Political Science" class="student-subject-cb"> <span>Political Science</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Geography" class="student-subject-cb"> <span>Geography</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Sociology" class="student-subject-cb"> <span>Sociology</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Psychology" class="student-subject-cb"> <span>Psychology</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Hindi" class="student-subject-cb"> <span>Hindi</span></label>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+};
+
 window.closeAddModal = () => {
     const mc = document.getElementById('modal-container');
     if(mc) mc.innerHTML = '';
@@ -639,6 +703,32 @@ window.submitAddModal = async (role) => {
         payload.class_id = g;
         payload.section = s;
         payload.section_id = `${g}-${s}`;
+
+        if (g === '11' || g === '12') {
+            const streamEl = document.getElementById('modal-stream');
+            if (streamEl && streamEl.value) {
+                payload.stream = streamEl.value;
+                const selectedSubjects = [];
+
+                if (payload.stream === 'Science') {
+                    selectedSubjects.push('Physics', 'Chemistry', 'English');
+                } else if (payload.stream === 'Commerce') {
+                    selectedSubjects.push('Accountancy', 'Business Studies', 'Economics', 'English');
+                } else if (payload.stream === 'Humanities') {
+                    selectedSubjects.push('English');
+                }
+
+                const cbs = document.querySelectorAll('#subject-selection-container .student-subject-cb:checked');
+                cbs.forEach(cb => selectedSubjects.push(cb.value));
+
+                const radio = document.querySelector('#subject-selection-container .student-subject-radio:checked');
+                if (radio && radio.value) {
+                    selectedSubjects.push(radio.value);
+                }
+
+                payload.selected_subjects = selectedSubjects;
+            }
+        }
 
         if (parentEmail) {
             try {
@@ -967,9 +1057,10 @@ function renderBucket(elementId, users, type) {
 
         if (type === 'student') {
             const parentText = u.parent_id ? `<span class="text-slate-700 font-mono text-[10px] bg-slate-100 px-2 py-1 rounded border border-slate-200">${u.parent_id}</span>` : `<span class="text-danger-red text-xs font-bold">Unlinked</span>`;
+            const streamBadge = u.stream ? `<span class="ml-2 text-[9px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200">[${u.stream}]</span>` : '';
             return `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="p-2 font-bold text-slate-700">${nameOrEmail}</td>
+                    <td class="p-2 font-bold text-slate-700">${nameOrEmail}${streamBadge}</td>
                     <td class="p-2">${parentText}</td>
                     <td class="p-2 text-right">
                         <div class="flex gap-1 justify-end flex-wrap items-center">
