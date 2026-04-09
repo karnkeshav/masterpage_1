@@ -76,6 +76,13 @@ service cloud.firestore {
       allow write: if isAdmin() || isOwner() || (isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher');
     }
 
+
+    // PYQ Bank Collection
+    match /PYQ_Bank/{document=**} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin() || isOwner();
+    }
+
     // Activity Logs Collection
     match /activity_logs/{logId} {
       allow read: if isAdmin() || isOwner();
