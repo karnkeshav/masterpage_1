@@ -33,7 +33,7 @@
         import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
         import { bindConsoleLogout } from "../js/guard.js";
         import * as UI from "../js/ui-renderer.js";
-        import { loadCurriculum } from "../js/curriculum/loader.js";
+        import { loadCurriculum, flattenSubject } from "../js/curriculum/loader.js";
 
         UI.injectStyles();
         bindConsoleLogout("logout-nav-btn", "../index.html");
@@ -50,22 +50,49 @@
                 // Fetch full profile from Firestore to get the real displayName and classId
                 const profile = await ensureUserInFirestore(user);
                 const displayName = profile?.displayName || user.email.split('+')[1]?.split('@')[0] || "Scholar";
-                const userGrade = grade || profile?.classId || "9";
+                const userGrade = grade || profile?.classId || profile?.grade;
 
                 document.getElementById("user-welcome").textContent = profile.displayName || "Student";
-                document.getElementById("context-badge").textContent = `Grade ${userGrade}`;
 
-                // Pass the loaded curriculum to the renderer
-                const curriculum = await loadCurriculum(userGrade);
-
-                if (!curriculum || (preSelectedSubject && !curriculum[preSelectedSubject])) {
-                    document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">No chapters found for ${preSelectedSubject || "the curriculum"} in Grade ${userGrade}.</div>`;
+                if (!userGrade) {
+                    document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">Curriculum coming soon</div>`;
                     return;
                 }
 
+                document.getElementById("context-badge").textContent = `Grade ${userGrade}`;
+
+                let curriculum;
+                try {
+                    // Pass the loaded curriculum to the renderer
+                    curriculum = await loadCurriculum(userGrade);
+                } catch (error) {
+                    document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">Curriculum coming soon</div>`;
+                    return;
+                }
+
+                if (!curriculum) {
+                    document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">Curriculum coming soon</div>`;
+                    return;
+                }
+
+                let matchingSubject = preSelectedSubject;
                 if (preSelectedSubject) {
+                    const normalizedPreSelected = preSelectedSubject.toLowerCase().trim();
+                    const curriculumKeys = Object.keys(curriculum);
+                    const exactMatch = curriculumKeys.find(k => k.toLowerCase().trim() === normalizedPreSelected);
+                    if (exactMatch) {
+                        matchingSubject = exactMatch;
+                    }
+                }
+
+                if (preSelectedSubject && !curriculum[matchingSubject]) {
+                    document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">No chapters found for ${preSelectedSubject} in Grade ${userGrade}.</div>`;
+                    return;
+                }
+
+                if (matchingSubject) {
                     const specificCurriculum = {};
-                    specificCurriculum[preSelectedSubject] = curriculum[preSelectedSubject];
+                    specificCurriculum[matchingSubject] = curriculum[matchingSubject];
                     renderLibrary(specificCurriculum);
                 } else {
                     renderLibrary(curriculum);
@@ -79,9 +106,9 @@
             const container = document.getElementById("library-container");
             container.innerHTML = "";
 
-            Object.entries(curriculum).forEach(([subject, chapters]) => {
+            Object.entries(curriculum).forEach(([subject, subjectData]) => {
                 // If a subject is pre-selected via URL, skip others
-                if (preSelectedSubject && subject !== preSelectedSubject) return;
+                // The key has been normalized in the init block, so we can use activeSubject for the initial check or skip since specificCurriculum is passed.
 
                 const section = document.createElement("div");
                 section.className = "mb-12 fade-in";
@@ -101,17 +128,20 @@
                 container.appendChild(section);
 
                 const grid = document.getElementById(gridId);
-                chapters.forEach(chapter => {
+                const flatChapters = flattenSubject(subjectData);
+
+                flatChapters.forEach(chapterItem => {
+                    const chapterTitle = typeof chapterItem === 'string' ? chapterItem : (chapterItem.chapter_title || chapterItem);
                     const card = document.createElement("a");
                     // Link to the Dynamic Content Page
-                    const urlGrade = grade || document.getElementById("context-badge").textContent.replace("Grade ", "").trim();
-                    card.href = `study-content.html?grade=${urlGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;
+                    const urlGrade = grade || (window.userProfile && (window.userProfile.classId || window.userProfile.grade));
+                    card.href = `study-content.html?grade=${urlGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterTitle)}`;
                     card.className = "group block bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden";
                     card.innerHTML = `
                         <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity text-cbse-blue">
                             <i class="fas fa-arrow-right"></i>
                         </div>
-                        <h4 class="font-bold text-slate-700 group-hover:text-cbse-blue transition-colors pr-6">${chapter}</h4>
+                        <h4 class="font-bold text-slate-700 group-hover:text-cbse-blue transition-colors pr-6">${chapterTitle}</h4>
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-2">Study Summary</p>
                     `;
                     grid.appendChild(card);
