@@ -70,9 +70,9 @@
         }
 
         window.routeToLibrary = (subject) => {
-            const grade = new URLSearchParams(window.location.search).get("grade") || "9";
-            window.location.href = `../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
-        };
+                const userGrade = window.currentUserProfile?.grade || window.currentUserProfile?.classId?.split('-')[0] || "9";
+                window.location.href = `../study-library.html?grade=${userGrade}&subject=${encodeURIComponent(subject)}`;
+            };
 
         window.loadStudentStats = async (uid, grade) => {
             if (!uid) return;
