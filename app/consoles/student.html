@@ -61,6 +61,7 @@
             const hubTitleEl = document.getElementById("knowledge-hub-title");
             if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
 
+            renderKnowledgeHub(profile);
             setupRoomNavigation(grade);
             await generateKnowledgeHub(profile, grade);
             await loadStudentStats(profile.uid, grade);
@@ -145,6 +146,66 @@ function setupRoomNavigation(grade) {
             // Header Start Button
             document.getElementById("start-new-quiz-btn").href = `../curriculum.html?grade=${grade}`;
             document.getElementById("btn-mistakes").href = `../mistake-book.html`;
+        }
+
+        function getSubjectIcon(subject) {
+            const icons = {
+                "Physics": "fa-atom",
+                "Chemistry": "fa-flask",
+                "Biology": "fa-dna",
+                "Mathematics": "fa-calculator",
+                "Applied Mathematics": "fa-calculator",
+                "Accountancy": "fa-file-invoice-dollar",
+                "Business Studies": "fa-briefcase",
+                "Economics": "fa-chart-line",
+                "History": "fa-landmark",
+                "Political Science": "fa-university",
+                "Geography": "fa-globe-americas",
+                "Sociology": "fa-users",
+                "Psychology": "fa-brain",
+                "Hindi": "fa-om",
+                "English": "fa-language",
+                "Science": "fa-microscope",
+                "Social Science": "fa-users-cog"
+            };
+            return icons[subject] || "fa-book";
+        }
+
+        function renderKnowledgeHub(profile) {
+            const linksContainer = document.getElementById("knowledge-hub-links");
+            if (!linksContainer) return;
+
+            let subjects = [];
+            if (profile.mapped_disciplines && profile.mapped_disciplines.length > 0) {
+                subjects = profile.mapped_disciplines;
+            } else {
+                subjects = ["Mathematics", "Science", "Social Science"];
+            }
+
+            linksContainer.innerHTML = "";
+            subjects.forEach((subject, index) => {
+                // Determine a nice color based on index
+                const colors = ["blue-500", "purple-500", "amber-500", "green-500", "red-500", "indigo-500"];
+                const color = colors[index % colors.length];
+
+                const card = document.createElement("a");
+                card.href = "#";
+                card.onclick = (e) => { e.preventDefault(); routeToLibrary(subject); };
+                card.className = `block glass-panel p-5 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition group relative overflow-hidden border-l-4 border-${color}`;
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-${color.replace("500", "50")} text-${color.replace("500", "600")} flex items-center justify-center text-xl">
+                            <i class="fas ${getSubjectIcon(subject)}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">${subject}</h4>
+                            <p class="text-[10px] text-slate-500 font-medium">Explore curriculum.</p>
+                        </div>
+                        <i class="fas fa-chevron-right ml-auto text-slate-300 group-hover:text-${color.replace("500", "500")} transition"></i>
+                    </div>
+                `;
+                linksContainer.appendChild(card);
+            });
         }
 
         window.routeToLibrary = (subject) => {
