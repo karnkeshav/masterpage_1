@@ -53,9 +53,13 @@
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get("grade")) grade = urlParams.get("grade");
             else if (profile.classId) grade = profile.classId;
+            else if (profile.grade) grade = profile.grade;
+            else if (profile.class_id) grade = profile.class_id;
 
             document.getElementById("class-title").textContent = `Class ${grade} Hub`;
             document.getElementById("context-badge").textContent = `Grade ${grade}`;
+            const hubTitleEl = document.getElementById("knowledge-hub-title");
+            if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
 
             setupRoomNavigation(grade);
             await loadStudentStats(profile.uid, grade);
@@ -87,9 +91,19 @@
                     getDocs(q),
                     loadCurriculum(grade).catch(e => {
                         console.error("Curriculum load failed:", e);
-                        return {};
+                        return null;
                     })
                 ]);
+
+                if (!curriculum || Object.keys(curriculum).length === 0) {
+                    const hubTitleEl = document.getElementById("knowledge-hub-title");
+                    if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
+                    document.getElementById("knowledge-hub-links").innerHTML = `
+                        <div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">
+                            Curriculum Coming Soon
+                        </div>
+                    `;
+                }
 
                 // --- METRIC: Curriculum Totals ---
                 const curriculumCounts = { "Mathematics": 0, "Science": 0, "Social Science": 0 };
@@ -952,10 +966,10 @@
             <div class="lg:col-span-1 space-y-6">
                 <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2">
                     <span class="w-2 h-6 bg-accent-gold rounded-full"></span>
-                    Knowledge Hub
+                    <span id="knowledge-hub-title">Knowledge Hub</span>
                 </h3>
 
-                <div class="space-y-4">
+                <div class="space-y-4" id="knowledge-hub-links">
                     <a href="#" onclick="routeToLibrary('Mathematics'); return false;"
                         class="block glass-panel p-5 rounded-3xl hover:shadow-lg hover:-translate-y-1 transition group relative overflow-hidden border-l-4 border-blue-500">
                         <div class="flex items-center gap-4">
