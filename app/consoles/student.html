@@ -74,7 +74,8 @@
         }
 
         window.routeToLibrary = (subject) => {
-            const grade = new URLSearchParams(window.location.search).get("grade") || "9";
+            const gradeBadge = document.getElementById("context-badge").textContent;
+            const grade = gradeBadge.replace("Grade ", "").trim() || "9";
             window.location.href = `../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
         };
 
