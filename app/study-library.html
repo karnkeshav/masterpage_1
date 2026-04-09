@@ -33,37 +33,39 @@
         import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
         import { bindConsoleLogout } from "../js/guard.js";
         import * as UI from "../js/ui-renderer.js";
+        import { loadCurriculum } from "../js/curriculum/loader.js";
 
         UI.injectStyles();
         bindConsoleLogout("logout-nav-btn", "../index.html");
 
-        // Mock Curriculum Data (In production, fetch from Firestore curriculum collection)
-        const CURRICULUM = {
-            "Mathematics": ["Number Systems", "Polynomials", "Coordinate Geometry", "Linear Equations", "Euclid Geometry", "Lines and Angles", "Triangles", "Quadrilaterals", "Circles", "Heron Formula", "Surface Areas", "Statistics", "Probability"],
-            "Science": ["Matter in Our Surroundings", "Is Matter Around Us Pure", "Atoms and Molecules", "Structure of the Atom", "The Fundamental Unit of Life", "Tissues", "Motion", "Force and Laws of Motion", "Gravitation", "Work and Energy", "Sound", "Improvement in Food Resources"],
-            "Social Science": ["The French Revolution", "Socialism in Europe", "Nazism and the Rise of Hitler", "Forest Society and Colonialism", "India - Size and Location", "Physical Features of India", "Drainage", "Climate", "Natural Vegetation", "Population", "What is Democracy", "Constitutional Design", "Electoral Politics", "Working of Institutions", "Democratic Rights", "The Story of Village Palampur", "People as Resource", "Poverty as a Challenge", "Food Security in India"]
-        };
-
         const params = new URLSearchParams(window.location.search);
-        const grade = params.get("grade") || "9";
+        const grade = params.get("grade"); // Let it be null if not in URL, we will use profile
         const preSelectedSubject = params.get("subject");
 
         // Init
         initializeAuthListener(async (user) => {
             if (user) {
-                document.getElementById("user-welcome").textContent = user.displayName || "Scholar";
-                document.getElementById("context-badge").textContent = `Grade ${grade}`;
-                renderLibrary();
+                // Fetch full profile from Firestore to get the real displayName and classId
+                const profile = await ensureUserInFirestore(user);
+                const displayName = profile?.displayName || user.email.split('+')[1]?.split('@')[0] || "Scholar";
+                const userGrade = grade || profile?.classId || "9";
+
+                document.getElementById("user-welcome").textContent = displayName;
+                document.getElementById("context-badge").textContent = `Grade ${userGrade}`;
+
+                // Pass the loaded curriculum to the renderer
+                const curriculum = await loadCurriculum(userGrade);
+                renderLibrary(curriculum);
             } else {
                 window.location.href = "../index.html";
             }
         });
 
-        function renderLibrary() {
+        function renderLibrary(curriculum) {
             const container = document.getElementById("library-container");
             container.innerHTML = "";
 
-            Object.entries(CURRICULUM).forEach(([subject, chapters]) => {
+            Object.entries(curriculum).forEach(([subject, chapters]) => {
                 // If a subject is pre-selected via URL, skip others
                 if (preSelectedSubject && subject !== preSelectedSubject) return;
 

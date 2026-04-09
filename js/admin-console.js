@@ -1,7 +1,7 @@
 import { getInitializedClients } from "./config.js";
 import { guardConsole, bindConsoleLogout } from "./guard.js";
 import { loadCurriculum } from "./curriculum/loader.js";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, arrayRemove, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
@@ -1064,45 +1064,7 @@ window.assignTeacherToSection = async (teacherUid, grade, section, discipline) =
 
 // --- TASK 3: VIP OBSERVABILITY DASHBOARD ---
 
-
-window.deleteStudent = async (studentUid, name) => {
-    if (!confirm(`Are you sure you want to permanently delete student ${name}? This will also unlink them from their parent.`)) return;
-
-    try {
-        const { db } = await getInitializedClients();
-        const studentRef = doc(db, 'users', studentUid);
-        const studentSnap = await getDoc(studentRef);
-
-        if (studentSnap.exists()) {
-            const studentData = studentSnap.data();
-            const parentId = studentData.parent_id;
-
-            if (parentId) {
-            if (parentId) {
-                // Remove student from parent's linked_children array
-                try {
-                    const parentRef = doc(db, 'users', parentId);
-                    await updateDoc(parentRef, {
-                        linked_children: arrayRemove(studentUid),
-                        updated_at: serverTimestamp()
-                    });
-                } catch (unlinkErr) {
-                    console.warn("Could not unlink from parent (may already be deleted):", unlinkErr);
-                }
-            }
-        }
-
-        // Delete the student record
-        await deleteDoc(studentRef);
-        alert('Student deleted successfully.');
-    } catch (error) {
-        console.error("Failed to delete student:", error);
-        alert("Failed to delete student: " + error.message);
-    }
-};
-
 window.deleteUser = async (userId, displayName) => {
-
     if (!confirm(`Are you sure you want to delete "${displayName}"? This removes their Firestore profile. Firebase Auth account must be deleted separately from Firebase Console.`)) return;
     try {
         const { db } = await getInitializedClients();
