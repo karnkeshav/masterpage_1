@@ -471,12 +471,20 @@ window.showAddModal = async (role, grade = '', section = '') => {
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Grade</label>
-                    <input type="text" id="modal-grade" value="${grade}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${grade ? 'readonly' : ''}>
+                    <input type="text" id="modal-grade" value="${grade}" oninput="window.toggleStreamField()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${grade ? 'readonly' : ''}>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
                     <input type="text" id="modal-section" value="${section}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${section ? 'readonly' : ''}>
                 </div>
+            </div>
+            <div id="stream-container" class="${(grade == '11' || grade == '12') ? '' : 'hidden'}">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stream Selection</label>
+                <select id="modal-stream" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                    <option value="Science">Science</option>
+                    <option value="Commerce">Commerce</option>
+                    <option value="Humanities">Humanities</option>
+                </select>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Parent (Parent Email)</label>
@@ -556,6 +564,19 @@ window.showAddModal = async (role, grade = '', section = '') => {
     `;
 };
 
+window.toggleStreamField = () => {
+    const gradeInput = document.getElementById('modal-grade');
+    const streamContainer = document.getElementById('stream-container');
+    if (!gradeInput || !streamContainer) return;
+
+    const val = String(gradeInput.value).trim();
+    if (val === '11' || val === '12') {
+        streamContainer.classList.remove('hidden');
+    } else {
+        streamContainer.classList.add('hidden');
+    }
+};
+
 window.closeAddModal = () => {
     const mc = document.getElementById('modal-container');
     if(mc) mc.innerHTML = '';
@@ -614,6 +635,13 @@ window.submitAddModal = async (role) => {
         payload.class_id = g;
         payload.section = s;
         payload.section_id = `${g}-${s}`;
+
+        if (g === '11' || g === '12') {
+            const streamEl = document.getElementById('modal-stream');
+            if (streamEl) {
+                payload.stream = streamEl.value;
+            }
+        }
 
         if (parentEmail) {
             try {
@@ -942,9 +970,10 @@ function renderBucket(elementId, users, type) {
 
         if (type === 'student') {
             const parentText = u.parent_id ? `<span class="text-slate-700 font-mono text-[10px] bg-slate-100 px-2 py-1 rounded border border-slate-200">${u.parent_id}</span>` : `<span class="text-danger-red text-xs font-bold">Unlinked</span>`;
+            const streamBadge = u.stream ? `<span class="ml-2 text-[9px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200">[${u.stream}]</span>` : '';
             return `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="p-2 font-bold text-slate-700">${nameOrEmail}</td>
+                    <td class="p-2 font-bold text-slate-700">${nameOrEmail}${streamBadge}</td>
                     <td class="p-2">${parentText}</td>
                     <td class="p-2 text-right">
                         <div class="flex gap-1 justify-end flex-wrap items-center">
