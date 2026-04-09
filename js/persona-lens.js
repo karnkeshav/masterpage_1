@@ -7,6 +7,8 @@ export function initPersonaLens() {
     lens.innerHTML = `
         <div class="text-[10px] font-black uppercase text-center text-slate-400 tracking-widest mb-1 border-b border-slate-700 pb-1">Master Lens</div>
         <button onclick="window.location.href='/app/consoles/student.html?grade=9'" class="lens-btn bg-emerald-600">Student (9)</button>
+        <button onclick="window.location.href='/app/consoles/student.html?grade=10'" class="lens-btn bg-teal-600">Student (10)</button>
+        <button onclick="window.location.href='/app/consoles/student.html?grade=12'" class="lens-btn bg-cyan-600">Student (12)</button>
         <button onclick="window.location.href='/app/consoles/teacher.html'" class="lens-btn bg-blue-600">Teacher</button>
         <button onclick="window.location.href='/app/consoles/principal.html'" class="lens-btn bg-purple-600">Principal</button>
         <button onclick="window.location.href='/app/consoles/admin.html'" class="lens-btn bg-slate-600">Admin (IAM)</button>
