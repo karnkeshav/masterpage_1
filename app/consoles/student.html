@@ -77,7 +77,7 @@
             const gradeBadge = document.getElementById("context-badge").textContent;
             const grade = gradeBadge.replace("Grade ", "").trim();
 
-            if (!grade) {
+            if (!grade || grade === "undefined") {
                 console.error("Grade not found in context badge.");
                 return;
             }
