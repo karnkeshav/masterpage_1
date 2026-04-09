@@ -467,21 +467,6 @@ window.showAddModal = async (role, grade = '', section = '') => {
     let extraFields = '';
 
     if (role === 'student') {
-        let discHtml = '';
-        if (grade === '11' || grade === '12') {
-            schoolDisciplines.forEach(d => {
-                discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="student-disc-cb"> <span>${d}</span></label>`;
-            });
-            discHtml = `
-                <div class="col-span-2 mt-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Subjects / Disciplines (Grades 11/12)</label>
-                    <div class="grid grid-cols-2 gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
-                        ${discHtml}
-                    </div>
-                </div>
-            `;
-        }
-
         extraFields = `
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -492,8 +477,21 @@ window.showAddModal = async (role, grade = '', section = '') => {
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
                     <input type="text" id="modal-section" value="${section}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue" ${section ? 'readonly' : ''}>
                 </div>
-                ${discHtml}
             </div>
+
+            <div id="stream-container" class="${(grade === '11' || grade === '12') ? '' : 'hidden'} mt-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Stream</label>
+                <select id="modal-stream" onchange="window.updateSubjectOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                    <option value="">-- Select Stream --</option>
+                    <option value="Science">Science</option>
+                    <option value="Commerce">Commerce</option>
+                    <option value="Humanities">Humanities</option>
+                </select>
+            </div>
+
+            <div id="subject-selection-container" class="mt-4 hidden space-y-2">
+            </div>
+
             <div class="mt-4">
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Parent (Parent Email)</label>
                 <input type="email" id="modal-parent" placeholder="Optional parent email..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none focus:border-cbse-blue">
@@ -602,33 +600,32 @@ window.updateSubjectOptions = () => {
 
     if (stream === 'Science') {
         html += `
-            <p class="font-bold text-slate-700 mb-1">Mandatory Subjects:</p>
-            <p class="text-xs text-slate-500 mb-3">Physics, Chemistry, English</p>
-            <p class="font-bold text-slate-700 mb-1">Options:</p>
-            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="checkbox" value="Mathematics" class="student-subject-cb"> <span>Mathematics</span></label>
-            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="checkbox" value="Biology" class="student-subject-cb"> <span>Biology</span></label>
+            <p class="font-bold text-slate-700 text-xs mb-1">Core: Physics, Chemistry, English</p>
+            <p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Select Options:</p>
+            <div class="flex gap-4">
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Mathematics" class="student-subject-cb"> <span>Mathematics</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Biology" class="student-subject-cb"> <span>Biology</span></label>
+            </div>
         `;
     } else if (stream === 'Commerce') {
         html += `
-            <p class="font-bold text-slate-700 mb-1">Mandatory Subjects:</p>
-            <p class="text-xs text-slate-500 mb-3">Accountancy, Business Studies, Economics, English</p>
-            <p class="font-bold text-slate-700 mb-1">Options (Select one or none):</p>
-            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="radio" name="commerce-opt" value="Mathematics" class="student-subject-radio"> <span>Mathematics</span></label>
-            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="radio" name="commerce-opt" value="Applied Mathematics" class="student-subject-radio"> <span>Applied Mathematics</span></label>
-            <label class="flex items-center space-x-2 text-xs text-slate-600 mb-1"><input type="radio" name="commerce-opt" value="" class="student-subject-radio" checked> <span>No Maths</span></label>
+            <p class="font-bold text-slate-700 text-xs mb-1">Core: Accountancy, Business Studies, Economics, English</p>
+            <p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Select Math Option:</p>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="radio" name="comm-math" value="Mathematics" class="student-subject-radio"> <span>Mathematics</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="radio" name="comm-math" value="Applied Mathematics" class="student-subject-radio"> <span>Applied Maths</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="radio" name="comm-math" value="" class="student-subject-radio" checked> <span>None</span></label>
+            </div>
         `;
     } else if (stream === 'Humanities') {
         html += `
-            <p class="font-bold text-slate-700 mb-1">Mandatory Subjects:</p>
-            <p class="text-xs text-slate-500 mb-3">English</p>
-            <p class="font-bold text-slate-700 mb-1">Options (Multi-select):</p>
+            <p class="font-bold text-slate-700 text-xs mb-1">Core: English</p>
+            <p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Select Electives:</p>
             <div class="grid grid-cols-2 gap-2">
                 <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="History" class="student-subject-cb"> <span>History</span></label>
-                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Political Science" class="student-subject-cb"> <span>Political Science</span></label>
+                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Political Science" class="student-subject-cb"> <span>Pol. Science</span></label>
                 <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Geography" class="student-subject-cb"> <span>Geography</span></label>
                 <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Sociology" class="student-subject-cb"> <span>Sociology</span></label>
-                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Psychology" class="student-subject-cb"> <span>Psychology</span></label>
-                <label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="Hindi" class="student-subject-cb"> <span>Hindi</span></label>
             </div>
         `;
     }
@@ -683,14 +680,6 @@ window.submitAddModal = async (role) => {
         const g = document.getElementById('modal-grade').value.trim();
         const s = document.getElementById('modal-section').value.trim();
 
-        let mapped_disciplines = [];
-        if (g === '11' || g === '12') {
-            const cbNodes = document.querySelectorAll('.student-disc-cb:checked');
-            cbNodes.forEach(n => mapped_disciplines.push(n.value));
-        }
-        if (mapped_disciplines.length > 0) {
-            payload.mapped_disciplines = mapped_disciplines;
-        }
         const parentEmailInput = document.getElementById('modal-parent').value.trim();
         const parentEmail = parentEmailInput ? (parentEmailInput.includes('@')
             ? parentEmailInput
@@ -710,24 +699,20 @@ window.submitAddModal = async (role) => {
                 payload.stream = streamEl.value;
                 const selectedSubjects = [];
 
-                if (payload.stream === 'Science') {
-                    selectedSubjects.push('Physics', 'Chemistry', 'English');
-                } else if (payload.stream === 'Commerce') {
-                    selectedSubjects.push('Accountancy', 'Business Studies', 'Economics', 'English');
-                } else if (payload.stream === 'Humanities') {
-                    selectedSubjects.push('English');
-                }
+                // Add core subjects based on stream
+                if (payload.stream === 'Science') selectedSubjects.push('Physics', 'Chemistry', 'English');
+                else if (payload.stream === 'Commerce') selectedSubjects.push('Accountancy', 'Business Studies', 'Economics', 'English');
+                else if (payload.stream === 'Humanities') selectedSubjects.push('English');
 
-                const cbs = document.querySelectorAll('#subject-selection-container .student-subject-cb:checked');
-                cbs.forEach(cb => selectedSubjects.push(cb.value));
+                // Add checked checkboxes
+                document.querySelectorAll('.student-subject-cb:checked').forEach(cb => selectedSubjects.push(cb.value));
 
-                const radio = document.querySelector('#subject-selection-container .student-subject-radio:checked');
-                if (radio && radio.value) {
-                    selectedSubjects.push(radio.value);
-                }
+                // Add selected radio button
+                const radio = document.querySelector('.student-subject-radio:checked');
+                if (radio && radio.value) selectedSubjects.push(radio.value);
 
                 payload.selected_subjects = selectedSubjects;
-                payload.mapped_disciplines = selectedSubjects; // Keep for Knowledge Hub rendering
+                payload.mapped_disciplines = selectedSubjects; // Aligning with Knowledge Hub
             }
         }
 
