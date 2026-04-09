@@ -1080,7 +1080,8 @@ window.deleteStudent = async (studentUid, name) => {
                 // Remove student from parent's linked_children array
                 const parentRef = doc(db, 'users', parentId);
                 await updateDoc(parentRef, {
-                    linked_children: arrayRemove(studentUid)
+                    linked_children: arrayRemove(studentUid),
+                    updated_at: serverTimestamp()
                 });
             }
         }
