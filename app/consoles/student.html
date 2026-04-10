@@ -63,6 +63,10 @@
 
             renderKnowledgeHub(profile);
             setupRoomNavigation(grade);
+            if (grade === "10" || grade === "12") {
+                const pyqBtn = document.getElementById("btn-pyq-vault");
+                if (pyqBtn) pyqBtn.classList.remove("hidden");
+            }
             await generateKnowledgeHub(profile, grade);
             await loadStudentStats(profile.uid, grade);
             renderInbox();
@@ -934,6 +938,10 @@ function setupRoomNavigation(grade) {
             <a id="start-new-quiz-btn" href="#"
                 class="peel-back-anim px-6 py-3 bg-cbse-blue text-white font-black uppercase text-xs rounded-xl hover:shadow-xl hover:shadow-blue-900/20 transition flex items-center gap-2">
                 Start New Quiz <i class="fas fa-arrow-right"></i>
+            </a>
+            <a id="btn-pyq-vault" href="../pyq.html"
+                class="hidden peel-back-anim px-6 py-3 bg-accent-gold text-cbse-blue font-black uppercase text-xs rounded-xl hover:shadow-lg transition flex items-center gap-2">
+                <b>Previous year question paper</b>
             </a>
         </div>
 

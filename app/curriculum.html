@@ -39,19 +39,33 @@
         import { initializeAuthListener } from "../js/auth-paywall.js";
         import { injectStyles } from "../js/ui-renderer.js";
         import { getInitializedClients } from "../js/config.js";
-        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Inject shared styles (glass-panel, etc.)
         injectStyles();
 
-        window.loadSubjects = async () => {
+        window.loadSubjects = async (user) => {
             const params = new URLSearchParams(window.location.search);
             const grade = params.get("grade") || "9";
 
             document.getElementById("grade-display").textContent = `Class ${grade}`;
 
             // Render Subject Buttons
-            const subjects = ["Science", "Mathematics", "Social Science", "English"];
+            let subjects = ["Science", "Mathematics", "Social Science", "English"];
+            if (user && (grade === "11" || grade === "12")) {
+                try {
+                    const { db } = await getInitializedClients();
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const profile = userDoc.data();
+                        if (profile.mapped_disciplines && Array.isArray(profile.mapped_disciplines) && profile.mapped_disciplines.length > 0) {
+                            subjects = profile.mapped_disciplines;
+                        }
+                    }
+                } catch(e) {
+                    console.error("Error fetching user profile", e);
+                }
+            }
 
             const container = document.getElementById("subject-grid");
             container.innerHTML = subjects.map(sub => `
@@ -205,7 +219,7 @@
         // Init
         initializeAuthListener((user) => {
             // 1. Render Subject Grid (Public)
-            loadSubjects();
+            loadSubjects(user);
 
             // 2. Render Mastery Milestones (Private)
             if (user) {
