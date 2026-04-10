@@ -46,7 +46,7 @@ def verify_enterprise():
         # TEST 1: Open Entry (No Login Wall)
         # ---------------------------------------------------------
         context = browser.new_context(viewport={'width': 1280, 'height': 800})
-        context.route("**/cbse/class-9/js/auth-paywall.js", lambda route: route.fulfill(
+        context.route("**/js/auth-paywall.js", lambda route: route.fulfill(
             status=200, content_type="application/javascript", body=AUTH_MOCK_NULL
         ))
 
@@ -77,7 +77,7 @@ def verify_enterprise():
         # TEST 2: Demo Access (School Portal)
         # ---------------------------------------------------------
         context_demo = browser.new_context(viewport={'width': 1280, 'height': 800})
-        context_demo.route("**/cbse/class-9/js/auth-paywall.js", lambda route: route.fulfill(
+        context_demo.route("**/js/auth-paywall.js", lambda route: route.fulfill(
             status=200, content_type="application/javascript", body=AUTH_MOCK_DEMO
         ))
 
@@ -109,7 +109,7 @@ def verify_enterprise():
         # TEST 3: Master Persona Lens
         # ---------------------------------------------------------
         context_master = browser.new_context(viewport={'width': 1280, 'height': 800})
-        context_master.route("**/cbse/class-9/js/auth-paywall.js", lambda route: route.fulfill(
+        context_master.route("**/js/auth-paywall.js", lambda route: route.fulfill(
             status=200, content_type="application/javascript", body=AUTH_MOCK_MASTER
         ))
 

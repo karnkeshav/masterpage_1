@@ -30,7 +30,7 @@ def verify_propagation():
         # ---------------------------------------------------------
         context_admin = browser.new_context(viewport={'width': 1280, 'height': 800})
         # Mock Auth as Admin
-        context_admin.route("**/cbse/class-9/js/auth-paywall.js", lambda route: route.fulfill(
+        context_admin.route("**/js/auth-paywall.js", lambda route: route.fulfill(
             status=200, content_type="application/javascript", body=AUTH_MOCK_ADMIN
         ))
 
@@ -62,7 +62,7 @@ def verify_propagation():
         # ---------------------------------------------------------
         context_student = browser.new_context(viewport={'width': 1280, 'height': 800})
         # Mock Auth as Student
-        context_student.route("**/cbse/class-9/js/auth-paywall.js", lambda route: route.fulfill(
+        context_student.route("**/js/auth-paywall.js", lambda route: route.fulfill(
             status=200, content_type="application/javascript", body=AUTH_MOCK_STUDENT
         ))
         # Mock Class 11 specific auth/quiz if needed, but we rely on propagation

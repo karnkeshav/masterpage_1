@@ -90,7 +90,7 @@ def verify_school_portal():
 
         # TEST 2: Student Console (No Redirect)
         context2 = browser.new_context(viewport={'width': 1280, 'height': 800})
-        context2.route("**/cbse/class-9/js/auth-paywall.js", lambda route: route.fulfill(
+        context2.route("**/js/auth-paywall.js", lambda route: route.fulfill(
             status=200, content_type="application/javascript", body=AUTH_MOCK_STUDENT
         ))
         # Mock UI Renderer for showSkeleton
@@ -120,7 +120,7 @@ def verify_school_portal():
 
         # TEST 3: Principal Dashboard Heatmap
         context3 = browser.new_context(viewport={'width': 1280, 'height': 800})
-        context3.route("**/cbse/class-9/js/auth-paywall.js", lambda route: route.fulfill(
+        context3.route("**/js/auth-paywall.js", lambda route: route.fulfill(
             status=200, content_type="application/javascript", body=AUTH_MOCK_PRINCIPAL
         ))
 
