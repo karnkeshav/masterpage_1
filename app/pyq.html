@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PYQ Vault — Ready4Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        'cbse-blue': '#1a3e6a',
+                        'cbse-light': '#f5f7fa',
+                        'accent-gold': '#ffb703',
+                        'success-green': '#16a34a',
+                        'warning-yellow': '#ca8a04',
+                        'danger-red': '#dc2626'
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+    </style>
+
+    <script src="../js/firebase-master-config.js"></script>
+    <script src="../js/config.js" type="module"></script>
+
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col font-sans">
+    <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <a href="../index.html"
+                class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
+            <div>
+                <h2 id="class-title" class="text-xl font-black  leading-none tracking-tight text-accent-gold">PYQ Vault
+                </h2>
+                <p class="text-[10px]  font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <div class="hidden md:flex flex-col items-end mr-2">
+                <span id="user-welcome" class="text-xs font-bold text-white">Student</span>
+                <span id="context-badge"
+                    class="text-[10px] font-black text-accent-gold bg-cbse-blue px-2 py-0.5 rounded uppercase tracking-wide">Grade
+                    --</span>
+            </div>
+            <button id="logout-nav-btn"
+                class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">🚪</button>
+        </div>
+    </header>
+
+    <div id="loading" class="flex items-center justify-center flex-grow py-20">
+        <div class="animate-pulse font-bold text-slate-400">Verifying Vault Access...</div>
+    </div>
+
+    <div id="app" class="hidden max-w-6xl mx-auto w-full p-4 md:p-8 fade-in flex-grow">
+        <!-- Strategic Hero: Mastery Gauge & Search -->
+        <div class="mb-8">
+            <div class="glass-panel p-6 md:p-8 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm border border-slate-200">
+                <div class="flex-1 w-full">
+                    <h3 class="font-black text-slate-900 text-2xl mb-1">Previous Year Question Vault</h3>
+                    <p class="text-sm font-medium text-slate-500 mb-4">Master the patterns of the past decade.</p>
+                    <!-- Mastery Gauge -->
+                    <div class="bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-indigo-50 text-cbse-blue flex items-center justify-center text-xl shadow-inner">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Decade Coverage</span>
+                                <span class="text-lg font-black text-slate-800" id="mastery-percentage">0%</span>
+                            </div>
+                            <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div id="mastery-bar" class="h-full bg-cbse-blue rounded-full transition-all duration-1000" style="width: 0%"></div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1" id="mastery-text">You have explored 0% of the last 10 years papers</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 w-full flex flex-col gap-3">
+                    <!-- Search within Papers -->
+                    <div class="relative w-full">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-slate-400"></i>
+                        </div>
+                        <input type="text" id="vault-search" class="w-full pl-10 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-cbse-blue focus:border-transparent transition-all shadow-sm placeholder-slate-400" placeholder="Search topics, questions, or keywords...">
+                    </div>
+                    <!-- Heatmap Toggle -->
+                    <button id="toggle-heatmap" class="w-full py-3 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 border border-amber-200 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:shadow-md transition-all active:scale-95">
+                        <i class="fas fa-fire text-orange-500"></i>
+                        <span>Toggle Priority Heatmap</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Year Ribbon -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide" id="year-ribbon">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- Filter Matrix -->
+        <div class="mb-8 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            <!-- Subject Pills -->
+            <div class="w-full md:w-auto">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Subject Filter</span>
+                <div class="flex flex-wrap gap-2" id="subject-filters">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-4 w-full md:w-auto">
+                <!-- Paper Type Selector -->
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Paper Type</span>
+                    <select id="filter-type" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg focus:ring-cbse-blue focus:border-cbse-blue block w-full p-2 outline-none appearance-none pr-8 relative">
+                        <option value="all">All Types</option>
+                        <option value="board">Board Final</option>
+                        <option value="marking">Marking Scheme</option>
+                        <option value="compartment">Compartment</option>
+                    </select>
+                </div>
+
+                <!-- Set Selector -->
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Set Selector</span>
+                    <select id="filter-set" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg focus:ring-cbse-blue focus:border-cbse-blue block w-full p-2 outline-none appearance-none pr-8 relative">
+                        <option value="all">All Sets</option>
+                        <option value="1">Set 1</option>
+                        <option value="2">Set 2</option>
+                        <option value="3">Set 3</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Grid -->
+        <div>
+            <h3 class="font-bold text-slate-900 text-lg mb-4 flex items-center gap-2">
+                <span class="w-2 h-6 bg-cbse-blue rounded-full"></span>
+                Premium Document Vault
+            </h3>
+            <div id="pdf-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Injected via JS -->
+            </div>
+            <div id="no-pyq-msg" class="hidden text-center py-12">
+                <div class="w-20 h-20 mx-auto bg-slate-100 rounded-full flex items-center justify-center text-slate-300 text-3xl mb-4">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <h3 class="text-slate-500 font-bold">No Documents Found</h3>
+                <p class="text-slate-400 text-sm mt-1">Try adjusting your filters.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
+        <p>© 2025 Ready4Exam Academic Portal.</p>
+    </footer>
+
+<script type="module">
+import { guardConsole, bindConsoleLogout } from "../js/guard.js";
+import { getInitializedClients } from "../js/config.js";
+import { collection, query, where, getDocs, orderBy, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import * as UI from "../js/ui-renderer.js";
+import { loadCurriculum } from "../js/curriculum/loader.js";
+
+UI.injectStyles();
+bindConsoleLogout("logout-nav-btn", "../index.html");
+guardConsole("student");
+
+let currentVaultData = [];
+let activeYear = "All";
+let activeSubject = "All";
+let activeType = "all";
+let activeSet = "all";
+let searchQuery = "";
+let isHeatmapActive = false;
+
+window.loadConsoleData = async (profile) => {
+    console.log("Loading PYQ Vault for:", profile.displayName);
+    document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
+
+    let grade = "9";
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("grade")) grade = urlParams.get("grade");
+    else if (profile.classId) grade = profile.classId;
+    else if (profile.grade) grade = profile.grade;
+    else if (profile.class_id) grade = profile.class_id;
+
+    document.getElementById("context-badge").textContent = `Grade ${grade}`;
+
+    // Initialize UI Elements
+    setupYearRibbon();
+    setupSubjectFilters(profile, grade);
+    setupEventListeners();
+
+    await loadPyqVault(grade, "All");
+};
+
+function setupYearRibbon() {
+    const container = document.getElementById("year-ribbon");
+    container.innerHTML = "";
+
+    // "All Years" pill
+    const allPill = document.createElement("button");
+    allPill.className = `year-pill px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap bg-cbse-blue text-white shadow-md`;
+    allPill.textContent = "All Years";
+    allPill.onclick = () => filterByYear("All", allPill);
+    container.appendChild(allPill);
+
+    for (let year = 2026; year >= 2015; year--) {
+        const pill = document.createElement("button");
+        pill.className = `year-pill px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-white border border-slate-200 hover:border-cbse-blue hover:text-cbse-blue transition-all whitespace-nowrap shadow-sm`;
+        pill.textContent = year;
+        pill.onclick = () => filterByYear(year.toString(), pill);
+        container.appendChild(pill);
+    }
+}
+
+async function setupSubjectFilters(profile, grade) {
+    const container = document.getElementById("subject-filters");
+    container.innerHTML = "";
+
+    let subjects = ["Science", "Mathematics", "Social Science", "English"]; // Default Fallback
+
+    // Try to load dynamic curriculum to know valid subjects
+    try {
+        const curriculum = await loadCurriculum(grade);
+        if(curriculum) subjects = Object.keys(curriculum);
+    } catch(e) {
+        console.log("Using default subjects");
+    }
+
+    if (profile && profile.mapped_disciplines && profile.mapped_disciplines.length > 0) {
+        subjects = profile.mapped_disciplines;
+    }
+
+    // Add "All Subjects" pill
+    const allPill = document.createElement("button");
+    allPill.className = `subject-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-cbse-blue text-white shadow-sm`;
+    allPill.textContent = "All Subjects";
+    allPill.onclick = () => filterBySubject("All", allPill);
+    container.appendChild(allPill);
+
+    subjects.forEach(subject => {
+        const pill = document.createElement("button");
+        pill.className = `subject-pill px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all shadow-sm`;
+        pill.textContent = subject;
+        pill.onclick = () => filterBySubject(subject, pill);
+        container.appendChild(pill);
+    });
+}
+
+function setupEventListeners() {
+    document.getElementById("filter-type").addEventListener("change", (e) => {
+        activeType = e.target.value;
+        renderGrid();
+    });
+
+    document.getElementById("filter-set").addEventListener("change", (e) => {
+        activeSet = e.target.value;
+        renderGrid();
+    });
+
+    document.getElementById("vault-search").addEventListener("input", (e) => {
+        searchQuery = e.target.value.toLowerCase();
+        renderGrid();
+    });
+
+    const heatmapBtn = document.getElementById("toggle-heatmap");
+    heatmapBtn.addEventListener("click", () => {
+        isHeatmapActive = !isHeatmapActive;
+        if(isHeatmapActive) {
+            heatmapBtn.classList.add("ring-2", "ring-orange-400", "scale-95");
+        } else {
+            heatmapBtn.classList.remove("ring-2", "ring-orange-400", "scale-95");
+        }
+        renderGrid();
+    });
+}
+
+function filterByYear(year, clickedPill) {
+    activeYear = year;
+    document.querySelectorAll(".year-pill").forEach(p => {
+        p.classList.remove("bg-cbse-blue", "text-white", "shadow-md");
+        p.classList.add("bg-white", "text-slate-500", "border", "border-slate-200");
+    });
+    clickedPill.classList.remove("bg-white", "text-slate-500", "border", "border-slate-200");
+    clickedPill.classList.add("bg-cbse-blue", "text-white", "shadow-md");
+    renderGrid();
+}
+
+function filterBySubject(subject, clickedPill) {
+    activeSubject = subject;
+    document.querySelectorAll(".subject-pill").forEach(p => {
+        p.classList.remove("bg-cbse-blue", "text-white", "shadow-sm");
+        p.classList.add("bg-slate-50", "text-slate-500", "border", "border-slate-200");
+    });
+    clickedPill.classList.remove("bg-slate-50", "text-slate-500", "border", "border-slate-200");
+    clickedPill.classList.add("bg-cbse-blue", "text-white", "shadow-sm");
+    renderGrid();
+}
+
+
+async function loadPyqVault(grade, subject) {
+    const appDiv = document.getElementById("app");
+    appDiv.classList.remove("hidden");
+    document.getElementById("loading").classList.add("hidden");
+
+    try {
+        const db = window.firebaseDb; // from config.js
+        let q;
+        if (subject && subject !== "All") {
+             q = query(collection(db, "pyq_vault"), where("grade", "==", grade.toString()), where("subject", "==", subject));
+        } else {
+             q = query(collection(db, "pyq_vault"), where("grade", "==", grade.toString()));
+        }
+
+        const snapshot = await getDocs(q);
+
+        currentVaultData = [];
+        snapshot.forEach(doc => {
+            currentVaultData.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Mock data if empty for demonstration of layout
+        if (currentVaultData.length === 0) {
+            console.log("No real PYQ data found, injecting mock data for UI demo.");
+            currentVaultData = [
+                { id: "mock1", year: "2023", subject: "Science", type: "board", set: "1", title: "CBSE Class 10 Science Final", url: "#", priority: 90, solved: true },
+                { id: "mock2", year: "2023", subject: "Mathematics", type: "board", set: "2", title: "CBSE Class 10 Math Final", url: "#", priority: 85, solved: false },
+                { id: "mock3", year: "2022", subject: "Science", type: "compartment", set: "1", title: "Class 10 Sci Compartment", url: "#", priority: 60, solved: false },
+                { id: "mock4", year: "2021", subject: "Social Science", type: "marking", set: "3", title: "Class 10 SST Marking Scheme", url: "#", priority: 40, solved: true },
+            ];
+        }
+
+        updateMasteryGauge();
+        renderGrid();
+
+    } catch (error) {
+        console.error("Error fetching PYQ Vault:", error);
+        UI.showToast("Failed to load vault data", "error");
+    }
+}
+
+function updateMasteryGauge() {
+    // Calculate unique years covered in current data vs total decade (10)
+    const uniqueYears = new Set(currentVaultData.map(d => d.year)).size;
+    let percentage = Math.min(Math.round((uniqueYears / 10) * 100), 100);
+
+    document.getElementById("mastery-percentage").textContent = `${percentage}%`;
+    document.getElementById("mastery-bar").style.width = `${percentage}%`;
+    document.getElementById("mastery-text").textContent = `You have explored ${percentage}% of the last 10 years papers`;
+}
+
+function renderGrid() {
+    const grid = document.getElementById("pdf-grid");
+    const noMsg = document.getElementById("no-pyq-msg");
+    grid.innerHTML = "";
+
+    const filteredData = currentVaultData.filter(item => {
+        const matchYear = activeYear === "All" || item.year === activeYear;
+        const matchSubject = activeSubject === "All" || item.subject === activeSubject;
+        const matchType = activeType === "all" || item.type === activeType;
+        const matchSet = activeSet === "all" || item.set === activeSet;
+        const matchSearch = searchQuery === "" ||
+            (item.title && item.title.toLowerCase().includes(searchQuery)) ||
+            (item.subject && item.subject.toLowerCase().includes(searchQuery));
+
+        return matchYear && matchSubject && matchType && matchSet && matchSearch;
+    });
+
+    if (filteredData.length === 0) {
+        grid.classList.add("hidden");
+        noMsg.classList.remove("hidden");
+        return;
+    }
+
+    grid.classList.remove("hidden");
+    noMsg.classList.add("hidden");
+
+    filteredData.forEach(item => {
+        const heatmapStyle = (isHeatmapActive && item.priority && item.priority > 80) ? "ring-2 ring-orange-400 shadow-orange-100" : "border-slate-100";
+        const typeLabel = item.type === 'board' ? 'Board Final' : (item.type === 'marking' ? 'Marking Scheme' : 'Compartment');
+
+        const cardHTML = `
+            <div class="group relative bg-white rounded-2xl border ${heatmapStyle} p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full overflow-hidden">
+                ${item.solved ? `
+                <div class="absolute -right-6 -top-6 w-16 h-16 bg-success-green/10 rounded-full flex items-end justify-start p-3">
+                    <i class="fas fa-check-circle text-success-green text-lg bg-white rounded-full"></i>
+                </div>
+                ` : ''}
+
+                ${isHeatmapActive && item.priority > 80 ? `
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-red-500"></div>
+                ` : ''}
+
+                <!-- Year Badge -->
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                    <span class="px-3 py-1 bg-indigo-50 text-cbse-blue text-xs font-black rounded-lg shadow-sm">${item.year}</span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded">${typeLabel}</span>
+                </div>
+
+                <!-- PDF Icon & Title -->
+                <div class="flex-grow flex flex-col items-center justify-center text-center py-4 group-hover:scale-105 transition-transform duration-300">
+                    <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 text-3xl mb-3 shadow-sm group-hover:bg-red-500 group-hover:text-white transition-colors relative">
+                        <i class="fas fa-file-pdf relative z-10"></i>
+                        <!-- Hover Peek Animation Effect -->
+                        <div class="absolute inset-0 bg-red-400 rounded-2xl opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-opacity" style="animation-duration: 2s;"></div>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm leading-tight mb-1 line-clamp-2">${item.title || "Document"}</h4>
+                    <p class="text-xs text-slate-500 font-medium">${item.subject} • Set ${item.set}</p>
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-4 pt-4 border-t border-slate-50 grid grid-cols-2 gap-2 relative z-10">
+                    <button class="py-2 text-xs font-bold text-slate-600 bg-slate-50 rounded-xl hover:bg-cbse-blue hover:text-white transition-colors">
+                        <i class="fas fa-eye mr-1"></i> Quick View
+                    </button>
+                    <button class="py-2 text-xs font-bold text-cbse-blue bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors">
+                        <i class="fas fa-download mr-1"></i> Offline
+                    </button>
+                </div>
+            </div>
+        `;
+        grid.insertAdjacentHTML('beforeend', cardHTML);
+    });
+}
+</script>
+</body>
+</html>
