@@ -132,17 +132,26 @@
 
                 flatChapters.forEach(chapterItem => {
                     const chapterTitle = typeof chapterItem === 'string' ? chapterItem : (chapterItem.chapter_title || chapterItem);
-                    const card = document.createElement("a");
-                    // Link to the Dynamic Content Page
+                    const card = document.createElement("div");
                     const urlGrade = resolvedGrade;
-                    card.href = `study-content.html?grade=${urlGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterTitle)}`;
-                    card.className = "group block bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden";
+                    card.className = "group block bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col justify-between";
+
+                    let pyqHtml = "";
+                    if (resolvedGrade === "10" || resolvedGrade === "12") {
+                        const chapterSlug = typeof chapterItem === 'string' ? chapterItem : (chapterItem.slug || chapterItem.chapter_title);
+                        pyqHtml = `<a href="pyq10yrs-insights.html?grade=${resolvedGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterSlug)}" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-cbse-blue z-10 relative">PYQ 10yrs Insights</a>`;
+                    }
+
                     card.innerHTML = `
-                        <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity text-cbse-blue">
+                        <a href="study-content.html?grade=${urlGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterTitle)}" class="absolute inset-0 z-0"></a>
+                        <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity text-cbse-blue z-0 pointer-events-none">
                             <i class="fas fa-arrow-right"></i>
                         </div>
-                        <h4 class="font-bold text-slate-700 group-hover:text-cbse-blue transition-colors pr-6">${chapterTitle}</h4>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-2">Study Summary</p>
+                        <h4 class="font-bold text-slate-700 group-hover:text-cbse-blue transition-colors pr-6 relative z-0 pointer-events-none">${chapterTitle}</h4>
+                        <div class="flex items-center gap-4 mt-2 relative z-10 pointer-events-none">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pointer-events-auto">Study Summary</p>
+                            <span class="pointer-events-auto">${pyqHtml}</span>
+                        </div>
                     `;
                     grid.appendChild(card);
                 });
