@@ -655,6 +655,9 @@ window.updateTeacherSubjectOptions = () => {
 
     if (!disciplineContainer) return;
 
+    // Snapshot the currently checked disciplines to preserve selection
+    const previouslyChecked = new Set(Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value));
+
     if (!hasHigherGrades) {
         if (streamContainer) {
             streamContainer.classList.add('hidden');
@@ -662,9 +665,16 @@ window.updateTeacherSubjectOptions = () => {
             if (streamSelect) streamSelect.value = '';
         }
 
+        // Early return if we are already showing the default disciplines
+        // This prevents rebuilding the DOM and losing selection when toggling non-11/12 sections
+        const currentDisciplines = Array.from(document.querySelectorAll('.teacher-disc-cb')).map(cb => cb.value);
+        if (currentDisciplines.length === schoolDisciplines.length && currentDisciplines.every((val, index) => val === schoolDisciplines[index])) {
+            return;
+        }
+
         let discHtml = '';
         schoolDisciplines.forEach(d => {
-            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb"> <span>${d}</span></label>`;
+            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb" ${previouslyChecked.has(d) ? 'checked' : ''}> <span>${d}</span></label>`;
         });
         disciplineContainer.innerHTML = discHtml;
         return;
@@ -676,15 +686,15 @@ window.updateTeacherSubjectOptions = () => {
 
     if (stream === 'Science') {
         ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'English'].forEach(d => {
-            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb"> <span>${d}</span></label>`;
+            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb" ${previouslyChecked.has(d) ? 'checked' : ''}> <span>${d}</span></label>`;
         });
     } else if (stream === 'Commerce') {
         ['Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'English'].forEach(d => {
-            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb"> <span>${d}</span></label>`;
+            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb" ${previouslyChecked.has(d) ? 'checked' : ''}> <span>${d}</span></label>`;
         });
     } else if (stream === 'Humanities') {
         ['History', 'Geography', 'Political Science', 'Sociology', 'English'].forEach(d => {
-            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb"> <span>${d}</span></label>`;
+            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb" ${previouslyChecked.has(d) ? 'checked' : ''}> <span>${d}</span></label>`;
         });
     } else {
         discHtml = '<div class="text-xs text-slate-400 italic col-span-2">Please select a stream to view subjects.</div>';
@@ -826,14 +836,6 @@ window.submitAddModal = async (role) => {
 
     } else if (role === 'teacher') {
         const checkedSecs = Array.from(document.querySelectorAll('.teacher-sec-cb:checked')).map(cb => cb.value);
-        const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
-
-        if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
-            return showError("At least one Section and one Discipline are required.");
-        }
-
-        payload.sections = checkedSecs;
-        payload.mapped_disciplines = checkedDiscs;
 
         const hasHigherGrades = checkedSecs.some(sec => sec.startsWith('11') || sec.startsWith('12'));
         if (hasHigherGrades) {
@@ -844,6 +846,15 @@ window.submitAddModal = async (role) => {
                 return showError("Stream selection is required for Grades 11 and 12.");
             }
         }
+
+        const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
+
+        if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
+            return showError("At least one Section and one Discipline are required.");
+        }
+
+        payload.sections = checkedSecs;
+        payload.mapped_disciplines = checkedDiscs;
     } else if (role === 'vip') {
         payload.role = document.getElementById('modal-role-type').value;
     }
