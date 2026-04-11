@@ -1,7 +1,7 @@
 import { getInitializedClients } from "./config.js";
 import { guardConsole, bindConsoleLogout } from "./guard.js";
 import { loadCurriculum } from "./curriculum/loader.js";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc, deleteDoc, getDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
@@ -314,9 +314,145 @@ window.renderInventoryEngine = async () => {
     });
 };
 
-function renderFacultyPillars(teachers) {
+window.renderFacultyPillars = function(teachers) {
     const container = document.getElementById('faculty-pillars-container');
     if(!container) return;
+
+    const streams = {
+        'Science': {
+            subjects: ['Physics', 'Chemistry', 'Biology'],
+            teachers: { 'Physics': [], 'Chemistry': [], 'Biology': [] },
+            color: 'purple', icon: 'flask'
+        },
+        'Commerce': {
+            subjects: ['Accountancy', 'Business Studies', 'Economics'],
+            teachers: { 'Accountancy': [], 'Business Studies': [], 'Economics': [] },
+            color: 'emerald', icon: 'chart-line'
+        },
+        'Humanities': {
+            subjects: ['History', 'Geography', 'Political Science', 'Sociology'],
+            teachers: { 'History': [], 'Geography': [], 'Political Science': [], 'Sociology': [] },
+            color: 'amber', icon: 'landmark'
+        },
+        'Core/Others': {
+            subjects: ['Mathematics', 'Applied Mathematics', 'English', 'Social Science'],
+            teachers: { 'Mathematics': [], 'Applied Mathematics': [], 'English': [], 'Social Science': [] },
+            color: 'blue', icon: 'book'
+        }
+    };
+
+    const otherTeachers = [];
+
+    teachers.forEach(t => {
+        const discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : []);
+        let matched = false;
+
+        discs.forEach(d => {
+            const lowerD = d.toLowerCase();
+            let matchedD = false;
+
+            for (const streamName in streams) {
+                const streamData = streams[streamName];
+                const actualSubj = streamData.subjects.find(s => s.toLowerCase() === lowerD || (lowerD === 'math' && s === 'Mathematics'));
+                if (actualSubj) {
+                    if (!streamData.teachers[actualSubj].includes(t)) {
+                        streamData.teachers[actualSubj].push(t);
+                    }
+                    matched = true;
+                    matchedD = true;
+                    break;
+                }
+            }
+            // For backward compatibility (if any generic science/sst is given not matching above exactly)
+            if (!matchedD) {
+                if (lowerD === 'science') {
+                   if (!streams['Science'].teachers['Physics'].includes(t)) streams['Science'].teachers['Physics'].push(t);
+                   matched = true;
+                }
+            }
+        });
+
+        if (!matched) {
+            otherTeachers.push(t);
+        }
+    });
+
+    const buildTeacherTable = (teacherArray) => {
+        if(teacherArray.length === 0) return '<div class="p-4 text-center text-xs text-slate-400 italic border-t border-slate-100">No teachers assigned.</div>';
+
+        let rows = '';
+        teacherArray.forEach(u => {
+            const name = u.displayName || u.email || 'Unknown';
+            const secs = (u.sections || []).join(', ') || '<span class="italic opacity-50">None</span>';
+            const disc = (u.mapped_disciplines || []).join(', ') || u.mapped_discipline || 'Unassigned';
+
+            rows += `
+                <div class="flex justify-between items-center p-3 border-t border-slate-100 hover:bg-slate-50 text-xs text-slate-700">
+                    <div class="font-bold">${name} <span class="block text-[10px] text-slate-400 font-normal mt-0.5">${disc}</span></div>
+                    <div class="font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">${secs}</div>
+                </div>
+            `;
+        });
+        return rows;
+    };
+
+    let html = '<div class="space-y-4">';
+
+    let pillarIndex = 0;
+    for (const [streamName, streamData] of Object.entries(streams)) {
+        // Only render if there's at least one teacher in any subject of this stream
+        let hasTeachers = false;
+        let innerHtml = '';
+
+        for (const [subj, tArray] of Object.entries(streamData.teachers)) {
+            if (tArray.length > 0 || (streamName === 'Science' || streamName === 'Core/Others')) {
+                 // Always show some core subjects even if empty for visual consistency of the original UI
+                 hasTeachers = true;
+            }
+            if (tArray.length > 0) {
+                 innerHtml += `<div class="p-3 bg-${streamData.color}-50 font-bold text-[10px] uppercase tracking-widest text-${streamData.color}-500 border-t border-${streamData.color}-100">${subj}</div>`;
+                 innerHtml += buildTeacherTable(tArray);
+            } else if ((streamName === 'Science' || streamName === 'Core/Others') && tArray.length === 0) {
+                 // To maintain similar look to old UI where Physics/Chem/Bio always showed up if Science pillar showed up
+                 if(streamName === 'Science' || ['Mathematics', 'Social Science'].includes(subj)) {
+                     innerHtml += `<div class="p-3 bg-${streamData.color}-50 font-bold text-[10px] uppercase tracking-widest text-${streamData.color}-500 border-t border-${streamData.color}-100">${subj}</div>`;
+                     innerHtml += buildTeacherTable(tArray);
+                 }
+            }
+        }
+
+        if (hasTeachers) {
+            const pillarId = `pillar-${streamName.toLowerCase().replace('/', '-')}`;
+            html += `
+                <div class="border border-${streamData.color}-200 rounded-xl bg-${streamData.color}-50/30 overflow-hidden shadow-sm">
+                    <button onclick="window.toggleAccordion('${pillarId}')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-${streamData.color}-50 transition text-${streamData.color}-700 text-sm">
+                        <span><i class="fas fa-${streamData.icon} mr-2"></i> ${streamName}</span>
+                        <i class="fas fa-chevron-down text-${streamData.color}-300 transition-transform duration-200" id="icon-${pillarId}"></i>
+                    </button>
+                    <div id="${pillarId}" class="hidden bg-white">
+                        ${innerHtml}
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // Others
+    html += `
+        <div class="border border-slate-200 rounded-xl bg-slate-50/30 overflow-hidden shadow-sm">
+            <button onclick="window.toggleAccordion('pillar-other')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-slate-50 transition text-slate-700 text-sm">
+                <span><i class="fas fa-ellipsis-h mr-2"></i> Others / Unmapped</span>
+                <i class="fas fa-chevron-down text-slate-300 transition-transform duration-200" id="icon-pillar-other"></i>
+            </button>
+            <div id="pillar-other" class="hidden bg-white">
+                ${buildTeacherTable(otherTeachers)}
+            </div>
+        </div>
+    `;
+
+    html += '</div>';
+    container.innerHTML = html;
+}
 
     // Grouping structure
     const mathTeachers = [];
@@ -1133,7 +1269,7 @@ function renderBucket(elementId, users, type) {
                             <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Link Parent</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
                             <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}', '${u.role}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -1149,7 +1285,7 @@ function renderBucket(elementId, users, type) {
                             <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
                             <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}', '${u.role}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -1246,8 +1382,14 @@ window.assignTeacherToSection = async (teacherUid, grade, section, discipline) =
 
 // --- TASK 3: VIP OBSERVABILITY DASHBOARD ---
 
-window.deleteUser = async (userId, displayName) => {
-    if (!confirm(`Are you sure you want to delete "${displayName}"? This removes their Firestore profile. Firebase Auth account must be deleted separately from Firebase Console.`)) return;
+window.deleteUser = async (userId, displayName, role = '') => {
+    let msg = `Are you sure you want to delete "${displayName}"? This removes their Firestore profile. Firebase Auth account must be deleted separately from Firebase Console.`;
+    if (role === 'teacher') {
+        msg = `WARNING: Are you sure you want to delete teacher "${displayName}"?
+
+Classes assigned to this teacher will lose their subject instructor. This cannot be undone.`;
+    }
+    if (!confirm(msg)) return;
     try {
         const { db } = await getInitializedClients();
         await deleteDoc(doc(db, "users", userId));
@@ -1315,6 +1457,69 @@ window.showEditModal = async (userId) => {
         if (!userSnap.exists()) { alert("User not found."); return; }
         const u = userSnap.data();
 
+        let extraFields = '';
+        if (u.role === 'teacher') {
+            const gradesArr = schoolGrades;
+            const secsArr = schoolSections;
+            const teacherSecs = u.sections || [];
+            const teacherDiscs = u.mapped_disciplines || (u.mapped_discipline ? [u.mapped_discipline] : []);
+
+            let gridHtml = '<div class="grid grid-cols-3 gap-2">';
+            gradesArr.forEach(g => {
+                secsArr.forEach(s => {
+                    const secVal = `${g}${s}`;
+                    const isChecked = teacherSecs.includes(secVal) ? 'checked' : '';
+                    gridHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${secVal}" class="teacher-sec-cb" onchange="window.updateTeacherSubjectOptions()" ${isChecked}> <span>${secVal}</span></label>`;
+                });
+            });
+            gridHtml += '</div>';
+
+            let discHtml = '';
+            schoolDisciplines.forEach(d => {
+                const isChecked = teacherDiscs.includes(d) ? 'checked' : '';
+                discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb" ${isChecked}> <span>${d}</span></label>`;
+            });
+
+            extraFields = `
+                <div class="mt-4">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Class Assignment Grid</label>
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 h-32 overflow-y-auto">
+                        ${gridHtml}
+                    </div>
+                </div>
+
+                <div id="teacher-stream-container" class="hidden mt-4">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Stream</label>
+                    <select id="teacher-modal-stream" onchange="window.updateTeacherSubjectOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                        <option value="">-- Select Stream --</option>
+                        <option value="Science" ${u.stream === 'Science' ? 'selected' : ''}>Science</option>
+                        <option value="Commerce" ${u.stream === 'Commerce' ? 'selected' : ''}>Commerce</option>
+                        <option value="Humanities" ${u.stream === 'Humanities' ? 'selected' : ''}>Humanities</option>
+                    </select>
+                </div>
+
+                <div class="mt-4">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Discipline Selection (Multi)</label>
+                    <div id="teacher-discipline-container" class="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        ${discHtml}
+                    </div>
+                </div>
+            `;
+        } else {
+             extraFields = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Grade</label>
+                        <input type="text" id="edit-grade" value="${u.grade || ''}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
+                        <input type="text" id="edit-section" value="${u.section || ''}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                    </div>
+                </div>
+             `;
+        }
+
         const modalContainer = document.getElementById('modal-container');
         modalContainer.innerHTML = `
             <div class="fixed inset-0 bg-slate-900/50 flex justify-center items-center z-50 backdrop-blur-sm" id="edit-modal">
@@ -1328,26 +1533,13 @@ window.showEditModal = async (userId) => {
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Display Name</label>
                             <input type="text" id="edit-name" value="${(u.displayName || '').replace(/"/g, '&quot;')}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
                         </div>
-                        <div>
+                        <div class="hidden">
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
                             <select id="edit-role" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
-                                <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
-                                <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option>
-                                <option value="parent" ${u.role === 'parent' ? 'selected' : ''}>Parent</option>
-                                <option value="principal" ${u.role === 'principal' ? 'selected' : ''}>Principal</option>
-                                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                <option value="${u.role}" selected>${u.role}</option>
                             </select>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Grade</label>
-                                <input type="text" id="edit-grade" value="${u.grade || ''}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Section</label>
-                                <input type="text" id="edit-section" value="${u.section || ''}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
-                            </div>
-                        </div>
+                        ${extraFields}
                         <div id="edit-error" class="hidden text-xs font-bold text-danger-red bg-red-50 p-2 rounded border border-red-100"></div>
                     </div>
                     <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-3">
@@ -1358,11 +1550,14 @@ window.showEditModal = async (userId) => {
             </div>
         `;
 
+        // Trigger subject update if teacher has higher grades initially
+        if (u.role === 'teacher') {
+             window.updateTeacherSubjectOptions();
+        }
+
         document.getElementById('edit-save-btn').addEventListener('click', async () => {
             const newName = document.getElementById('edit-name').value.trim();
             const newRole = document.getElementById('edit-role').value;
-            const newGrade = document.getElementById('edit-grade').value.trim();
-            const newSection = document.getElementById('edit-section').value.trim();
             const errorEl = document.getElementById('edit-error');
 
             if (!newName) {
@@ -1377,9 +1572,41 @@ window.showEditModal = async (userId) => {
                     role: newRole,
                     updated_at: serverTimestamp()
                 };
-                if (newGrade) { updatePayload.grade = newGrade; updatePayload.classId = newGrade; }
-                if (newSection) { updatePayload.section = newSection; }
-                if (newGrade && newSection) { updatePayload.section_id = newGrade + '-' + newSection; }
+
+                if (newRole === 'teacher') {
+                    const checkedSecs = Array.from(document.querySelectorAll('.teacher-sec-cb:checked')).map(cb => cb.value);
+                    const hasHigherGrades = checkedSecs.some(sec => sec.startsWith('11') || sec.startsWith('12'));
+
+                    if (hasHigherGrades) {
+                        const streamEl = document.getElementById('teacher-modal-stream');
+                        if (streamEl && streamEl.value) {
+                            updatePayload.stream = streamEl.value;
+                        } else {
+                            errorEl.innerText = "Stream selection is required for Grades 11 and 12.";
+                            errorEl.classList.remove('hidden');
+                            return;
+                        }
+                    } else {
+                        updatePayload.stream = deleteField();
+                    }
+
+                    const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
+
+                    if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
+                        errorEl.innerText = "At least one Section and one Discipline are required.";
+                        errorEl.classList.remove('hidden');
+                        return;
+                    }
+
+                    updatePayload.sections = checkedSecs;
+                    updatePayload.mapped_disciplines = checkedDiscs;
+                } else {
+                    const newGrade = document.getElementById('edit-grade')?.value.trim();
+                    const newSection = document.getElementById('edit-section')?.value.trim();
+                    if (newGrade) { updatePayload.grade = newGrade; updatePayload.classId = newGrade; }
+                    if (newSection) { updatePayload.section = newSection; }
+                    if (newGrade && newSection) { updatePayload.section_id = newGrade + '-' + newSection; }
+                }
 
                 await updateDoc(doc(db, "users", userId), updatePayload);
                 document.getElementById('modal-container').innerHTML = '';
