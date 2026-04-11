@@ -504,7 +504,7 @@ window.showAddModal = async (role, grade = '', section = '') => {
         let gridHtml = '<div class="grid grid-cols-3 gap-2">';
         gradesArr.forEach(g => {
             secsArr.forEach(s => {
-                gridHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${g}${s}" class="teacher-sec-cb"> <span>${g}${s}</span></label>`;
+                gridHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${g}${s}" class="teacher-sec-cb" onchange="window.updateTeacherSubjectOptions()"> <span>${g}${s}</span></label>`;
             });
         });
         gridHtml += '</div>';
@@ -521,9 +521,20 @@ window.showAddModal = async (role, grade = '', section = '') => {
                     ${gridHtml}
                 </div>
             </div>
+
+            <div id="teacher-stream-container" class="hidden mt-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Stream</label>
+                <select id="teacher-modal-stream" onchange="window.updateTeacherSubjectOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-cbse-blue">
+                    <option value="">-- Select Stream --</option>
+                    <option value="Science">Science</option>
+                    <option value="Commerce">Commerce</option>
+                    <option value="Humanities">Humanities</option>
+                </select>
+            </div>
+
             <div class="mt-4">
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Discipline Selection (Multi)</label>
-                <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <div id="teacher-discipline-container" class="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-3">
                     ${discHtml}
                 </div>
             </div>
@@ -631,6 +642,55 @@ window.updateSubjectOptions = () => {
     }
 
     container.innerHTML = html;
+};
+
+
+window.updateTeacherSubjectOptions = () => {
+    const checkedSecs = Array.from(document.querySelectorAll('.teacher-sec-cb:checked')).map(cb => cb.value);
+    const hasHigherGrades = checkedSecs.some(sec => sec.startsWith('11') || sec.startsWith('12'));
+
+    const streamContainer = document.getElementById('teacher-stream-container');
+    const disciplineContainer = document.getElementById('teacher-discipline-container');
+    const stream = document.getElementById('teacher-modal-stream')?.value;
+
+    if (!disciplineContainer) return;
+
+    if (!hasHigherGrades) {
+        if (streamContainer) {
+            streamContainer.classList.add('hidden');
+            const streamSelect = document.getElementById('teacher-modal-stream');
+            if (streamSelect) streamSelect.value = '';
+        }
+
+        let discHtml = '';
+        schoolDisciplines.forEach(d => {
+            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb"> <span>${d}</span></label>`;
+        });
+        disciplineContainer.innerHTML = discHtml;
+        return;
+    }
+
+    if (streamContainer) streamContainer.classList.remove('hidden');
+
+    let discHtml = '';
+
+    if (stream === 'Science') {
+        ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'English'].forEach(d => {
+            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb"> <span>${d}</span></label>`;
+        });
+    } else if (stream === 'Commerce') {
+        ['Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'English'].forEach(d => {
+            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb"> <span>${d}</span></label>`;
+        });
+    } else if (stream === 'Humanities') {
+        ['History', 'Geography', 'Political Science', 'Sociology', 'English'].forEach(d => {
+            discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb"> <span>${d}</span></label>`;
+        });
+    } else {
+        discHtml = '<div class="text-xs text-slate-400 italic col-span-2">Please select a stream to view subjects.</div>';
+    }
+
+    disciplineContainer.innerHTML = discHtml;
 };
 
 window.closeAddModal = () => {
@@ -775,6 +835,15 @@ window.submitAddModal = async (role) => {
         payload.sections = checkedSecs;
         payload.mapped_disciplines = checkedDiscs;
 
+        const hasHigherGrades = checkedSecs.some(sec => sec.startsWith('11') || sec.startsWith('12'));
+        if (hasHigherGrades) {
+            const streamEl = document.getElementById('teacher-modal-stream');
+            if (streamEl && streamEl.value) {
+                payload.stream = streamEl.value;
+            } else {
+                return showError("Stream selection is required for Grades 11 and 12.");
+            }
+        }
     } else if (role === 'vip') {
         payload.role = document.getElementById('modal-role-type').value;
     }
