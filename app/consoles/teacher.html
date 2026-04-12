@@ -344,7 +344,11 @@
         };
 
         function updateActiveChapters(curriculumData) {
-            if (!curriculumData) { activeChapters = []; return; }
+            if (!curriculumData) {
+                activeChapters = [];
+                selectedChapterId = null;
+                return;
+            }
 
             const disc = currentContext.discipline;
             let chaps = [];
@@ -373,6 +377,8 @@
 
             if (activeChapters.length > 0) {
                 selectedChapterId = activeChapters[0].id;
+            } else {
+                selectedChapterId = null;
             }
         }
 
