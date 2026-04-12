@@ -384,44 +384,61 @@ function renderFacultyPillars(teachers) {
 
     let html = '<div class="space-y-4">';
 
-    // Sort disciplines alphabetically, pushing 'Unassigned' to the end
-    const sortedDisciplines = Object.keys(disciplineGroups).sort((a, b) => {
-        if (a === 'Unassigned') return 1;
-        if (b === 'Unassigned') return -1;
-        return a.localeCompare(b);
-    });
+    let pillarIndex = 0;
+    for (const [streamName, streamData] of Object.entries(streams)) {
+        // Only render if there's at least one teacher in any subject of this stream
+        let hasTeachers = false;
+        let innerHtml = '';
 
-    sortedDisciplines.forEach(discipline => {
-        const tArray = disciplineGroups[discipline];
-        const lowerD = discipline.toLowerCase();
-        const theme = themeMap[lowerD] || defaultTheme;
-        const pillarId = `pillar-${discipline.toLowerCase().replace(/\s+/g, '-')}`;
+        for (const [subj, tArray] of Object.entries(streamData.teachers)) {
+            if (tArray.length > 0 || (streamName === 'Science' || streamName === 'Core/Others')) {
+                 // Always show some core subjects even if empty for visual consistency of the original UI
+                 hasTeachers = true;
+            }
+            if (tArray.length > 0) {
+                 innerHtml += `<div class="p-3 bg-${streamData.color}-50 font-bold text-[10px] uppercase tracking-widest text-${streamData.color}-500 border-t border-${streamData.color}-100">${subj}</div>`;
+                 innerHtml += buildTeacherTable(tArray);
+            } else if ((streamName === 'Science' || streamName === 'Core/Others') && tArray.length === 0) {
+                 // To maintain similar look to old UI where Physics/Chem/Bio always showed up if Science pillar showed up
+                 if(streamName === 'Science' || ['Mathematics', 'Social Science'].includes(subj)) {
+                     innerHtml += `<div class="p-3 bg-${streamData.color}-50 font-bold text-[10px] uppercase tracking-widest text-${streamData.color}-500 border-t border-${streamData.color}-100">${subj}</div>`;
+                     innerHtml += buildTeacherTable(tArray);
+                 }
+            }
+        }
 
-        // Use general 'brain' icon if unassigned, else mapped icon
-        const icon = discipline === 'Unassigned' ? 'user-slash' : theme.icon;
-        const color = discipline === 'Unassigned' ? 'slate' : theme.color;
-
-        html += `
-            <div class="border border-${color}-200 rounded-xl bg-${color}-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('${pillarId}')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-${color}-50 transition text-${color}-700 text-sm">
-                    <span><i class="fas fa-${icon} mr-2"></i> ${discipline}</span>
-                    <i class="fas fa-chevron-down text-${color}-300 transition-transform duration-200" id="icon-${pillarId}"></i>
-                </button>
-                <div id="${pillarId}" class="hidden bg-white">
-                    ${buildTeacherTable(tArray)}
+        if (hasTeachers) {
+            const pillarId = `pillar-${streamName.toLowerCase().replace('/', '-')}`;
+            html += `
+                <div class="border border-${streamData.color}-200 rounded-xl bg-${streamData.color}-50/30 overflow-hidden shadow-sm">
+                    <button onclick="window.toggleAccordion('${pillarId}')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-${streamData.color}-50 transition text-${streamData.color}-700 text-sm">
+                        <span><i class="fas fa-${streamData.icon} mr-2"></i> ${streamName}</span>
+                        <i class="fas fa-chevron-down text-${streamData.color}-300 transition-transform duration-200" id="icon-${pillarId}"></i>
+                    </button>
+                    <div id="${pillarId}" class="hidden bg-white">
+                        ${innerHtml}
+                    </div>
                 </div>
-            </div>
-        `;
-    });
-
-    if (sortedDisciplines.length === 0) {
-         html += '<div class="p-8 text-center text-slate-400 italic">No faculty data available.</div>';
+            `;
+        }
     }
+
+    // Others
+    html += `
+        <div class="border border-slate-200 rounded-xl bg-slate-50/30 overflow-hidden shadow-sm">
+            <button onclick="window.toggleAccordion('pillar-other')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-slate-50 transition text-slate-700 text-sm">
+                <span><i class="fas fa-ellipsis-h mr-2"></i> Others / Unmapped</span>
+                <i class="fas fa-chevron-down text-slate-300 transition-transform duration-200" id="icon-pillar-other"></i>
+            </button>
+            <div id="pillar-other" class="hidden bg-white">
+                ${buildTeacherTable(otherTeachers)}
+            </div>
+        </div>
+    `;
 
     html += '</div>';
     container.innerHTML = html;
 }
-
 
 window.toggleAccordion = (id) => {
     const el = document.getElementById(id);
