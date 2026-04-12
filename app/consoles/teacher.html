@@ -225,45 +225,7 @@
             }
         }
 
-        async function fetchSectionStudents() {
-            if (!db) return;
-            const constraints = [
-                where("section_id", "==", getSectionId()),
-                where("role", "==", "student"),
-                where("school_id", "==", window.teacherProfile?.school_id || '')
-            ];
-
-            const studentsQuery = query(collection(db, "users"), ...constraints);
-            const studentsSnap = await getDocs(studentsQuery);
-            const studentUids = studentsSnap.docs.map(d => d.id);
-            const studentNames = {};
-            const studentParentIds = {};
-            studentsSnap.docs.forEach(d => {
-                const data = d.data();
-                studentNames[d.id] = data.displayName || data.email || d.id;
-                studentParentIds[d.id] = data.parent_id || null;
-            });
-            window.sectionStudents = { uids: studentUids, names: studentNames, parentIds: studentParentIds };
-
-            studentScores = [];
-            for (let i = 0; i < studentUids.length; i += 10) {
-                const batch = studentUids.slice(i, i + 10);
-                if (batch.length === 0) continue;
-                const scoresQuery = query(collection(db, "quiz_scores"), where("user_id", "in", batch), where("school_id", "==", window.teacherProfile?.school_id || ''));
-                const scoresSnap = await getDocs(scoresQuery);
-                scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
-            }
-        }
-
-        function getSectionId() {
-            const letter = currentContext.section.replace(/^\d+/, '');
-            return `${currentContext.grade}-${letter}`;
-        }
-
-
-
-
-
+       
         async function fetchSectionStudents() {
             if (!db) return;
             const constraints = [
