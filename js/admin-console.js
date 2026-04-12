@@ -314,7 +314,7 @@ window.renderInventoryEngine = async () => {
     });
 };
 
-function renderFacultyPillars(teachers) {
+window.renderFacultyPillars = function(teachers) {
     const container = document.getElementById('faculty-pillars-container');
     if(!container) return;
 
@@ -373,9 +373,17 @@ function renderFacultyPillars(teachers) {
             const disc = (u.mapped_disciplines || []).join(', ') || u.mapped_discipline || 'Unassigned';
 
             rows += `
-                <div class="flex justify-between items-center p-3 border-t border-slate-100 hover:bg-slate-50 text-xs text-slate-700">
-                    <div class="font-bold">${name} <span class="block text-[10px] text-slate-400 font-normal mt-0.5">${disc}</span></div>
-                    <div class="font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">${secs}</div>
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 border-t border-slate-100 hover:bg-slate-50 text-xs text-slate-700 gap-2">
+                    <div>
+                        <div class="font-bold">${name} <span class="block text-[10px] text-slate-400 font-normal mt-0.5">${disc}</span></div>
+                        <div class="font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded inline-block mt-1">${secs}</div>
+                    </div>
+                    <div class="flex gap-1 justify-end flex-wrap items-center">
+                        <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
+                        <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
+                        <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
+                        <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}', 'teacher')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                    </div>
                 </div>
             `;
         });
@@ -384,61 +392,44 @@ function renderFacultyPillars(teachers) {
 
     let html = '<div class="space-y-4">';
 
-    let pillarIndex = 0;
-    for (const [streamName, streamData] of Object.entries(streams)) {
-        // Only render if there's at least one teacher in any subject of this stream
-        let hasTeachers = false;
-        let innerHtml = '';
+    // Sort disciplines alphabetically, pushing 'Unassigned' to the end
+    const sortedDisciplines = Object.keys(disciplineGroups).sort((a, b) => {
+        if (a === 'Unassigned') return 1;
+        if (b === 'Unassigned') return -1;
+        return a.localeCompare(b);
+    });
 
-        for (const [subj, tArray] of Object.entries(streamData.teachers)) {
-            if (tArray.length > 0 || (streamName === 'Science' || streamName === 'Core/Others')) {
-                 // Always show some core subjects even if empty for visual consistency of the original UI
-                 hasTeachers = true;
-            }
-            if (tArray.length > 0) {
-                 innerHtml += `<div class="p-3 bg-${streamData.color}-50 font-bold text-[10px] uppercase tracking-widest text-${streamData.color}-500 border-t border-${streamData.color}-100">${subj}</div>`;
-                 innerHtml += buildTeacherTable(tArray);
-            } else if ((streamName === 'Science' || streamName === 'Core/Others') && tArray.length === 0) {
-                 // To maintain similar look to old UI where Physics/Chem/Bio always showed up if Science pillar showed up
-                 if(streamName === 'Science' || ['Mathematics', 'Social Science'].includes(subj)) {
-                     innerHtml += `<div class="p-3 bg-${streamData.color}-50 font-bold text-[10px] uppercase tracking-widest text-${streamData.color}-500 border-t border-${streamData.color}-100">${subj}</div>`;
-                     innerHtml += buildTeacherTable(tArray);
-                 }
-            }
-        }
+    sortedDisciplines.forEach(discipline => {
+        const tArray = disciplineGroups[discipline];
+        const lowerD = discipline.toLowerCase();
+        const theme = themeMap[lowerD] || defaultTheme;
+        const pillarId = `pillar-${discipline.toLowerCase().replace(/\s+/g, '-')}`;
 
-        if (hasTeachers) {
-            const pillarId = `pillar-${streamName.toLowerCase().replace('/', '-')}`;
-            html += `
-                <div class="border border-${streamData.color}-200 rounded-xl bg-${streamData.color}-50/30 overflow-hidden shadow-sm">
-                    <button onclick="window.toggleAccordion('${pillarId}')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-${streamData.color}-50 transition text-${streamData.color}-700 text-sm">
-                        <span><i class="fas fa-${streamData.icon} mr-2"></i> ${streamName}</span>
-                        <i class="fas fa-chevron-down text-${streamData.color}-300 transition-transform duration-200" id="icon-${pillarId}"></i>
-                    </button>
-                    <div id="${pillarId}" class="hidden bg-white">
-                        ${innerHtml}
-                    </div>
+        // Use general 'brain' icon if unassigned, else mapped icon
+        const icon = discipline === 'Unassigned' ? 'user-slash' : theme.icon;
+        const color = discipline === 'Unassigned' ? 'slate' : theme.color;
+
+        html += `
+            <div class="border border-${color}-200 rounded-xl bg-${color}-50/30 overflow-hidden shadow-sm">
+                <button onclick="window.toggleAccordion('${pillarId}')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-${color}-50 transition text-${color}-700 text-sm">
+                    <span><i class="fas fa-${icon} mr-2"></i> ${discipline}</span>
+                    <i class="fas fa-chevron-down text-${color}-300 transition-transform duration-200" id="icon-${pillarId}"></i>
+                </button>
+                <div id="${pillarId}" class="hidden bg-white">
+                    ${buildTeacherTable(tArray)}
                 </div>
-            `;
-        }
-    }
-
-    // Others
-    html += `
-        <div class="border border-slate-200 rounded-xl bg-slate-50/30 overflow-hidden shadow-sm">
-            <button onclick="window.toggleAccordion('pillar-other')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-slate-50 transition text-slate-700 text-sm">
-                <span><i class="fas fa-ellipsis-h mr-2"></i> Others / Unmapped</span>
-                <i class="fas fa-chevron-down text-slate-300 transition-transform duration-200" id="icon-pillar-other"></i>
-            </button>
-            <div id="pillar-other" class="hidden bg-white">
-                ${buildTeacherTable(otherTeachers)}
             </div>
-        </div>
-    `;
+        `;
+    });
+
+    if (sortedDisciplines.length === 0) {
+         html += '<div class="p-8 text-center text-slate-400 italic">No faculty data available.</div>';
+    }
 
     html += '</div>';
     container.innerHTML = html;
 }
+
 
 window.toggleAccordion = (id) => {
     const el = document.getElementById(id);
@@ -1159,7 +1150,7 @@ function renderBucket(elementId, users, type) {
                             <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
                             <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}', 'teacher')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>
