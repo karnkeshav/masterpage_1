@@ -322,7 +322,12 @@ async function loadPyqVault(grade, subject) {
     document.getElementById("loading").classList.add("hidden");
 
     try {
-        const db = window.firebaseDb; // from config.js
+        const { db } = await getInitializedClients();
+        if (!db) {
+            console.error("Database not initialized");
+            UI.showToast("Database initialization failed", "error");
+            return;
+        }
         let q;
         // Hardcoded requirement: Fetch Class 10 Mathematics papers for the year 2022 from Ready4Exam_Vault
         q = query(collection(db, "Ready4Exam_Vault"), where("year", "==", "2022"), where("subject", "==", "Maths"));

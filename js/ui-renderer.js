@@ -509,3 +509,14 @@ export async function renderBoardInsights(grade, subject, chapter, container) {
         listEl.innerHTML = `<div class="p-4 text-center text-red-500">Failed to load insights.</div>`;
     }
 }
+
+export function showToast(message, type = "info") {
+    const toast = document.createElement("div");
+    toast.className = \`fixed bottom-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-bold transition-opacity duration-300 \${type === 'error' ? 'bg-red-500' : 'bg-cbse-blue'}\`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
