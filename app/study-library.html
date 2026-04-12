@@ -139,7 +139,7 @@
                     let pyqHtml = "";
                     if (resolvedGrade === "10" || resolvedGrade === "12") {
                         const chapterSlug = typeof chapterItem === 'string' ? chapterItem : (chapterItem.slug || chapterItem.chapter_title);
-                        pyqHtml = `<a href="pyq10yrs-insights.html?grade=${resolvedGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterSlug)}" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-cbse-blue z-10 relative">PYQ 10yrs Insights</a>`;
+                        pyqHtml = `<a href="pyq_insights.html?grade=${resolvedGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterSlug)}" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-cbse-blue z-10 relative">CBSE PYQ Insights</a>`;
                     }
 
                     card.innerHTML = `
