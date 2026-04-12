@@ -208,7 +208,7 @@
 
 
         function filterSectionsForGrade(grade) {
-            const allSections = window.teacherProfile?.sections || ['9A'];
+            const allSections = window.teacherProfile?.sections || (window.teacherProfile?.mapped_section ? [`${window.teacherProfile?.mapped_grade || '9'}${window.teacherProfile.mapped_section}`] : ['9A']);
             const filtered = allSections.filter(s => s.replace(/[A-Z]/g, '') === grade);
             const sectionSelect = document.getElementById('section-select');
             sectionSelect.innerHTML = filtered.map(s =>
@@ -218,6 +218,42 @@
                 currentContext.section = filtered[0];
             }
         }
+
+        async function fetchSectionStudents() {
+            if (!db) return;
+            const constraints = [
+                where("section_id", "==", getSectionId()),
+                where("role", "==", "student"),
+                where("school_id", "==", window.teacherProfile?.school_id || '')
+            ];
+
+            const studentsQuery = query(collection(db, "users"), ...constraints);
+            const studentsSnap = await getDocs(studentsQuery);
+            const studentUids = studentsSnap.docs.map(d => d.id);
+            const studentNames = {};
+            studentsSnap.docs.forEach(d => {
+                studentNames[d.id] = d.data().displayName || d.data().email || d.id;
+            });
+            window.sectionStudents = { uids: studentUids, names: studentNames };
+
+            studentScores = [];
+            for (let i = 0; i < studentUids.length; i += 10) {
+                const batch = studentUids.slice(i, i + 10);
+                if (batch.length === 0) continue;
+                const scoresQuery = query(collection(db, "quiz_scores"), where("user_id", "in", batch), where("school_id", "==", window.teacherProfile?.school_id || ''));
+                const scoresSnap = await getDocs(scoresQuery);
+                scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
+            }
+        }
+
+        function getSectionId() {
+            const letter = currentContext.section.replace(/^\d+/, '');
+            return `${currentContext.grade}-${letter}`;
+        }
+
+
+
+
 
         async function fetchSectionStudents() {
             if (!db) return;
