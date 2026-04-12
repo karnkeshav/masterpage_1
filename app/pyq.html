@@ -329,8 +329,15 @@ async function loadPyqVault(grade, subject) {
             return;
         }
         let q;
-        // Hardcoded requirement: Fetch Class 10 Mathematics papers for the year 2022 from Ready4Exam_Vault
-        q = query(collection(db, "Ready4Exam_Vault"), where("year", "==", "2022"), where("subject", "==", "Maths"));
+        if (subject && subject !== "All") {
+            if (subject === "Mathematics") {
+                q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()), where("subject", "in", ["Mathematics", "Maths"]));
+            } else {
+                q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()), where("subject", "==", subject));
+            }
+        } else {
+             q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()));
+        }
 
         const snapshot = await getDocs(q);
 
@@ -347,6 +354,7 @@ async function loadPyqVault(grade, subject) {
                 { id: "mock2", year: "2023", subject: "Mathematics", type: "board", set: "2", title: "CBSE Class 10 Math Final", url: "#", priority: 85, solved: false },
                 { id: "mock3", year: "2022", subject: "Science", type: "compartment", set: "1", title: "Class 10 Sci Compartment", url: "#", priority: 60, solved: false },
                 { id: "mock4", year: "2021", subject: "Social Science", type: "marking", set: "3", title: "Class 10 SST Marking Scheme", url: "#", priority: 40, solved: true },
+                { id: "mock-math-2022", year: "2022", subject: "Mathematics", type: "board", set: "1", code: "MAT-2022-MAIN", url: "#", priority: 100, solved: false }
             ];
         }
 
