@@ -314,67 +314,53 @@ window.renderInventoryEngine = async () => {
     });
 };
 
-window.renderFacultyPillars = function(teachers) {
+function renderFacultyPillars(teachers) {
     const container = document.getElementById('faculty-pillars-container');
     if(!container) return;
 
-    const streams = {
-        'Science': {
-            subjects: ['Physics', 'Chemistry', 'Biology'],
-            teachers: { 'Physics': [], 'Chemistry': [], 'Biology': [] },
-            color: 'purple', icon: 'flask'
-        },
-        'Commerce': {
-            subjects: ['Accountancy', 'Business Studies', 'Economics'],
-            teachers: { 'Accountancy': [], 'Business Studies': [], 'Economics': [] },
-            color: 'emerald', icon: 'chart-line'
-        },
-        'Humanities': {
-            subjects: ['History', 'Geography', 'Political Science', 'Sociology'],
-            teachers: { 'History': [], 'Geography': [], 'Political Science': [], 'Sociology': [] },
-            color: 'amber', icon: 'landmark'
-        },
-        'Core/Others': {
-            subjects: ['Mathematics', 'Applied Mathematics', 'English', 'Social Science'],
-            teachers: { 'Mathematics': [], 'Applied Mathematics': [], 'English': [], 'Social Science': [] },
-            color: 'blue', icon: 'book'
-        }
+    // Theme Mapping for common disciplines to ensure colorful UI
+    const themeMap = {
+        'physics': { color: 'purple', icon: 'flask' },
+        'chemistry': { color: 'purple', icon: 'flask' },
+        'biology': { color: 'purple', icon: 'flask' },
+        'science': { color: 'purple', icon: 'flask' },
+        'accountancy': { color: 'emerald', icon: 'chart-line' },
+        'business studies': { color: 'emerald', icon: 'chart-line' },
+        'economics': { color: 'emerald', icon: 'chart-line' },
+        'commerce': { color: 'emerald', icon: 'chart-line' },
+        'history': { color: 'amber', icon: 'landmark' },
+        'geography': { color: 'amber', icon: 'landmark' },
+        'political science': { color: 'amber', icon: 'landmark' },
+        'sociology': { color: 'amber', icon: 'landmark' },
+        'humanities': { color: 'amber', icon: 'landmark' },
+        'mathematics': { color: 'blue', icon: 'calculator' },
+        'applied mathematics': { color: 'blue', icon: 'calculator' },
+        'math': { color: 'blue', icon: 'calculator' },
+        'english': { color: 'blue', icon: 'book' },
+        'social science': { color: 'amber', icon: 'globe' },
     };
 
-    const otherTeachers = [];
+    // Default theme for unknown disciplines
+    const defaultTheme = { color: 'slate', icon: 'brain' };
+
+    // 1. Scan and group dynamically
+    const disciplineGroups = {};
 
     teachers.forEach(t => {
-        const discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : []);
-        let matched = false;
+        let discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : []);
+        if (discs.length === 0) discs = ['Unassigned'];
 
         discs.forEach(d => {
-            const lowerD = d.toLowerCase();
-            let matchedD = false;
+            // Standardize format: Title Case
+            const titleCaseD = d.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
-            for (const streamName in streams) {
-                const streamData = streams[streamName];
-                const actualSubj = streamData.subjects.find(s => s.toLowerCase() === lowerD || (lowerD === 'math' && s === 'Mathematics'));
-                if (actualSubj) {
-                    if (!streamData.teachers[actualSubj].includes(t)) {
-                        streamData.teachers[actualSubj].push(t);
-                    }
-                    matched = true;
-                    matchedD = true;
-                    break;
-                }
+            if (!disciplineGroups[titleCaseD]) {
+                disciplineGroups[titleCaseD] = [];
             }
-            // For backward compatibility (if any generic science/sst is given not matching above exactly)
-            if (!matchedD) {
-                if (lowerD === 'science') {
-                   if (!streams['Science'].teachers['Physics'].includes(t)) streams['Science'].teachers['Physics'].push(t);
-                   matched = true;
-                }
+            if (!disciplineGroups[titleCaseD].includes(t)) {
+                disciplineGroups[titleCaseD].push(t);
             }
         });
-
-        if (!matched) {
-            otherTeachers.push(t);
-        }
     });
 
     const buildTeacherTable = (teacherArray) => {
@@ -868,7 +854,10 @@ window.submitAddModal = async (role) => {
             }
         }
 
-        const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
+        // Standardize formatting to Title Case to match curriculum schemas
+        const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => {
+            return cb.value.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        });
 
         if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
             return showError("At least one Section and one Discipline are required.");
@@ -1154,7 +1143,7 @@ function renderBucket(elementId, users, type) {
                             <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Link Parent</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
                             <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}', '${u.role}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -1170,7 +1159,7 @@ function renderBucket(elementId, users, type) {
                             <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
                             <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}', '${u.role}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -1270,9 +1259,7 @@ window.assignTeacherToSection = async (teacherUid, grade, section, discipline) =
 window.deleteUser = async (userId, displayName, role = '') => {
     let msg = `Are you sure you want to delete "${displayName}"? This removes their Firestore profile. Firebase Auth account must be deleted separately from Firebase Console.`;
     if (role === 'teacher') {
-        msg = `WARNING: Are you sure you want to delete teacher "${displayName}"?
-
-Classes assigned to this teacher will lose their subject instructor. This cannot be undone.`;
+        msg = `WARNING: Are you sure you want to delete teacher "${displayName}"? Classes assigned to this teacher will lose their subject instructor. This cannot be undone.`;
     }
     if (!confirm(msg)) return;
     try {
@@ -1299,11 +1286,15 @@ window.resetUserPassword = async (email, displayName) => {
     if (!action) return;
 
     try {
-        const { auth, db } = await getInitializedClients();
+        const { db } = await getInitializedClients();
 
-        // Step 1: Send Firebase password reset email
+        if (!secondaryAuth) {
+             throw new Error("SecondaryOnboarding Auth instance is not initialized.");
+        }
+
+        // Step 1: Send Firebase password reset email using secondaryAuth to avoid session disruption
         console.log("[RESET] Sending password reset email to:", email);
-        await sendPasswordResetEmail(auth, email);
+        await sendPasswordResetEmail(secondaryAuth, email);
         console.log("[RESET] sendPasswordResetEmail succeeded for:", email);
 
         // Step 2: Reset setupComplete in Firestore so guard triggers password change on next login
@@ -1360,7 +1351,9 @@ window.showEditModal = async (userId) => {
             gridHtml += '</div>';
 
             let discHtml = '';
-            schoolDisciplines.forEach(d => {
+            // Ensure any currently mapped disciplines are present in the DOM for snapshot preservation
+            const renderDiscs = new Set([...schoolDisciplines, ...teacherDiscs]);
+            renderDiscs.forEach(d => {
                 const isChecked = teacherDiscs.includes(d) ? 'checked' : '';
                 discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb" ${isChecked}> <span>${d}</span></label>`;
             });
@@ -1475,7 +1468,10 @@ window.showEditModal = async (userId) => {
                         updatePayload.stream = deleteField();
                     }
 
-                    const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
+                    // Standardize formatting to Title Case to match curriculum schemas
+                    const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => {
+                        return cb.value.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                    });
 
                     if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
                         errorEl.innerText = "At least one Section and one Discipline are required.";
