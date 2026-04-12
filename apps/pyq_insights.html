@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter Insight — Ready4Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily:{ sans:['Inter','sans-serif'] },
+          colors:{
+            'cbse-blue':'#1a3e6a',
+            'cbse-light':'#f5f7fa',
+            'accent-gold':'#ffb703',
+            'success-green': '#16a34a',
+            'warning-yellow': '#ca8a04',
+            'danger-red': '#dc2626'
+          }
+        }
+      }
+    }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/global.css">
+    <style>body{font-family:'Inter',sans-serif;}</style>
+
+    <script src="../js/firebase-master-config.js"></script>
+    <script type="module">
+        import { getInitializedClients } from '../js/config.js';
+        import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Extract parameters from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const grade = urlParams.get('grade') || '10';
+        const subject = urlParams.get('subject') || 'Science';
+        const chapterID = urlParams.get('chapterID') || 'Chemical_Reactions';
+
+        async function loadChapterInsights() {
+            try {
+                // Update header dynamically
+
+                const headerTitle = document.getElementById('header-title');
+                headerTitle.textContent = '';
+                const subjectSpan = document.createElement('span');
+                subjectSpan.textContent = subject.replace(/_/g, ' ');
+                const chapterSpan = document.createElement('span');
+                chapterSpan.className = 'text-white opacity-80 text-lg font-medium ml-2';
+                chapterSpan.textContent = '| ' + chapterID.replace(/_/g, ' ');
+                headerTitle.appendChild(subjectSpan);
+                headerTitle.appendChild(chapterSpan);
+
+                document.getElementById('context-badge').textContent = `Grade ${grade}`;
+
+                const { db } = await getInitializedClients();
+                if(!db) throw new Error("Database initialization failed.");
+
+                // 1. Fetch Metadata for Intelligence Grid
+                const metadataRef = doc(db, 'Chapter_Analysis', grade, subject, chapterID);
+                const metaSnap = await getDoc(metadataRef);
+
+                if (metaSnap.exists()) {
+                    const data = metaSnap.data();
+
+                    // Populate Concept Heatmap
+                    if(data.heatmap) {
+                        const heatmapContainer = document.getElementById('heatmap-container');
+                        heatmapContainer.innerHTML = data.heatmap.map(item => `
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-slate-700">${item.topic}</span>
+                                <div class="w-1/2 bg-slate-200 rounded-full h-2">
+                                    <div class="bg-warning-yellow h-2 rounded-full" style="width: ${item.frequency}%"></div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+
+                    // Populate Marks Blueprint
+                    if(data.blueprint) {
+                        document.getElementById('blueprint-1m').textContent = data.blueprint['1m'] || 0;
+                        document.getElementById('blueprint-2m').textContent = data.blueprint['2m'] || 0;
+                        document.getElementById('blueprint-3m').textContent = data.blueprint['3m'] || 0;
+                        document.getElementById('blueprint-5m').textContent = data.blueprint['5m'] || 0;
+                    }
+
+                    // Populate Forensics
+                    if(data.forensics) {
+                        document.getElementById('forensics-text').textContent = data.forensics;
+                    }
+
+                    // Populate Predictive
+                    if(data.predictive) {
+                        document.getElementById('predictive-text').textContent = data.predictive;
+                    }
+
+                    // Industry Connection
+                    if(data.industry_connection) {
+                        document.getElementById('industry-connection-text').textContent = data.industry_connection;
+                    }
+                } else {
+                    console.log("No metadata found for this chapter.");
+                    document.getElementById('grid-loading').innerHTML = `<p class="text-slate-500 italic p-4 text-center">Intelligence data not yet generated for this chapter.</p>`;
+                }
+
+                // 2. Fetch Historical Questions
+                const questionsRef = collection(db, 'Chapter_Analysis', grade, subject, chapterID, 'Historical_Questions');
+                const qSnap = await getDocs(questionsRef);
+
+                const questionsList = [];
+                qSnap.forEach(doc => {
+                    questionsList.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderQuestions(questionsList);
+
+            } catch (err) {
+                console.error("Error loading chapter insights:", err);
+                document.getElementById('app-content').innerHTML = `
+                    <div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl border border-red-200">
+                        <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
+                        <h3 class="font-bold text-lg mb-2">Failed to Load Intelligence Data</h3>
+                        <p class="text-sm opacity-80">${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderQuestions(questions) {
+            const container = document.getElementById('compendium-container');
+            if(questions.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-8">No historical questions found.</p>`;
+                return;
+            }
+
+            // Group by marks
+            const grouped = { '1m': [], '2m': [], '3m': [], '5m': [], 'other': [] };
+            questions.forEach(q => {
+                const mark = (q.marks || '').toString().toLowerCase();
+                if(mark === '1' || mark === '1m') grouped['1m'].push(q);
+                else if(mark === '2' || mark === '2m') grouped['2m'].push(q);
+                else if(mark === '3' || mark === '3m') grouped['3m'].push(q);
+                else if(mark === '5' || mark === '5m') grouped['5m'].push(q);
+                else grouped['other'].push(q);
+            });
+
+            let html = '';
+            ['5m', '3m', '2m', '1m', 'other'].forEach(group => {
+                if(grouped[group].length > 0) {
+                    html += `
+                        <div class="mb-8">
+                            <h4 class="text-lg font-bold text-cbse-blue mb-4 border-b-2 border-slate-200 pb-2 flex items-center">
+                                <span class="bg-cbse-blue text-white text-xs px-2 py-1 rounded mr-2">${group.toUpperCase()}</span>
+                                Questions
+                            </h4>
+                            <div class="space-y-4">
+                                ${grouped[group].map((q, idx) => `
+                                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group hover:border-cbse-blue transition">
+                                        <div class="absolute top-4 right-4 text-xs font-bold text-slate-400">Year: ${q.year || 'N/A'}</div>
+                                        <div class="text-sm text-slate-800 font-medium mb-4 pr-16 leading-relaxed">
+                                            ${q.question_text || ''}
+                                            ${q.image_url ? `<img src="${q.image_url}" alt="Question Graphic" class="mt-3 max-h-48 rounded border border-slate-200">` : ''}
+                                        </div>
+
+                                        <button onclick="document.getElementById('logic-${group}-${idx}').classList.toggle('hidden')"
+                                                class="text-xs font-bold text-cbse-blue hover:text-accent-gold transition flex items-center gap-1">
+                                            <i class="fas fa-magic"></i> Reveal Marking Logic
+                                        </button>
+
+                                        <div id="logic-${group}-${idx}" class="hidden mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-sm text-slate-700">
+                                            <div class="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                                                <i class="fas fa-check-double"></i> Step-wise Answer (Marking Scheme)
+                                            </div>
+                                            <div class="whitespace-pre-wrap">${q.answer_logic || 'Marking scheme not available.'}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', loadChapterInsights);
+    </script>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- Glass Header -->
+    <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
+      <div class="flex items-center space-x-4">
+        <a href="javascript:history.back()" class="w-10 h-10 flex items-center justify-center bg-white/10 text-white font-bold rounded-xl hover:bg-white hover:text-cbse-blue transition text-sm">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+          <h2 id="header-title" class="text-xl font-black leading-none tracking-tight text-accent-gold">Chapter Insights</h2>
+          <p class="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">Strategic Board Intelligence</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+          <div class="hidden md:flex flex-col items-end mr-2">
+              <span id="context-badge" class="text-[10px] font-black text-white bg-cbse-blue px-2 py-0.5 border border-white/20 rounded uppercase tracking-wide">Grade --</span>
+          </div>
+      </div>
+    </header>
+
+    <main id="app-content" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8">
+
+        <!-- Section 1: The Intelligence Grid -->
+        <section class="mb-10">
+            <h3 class="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                <i class="fas fa-brain text-accent-gold"></i> The Intelligence Grid
+            </h3>
+
+            <div id="grid-loading" class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Concept Heatmap -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-lg">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 leading-tight">Concept Heatmap</h4>
+                    </div>
+                    <div id="heatmap-container" class="space-y-3 min-h-[100px] flex flex-col justify-center">
+                        <p class="text-xs text-slate-400 italic text-center">Loading topic frequencies...</p>
+                    </div>
+                </div>
+
+                <!-- Marks Blueprint -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center text-lg">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 leading-tight">Marks Blueprint</h4>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-center">
+                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <div class="text-xs font-bold text-slate-400">1 Mark</div>
+                            <div id="blueprint-1m" class="text-xl font-black text-slate-700">-</div>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <div class="text-xs font-bold text-slate-400">2 Marks</div>
+                            <div id="blueprint-2m" class="text-xl font-black text-slate-700">-</div>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <div class="text-xs font-bold text-slate-400">3 Marks</div>
+                            <div id="blueprint-3m" class="text-xl font-black text-slate-700">-</div>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <div class="text-xs font-bold text-slate-400">5 Marks</div>
+                            <div id="blueprint-5m" class="text-xl font-black text-slate-700">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step-Marking Forensics -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center text-lg">
+                            <i class="fas fa-search-dollar"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 leading-tight">Step-Marking Forensics</h4>
+                    </div>
+                    <div class="bg-red-50/50 p-3 rounded-lg border border-red-100 text-sm text-red-800 font-medium">
+                        <strong class="block text-red-600 mb-1 text-xs uppercase tracking-wider">Top Mistake Alert</strong>
+                        <span id="forensics-text">Analyzing examiner reports...</span>
+                    </div>
+                </div>
+
+                <!-- Predictive Probability -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center text-lg">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 leading-tight">Predictive Probability</h4>
+                    </div>
+                    <div class="bg-green-50/50 p-3 rounded-lg border border-green-100 text-sm text-green-800 font-medium">
+                        <strong class="block text-green-600 mb-1 text-xs uppercase tracking-wider">High Probability</strong>
+                        <span id="predictive-text">Calculating algorithmic trends...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Industry Connection & Compendium Layout -->
+        <div class="grid lg:grid-cols-4 gap-8">
+
+            <!-- Left Sidebar: Industry Connection -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-gradient-to-br from-slate-900 to-cbse-blue rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 text-white/10 text-9xl pointer-events-none">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <div class="relative z-10">
+                        <div class="inline-block bg-accent-gold text-slate-900 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded mb-4">
+                            Ready4Industry
+                        </div>
+                        <h4 class="text-xl font-bold mb-3">Real-World Application</h4>
+                        <p id="industry-connection-text" class="text-sm text-blue-100 leading-relaxed font-medium">
+                            Discover how this chapter powers modern technology, engineering, and digital economies.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Area: Historical Compendium -->
+            <div class="lg:col-span-3">
+                <section class="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-end mb-6">
+                        <div>
+                            <h3 class="text-2xl font-black text-slate-900 mb-1">Historical Compendium</h3>
+                            <p class="text-sm text-slate-500 font-medium">10 Years of Board Questions</p>
+                        </div>
+                    </div>
+
+                    <div id="compendium-container" class="min-h-[300px]">
+                        <div class="flex flex-col items-center justify-center h-48 text-slate-400">
+                            <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                            <p class="text-sm font-medium">Retrieving archives...</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>
