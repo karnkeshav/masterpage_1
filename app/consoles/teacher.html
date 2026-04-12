@@ -50,14 +50,14 @@
                 <span class="text-xs text-slate-300 font-bold uppercase">Grade:</span>
                 <select id="grade-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
                     <option value="8" class="text-slate-800">8th</option>
-                    <option value="9" class="text-slate-800" selected>9th</option>
+                    <option value="Unassigned" class="text-slate-800" selected>Unassigned</option>
                 </select>
             </div>
             <div class="h-4 w-px bg-white/20"></div>
             <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-300 font-bold uppercase">Section:</span>
                 <select id="section-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
-                    <option value="9A" class="text-slate-800" selected>9A</option>
+                    <option value="Unassigned" class="text-slate-800" selected>Unassigned</option>
                     <option value="9B" class="text-slate-800">9B</option>
                     <option value="8C" class="text-slate-800">8C</option>
                     <option value="8D" class="text-slate-800">8D</option>
@@ -67,7 +67,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-300 font-bold uppercase">Discipline:</span>
                 <select id="discipline-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
-                    <option value="Chemistry" class="text-slate-800" selected>Chemistry</option>
+                    <option value="Unassigned" class="text-slate-800" selected>Unassigned</option>
                     <option value="Biology" class="text-slate-800">Biology</option>
                 </select>
             </div>
@@ -131,7 +131,7 @@
                 <!-- Breadcrumb -->
                 <div>
                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">
-                        Class <span id="header-class">9-9A</span> <span class="text-cbse-blue">| <span id="header-discipline">Chemistry</span></span>
+                        Class <span id="header-class">Unassigned-Unassigned</span> <span class="text-cbse-blue">| <span id="header-discipline">Unassigned</span></span>
                     </h1>
                     <p class="text-slate-500 text-sm mt-1">
                         Real-time Command Hub linking the classroom to the student's mastery matrix.
@@ -165,7 +165,7 @@
         // App State
         let currentUser = null;
         let activeTab = 'curriculum';
-        let currentContext = { grade: '9', section: '9A', discipline: 'Chemistry' };
+        let currentContext = { grade: 'Unassigned', section: 'Unassigned', discipline: 'Unassigned' };
         let currentSubject = 'science';
         let activeChapters = [];
         let completedChapters = {};
@@ -214,7 +214,7 @@
 
 
         function filterSectionsForGrade(grade) {
-            const allSections = window.teacherProfile?.sections || (window.teacherProfile?.mapped_section ? [`${window.teacherProfile?.mapped_grade || '9'}${window.teacherProfile.mapped_section}`] : ['9A']);
+            const allSections = window.teacherProfile?.sections || (window.teacherProfile?.mapped_section ? [`${window.teacherProfile?.mapped_grade || 'Unassigned'}${window.teacherProfile.mapped_section}`] : []);
             const filtered = allSections.filter(s => s.replace(/[A-Z]/g, '') === grade);
             const sectionSelect = document.getElementById('section-select');
             sectionSelect.innerHTML = filtered.map(s =>
@@ -222,6 +222,9 @@
             ).join('');
             if (filtered.length > 0) {
                 currentContext.section = filtered[0];
+            } else {
+                currentContext.section = 'Unassigned';
+                sectionSelect.innerHTML = `<option value="Unassigned" class="text-slate-800">Unassigned</option>`;
             }
         }
 
@@ -268,8 +271,8 @@
             window.teacherProfile = user;
 
             // Populate dropdowns from teacher profile
-            const sections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || '9'}${user.mapped_section}`] : ['9A']);
-            const disciplines = user?.mapped_disciplines || (user?.mapped_discipline ? [user.mapped_discipline] : ['Chemistry']);
+            const sections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || 'Unassigned'}${user.mapped_section}`] : []);
+            const disciplines = user?.mapped_disciplines || (user?.mapped_discipline ? [user.mapped_discipline] : []);
 
             const sectionSelect = document.getElementById('section-select');
             sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('');
@@ -283,9 +286,12 @@
             gradeSelect.innerHTML = grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('');
 
             // Set initial context
-            currentContext.grade = grades[0] || '9';
-            currentContext.section = sections[0] || '9A';
-            currentContext.discipline = disciplines[0] || 'Chemistry';
+            currentContext.grade = grades[0] || 'Unassigned';
+            currentContext.section = sections[0] || 'Unassigned';
+            currentContext.discipline = disciplines[0] || 'Unassigned';
+
+            document.getElementById('header-class').innerText = `${currentContext.grade}-${currentContext.section}`;
+            document.getElementById('header-discipline').innerText = currentContext.discipline;
 
 
             const viewport = document.getElementById('tab-viewport');
@@ -344,10 +350,18 @@
             let chaps = [];
 
             // Search all subjects for the discipline
-            for (const [subject, subDiscs] of Object.entries(curriculumData)) {
-                if (subDiscs[disc]) {
-                    chaps = flattenSubject(subDiscs[disc]);
-                    currentSubject = subject.toLowerCase().replace(/\s+/g, '_');
+            for (const [subjectKey, subjectValue] of Object.entries(curriculumData)) {
+                // Case 1 (Flat): If the subjectKey matches the discipline (and it's an array)
+                if (subjectKey === disc && Array.isArray(subjectValue)) {
+                    chaps = flattenSubject(subjectValue);
+                    currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
+                    break;
+                }
+
+                // Case 2 (Nested): If the discipline exists inside the subjectKey object
+                if (subjectValue && typeof subjectValue === 'object' && !Array.isArray(subjectValue) && subjectValue[disc]) {
+                    chaps = flattenSubject(subjectValue[disc]);
+                    currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
                     break;
                 }
             }
