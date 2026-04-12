@@ -314,67 +314,53 @@ window.renderInventoryEngine = async () => {
     });
 };
 
-window.renderFacultyPillars = function(teachers) {
+function renderFacultyPillars(teachers) {
     const container = document.getElementById('faculty-pillars-container');
     if(!container) return;
 
-    const streams = {
-        'Science': {
-            subjects: ['Physics', 'Chemistry', 'Biology'],
-            teachers: { 'Physics': [], 'Chemistry': [], 'Biology': [] },
-            color: 'purple', icon: 'flask'
-        },
-        'Commerce': {
-            subjects: ['Accountancy', 'Business Studies', 'Economics'],
-            teachers: { 'Accountancy': [], 'Business Studies': [], 'Economics': [] },
-            color: 'emerald', icon: 'chart-line'
-        },
-        'Humanities': {
-            subjects: ['History', 'Geography', 'Political Science', 'Sociology'],
-            teachers: { 'History': [], 'Geography': [], 'Political Science': [], 'Sociology': [] },
-            color: 'amber', icon: 'landmark'
-        },
-        'Core/Others': {
-            subjects: ['Mathematics', 'Applied Mathematics', 'English', 'Social Science'],
-            teachers: { 'Mathematics': [], 'Applied Mathematics': [], 'English': [], 'Social Science': [] },
-            color: 'blue', icon: 'book'
-        }
+    // Theme Mapping for common disciplines to ensure colorful UI
+    const themeMap = {
+        'physics': { color: 'purple', icon: 'flask' },
+        'chemistry': { color: 'purple', icon: 'flask' },
+        'biology': { color: 'purple', icon: 'flask' },
+        'science': { color: 'purple', icon: 'flask' },
+        'accountancy': { color: 'emerald', icon: 'chart-line' },
+        'business studies': { color: 'emerald', icon: 'chart-line' },
+        'economics': { color: 'emerald', icon: 'chart-line' },
+        'commerce': { color: 'emerald', icon: 'chart-line' },
+        'history': { color: 'amber', icon: 'landmark' },
+        'geography': { color: 'amber', icon: 'landmark' },
+        'political science': { color: 'amber', icon: 'landmark' },
+        'sociology': { color: 'amber', icon: 'landmark' },
+        'humanities': { color: 'amber', icon: 'landmark' },
+        'mathematics': { color: 'blue', icon: 'calculator' },
+        'applied mathematics': { color: 'blue', icon: 'calculator' },
+        'math': { color: 'blue', icon: 'calculator' },
+        'english': { color: 'blue', icon: 'book' },
+        'social science': { color: 'amber', icon: 'globe' },
     };
 
-    const otherTeachers = [];
+    // Default theme for unknown disciplines
+    const defaultTheme = { color: 'slate', icon: 'brain' };
+
+    // 1. Scan and group dynamically
+    const disciplineGroups = {};
 
     teachers.forEach(t => {
-        const discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : []);
-        let matched = false;
+        let discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : []);
+        if (discs.length === 0) discs = ['Unassigned'];
 
         discs.forEach(d => {
-            const lowerD = d.toLowerCase();
-            let matchedD = false;
+            // Standardize format: Title Case
+            const titleCaseD = d.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
-            for (const streamName in streams) {
-                const streamData = streams[streamName];
-                const actualSubj = streamData.subjects.find(s => s.toLowerCase() === lowerD || (lowerD === 'math' && s === 'Mathematics'));
-                if (actualSubj) {
-                    if (!streamData.teachers[actualSubj].includes(t)) {
-                        streamData.teachers[actualSubj].push(t);
-                    }
-                    matched = true;
-                    matchedD = true;
-                    break;
-                }
+            if (!disciplineGroups[titleCaseD]) {
+                disciplineGroups[titleCaseD] = [];
             }
-            // For backward compatibility (if any generic science/sst is given not matching above exactly)
-            if (!matchedD) {
-                if (lowerD === 'science') {
-                   if (!streams['Science'].teachers['Physics'].includes(t)) streams['Science'].teachers['Physics'].push(t);
-                   matched = true;
-                }
+            if (!disciplineGroups[titleCaseD].includes(t)) {
+                disciplineGroups[titleCaseD].push(t);
             }
         });
-
-        if (!matched) {
-            otherTeachers.push(t);
-        }
     });
 
     const buildTeacherTable = (teacherArray) => {
@@ -398,174 +384,42 @@ window.renderFacultyPillars = function(teachers) {
 
     let html = '<div class="space-y-4">';
 
-    let pillarIndex = 0;
-    for (const [streamName, streamData] of Object.entries(streams)) {
-        // Only render if there's at least one teacher in any subject of this stream
-        let hasTeachers = false;
-        let innerHtml = '';
+    // Sort disciplines alphabetically, pushing 'Unassigned' to the end
+    const sortedDisciplines = Object.keys(disciplineGroups).sort((a, b) => {
+        if (a === 'Unassigned') return 1;
+        if (b === 'Unassigned') return -1;
+        return a.localeCompare(b);
+    });
 
-        for (const [subj, tArray] of Object.entries(streamData.teachers)) {
-            if (tArray.length > 0 || (streamName === 'Science' || streamName === 'Core/Others')) {
-                 // Always show some core subjects even if empty for visual consistency of the original UI
-                 hasTeachers = true;
-            }
-            if (tArray.length > 0) {
-                 innerHtml += `<div class="p-3 bg-${streamData.color}-50 font-bold text-[10px] uppercase tracking-widest text-${streamData.color}-500 border-t border-${streamData.color}-100">${subj}</div>`;
-                 innerHtml += buildTeacherTable(tArray);
-            } else if ((streamName === 'Science' || streamName === 'Core/Others') && tArray.length === 0) {
-                 // To maintain similar look to old UI where Physics/Chem/Bio always showed up if Science pillar showed up
-                 if(streamName === 'Science' || ['Mathematics', 'Social Science'].includes(subj)) {
-                     innerHtml += `<div class="p-3 bg-${streamData.color}-50 font-bold text-[10px] uppercase tracking-widest text-${streamData.color}-500 border-t border-${streamData.color}-100">${subj}</div>`;
-                     innerHtml += buildTeacherTable(tArray);
-                 }
-            }
-        }
+    sortedDisciplines.forEach(discipline => {
+        const tArray = disciplineGroups[discipline];
+        const lowerD = discipline.toLowerCase();
+        const theme = themeMap[lowerD] || defaultTheme;
+        const pillarId = `pillar-${discipline.toLowerCase().replace(/\s+/g, '-')}`;
 
-        if (hasTeachers) {
-            const pillarId = `pillar-${streamName.toLowerCase().replace('/', '-')}`;
-            html += `
-                <div class="border border-${streamData.color}-200 rounded-xl bg-${streamData.color}-50/30 overflow-hidden shadow-sm">
-                    <button onclick="window.toggleAccordion('${pillarId}')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-${streamData.color}-50 transition text-${streamData.color}-700 text-sm">
-                        <span><i class="fas fa-${streamData.icon} mr-2"></i> ${streamName}</span>
-                        <i class="fas fa-chevron-down text-${streamData.color}-300 transition-transform duration-200" id="icon-${pillarId}"></i>
-                    </button>
-                    <div id="${pillarId}" class="hidden bg-white">
-                        ${innerHtml}
-                    </div>
+        // Use general 'brain' icon if unassigned, else mapped icon
+        const icon = discipline === 'Unassigned' ? 'user-slash' : theme.icon;
+        const color = discipline === 'Unassigned' ? 'slate' : theme.color;
+
+        html += `
+            <div class="border border-${color}-200 rounded-xl bg-${color}-50/30 overflow-hidden shadow-sm">
+                <button onclick="window.toggleAccordion('${pillarId}')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-${color}-50 transition text-${color}-700 text-sm">
+                    <span><i class="fas fa-${icon} mr-2"></i> ${discipline}</span>
+                    <i class="fas fa-chevron-down text-${color}-300 transition-transform duration-200" id="icon-${pillarId}"></i>
+                </button>
+                <div id="${pillarId}" class="hidden bg-white">
+                    ${buildTeacherTable(tArray)}
                 </div>
-            `;
-        }
-    }
-
-    // Others
-    html += `
-        <div class="border border-slate-200 rounded-xl bg-slate-50/30 overflow-hidden shadow-sm">
-            <button onclick="window.toggleAccordion('pillar-other')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-slate-50 transition text-slate-700 text-sm">
-                <span><i class="fas fa-ellipsis-h mr-2"></i> Others / Unmapped</span>
-                <i class="fas fa-chevron-down text-slate-300 transition-transform duration-200" id="icon-pillar-other"></i>
-            </button>
-            <div id="pillar-other" class="hidden bg-white">
-                ${buildTeacherTable(otherTeachers)}
             </div>
-        </div>
-    `;
+        `;
+    });
+
+    if (sortedDisciplines.length === 0) {
+         html += '<div class="p-8 text-center text-slate-400 italic">No faculty data available.</div>';
+    }
 
     html += '</div>';
     container.innerHTML = html;
-}
-
-    // Grouping structure
-    const mathTeachers = [];
-    const socialTeachers = [];
-    const sciencePillars = { Physics: [], Chemistry: [], Biology: [] };
-    const otherTeachers = [];
-
-    teachers.forEach(t => {
-        const discs = t.mapped_disciplines || (t.mapped_discipline ? [t.mapped_discipline] : []);
-        let matched = false;
-
-        discs.forEach(d => {
-            const lowerD = d.toLowerCase();
-            if (lowerD === 'mathematics' || lowerD === 'math') {
-                if(!mathTeachers.includes(t)) mathTeachers.push(t);
-                matched = true;
-            } else if (['physics', 'chemistry', 'biology'].includes(lowerD)) {
-                const TitleCase = lowerD.charAt(0).toUpperCase() + lowerD.slice(1);
-                if(!sciencePillars[TitleCase].includes(t)) sciencePillars[TitleCase].push(t);
-                matched = true;
-            } else if (lowerD === 'social science' || lowerD === 'history' || lowerD === 'geography' || lowerD === 'civics') {
-                if(!socialTeachers.includes(t)) socialTeachers.push(t);
-                matched = true;
-            }
-        });
-
-        if (!matched) {
-            otherTeachers.push(t);
-        }
-    });
-
-    const buildTeacherTable = (teacherArray) => {
-        if(teacherArray.length === 0) return '<div class="p-4 text-center text-xs text-slate-400 italic border-t border-slate-100">No teachers assigned.</div>';
-
-        let rows = '';
-        teacherArray.forEach(u => {
-            const name = u.displayName || u.email || 'Unknown';
-            const secs = (u.sections || []).join(', ') || '<span class="italic opacity-50">None</span>';
-            const disc = (u.mapped_disciplines || []).join(', ') || u.mapped_discipline || 'Unassigned';
-
-            rows += `
-                <div class="flex justify-between items-center p-3 border-t border-slate-100 hover:bg-slate-50 text-xs text-slate-700">
-                    <div class="font-bold">${name} <span class="block text-[10px] text-slate-400 font-normal mt-0.5">${disc}</span></div>
-                    <div class="font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">${secs}</div>
-                </div>
-            `;
-        });
-        return rows;
-    };
-
-    container.innerHTML = `
-        <div class="space-y-4">
-            <!-- Mathematics Pillar -->
-            <div class="border border-blue-200 rounded-xl bg-blue-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('pillar-math')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-blue-50 transition text-cbse-blue text-sm">
-                    <span><i class="fas fa-calculator mr-2"></i> Mathematics</span>
-                    <i class="fas fa-chevron-down text-blue-300 transition-transform duration-200" id="icon-pillar-math"></i>
-                </button>
-                <div id="pillar-math" class="hidden bg-white">
-                    ${buildTeacherTable(mathTeachers)}
-                </div>
-            </div>
-
-            <!-- Science Pillar (Sub-disciplines) -->
-            <div class="border border-purple-200 rounded-xl bg-purple-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('pillar-sci')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-purple-50 transition text-purple-700 text-sm">
-                    <span><i class="fas fa-flask mr-2"></i> Science</span>
-                    <i class="fas fa-chevron-down text-purple-300 transition-transform duration-200" id="icon-pillar-sci"></i>
-                </button>
-                <div id="pillar-sci" class="hidden bg-white p-2 space-y-2 border-t border-purple-100">
-                    <!-- Physics -->
-                    <div class="border border-slate-100 rounded bg-slate-50/50">
-                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Physics</div>
-                        ${buildTeacherTable(sciencePillars.Physics)}
-                    </div>
-                    <!-- Chemistry -->
-                    <div class="border border-slate-100 rounded bg-slate-50/50">
-                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Chemistry</div>
-                        ${buildTeacherTable(sciencePillars.Chemistry)}
-                    </div>
-                    <!-- Biology -->
-                    <div class="border border-slate-100 rounded bg-slate-50/50">
-                        <div class="px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">Biology</div>
-                        ${buildTeacherTable(sciencePillars.Biology)}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Social Science Pillar -->
-            <div class="border border-amber-200 rounded-xl bg-amber-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('pillar-ss')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-amber-50 transition text-amber-700 text-sm">
-                    <span><i class="fas fa-globe mr-2"></i> Social Science</span>
-                    <i class="fas fa-chevron-down text-amber-300 transition-transform duration-200" id="icon-pillar-ss"></i>
-                </button>
-                <div id="pillar-ss" class="hidden bg-white">
-                    ${buildTeacherTable(socialTeachers)}
-                </div>
-            </div>
-
-            <!-- Other Subjects -->
-            ${otherTeachers.length > 0 ? `
-            <div class="border border-slate-200 rounded-xl bg-slate-50/30 overflow-hidden shadow-sm">
-                <button onclick="window.toggleAccordion('pillar-oth')" class="w-full text-left p-3 font-bold flex justify-between items-center hover:bg-slate-50 transition text-slate-700 text-sm">
-                    <span><i class="fas fa-book mr-2"></i> Other Subjects</span>
-                    <i class="fas fa-chevron-down text-slate-300 transition-transform duration-200" id="icon-pillar-oth"></i>
-                </button>
-                <div id="pillar-oth" class="hidden bg-white">
-                    ${buildTeacherTable(otherTeachers)}
-                </div>
-            </div>
-            ` : ''}
-        </div>
-    `;
 }
 
 
@@ -983,7 +837,10 @@ window.submitAddModal = async (role) => {
             }
         }
 
-        const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
+        // Standardize formatting to Title Case to match curriculum schemas
+        const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => {
+            return cb.value.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        });
 
         if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
             return showError("At least one Section and one Discipline are required.");
@@ -1269,7 +1126,7 @@ function renderBucket(elementId, users, type) {
                             <button onclick="window.promptLinkParent('${u.id}')" class="text-cbse-blue hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm transition active:scale-95">Link Parent</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
                             <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}', '${u.role}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -1285,7 +1142,7 @@ function renderBucket(elementId, users, type) {
                             <button onclick="window.promptAssignTeacher('${u.id}')" class="text-amber-600 hover:text-amber-800 font-bold text-xs bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 shadow-sm transition active:scale-95">Assign</button>
                             <button onclick="window.showEditModal('${u.id}')" class="text-slate-600 hover:text-slate-800 font-bold text-[10px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm transition active:scale-95">Edit</button>
                             <button onclick="window.resetUserPassword('${u.email || ''}', '${(u.displayName || '').replace(/'/g, "\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 shadow-sm transition active:scale-95">Reset Pwd</button>
-                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}', '${u.role}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
+                            <button onclick="window.deleteUser('${u.id}', '${(u.displayName || u.email || '').replace(/'/g, "\'")}')" class="text-danger-red hover:text-red-800 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg border border-red-100 shadow-sm transition active:scale-95">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -1385,9 +1242,7 @@ window.assignTeacherToSection = async (teacherUid, grade, section, discipline) =
 window.deleteUser = async (userId, displayName, role = '') => {
     let msg = `Are you sure you want to delete "${displayName}"? This removes their Firestore profile. Firebase Auth account must be deleted separately from Firebase Console.`;
     if (role === 'teacher') {
-        msg = `WARNING: Are you sure you want to delete teacher "${displayName}"?
-
-Classes assigned to this teacher will lose their subject instructor. This cannot be undone.`;
+        msg = `WARNING: Are you sure you want to delete teacher "${displayName}"? Classes assigned to this teacher will lose their subject instructor. This cannot be undone.`;
     }
     if (!confirm(msg)) return;
     try {
@@ -1414,11 +1269,15 @@ window.resetUserPassword = async (email, displayName) => {
     if (!action) return;
 
     try {
-        const { auth, db } = await getInitializedClients();
+        const { db } = await getInitializedClients();
 
-        // Step 1: Send Firebase password reset email
+        if (!secondaryAuth) {
+             throw new Error("SecondaryOnboarding Auth instance is not initialized.");
+        }
+
+        // Step 1: Send Firebase password reset email using secondaryAuth to avoid session disruption
         console.log("[RESET] Sending password reset email to:", email);
-        await sendPasswordResetEmail(auth, email);
+        await sendPasswordResetEmail(secondaryAuth, email);
         console.log("[RESET] sendPasswordResetEmail succeeded for:", email);
 
         // Step 2: Reset setupComplete in Firestore so guard triggers password change on next login
@@ -1475,7 +1334,9 @@ window.showEditModal = async (userId) => {
             gridHtml += '</div>';
 
             let discHtml = '';
-            schoolDisciplines.forEach(d => {
+            // Ensure any currently mapped disciplines are present in the DOM for snapshot preservation
+            const renderDiscs = new Set([...schoolDisciplines, ...teacherDiscs]);
+            renderDiscs.forEach(d => {
                 const isChecked = teacherDiscs.includes(d) ? 'checked' : '';
                 discHtml += `<label class="flex items-center space-x-2 text-xs text-slate-600"><input type="checkbox" value="${d}" class="teacher-disc-cb" ${isChecked}> <span>${d}</span></label>`;
             });
@@ -1590,7 +1451,10 @@ window.showEditModal = async (userId) => {
                         updatePayload.stream = deleteField();
                     }
 
-                    const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => cb.value);
+                    // Standardize formatting to Title Case to match curriculum schemas
+                    const checkedDiscs = Array.from(document.querySelectorAll('.teacher-disc-cb:checked')).map(cb => {
+                        return cb.value.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                    });
 
                     if(checkedSecs.length === 0 || checkedDiscs.length === 0) {
                         errorEl.innerText = "At least one Section and one Discipline are required.";
