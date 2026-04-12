@@ -324,11 +324,8 @@ async function loadPyqVault(grade, subject) {
     try {
         const db = window.firebaseDb; // from config.js
         let q;
-        if (subject && subject !== "All") {
-             q = query(collection(db, "pyq_vault"), where("grade", "==", grade.toString()), where("subject", "==", subject));
-        } else {
-             q = query(collection(db, "pyq_vault"), where("grade", "==", grade.toString()));
-        }
+        // Hardcoded requirement: Fetch Class 10 Mathematics papers for the year 2022 from Ready4Exam_Vault
+        q = query(collection(db, "Ready4Exam_Vault"), where("year", "==", "2022"), where("subject", "==", "Maths"));
 
         const snapshot = await getDocs(q);
 
@@ -422,17 +419,17 @@ function renderGrid() {
                         <!-- Hover Peek Animation Effect -->
                         <div class="absolute inset-0 bg-red-400 rounded-2xl opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-opacity" style="animation-duration: 2s;"></div>
                     </div>
-                    <h4 class="font-bold text-slate-800 text-sm leading-tight mb-1 line-clamp-2">${item.title || "Document"}</h4>
+                    <h4 class="font-bold text-slate-800 text-sm leading-tight mb-1 line-clamp-2">${item.code || "Document"}</h4>
                     <p class="text-xs text-slate-500 font-medium">${item.subject} • Set ${item.set}</p>
                 </div>
 
                 <!-- Actions -->
                 <div class="mt-4 pt-4 border-t border-slate-50 grid grid-cols-2 gap-2 relative z-10">
-                    <button class="py-2 text-xs font-bold text-slate-600 bg-slate-50 rounded-xl hover:bg-cbse-blue hover:text-white transition-colors">
-                        <i class="fas fa-eye mr-1"></i> Quick View
+                    <button onclick="window.openPdfModal('${item.qp_url}', '${item.code} Question Paper')" class="py-2 text-xs font-bold text-slate-600 bg-slate-50 rounded-xl hover:bg-cbse-blue hover:text-white transition-colors flex items-center justify-center">
+                        <i class="fas fa-eye mr-1"></i> View Question Paper
                     </button>
-                    <button class="py-2 text-xs font-bold text-cbse-blue bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors">
-                        <i class="fas fa-download mr-1"></i> Offline
+                    <button onclick="window.openPdfModal('${item.ms_url}', '${item.code} Marking Scheme')" class="py-2 text-xs font-bold text-cbse-blue bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center">
+                        <i class="fas fa-check mr-1"></i> View Marking Scheme
                     </button>
                 </div>
             </div>
@@ -441,5 +438,26 @@ function renderGrid() {
     });
 }
 </script>
+
+<!-- PDF Viewer Modal -->
+<div id="pdf-modal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h3 id="pdf-modal-title" class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-file-pdf text-red-500"></i> Document Viewer
+            </h3>
+            <button onclick="document.getElementById('pdf-modal').classList.add('hidden'); document.getElementById('pdf-iframe').src='about:blank';" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-200 text-slate-600 hover:bg-red-100 hover:text-red-500 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="flex-grow bg-slate-100 relative">
+            <div id="pdf-loading" class="absolute inset-0 flex items-center justify-center hidden">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cbse-blue"></div>
+            </div>
+            <iframe id="pdf-iframe" class="w-full h-full border-0" onload="document.getElementById('pdf-loading').classList.add('hidden')"></iframe>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
