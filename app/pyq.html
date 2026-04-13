@@ -208,7 +208,7 @@ window.loadConsoleData = async (profile) => {
     setupSubjectFilters(profile, grade);
     setupEventListeners();
 
-    await loadPyqVault(grade, "All");
+    await loadPyqVault(grade, preSelectedSubject || "All");
 };
 
 function setupYearRibbon() {
@@ -316,7 +316,41 @@ function filterBySubject(subject, clickedPill) {
 }
 
 
-async function loadPyqVault(grade, subject) {
+
+        window.openPdfModal = (url, title) => {
+            if (!url || url === "#") {
+                alert("Document not available yet");
+                return;
+            }
+            document.getElementById("pdf-modal-title").textContent = title || "Document";
+            document.getElementById("pdf-iframe").src = url;
+            document.getElementById("pdf-loading").classList.remove("hidden");
+            document.getElementById("pdf-modal").classList.remove("hidden");
+        };
+
+        window.closePdfModal = () => {
+            document.getElementById("pdf-modal").classList.add("hidden");
+            document.getElementById("pdf-iframe").src = "";
+        };
+
+
+        window.openPdfModal = (url, title) => {
+            if (!url || url === "#") {
+                alert("Document not available yet");
+                return;
+            }
+            document.getElementById("pdf-modal-title").textContent = title || "Document";
+            document.getElementById("pdf-iframe").src = url;
+            document.getElementById("pdf-loading").classList.remove("hidden");
+            document.getElementById("pdf-modal").classList.remove("hidden");
+        };
+
+        window.closePdfModal = () => {
+            document.getElementById("pdf-modal").classList.add("hidden");
+            document.getElementById("pdf-iframe").src = "";
+        };
+
+        async function loadPyqVault(grade, subject) {
     const appDiv = document.getElementById("app");
     appDiv.classList.remove("hidden");
     document.getElementById("loading").classList.add("hidden");
@@ -352,17 +386,16 @@ async function loadPyqVault(grade, subject) {
             currentVaultData.push({ id: doc.id, ...doc.data() });
         });
 
-        // Mock data if empty for demonstration of layout
+
         if (currentVaultData.length === 0) {
-            console.log("No real PYQ data found, injecting mock data for UI demo.");
-            currentVaultData = [
-                { id: "mock1", year: "2023", subject: "Science", type: "board", set: "1", title: "CBSE Class 10 Science Final", url: "#", priority: 90, solved: true },
-                { id: "mock2", year: "2023", subject: "Mathematics", type: "board", set: "2", title: "CBSE Class 10 Math Final", url: "#", priority: 85, solved: false },
-                { id: "mock3", year: "2022", subject: "Science", type: "compartment", set: "1", title: "Class 10 Sci Compartment", url: "#", priority: 60, solved: false },
-                { id: "mock4", year: "2021", subject: "Social Science", type: "marking", set: "3", title: "Class 10 SST Marking Scheme", url: "#", priority: 40, solved: true },
-                { id: "mock-math-2022", year: "2022", subject: "Mathematics", type: "board", set: "1", code: "MAT-2022-MAIN", url: "#", priority: 100, solved: false }
-            ];
+            document.getElementById("pdf-grid").innerHTML = `
+                <div class="col-span-full py-16 text-center text-slate-500 glass-panel rounded-3xl border border-slate-100">
+                    <i class="fas fa-file-pdf text-4xl mb-3 text-slate-300"></i>
+                    <p class="font-bold">No papers available for this grade yet. Check back soon.</p>
+                </div>`;
+            return;
         }
+
 
         updateMasteryGauge();
         renderGrid();
