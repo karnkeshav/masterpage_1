@@ -177,6 +177,7 @@ import { getInitializedClients } from "../js/config.js";
 import { collection, query, where, getDocs, orderBy, getDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import * as UI from "../js/ui-renderer.js";
 import { loadCurriculum } from "../js/curriculum/loader.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 UI.injectStyles();
 bindConsoleLogout("logout-nav-btn", "../index.html");
@@ -208,9 +209,21 @@ window.loadConsoleData = async (profile) => {
     setupSubjectFilters(profile, grade);
     setupEventListeners();
 
-    await loadPyqVault(grade, "All");
-};
+  
+const auth = getAuth();
 
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        console.error("User not logged in");
+        return;
+    }
+
+    console.log("User authenticated:", user.uid);
+
+    await loadPyqVault(grade, "All");
+});
+};
+    
 function setupYearRibbon() {
     const container = document.getElementById("year-ribbon");
     container.innerHTML = "";
