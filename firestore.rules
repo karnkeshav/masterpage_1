@@ -88,5 +88,16 @@ service cloud.firestore {
       allow read: if isAdmin() || isOwner();
       allow create: if isLoggedIn();
     }
+
+    // Chapter Analysis Collection (Intelligence Engine)
+    match /Chapter_Analysis/{chapterId} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin() || isOwner();
+
+      match /Historical_Questions/{questionId} {
+        allow read: if isLoggedIn();
+        allow write: if isAdmin() || isOwner();
+      }
+    }
   }
 }
