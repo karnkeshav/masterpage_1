@@ -329,14 +329,20 @@ async function loadPyqVault(grade, subject) {
             return;
         }
         let q;
-        if (subject && subject !== "All") {
-            if (subject === "Mathematics") {
-                q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()), where("subject", "in", ["Mathematics", "Maths"]));
-            } else {
-                q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()), where("subject", "==", subject));
+
+        let canonicalSubject = subject;
+        if (canonicalSubject) {
+            // Capitalize appropriately and map aliases
+            canonicalSubject = canonicalSubject.trim().replace(/\b\w/g, l => l.toUpperCase());
+            if (["Math", "Maths", "Mathematics"].includes(canonicalSubject)) {
+                canonicalSubject = "Mathematics";
             }
+        }
+
+        if (canonicalSubject && canonicalSubject !== "All") {
+            q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()), where("subject", "==", canonicalSubject));
         } else {
-             q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()));
+            q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()));
         }
 
         const snapshot = await getDocs(q);
@@ -384,7 +390,23 @@ function renderGrid() {
 
     const filteredData = currentVaultData.filter(item => {
         const matchYear = activeYear === "All" || item.year === activeYear;
-        const matchSubject = activeSubject === "All" || item.subject === activeSubject;
+        let itemSubject = item.subject;
+        if (itemSubject) {
+            itemSubject = itemSubject.trim().replace(/\b\w/g, l => l.toUpperCase());
+            if (["Math", "Maths", "Mathematics"].includes(itemSubject)) {
+                itemSubject = "Mathematics";
+            }
+        }
+
+        let targetSubject = activeSubject;
+        if (targetSubject && targetSubject !== "All") {
+            targetSubject = targetSubject.trim().replace(/\b\w/g, l => l.toUpperCase());
+            if (["Math", "Maths", "Mathematics"].includes(targetSubject)) {
+                targetSubject = "Mathematics";
+            }
+        }
+
+        const matchSubject = targetSubject === "All" || itemSubject === targetSubject;
         const matchType = activeType === "all" || item.type === activeType;
         const matchSet = activeSet === "all" || item.set === activeSet;
         const matchSearch = searchQuery === "" ||

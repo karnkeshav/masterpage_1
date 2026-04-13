@@ -58,7 +58,7 @@
                 if(!db) throw new Error("Database initialization failed.");
 
                 // 1. Fetch Metadata for Intelligence Grid
-                const metadataRef = doc(db, 'Chapter_Analysis', grade, subject, chapterID);
+                const metadataRef = doc(db, 'Chapter_Analysis', `${grade}_${subject}_${chapterID}`);
                 const metaSnap = await getDoc(metadataRef);
 
                 if (metaSnap.exists()) {
@@ -105,7 +105,7 @@
                 }
 
                 // 2. Fetch Historical Questions
-                const questionsRef = collection(db, 'Chapter_Analysis', grade, subject, chapterID, 'Historical_Questions');
+                const questionsRef = collection(db, 'Chapter_Analysis', `${grade}_${subject}_${chapterID}`, 'Historical_Questions');
                 const qSnap = await getDocs(questionsRef);
 
                 const questionsList = [];
