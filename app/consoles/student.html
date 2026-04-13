@@ -284,7 +284,7 @@ function setupRoomNavigation(grade) {
                 const totalMasteryPoints = totalChapters * 3;
 
                 // Update Total Chapters and Radial Chart
-                document.getElementById("stat-total").textContent = totalChapters;
+                if (document.getElementById("stat-total")) document.getElementById("stat-total").textContent = totalChapters;
 
                 // Update Total Attempts (in Average Mastery Card)
                 const attemptsEl = document.getElementById("stat-attempts-count");
@@ -719,29 +719,29 @@ function setupRoomNavigation(grade) {
         function renderZeroState(curriculumCounts, totalChapters) {
             // Update Volume Dashboard for Zero State
             if (curriculumCounts && totalChapters) {
-                document.getElementById("stat-coverage").textContent = `0 Chapters Touched`;
+                if (document.getElementById("stat-coverage")) document.getElementById("stat-coverage").textContent = `0 Chapters Touched`;
 
                 const radialBar = document.getElementById("stat-radial-bar");
                 if (radialBar) radialBar.setAttribute("stroke-dasharray", "0, 100");
 
-                document.getElementById("coverage-math").innerHTML = `<i class="fas fa-calculator mb-1"></i> M: 0/${curriculumCounts["Mathematics"]}`;
-                document.getElementById("coverage-sci").innerHTML = `<i class="fas fa-flask mb-1"></i> S: 0/${curriculumCounts["Science"]}`;
-                document.getElementById("coverage-sst").innerHTML = `<i class="fas fa-landmark mb-1"></i> SS: 0/${curriculumCounts["Social Science"]}`;
+                if (document.getElementById("coverage-math")) document.getElementById("coverage-math").innerHTML = `<i class="fas fa-calculator mb-1"></i> M: 0/${curriculumCounts["Mathematics"]}`;
+                if (document.getElementById("coverage-sci")) document.getElementById("coverage-sci").innerHTML = `<i class="fas fa-flask mb-1"></i> S: 0/${curriculumCounts["Science"]}`;
+                if (document.getElementById("coverage-sst")) document.getElementById("coverage-sst").innerHTML = `<i class="fas fa-landmark mb-1"></i> SS: 0/${curriculumCounts["Social Science"]}`;
 
-                document.getElementById("funnel-simple").style.width = "0%";
-                document.getElementById("funnel-medium").style.width = "0%";
-                document.getElementById("funnel-advanced").style.width = "0%";
+                if (document.getElementById("funnel-simple")) document.getElementById("funnel-simple").style.width = "0%";
+                if (document.getElementById("funnel-medium")) document.getElementById("funnel-medium").style.width = "0%";
+                if (document.getElementById("funnel-advanced")) document.getElementById("funnel-advanced").style.width = "0%";
             }
 
-            document.getElementById("stat-avg").textContent = "0%";
-            document.getElementById("stat-subject").textContent = "None";
-            document.getElementById("subject-mastery-container").innerHTML = `
+            if (document.getElementById("stat-avg")) document.getElementById("stat-avg").textContent = "0%";
+            if (document.getElementById("stat-subject")) document.getElementById("stat-subject").textContent = "None";
+            if (document.getElementById("subject-mastery-container")) document.getElementById("subject-mastery-container").innerHTML = `
                 <div class="text-center py-4">
                     <p class="text-xs text-slate-400 mb-2">No data yet.</p>
                     <a href="#" onclick="routeToLibrary('Mathematics'); return false;" class="text-xs font-bold text-blue-600 hover:underline">Start Your First Journey</a>
                 </div>
              `;
-            document.getElementById("grid-container").innerHTML = `<div class="p-8 text-center text-slate-400">Welcome! Visit the Knowledge Hub to begin.</div>`;
+            if (document.getElementById("grid-container")) document.getElementById("grid-container").innerHTML = `<div class="p-8 text-center text-slate-400">Welcome! Visit the Knowledge Hub to begin.</div>`;
         }
 
         function formatChapterName(slug) {

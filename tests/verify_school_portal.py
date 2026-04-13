@@ -102,7 +102,7 @@ def verify_school_portal():
         page2 = context2.new_page()
         try:
             print("[TEST 2] Checking Student Console...")
-            page2.goto(f"{BASE_URL}/cbse/class-9/consoles/student.html")
+            page2.goto(f"{BASE_URL}/app/consoles/student.html")
 
             # Should NOT redirect to index.html
             # Wait a bit
@@ -127,7 +127,7 @@ def verify_school_portal():
         page3 = context3.new_page()
         try:
             print("[TEST 3] Checking Principal Dashboard...")
-            page3.goto(f"{BASE_URL}/cbse/class-9/consoles/principal.html")
+            page3.goto(f"{BASE_URL}/app/consoles/principal.html")
 
             # Wait for heatmap
             page3.wait_for_selector("#heatmap-grid", state="visible")

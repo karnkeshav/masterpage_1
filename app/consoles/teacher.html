@@ -286,9 +286,9 @@
             gradeSelect.innerHTML = grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('');
 
             // Set initial context
-            currentContext.grade = grades[0] || 'Unassigned';
-            currentContext.section = sections[0] || 'Unassigned';
-            currentContext.discipline = disciplines[0] || 'Unassigned';
+            currentContext.grade = document.getElementById('grade-select').value || grades[0] || 'Unassigned';
+            currentContext.section = document.getElementById('section-select').value || sections[0] || 'Unassigned';
+            currentContext.discipline = document.getElementById('discipline-select').value || disciplines[0] || 'Unassigned';
 
             document.getElementById('header-class').innerText = `${currentContext.grade}-${currentContext.section}`;
             document.getElementById('header-discipline').innerText = currentContext.discipline;
@@ -353,20 +353,24 @@
             const disc = currentContext.discipline;
             let chaps = [];
 
-            // Search all subjects for the discipline
+            // Structure-Agnostic Recursion
             for (const [subjectKey, subjectValue] of Object.entries(curriculumData)) {
-                // Case 1 (Flat): If the subjectKey matches the discipline (and it's an array)
-                if (subjectKey === disc && Array.isArray(subjectValue)) {
-                    chaps = flattenSubject(subjectValue);
-                    currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
-                    break;
-                }
-
-                // Case 2 (Nested): If the discipline exists inside the subjectKey object
-                if (subjectValue && typeof subjectValue === 'object' && !Array.isArray(subjectValue) && subjectValue[disc]) {
-                    chaps = flattenSubject(subjectValue[disc]);
-                    currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
-                    break;
+                if (Array.isArray(subjectValue)) {
+                    if (subjectKey === disc) {
+                        chaps = flattenSubject(subjectValue);
+                        currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
+                        break;
+                    }
+                } else if (subjectValue && typeof subjectValue === 'object') {
+                    if (subjectKey === disc) {
+                        chaps = flattenSubject(subjectValue);
+                        currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
+                        break;
+                    } else if (subjectValue[disc]) {
+                        chaps = flattenSubject(subjectValue[disc]);
+                        currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
+                        break;
+                    }
                 }
             }
 
