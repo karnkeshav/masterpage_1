@@ -868,11 +868,13 @@ window.submitAddModal = async (role) => {
         const userSnap = await getDocs(userQuery);
 
         let newUid = null;
+        let isNewUser = false;
 
         if (!userSnap.empty) {
             newUid = userSnap.docs[0].id;
             console.log("Account exists in Firestore, linking to existing identity");
         } else {
+            isNewUser = true;
             // Zero-Manual Flow: Create User via Secondary Auth App
             if (!secondaryAuth) {
                 throw new Error("SecondaryOnboarding Auth instance is not initialized.");
@@ -900,7 +902,7 @@ window.submitAddModal = async (role) => {
         await setDoc(doc(db, "users", newUid), payload, { merge: true });
 
         // GAP 1 FIX: Retroactive notifications for already-finished chapters
-        if (role === 'student') {
+        if (role === 'student' && isNewUser) {
             try {
                 const studentGrade = payload.grade || payload.classId || payload.class_id;
                 const studentSection = payload.section;
