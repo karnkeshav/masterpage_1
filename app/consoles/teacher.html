@@ -148,7 +148,7 @@
 
         import { bindConsoleLogout, guardConsole } from "../../js/guard.js";
         import { loadCurriculum, getGradeFromURL, flattenSubject } from "../../js/curriculum/loader.js";
-        import { collection, query, where, onSnapshot, getDocs, setDoc, addDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, getDoc, getDocs, setDoc, addDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
 
         const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -312,6 +312,7 @@
 
                 // Configure Context
                 updateActiveChapters(curriculumData);
+               
                 attachFirebaseListeners();
 
                 // Render Default View
@@ -338,56 +339,66 @@
             init(currentUser);
         };
 
-        function updateActiveChapters(curriculumData) {
-            if (!curriculumData) {
-                activeChapters = [];
-                selectedChapterId = null;
-                return;
-            }
+        function updateActiveChapters(curriculumData) {  
+    if (!curriculumData) {  
+        activeChapters = [];  
+        selectedChapterId = null;  
+        return;  
+    }  
+  
+    const disc = currentContext.discipline;  
+    let chaps = [];  
+  
+    for (const [subjectKey, subjectValue] of Object.entries(curriculumData)) {  
+        if (Array.isArray(subjectValue)) {  
+            if (subjectKey === disc) {  
+                chaps = flattenSubject(subjectValue);  
+                currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');  
+                break;  
+            }  
+        } else if (subjectValue && typeof subjectValue === 'object') {  
+            if (subjectKey === disc) {  
+                chaps = flattenSubject(subjectValue);  
+                currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');  
+                break;  
+            }  
+            // Exact match first  
+            if (subjectValue[disc]) {  
+                chaps = flattenSubject(subjectValue[disc]);  
+                currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');  
+                break;  
+            }  
+            // Fuzzy match: find a sub-key that contains the discipline name  
+            const matchingKey = Object.keys(subjectValue).find(k =>   
+                k.toLowerCase().includes(disc.toLowerCase()) ||   
+                disc.toLowerCase().includes(k.toLowerCase())  
+            );  
+            if (matchingKey) {  
+                chaps = flattenSubject(subjectValue[matchingKey]);  
+                currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');  
+                break;  
+            }  
+        }  
+    }  
+  
+    activeChapters = chaps.map(c => ({  
+        id: c.chapter_title.toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/(^-|-$)/g, ''),  
+        title: c.chapter_title  
+    }));  
+  
+    if (activeChapters.length > 0) {  
+        selectedChapterId = activeChapters[0].id;  
+    } else {  
+        selectedChapterId = null;  
+    }  
+}
 
-            const disc = currentContext.discipline;
-            let chaps = [];
-
-            // Structure-Agnostic Recursion
-            for (const [subjectKey, subjectValue] of Object.entries(curriculumData)) {
-                if (Array.isArray(subjectValue)) {
-                    if (subjectKey === disc) {
-                        chaps = flattenSubject(subjectValue);
-                        currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
-                        break;
-                    }
-                } else if (subjectValue && typeof subjectValue === 'object') {
-                    if (subjectKey === disc) {
-                        chaps = flattenSubject(subjectValue);
-                        currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
-                        break;
-                    } else if (subjectValue[disc]) {
-                        chaps = flattenSubject(subjectValue[disc]);
-                        currentSubject = subjectKey.toLowerCase().replace(/\s+/g, '_');
-                        break;
-                    }
-                }
-            }
-
-            activeChapters = chaps.map(c => ({
-                id: c.chapter_title.toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/(^-|-$)/g, ''), // FIX: 13 — safe ID chars only
-                title: c.chapter_title
-            }));
-
-            if (activeChapters.length > 0) {
-                selectedChapterId = activeChapters[0].id;
-            } else {
-                selectedChapterId = null;
-            }
-        }
-
-        const getControlDocId = (slug) => {
-            return {
-                newId: `${currentContext.grade}_${currentContext.section}_${currentSubject}_${currentContext.discipline.toLowerCase()}_${slug}`,
-                oldId: `${currentContext.grade}_${currentContext.section}_science_${currentContext.discipline.toLowerCase()}_${slug}`
-            };
-        };
-
+         const getControlDocId = (slug) => {  
+    return {  
+        newId: `${currentContext.grade}_${currentContext.section}_${currentSubject}_${currentContext.discipline.toLowerCase()}_${slug}`,  
+        oldId: `${currentContext.grade}_${currentContext.section}_science_${currentContext.discipline.toLowerCase()}_${slug}`  
+    };  
+};
         function attachFirebaseListeners() {
             if(!db) return;
             // Clear existing listeners
