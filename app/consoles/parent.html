@@ -287,6 +287,15 @@
                         const hasScore = scoreData && (scoreData.simple !== null || scoreData.medium !== null || scoreData.advanced !== null);
                         const latestScore = hasScore ? Math.max(scoreData.simple || 0, scoreData.medium || 0, scoreData.advanced || 0) : null;
 
+                        // ALWAYS add to priority inbox regardless of score or time
+                        priorityCount++;
+                        const statusLabel = hasScore ? 'Test Taken' : (hoursDiff <= 48 ? 'Pending Execution' : 'Overdue');
+                        const statusColor = hasScore ? 'text-success-green' : (hoursDiff <= 48 ? 'text-accent-gold' : 'text-danger-red');
+                        inboxHtml += `
+                        <div class="text-xs border-b border-slate-50 pb-2 mb-2 p-2 rounded hover:bg-blue-50 transition cursor-pointer">
+                            <span class="font-bold text-cbse-blue">Chapter Finished:</span> ${data.chapter_title || chap} — <span class="${statusColor} font-bold">${statusLabel}</span>
+                        </div>`;
+
                         if (!hasScore) {
                             if (hoursDiff <= 48) {
                                 // Scenario 1: Pending Execution
@@ -309,12 +318,6 @@
                                 </div>`;
                             } else {
                                 // Scenario 2: Overdue
-                                priorityCount++;
-                                inboxHtml += `
-                                <div class="text-xs border-b border-slate-50 pb-2 mb-2 p-2 rounded hover:bg-red-50 transition cursor-pointer">
-                                    <span class="font-bold text-danger-red">System Diagnostic:</span> ${chap} deadline missed by ${hoursDiff}h. Command Nudge required immediately.
-                                </div>`;
-
                                 syncHtml += `
                                 <div class="flex gap-4">
                                     <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">

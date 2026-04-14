@@ -868,11 +868,13 @@ window.submitAddModal = async (role) => {
         const userSnap = await getDocs(userQuery);
 
         let newUid = null;
+        let isNewUser = false;
 
         if (!userSnap.empty) {
             newUid = userSnap.docs[0].id;
             console.log("Account exists in Firestore, linking to existing identity");
         } else {
+            isNewUser = true;
             // Zero-Manual Flow: Create User via Secondary Auth App
             if (!secondaryAuth) {
                 throw new Error("SecondaryOnboarding Auth instance is not initialized.");
@@ -898,6 +900,51 @@ window.submitAddModal = async (role) => {
         delete payload._parentCreated; // Remove temporary flag before saving
         payload.uid = newUid;
         await setDoc(doc(db, "users", newUid), payload, { merge: true });
+
+        // GAP 1 FIX: Retroactive notifications for already-finished chapters
+        if (role === 'student' && isNewUser) {
+            try {
+                const studentGrade = payload.grade || payload.classId || payload.class_id;
+                const studentSection = payload.section;
+                const studentSchoolId = payload.school_id;
+                if (studentGrade && studentSection && studentSchoolId) {
+                    const chapterQuery = query(
+                        collection(db, "chapter_control"),
+                        where("grade", "==", studentGrade),
+                        where("section", "==", studentSection),
+                        where("school_id", "==", studentSchoolId),
+                        where("status", "==", "finished")
+                    );
+                    const chapterSnap = await getDocs(chapterQuery);
+                    const retroNotifs = [];
+                    chapterSnap.forEach(chDoc => {
+                        const ch = chDoc.data();
+                        retroNotifs.push(addDoc(collection(db, "student_notifications"), {
+                            student_id: newUid,
+                            parent_id: parentId || null,
+                            type: "TEST_ASSIGNED",
+                            topicSlug: ch.chapter_slug,
+                            chapter_title: ch.chapter_title,
+                            discipline: ch.discipline,
+                            grade: ch.grade,
+                            section: ch.section,
+                            text: `Your teacher has completed "${ch.chapter_title}" in class. Please take the Simple test as early as possible.`,
+                            sender_name: "System (Retroactive)",
+                            priority: "teacher",
+                            timestamp: serverTimestamp(),
+                            school_id: studentSchoolId
+                        }));
+                    });
+                    if (retroNotifs.length > 0) {
+                        await Promise.all(retroNotifs);
+                        console.log(`[RETRO] Created ${retroNotifs.length} retroactive notifications for new student ${newUid}`);
+                    }
+                }
+            } catch (retroErr) {
+                console.warn("[RETRO] Failed to create retroactive notifications:", retroErr);
+            }
+        }
+
 
         // Parent double-link
         if (role === 'student' && parentId) {
@@ -1005,6 +1052,44 @@ window.handleCSVUpload = async (event) => {
                                 created_at: serverTimestamp()
                             });
                             window.logMessage(`Created student ${email} in ${csvGrade}-${csvSection}`);
+
+                            // GAP 1 FIX: Retroactive notifications for CSV-created student
+                            try {
+                                const chapterQuery = query(
+                                    collection(db, "chapter_control"),
+                                    where("grade", "==", csvGrade),
+                                    where("section", "==", csvSection),
+                                    where("school_id", "==", currentSchoolId),
+                                    where("status", "==", "finished")
+                                );
+                                const chapterSnap = await getDocs(chapterQuery);
+                                const retroNotifs = [];
+                                chapterSnap.forEach(chDoc => {
+                                    const ch = chDoc.data();
+                                    retroNotifs.push(addDoc(collection(db, "student_notifications"), {
+                                        student_id: userId,
+                                        parent_id: null,
+                                        type: "TEST_ASSIGNED",
+                                        topicSlug: ch.chapter_slug,
+                                        chapter_title: ch.chapter_title,
+                                        discipline: ch.discipline,
+                                        grade: ch.grade,
+                                        section: ch.section,
+                                        text: `Your teacher has completed "${ch.chapter_title}" in class. Please take the Simple test as early as possible.`,
+                                        sender_name: "System (Retroactive)",
+                                        priority: "teacher",
+                                        timestamp: serverTimestamp(),
+                                        school_id: currentSchoolId
+                                    }));
+                                });
+                                if (retroNotifs.length > 0) {
+                                    await Promise.all(retroNotifs);
+                                    console.log(`[RETRO-CSV] Created ${retroNotifs.length} retroactive notifications for ${email}`);
+                                }
+                            } catch (retroErr) {
+                                console.warn("[RETRO-CSV] Failed:", retroErr);
+                            }
+
                             successCount++;
                             continue;
                         } catch (createErr) {
