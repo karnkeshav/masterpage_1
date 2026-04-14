@@ -51,7 +51,7 @@ service cloud.firestore {
     match /student_notifications/{docId} {
       allow read: if isLoggedIn();
       allow create: if isLoggedIn();
-      allow delete: if isAdmin() || isOwner();
+      allow delete: if isAdmin() || isOwner() || (isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher');
     }
 
     // Schools Collection

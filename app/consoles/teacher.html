@@ -148,7 +148,7 @@
 
         import { bindConsoleLogout, guardConsole } from "../../js/guard.js";
         import { loadCurriculum, getGradeFromURL, flattenSubject } from "../../js/curriculum/loader.js";
-        import { collection, query, where, onSnapshot, getDoc, getDocs, setDoc, addDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, getDoc, getDocs, setDoc, addDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import * as UI from "../../js/ui-renderer.js";
 
         const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -172,6 +172,7 @@
         // UI Event Handlers Exposure
         window.switchTab = switchTab;
         window.markChapterFinished = markChapterFinished;
+        window.revokeChapterFinished = revokeChapterFinished;
 
         window.showStudentDetail = (uid) => {
             const name = window.sectionStudents?.names[uid] || uid;
@@ -499,6 +500,55 @@
             }
         }
 
+        async function revokeChapterFinished(chapterId) {
+            if (!db) return;
+            const chapterTitle = activeChapters.find(c => c.id === chapterId)?.title || chapterId;
+
+            const confirmed = confirm(
+                `REVOKE "${chapterTitle}"?\n\n` +
+                `This will:\n` +
+                `1. Remove the "finished" status for this chapter\n` +
+                `2. Delete all student & parent notifications for this chapter\n\n` +
+                `Are you sure?`
+            );
+            if (!confirmed) return;
+
+            try {
+                // 1. Delete chapter_control document (try both new and old ID formats)
+                const ids = getControlDocId(chapterId);
+                const newDocRef = doc(db, "chapter_control", ids.newId);
+                const oldDocRef = doc(db, "chapter_control", ids.oldId);
+
+                const newSnap = await getDoc(newDocRef);
+                if (newSnap.exists()) {
+                    await deleteDoc(newDocRef);
+                }
+                const oldSnap = await getDoc(oldDocRef);
+                if (oldSnap.exists()) {
+                    await deleteDoc(oldDocRef);
+                }
+
+                // 2. Delete all student_notifications for this chapter in this section
+                const notifQuery = query(
+                    collection(db, "student_notifications"),
+                    where("topicSlug", "==", chapterId),
+                    where("discipline", "==", currentContext.discipline),
+                    where("grade", "==", currentContext.grade),
+                    where("section", "==", currentContext.section),
+                    where("school_id", "==", window.teacherProfile?.school_id || '')
+                );
+                const notifSnap = await getDocs(notifQuery);
+                const deletePromises = notifSnap.docs.map(d => deleteDoc(d.ref));
+                await Promise.all(deletePromises);
+
+                console.log(`Revoked "${chapterTitle}": chapter_control deleted, ${notifSnap.size} notifications removed.`);
+
+            } catch (error) {
+                console.error("Revoke failed:", error);
+                alert("Failed to revoke chapter: " + error.message);
+            }
+        }
+
         function switchTab(tabId) {
             activeTab = tabId;
 
@@ -561,9 +611,12 @@
                                         <i class="fas fa-flag-checkered"></i> [Mark as Finished]
                                     </button>
                                 ` : `
-                                    <button disabled class="bg-slate-200 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed flex items-center gap-2">
-                                        <i class="fas fa-check"></i> Triggered
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-success-green font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> Triggered</span>
+                                        <button onclick="window.revokeChapterFinished('${chap.id}')" class="bg-red-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-sm hover:bg-red-700 transition active:scale-95 flex items-center gap-1">
+                                            <i class="fas fa-undo"></i> Revoke
+                                        </button>
+                                    </div>
                                 `}
                             </div>
                         </div>
