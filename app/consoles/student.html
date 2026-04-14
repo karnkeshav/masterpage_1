@@ -42,8 +42,14 @@
         import { loadCurriculum } from "../../js/curriculum/loader.js";
 
         UI.injectStyles();
+
+        const sanitize = s => String(s ?? '').replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
         bindConsoleLogout("logout-nav-btn", "../../index.html");
         guardConsole("student");
+
 
         window.loadConsoleData = async (profile) => {
             console.log("Loading Class Hub for:", profile.displayName);
@@ -61,7 +67,6 @@
             const hubTitleEl = document.getElementById("knowledge-hub-title");
             if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
 
-            renderKnowledgeHub(profile);
             setupRoomNavigation(grade);
             if (grade === "10" || grade === "12") {
                 const pyqBtn = document.getElementById("btn-pyq-vault");
@@ -233,13 +238,24 @@ function setupRoomNavigation(grade) {
                 const { db } = await getInitializedClients();
                 const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
 
-                const [snapshot, curriculum] = await Promise.all([
-                    getDocs(q),
-                    loadCurriculum(grade).catch(e => {
-                        console.error("Curriculum load failed:", e);
-                        return null;
-                    })
-                ]);
+                let snapshot, curriculum;
+                try {
+                    [snapshot, curriculum] = await Promise.all([
+                        getDocs(q),
+                        loadCurriculum(grade).catch(e => {
+                            console.error("Curriculum load failed:", e);
+                            return null;
+                        })
+                    ]);
+                } catch(e) {
+                    if (e.message && e.message.includes("requires an index")) {
+                        console.error("Missing Index:", e);
+                        const gridContainer = document.getElementById("grid-container");
+                        if (gridContainer) gridContainer.innerHTML = `<div class="p-8 text-center text-warning-yellow font-bold">Dashboard requires a one-time index setup. Contact your administrator.</div>`;
+                        return;
+                    }
+                    throw e;
+                }
 
                 if (!curriculum || Object.keys(curriculum).length === 0) {
                     const hubTitleEl = document.getElementById("knowledge-hub-title");
@@ -275,11 +291,26 @@ function setupRoomNavigation(grade) {
                     }
                 }
 
-                // Fallback for safety if curriculum fails or is empty
-                if (curriculumCounts["Mathematics"] === 0) curriculumCounts["Mathematics"] = 13;
-                if (curriculumCounts["Science"] === 0) curriculumCounts["Science"] = 14;
-                if (curriculumCounts["Social Science"] === 0) curriculumCounts["Social Science"] = 12;
 
+                if (Object.values(curriculumCounts).reduce((a, b) => a + b, 0) === 0) {
+                    const banner = document.createElement('div');
+                    banner.className = "bg-warning-yellow/10 border-l-4 border-warning-yellow text-warning-yellow p-4 mb-6 rounded-r-xl font-medium text-sm";
+                    banner.innerHTML = "⚠️ Curriculum data unavailable — coverage stats may be inaccurate.";
+                    const statsContainer = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-3');
+                    if (statsContainer && statsContainer.parentNode) {
+                        statsContainer.parentNode.insertBefore(banner, statsContainer);
+                    }
+                }
+
+                                if (Object.values(curriculumCounts).reduce((a, b) => a + b, 0) === 0) {
+                    const banner = document.createElement('div');
+                    banner.className = "bg-warning-yellow/10 border-l-4 border-warning-yellow text-warning-yellow p-4 mb-6 rounded-r-xl font-medium text-sm";
+                    banner.innerHTML = "⚠️ Curriculum data unavailable — coverage stats may be inaccurate.";
+                    const statsContainer = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-3');
+                    if (statsContainer && statsContainer.parentNode) {
+                        statsContainer.parentNode.insertBefore(banner, statsContainer);
+                    }
+                }
                 const totalChapters = curriculumCounts["Mathematics"] + curriculumCounts["Science"] + curriculumCounts["Social Science"];
                 const totalMasteryPoints = totalChapters * 3;
 
@@ -304,6 +335,13 @@ function setupRoomNavigation(grade) {
 
                 // Helper to normalize subject names
                 const getActualSubject = (data) => {
+                    if (data.subject && typeof data.subject === 'string' && data.subject.trim() !== '') {
+                        const s = data.subject.trim().toLowerCase();
+                        if (s === 'math' || s === 'maths' || s === 'mathematics') return 'Mathematics';
+                        if (s === 'sci' || s === 'science') return 'Science';
+                        if (s === 'social science' || s === 'sst' || s === 'social') return 'Social Science';
+                        return data.subject;
+                    }
                     const context = `${data.subject || ''} ${data.topicSlug || ''} ${data.topic || ''}`.toLowerCase();
                     if (context.includes("social") || context.includes("history") || context.includes("nazism") || context.includes("hitler") || context.includes("civics") || context.includes("geography")) return "Social Science";
                     if (context.includes("math") || context.includes("triangle") || context.includes("polynomial") || context.includes("probability") || context.includes("algebra") || context.includes("geometry")) return "Mathematics";
@@ -419,7 +457,7 @@ function setupRoomNavigation(grade) {
 
                 // 2. Latest Achievement
                 if (latestQuiz && document.getElementById("stat-subject")) {
-                    document.getElementById("stat-subject").innerHTML = `${latestQuiz.chapter} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
+                    document.getElementById("stat-subject").innerHTML = `${sanitize(latestQuiz.chapter)} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
                     document.getElementById("stat-subject-label").textContent = "Latest Achievement:";
                 }
 
@@ -613,7 +651,7 @@ function setupRoomNavigation(grade) {
                     const sPipClass = isSimpleMastered ? cfg.text : "text-slate-200";
 
                     // Overall Average for Mini-Spark
-                    const scores = subjectScores[cfg.key] ? [].concat(...Object.values(subjectScores[cfg.key])) : []; // Flatten logic
+                    const scores = Array.isArray(subjectScores[cfg.key]) ? subjectScores[cfg.key] : []; // Flatten logic
                     const overallAvg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
 
                     diagnosticRows += `
@@ -633,7 +671,7 @@ function setupRoomNavigation(grade) {
 
                             <!-- Row 2: Diagnostic Note -->
                             <div class="text-[9px] font-medium text-slate-500 leading-tight mb-1">
-                                <span class="font-bold text-success-green">Strong:</span> ${d.strong.substring(0, 15)} | <span class="font-bold text-danger-red">Weak:</span> ${d.weak.substring(0, 15)}
+                                <span class="font-bold text-success-green">Strong:</span> ${sanitize(d.strong).substring(0, 15)} | <span class="font-bold text-danger-red">Weak:</span> ${sanitize(d.weak).substring(0, 15)}
                             </div>
 
                             <!-- Row 3: Visual Hint (Mini-Spark) -->
@@ -664,7 +702,7 @@ function setupRoomNavigation(grade) {
                         return `
                             <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition">
                                 <div>
-                                    <h4 class="font-bold text-slate-800 text-sm truncate" title="${chap}">${chap}</h4>
+                                    <h4 class="font-bold text-slate-800 text-sm truncate" title="${sanitize(chap)}">${sanitize(chap)}</h4>
                                     <div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Highest Score</div>
                                     <div class="text-2xl font-black ${colorClass}">${stats.highest}%</div>
                                 </div>
@@ -746,11 +784,11 @@ function setupRoomNavigation(grade) {
 
         function formatChapterName(slug) {
             if (!slug) return "General Quiz";
-            let parts = slug.replace("_quiz", "").split("_");
-            if (parts.length >= 3) { parts = parts.slice(1, -1); }
-            else if (parts.length === 2 && !isNaN(parts[parts.length - 1])) { parts.pop(); }
-            let name = parts.join(" ");
-            return [...new Set(name.split(" "))].join(" ").replace(/\b\w/g, l => l.toUpperCase());
+            return slug
+              .replace(/_quiz$/i, '')
+              .replace(/_/g, ' ')
+              .replace(/\b\w/g, l => l.toUpperCase())
+              .trim();
         }
 
         function getScoreColor(p) {
@@ -769,6 +807,8 @@ function setupRoomNavigation(grade) {
         };
 
         async function listenToIntercom() {
+            if (unsubIntercom) unsubIntercom();
+            if (unsubIntercom) unsubIntercom();
             const { auth, db } = await getInitializedClients();
             const feed = document.getElementById('intercom-feed');
             if (!feed || !auth.currentUser) return;
@@ -788,13 +828,9 @@ function setupRoomNavigation(grade) {
                 where("school_id", "==", schoolId)
             );
 
-            onSnapshot(q, (snapshot) => {
+            unsubIntercom = unsubIntercom = onSnapshot(q, (snapshot) => {
                 feed.innerHTML = "";
-                const badge = document.getElementById("inbox-badge");
-                if (badge) {
-                    badge.textContent = "0";
-                    badge.classList.add("hidden");
-                }
+
 
                 // Sort manually client side
                 const docs = [];
@@ -835,6 +871,8 @@ function setupRoomNavigation(grade) {
         }
 
         async function renderInbox() {
+            if (unsubInbox) unsubInbox();
+            if (unsubInbox) unsubInbox();
             const { auth, db } = await getInitializedClients();
             const notificationContainer = document.getElementById('notification-list');
             if (!notificationContainer || !auth.currentUser) return;
@@ -842,7 +880,7 @@ function setupRoomNavigation(grade) {
             // Querying notifications for the logged-in student
             const q = query(collection(db, "student_notifications"), where("student_id", "==", auth.currentUser.uid));
 
-            onSnapshot(q, (snapshot) => {
+            unsubInbox = unsubInbox = onSnapshot(q, (snapshot) => {
                 notificationContainer.innerHTML = "";
                 let count = 0;
                 snapshot.forEach(doc => {

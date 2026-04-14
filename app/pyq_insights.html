@@ -36,7 +36,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const grade = urlParams.get('grade') || '10';
         const subject = urlParams.get('subject') || 'Science';
-        const chapterID = urlParams.get('chapterID') || 'Chemical_Reactions';
+        const chapterID = urlParams.get('chapter') || urlParams.get('chapterID') || 'Chemical_Reactions';
 
         async function loadChapterInsights() {
             try {

@@ -49,26 +49,21 @@
             <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-300 font-bold uppercase">Grade:</span>
                 <select id="grade-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
-                    <option value="8" class="text-slate-800">8th</option>
-                    <option value="Unassigned" class="text-slate-800" selected>Unassigned</option>
+                    <option value="" disabled selected class="text-slate-800">Loading...</option>
                 </select>
             </div>
             <div class="h-4 w-px bg-white/20"></div>
             <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-300 font-bold uppercase">Section:</span>
                 <select id="section-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
-                    <option value="Unassigned" class="text-slate-800" selected>Unassigned</option>
-                    <option value="9B" class="text-slate-800">9B</option>
-                    <option value="8C" class="text-slate-800">8C</option>
-                    <option value="8D" class="text-slate-800">8D</option>
+                    <option value="" disabled selected class="text-slate-800">Loading...</option>
                 </select>
             </div>
             <div class="h-4 w-px bg-white/20"></div>
             <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-300 font-bold uppercase">Discipline:</span>
                 <select id="discipline-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
-                    <option value="Unassigned" class="text-slate-800" selected>Unassigned</option>
-                    <option value="Biology" class="text-slate-800">Biology</option>
+                    <option value="" disabled selected class="text-slate-800">Loading...</option>
                 </select>
             </div>
         </div>
@@ -375,7 +370,7 @@
             }
 
             activeChapters = chaps.map(c => ({
-                id: c.chapter_title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+                id: c.chapter_title.toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/(^-|-$)/g, ''), // FIX: 13 — safe ID chars only
                 title: c.chapter_title
             }));
 
@@ -402,40 +397,27 @@
             // Re-attach listeners for current chapters
             activeChapters.forEach(chap => {
                 const ids = getControlDocId(chap.id);
-                let unsubOld = null; // Track inner listener
-
-                // First try the new ID
-                const unsubNew = onSnapshot(doc(db, "chapter_control", ids.newId), (docSnapNew) => {
-                    if (docSnapNew.exists()) {
-                        if (unsubOld) { unsubOld(); unsubOld = null; }
-                        completedChapters[chap.id] = docSnapNew.data().taught_date;
-                        updateHeatmapAndCurriculum(chap.id, docSnapNew.data().taught_date);
-                    } else {
-                        // Fallback to old ID if new ID doesn't exist
-                        if (!unsubOld) {
-                            unsubOld = onSnapshot(doc(db, "chapter_control", ids.oldId), (docSnapOld) => {
-                                if (docSnapOld.exists()) {
-                                    completedChapters[chap.id] = docSnapOld.data().taught_date;
-                                    updateHeatmapAndCurriculum(chap.id, docSnapOld.data().taught_date);
-                                } else {
-                                    completedChapters[chap.id] = null;
-                                    updateHeatmapAndCurriculum(chap.id, null);
-                                }
-                            }, (error) => {
-                                console.error(`Fallback listener error for chapter ${chap.id}:`, error);
+                // FIX: 14 — avoid nested onSnapshot; use getDoc to pick the right ID first
+                getDoc(doc(db, "chapter_control", ids.newId)).then(probe => {
+                    const targetId = probe.exists() ? ids.newId : ids.oldId;
+                    const unsub = onSnapshot(
+                        doc(db, "chapter_control", targetId),
+                        (snap) => {
+                            if (snap.exists()) {
+                                completedChapters[chap.id] = snap.data().taught_date;
+                                updateHeatmapAndCurriculum(chap.id, snap.data().taught_date);
+                            } else {
                                 completedChapters[chap.id] = null;
                                 updateHeatmapAndCurriculum(chap.id, null);
-                            });
+                            }
+                        },
+                        (error) => {
+                            console.error(`Listener error for chapter ${chap.id}:`, error);
+                            completedChapters[chap.id] = null;
+                            updateHeatmapAndCurriculum(chap.id, null);
                         }
-                    }
-                }, (error) => {
-                    console.error(`Listener error for chapter ${chap.id}:`, error);
-                    completedChapters[chap.id] = null;
-                });
-
-                chapterListeners.push(() => {
-                    unsubNew();
-                    if (unsubOld) unsubOld();
+                    );
+                    chapterListeners.push(unsub);
                 });
             });
 
@@ -843,8 +825,8 @@
 
             // Calculate Benchmark (B) at P70
             const sortedAttempts = realStudents.map(s => s.attempts).sort((a, b) => a - b);
-            const p70Index = Math.floor(realStudents.length * 0.70);
-            const B = sortedAttempts[p70Index] || 1;
+            const p70Index = Math.min(Math.floor(realStudents.length * 0.70), sortedAttempts.length - 1);
+            const B = sortedAttempts[p70Index] ?? 1;
 
             // Filter Strugglers (B+1)
             const strugglers = realStudents
