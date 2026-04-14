@@ -40,20 +40,6 @@
 
         async function loadChapterInsights() {
             try {
-                // Update header dynamically
-
-                const headerTitle = document.getElementById('header-title');
-                headerTitle.textContent = '';
-                const subjectSpan = document.createElement('span');
-                subjectSpan.textContent = subject.replace(/_/g, ' ');
-                const chapterSpan = document.createElement('span');
-                chapterSpan.className = 'text-white opacity-80 text-lg font-medium ml-2';
-                chapterSpan.textContent = '| ' + chapterID.replace(/_/g, ' ');
-                headerTitle.appendChild(subjectSpan);
-                headerTitle.appendChild(chapterSpan);
-
-                document.getElementById('context-badge').textContent = `Grade ${grade}`;
-
                 const { db } = await getInitializedClients();
                 if(!db) throw new Error("Database initialization failed.");
 
@@ -186,17 +172,28 @@
         }
 
         // Initialize on load
-       import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-       window.addEventListener('DOMContentLoaded', () => {
-    const auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            loadChapterInsights();
-        } else {
-            window.location.href = "../index.html";
-        }
-    });
-}); 
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Update header immediately from URL params
+            const headerTitle = document.getElementById('header-title');
+            headerTitle.textContent = '';
+            const subjectSpan = document.createElement('span');
+            subjectSpan.textContent = subject.replace(/_/g, ' ');
+            const chapterSpan = document.createElement('span');
+            chapterSpan.className = 'text-white opacity-80 text-lg font-medium ml-2';
+            chapterSpan.textContent = '| ' + chapterID.replace(/_/g, ' ');
+            headerTitle.appendChild(subjectSpan);
+            headerTitle.appendChild(chapterSpan);
+            document.getElementById('context-badge').textContent = `Grade ${grade}`;
+
+            const { auth } = await getInitializedClients();
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    loadChapterInsights();
+                } else {
+                    window.location.href = "../index.html";
+                }
+            });
+        });
     </script>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
