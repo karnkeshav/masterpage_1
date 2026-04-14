@@ -94,10 +94,7 @@ export async function authenticateWithCredentials(username, password) {
         // Hardcoded CREDENTIALS users must NOT get the password change prompt because
         // changing their Firebase password would desync from the hardcoded password,
         // making future logins impossible.
-        if (!isHardcoded && password === "Ready4Exam@2026") {
-            sessionStorage.setItem('firstLogin', 'true');
-        }
-
+   
         // 3. Store stable UID in session and window
         sessionStorage.setItem('uid', stableUID);
         sessionStorage.setItem('username', username);
