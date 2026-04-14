@@ -161,6 +161,7 @@
         const { auth, db } = await getInitializedClients();
         auth.onAuthStateChanged((user) => {
             if (user) {
+                await user.getIdToken(true);  
                 loadChapterInsights(db);
             } else {
                 window.location.href = "../index.html";
