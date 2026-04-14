@@ -199,10 +199,13 @@
                     return 0;
                 }
 
-                if (snapshot.empty) {
-                    console.log("No data found for student.");
-                    document.getElementById("matrix-body").innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500 text-xs">No quiz data available to generate Report Card.</td></tr>`;
-                    return;
+               if (snapshot.empty) {  
+    console.log("No data found for student.");  
+    document.getElementById("matrix-body").innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500 text-xs">No quiz data available to generate Report Card.</td></tr>`;  
+    // Still render sync wall & inbox — notifications exist even without quiz scores  
+    await renderSyncWallAndInbox(db, targetUid, {});  
+    return;  
+}
                 }
 
                 const chapterData = {};
