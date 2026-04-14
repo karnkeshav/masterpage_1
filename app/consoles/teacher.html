@@ -532,6 +532,7 @@
                 const notifQuery = query(
                     collection(db, "student_notifications"),
                     where("topicSlug", "==", chapterId),
+                    where("discipline", "==", currentContext.discipline),
                     where("grade", "==", currentContext.grade),
                     where("section", "==", currentContext.section),
                     where("school_id", "==", window.teacherProfile?.school_id || '')
