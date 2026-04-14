@@ -29,172 +29,145 @@
 
     <script src="../js/firebase-master-config.js"></script>
     <script type="module">
-        import { getInitializedClients } from '../js/config.js';
-        import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getInitializedClients } from '../js/config.js';
+    import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Extract parameters from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const grade = urlParams.get('grade') || '10';
-        const subject = urlParams.get('subject') || 'Science';
-        const chapterID = urlParams.get('chapter') || urlParams.get('chapterID') || 'Chemical_Reactions';
+    const urlParams = new URLSearchParams(window.location.search);
+    const grade = urlParams.get('grade') || '10';
+    const subject = urlParams.get('subject') || 'Science';
+    const chapterID = urlParams.get('chapter') || urlParams.get('chapterID') || 'Chemical_Reactions';
 
-        async function loadChapterInsights() {
-            try {
-                const { db } = await getInitializedClients();
-                if(!db) throw new Error("Database initialization failed.");
+    async function loadChapterInsights(db) {
+        try {
+            const metadataRef = doc(db, 'Chapter_Analysis', `${grade}_${subject}_${chapterID}`);
+            const metaSnap = await getDoc(metadataRef);
 
-                // 1. Fetch Metadata for Intelligence Grid
-                const metadataRef = doc(db, 'Chapter_Analysis', `${grade}_${subject}_${chapterID}`);
-                const metaSnap = await getDoc(metadataRef);
+            if (metaSnap.exists()) {
+                const data = metaSnap.data();
 
-                if (metaSnap.exists()) {
-                    const data = metaSnap.data();
-
-                    // Populate Concept Heatmap
-                    if(data.heatmap) {
-                        const heatmapContainer = document.getElementById('heatmap-container');
-                        heatmapContainer.innerHTML = data.heatmap.map(item => `
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-slate-700">${item.topic}</span>
-                                <div class="w-1/2 bg-slate-200 rounded-full h-2">
-                                    <div class="bg-warning-yellow h-2 rounded-full" style="width: ${item.frequency}%"></div>
-                                </div>
+                if(data.heatmap) {
+                    document.getElementById('heatmap-container').innerHTML = data.heatmap.map(item => `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-slate-700">${item.topic}</span>
+                            <div class="w-1/2 bg-slate-200 rounded-full h-2">
+                                <div class="bg-warning-yellow h-2 rounded-full" style="width: ${item.frequency}%"></div>
                             </div>
-                        `).join('');
-                    }
-
-                    // Populate Marks Blueprint
-                    if(data.blueprint) {
-                        document.getElementById('blueprint-1m').textContent = data.blueprint['1m'] || 0;
-                        document.getElementById('blueprint-2m').textContent = data.blueprint['2m'] || 0;
-                        document.getElementById('blueprint-3m').textContent = data.blueprint['3m'] || 0;
-                        document.getElementById('blueprint-5m').textContent = data.blueprint['5m'] || 0;
-                    }
-
-                    // Populate Forensics
-                    if(data.forensics) {
-                        document.getElementById('forensics-text').textContent = data.forensics;
-                    }
-
-                    // Populate Predictive
-                    if(data.predictive) {
-                        document.getElementById('predictive-text').textContent = data.predictive;
-                    }
-
-                    // Industry Connection
-                    if(data.industry_connection) {
-                        document.getElementById('industry-connection-text').textContent = data.industry_connection;
-                    }
-                } else {
-                    console.log("No metadata found for this chapter.");
-                    document.getElementById('grid-loading').innerHTML = `<p class="text-slate-500 italic p-4 text-center">Intelligence data not yet generated for this chapter.</p>`;
+                        </div>
+                    `).join('');
                 }
 
-                // 2. Fetch Historical Questions
-                const questionsRef = collection(db, 'Chapter_Analysis', `${grade}_${subject}_${chapterID}`, 'Historical_Questions');
-                const qSnap = await getDocs(questionsRef);
+                if(data.blueprint) {
+                    document.getElementById('blueprint-1m').textContent = data.blueprint['1m'] || 0;
+                    document.getElementById('blueprint-2m').textContent = data.blueprint['2m'] || 0;
+                    document.getElementById('blueprint-3m').textContent = data.blueprint['3m'] || 0;
+                    document.getElementById('blueprint-5m').textContent = data.blueprint['5m'] || 0;
+                }
 
-                const questionsList = [];
-                qSnap.forEach(doc => {
-                    questionsList.push({ id: doc.id, ...doc.data() });
-                });
+                if(data.forensics) document.getElementById('forensics-text').textContent = data.forensics;
+                if(data.predictive) document.getElementById('predictive-text').textContent = data.predictive;
+                if(data.industry_connection) document.getElementById('industry-connection-text').textContent = data.industry_connection;
 
-                renderQuestions(questionsList);
+            } else {
+                document.getElementById('grid-loading').innerHTML = `<p class="text-slate-500 italic p-4 text-center">Intelligence data not yet generated for this chapter.</p>`;
+            }
 
-            } catch (err) {
-                console.error("Error loading chapter insights:", err);
-                document.getElementById('app-content').innerHTML = `
-                    <div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl border border-red-200">
-                        <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
-                        <h3 class="font-bold text-lg mb-2">Failed to Load Intelligence Data</h3>
-                        <p class="text-sm opacity-80">${err.message}</p>
+            const questionsRef = collection(db, 'Chapter_Analysis', `${grade}_${subject}_${chapterID}`, 'Historical_Questions');
+            const qSnap = await getDocs(questionsRef);
+            const questionsList = [];
+            qSnap.forEach(d => questionsList.push({ id: d.id, ...d.data() }));
+            renderQuestions(questionsList);
+
+        } catch (err) {
+            console.error("Error loading chapter insights:", err);
+            document.getElementById('app-content').innerHTML = `
+                <div class="p-8 text-center bg-red-50 text-red-600 rounded-2xl border border-red-200">
+                    <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
+                    <h3 class="font-bold text-lg mb-2">Failed to Load Intelligence Data</h3>
+                    <p class="text-sm opacity-80">${err.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderQuestions(questions) {
+        const container = document.getElementById('compendium-container');
+        if(questions.length === 0) {
+            container.innerHTML = `<p class="text-center text-slate-500 py-8">No historical questions found.</p>`;
+            return;
+        }
+
+        const grouped = { '1m': [], '2m': [], '3m': [], '5m': [], 'other': [] };
+        questions.forEach(q => {
+            const mark = (q.marks || '').toString().toLowerCase();
+            if(mark === '1' || mark === '1m') grouped['1m'].push(q);
+            else if(mark === '2' || mark === '2m') grouped['2m'].push(q);
+            else if(mark === '3' || mark === '3m') grouped['3m'].push(q);
+            else if(mark === '5' || mark === '5m') grouped['5m'].push(q);
+            else grouped['other'].push(q);
+        });
+
+        let html = '';
+        ['5m', '3m', '2m', '1m', 'other'].forEach(group => {
+            if(grouped[group].length > 0) {
+                html += `
+                    <div class="mb-8">
+                        <h4 class="text-lg font-bold text-cbse-blue mb-4 border-b-2 border-slate-200 pb-2 flex items-center">
+                            <span class="bg-cbse-blue text-white text-xs px-2 py-1 rounded mr-2">${group.toUpperCase()}</span>
+                            Questions
+                        </h4>
+                        <div class="space-y-4">
+                            ${grouped[group].map((q, idx) => `
+                                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group hover:border-cbse-blue transition">
+                                    <div class="absolute top-4 right-4 text-xs font-bold text-slate-400">Year: ${q.year || 'N/A'}</div>
+                                    <div class="text-sm text-slate-800 font-medium mb-4 pr-16 leading-relaxed">
+                                        ${q.question_text || ''}
+                                        ${q.image_url ? `<img src="${q.image_url}" alt="Question Graphic" class="mt-3 max-h-48 rounded border border-slate-200">` : ''}
+                                    </div>
+                                    <button onclick="document.getElementById('logic-${group}-${idx}').classList.toggle('hidden')"
+                                            class="text-xs font-bold text-cbse-blue hover:text-accent-gold transition flex items-center gap-1">
+                                        <i class="fas fa-magic"></i> Reveal Marking Logic
+                                    </button>
+                                    <div id="logic-${group}-${idx}" class="hidden mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-sm text-slate-700">
+                                        <div class="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                                            <i class="fas fa-check-double"></i> Step-wise Answer (Marking Scheme)
+                                        </div>
+                                        <div class="whitespace-pre-wrap">${q.answer_logic || 'Marking scheme not available.'}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 `;
             }
-        }
-
-        function renderQuestions(questions) {
-            const container = document.getElementById('compendium-container');
-            if(questions.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-500 py-8">No historical questions found.</p>`;
-                return;
-            }
-
-            // Group by marks
-            const grouped = { '1m': [], '2m': [], '3m': [], '5m': [], 'other': [] };
-            questions.forEach(q => {
-                const mark = (q.marks || '').toString().toLowerCase();
-                if(mark === '1' || mark === '1m') grouped['1m'].push(q);
-                else if(mark === '2' || mark === '2m') grouped['2m'].push(q);
-                else if(mark === '3' || mark === '3m') grouped['3m'].push(q);
-                else if(mark === '5' || mark === '5m') grouped['5m'].push(q);
-                else grouped['other'].push(q);
-            });
-
-            let html = '';
-            ['5m', '3m', '2m', '1m', 'other'].forEach(group => {
-                if(grouped[group].length > 0) {
-                    html += `
-                        <div class="mb-8">
-                            <h4 class="text-lg font-bold text-cbse-blue mb-4 border-b-2 border-slate-200 pb-2 flex items-center">
-                                <span class="bg-cbse-blue text-white text-xs px-2 py-1 rounded mr-2">${group.toUpperCase()}</span>
-                                Questions
-                            </h4>
-                            <div class="space-y-4">
-                                ${grouped[group].map((q, idx) => `
-                                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group hover:border-cbse-blue transition">
-                                        <div class="absolute top-4 right-4 text-xs font-bold text-slate-400">Year: ${q.year || 'N/A'}</div>
-                                        <div class="text-sm text-slate-800 font-medium mb-4 pr-16 leading-relaxed">
-                                            ${q.question_text || ''}
-                                            ${q.image_url ? `<img src="${q.image_url}" alt="Question Graphic" class="mt-3 max-h-48 rounded border border-slate-200">` : ''}
-                                        </div>
-
-                                        <button onclick="document.getElementById('logic-${group}-${idx}').classList.toggle('hidden')"
-                                                class="text-xs font-bold text-cbse-blue hover:text-accent-gold transition flex items-center gap-1">
-                                            <i class="fas fa-magic"></i> Reveal Marking Logic
-                                        </button>
-
-                                        <div id="logic-${group}-${idx}" class="hidden mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-sm text-slate-700">
-                                            <div class="font-bold text-indigo-800 mb-2 flex items-center gap-2">
-                                                <i class="fas fa-check-double"></i> Step-wise Answer (Marking Scheme)
-                                            </div>
-                                            <div class="whitespace-pre-wrap">${q.answer_logic || 'Marking scheme not available.'}</div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-
-            container.innerHTML = html;
-        }
-
-        // Initialize on load
-        window.addEventListener('DOMContentLoaded', async () => {
-            // Update header immediately from URL params
-            const headerTitle = document.getElementById('header-title');
-            headerTitle.textContent = '';
-            const subjectSpan = document.createElement('span');
-            subjectSpan.textContent = subject.replace(/_/g, ' ');
-            const chapterSpan = document.createElement('span');
-            chapterSpan.className = 'text-white opacity-80 text-lg font-medium ml-2';
-            chapterSpan.textContent = '| ' + chapterID.replace(/_/g, ' ');
-            headerTitle.appendChild(subjectSpan);
-            headerTitle.appendChild(chapterSpan);
-            document.getElementById('context-badge').textContent = `Grade ${grade}`;
-
-            const { auth } = await getInitializedClients();
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    loadChapterInsights();
-                } else {
-                    window.location.href = "../index.html";
-                }
-            });
         });
-    </script>
+
+        container.innerHTML = html;
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        // Update header immediately from URL params
+        const headerTitle = document.getElementById('header-title');
+        headerTitle.textContent = '';
+        const subjectSpan = document.createElement('span');
+        subjectSpan.textContent = subject.replace(/_/g, ' ');
+        const chapterSpan = document.createElement('span');
+        chapterSpan.className = 'text-white opacity-80 text-lg font-medium ml-2';
+        chapterSpan.textContent = '| ' + chapterID.replace(/_/g, ' ');
+        headerTitle.appendChild(subjectSpan);
+        headerTitle.appendChild(chapterSpan);
+        document.getElementById('context-badge').textContent = `Grade ${grade}`;
+
+        // Get auth and db together once — pass db into loadChapterInsights
+        const { auth, db } = await getInitializedClients();
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                loadChapterInsights(db);
+            } else {
+                window.location.href = "../index.html";
+            }
+        });
+    });
+</script>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
 
