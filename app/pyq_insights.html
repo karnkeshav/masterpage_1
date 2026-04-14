@@ -186,7 +186,17 @@
         }
 
         // Initialize on load
-        window.addEventListener('DOMContentLoaded', loadChapterInsights);
+       import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+       window.addEventListener('DOMContentLoaded', () => {
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loadChapterInsights();
+        } else {
+            window.location.href = "../index.html";
+        }
+    });
+}); 
     </script>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
