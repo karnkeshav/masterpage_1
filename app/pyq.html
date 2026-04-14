@@ -208,14 +208,7 @@ window.loadConsoleData = async (profile) => {
     setupSubjectFilters(profile, grade);
     setupEventListeners();
 
-    const auth = getAuth();
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            console.error("User not logged in");
-            return;
-        }
-        await loadPyqVault(grade, preSelectedSubject || "All");
-    });
+await loadPyqVault(grade, "All");
 };
 
 function setupYearRibbon() {
