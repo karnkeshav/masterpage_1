@@ -41,6 +41,9 @@
         import * as UI from "../../js/ui-renderer.js";
         import { loadCurriculum } from "../../js/curriculum/loader.js";
 
+        let unsubInbox = null;
+        let unsubIntercom = null;
+
         UI.injectStyles();
 
         const sanitize = s => String(s ?? '').replace(/&/g,'&amp;')
