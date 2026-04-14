@@ -302,15 +302,7 @@ function setupRoomNavigation(grade) {
                     }
                 }
 
-                                if (Object.values(curriculumCounts).reduce((a, b) => a + b, 0) === 0) {
-                    const banner = document.createElement('div');
-                    banner.className = "bg-warning-yellow/10 border-l-4 border-warning-yellow text-warning-yellow p-4 mb-6 rounded-r-xl font-medium text-sm";
-                    banner.innerHTML = "⚠️ Curriculum data unavailable — coverage stats may be inaccurate.";
-                    const statsContainer = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-3');
-                    if (statsContainer && statsContainer.parentNode) {
-                        statsContainer.parentNode.insertBefore(banner, statsContainer);
-                    }
-                }
+
                 const totalChapters = curriculumCounts["Mathematics"] + curriculumCounts["Science"] + curriculumCounts["Social Science"];
                 const totalMasteryPoints = totalChapters * 3;
 
@@ -808,7 +800,6 @@ function setupRoomNavigation(grade) {
 
         async function listenToIntercom() {
             if (unsubIntercom) unsubIntercom();
-            if (unsubIntercom) unsubIntercom();
             const { auth, db } = await getInitializedClients();
             const feed = document.getElementById('intercom-feed');
             if (!feed || !auth.currentUser) return;
@@ -828,7 +819,7 @@ function setupRoomNavigation(grade) {
                 where("school_id", "==", schoolId)
             );
 
-            unsubIntercom = unsubIntercom = onSnapshot(q, (snapshot) => {
+            unsubIntercom = onSnapshot(q, (snapshot) => {
                 feed.innerHTML = "";
 
 
@@ -872,7 +863,6 @@ function setupRoomNavigation(grade) {
 
         async function renderInbox() {
             if (unsubInbox) unsubInbox();
-            if (unsubInbox) unsubInbox();
             const { auth, db } = await getInitializedClients();
             const notificationContainer = document.getElementById('notification-list');
             if (!notificationContainer || !auth.currentUser) return;
@@ -880,7 +870,7 @@ function setupRoomNavigation(grade) {
             // Querying notifications for the logged-in student
             const q = query(collection(db, "student_notifications"), where("student_id", "==", auth.currentUser.uid));
 
-            unsubInbox = unsubInbox = onSnapshot(q, (snapshot) => {
+            unsubInbox = onSnapshot(q, (snapshot) => {
                 notificationContainer.innerHTML = "";
                 let count = 0;
                 snapshot.forEach(doc => {
