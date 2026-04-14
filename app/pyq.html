@@ -205,7 +205,7 @@ window.loadConsoleData = async (profile) => {
 
     // Initialize UI Elements
     setupYearRibbon();
-    setupSubjectFilters(profile, grade);
+   await setupSubjectFilters(profile, grade);
     setupEventListeners();
 
 await loadPyqVault(grade, "All");
@@ -339,7 +339,10 @@ function filterBySubject(subject, clickedPill) {
     document.getElementById("loading").classList.add("hidden");
 
     try {
-        const { db } = await getInitializedClients();
+        const { auth, db } = await getInitializedClients();  
+        if (auth && auth.currentUser) {  
+            await auth.currentUser.getIdToken(true);  
+            }
         if (!db) {
             console.error("Database not initialized");
             UI.showToast("Database initialization failed", "error");
