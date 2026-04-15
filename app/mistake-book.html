@@ -71,6 +71,24 @@
             "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500", lightBar: "bg-slate-200" }
         };
 
+function removeSkeleton(container) {
+            if (!container) return;
+
+            // Remove all known skeleton elements
+            container.querySelectorAll('.skeleton, .loading, .animate-pulse').forEach(el => el.remove());
+
+            // Remove overlay divs (safety)
+            container.querySelectorAll('div').forEach(el => {
+                const style = window.getComputedStyle(el);
+                if (style.position === 'absolute' || style.position === 'fixed') {
+                    el.remove();
+                }
+            });
+
+            // Reset container completely (final guarantee)
+            container.innerHTML = "";
+        }
+
 async function init(user) {
     const container = document.getElementById("mistakes-container");
     if (container) UI.showSkeleton(container);
@@ -105,7 +123,11 @@ async function init(user) {
         console.log("🔍 Both empty?", scoresSnap.empty && mistakesSnap.empty);
 
         if (scoresSnap.empty && mistakesSnap.empty) {
+            removeSkeleton(container);
             renderEmptyState(container);
+            container.style.opacity = "1";
+            container.style.visibility = "visible";
+            container.style.zIndex = "1";
             return;
         }
 
@@ -138,8 +160,18 @@ async function init(user) {
                 
                processData(scoreDocs);
 
-                if (container) container.innerHTML = "";
+                // ✅ Step 1: remove skeleton COMPLETELY
+                removeSkeleton(container);
+
+                // ✅ Step 2: verify container is clean
+                console.log("After skeleton removal:", container);
+
+                // ✅ Step 3: render ONCE
                 renderConsole(container); 
+
+                container.style.opacity = "1";
+                container.style.visibility = "visible";
+                container.style.zIndex = "1";
                
             } catch (e) {
                 console.error("Mistake Book Error:", e);
