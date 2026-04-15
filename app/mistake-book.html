@@ -100,6 +100,10 @@ async function init(user) {
         const scoresSnap = await getDocs(query(collection(db, "quiz_scores"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")));
         const mistakesSnap = await getDocs(query(collection(db, "mistake_notebook"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")));
 
+        console.log("📊 Scores count:", scoresSnap.size);
+        console.log("📝 Mistakes count:", mistakesSnap.size);
+        console.log("🔍 Both empty?", scoresSnap.empty && mistakesSnap.empty);
+
         if (scoresSnap.empty && mistakesSnap.empty) {
             renderEmptyState(container);
             return;
