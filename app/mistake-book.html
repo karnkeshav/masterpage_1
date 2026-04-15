@@ -71,27 +71,39 @@
             "General": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: "fa-cubes", bar: "bg-slate-500", lightBar: "bg-slate-200" }
         };
 
-        async function init(user) {
-            const container = document.getElementById("mistakes-container");
-            if (container) UI.showSkeleton(container);
+async function init(user) {
+    const container = document.getElementById("mistakes-container");
+    if (container) UI.showSkeleton(container);
 
-            try {
-                const profile = await ensureUserInFirestore(user);
-                currentGrade = profile?.classId || "9";
-                
-                const badge = document.getElementById("context-badge");
-                if (badge) badge.textContent = `Grade ${currentGrade}`;
+    try {
+        const profile = await ensureUserInFirestore(user);
+        console.log("✅ Profile loaded:", profile);
+        currentGrade = profile?.classId || "9";
 
-                curriculumData = await loadCurriculum(currentGrade);
-                const { db } = await getInitializedClients();
+        const badge = document.getElementById("context-badge");
+        if (badge) badge.textContent = `Grade ${currentGrade}`;
 
-                const scoresSnap = await getDocs(query(collection(db, "quiz_scores"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")));
-                const mistakesSnap = await getDocs(query(collection(db, "mistake_notebook"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")));
+        curriculumData = await Promise.race([
+            loadCurriculum(currentGrade),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("loadCurriculum timed out")), 5000)
+            )
+        ]).catch(e => {
+            console.warn("Curriculum load failed, continuing without it:", e);
+            return {};
+        });
+        console.log("✅ Curriculum loaded");
 
-                if (scoresSnap.empty && mistakesSnap.empty) {
-                    renderEmptyState(container);
-                    return;
-                }
+        const { db } = await getInitializedClients();
+        console.log("✅ DB ready");
+
+        const scoresSnap = await getDocs(query(collection(db, "quiz_scores"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")));
+        const mistakesSnap = await getDocs(query(collection(db, "mistake_notebook"), where("user_id", "==", user.uid), orderBy("timestamp", "desc")));
+
+        if (scoresSnap.empty && mistakesSnap.empty) {
+            renderEmptyState(container);
+            return;
+        }
 
                 const scoreDocs = scoresSnap.docs.map(d => {
                     const data = d.data();
