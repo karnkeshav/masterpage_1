@@ -1058,7 +1058,7 @@ window.handleCSVUpload = async (event) => {
                                 const chapterQuery = query(
                                     collection(db, "chapter_control"),
                                     where("grade", "==", csvGrade),
-                                    where("section", "==", csvSection),
+                                    where("section", "==", csvGrade + csvSection),
                                     where("school_id", "==", currentSchoolId),
                                     where("status", "==", "finished")
                                 );
