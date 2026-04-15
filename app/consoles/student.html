@@ -796,30 +796,10 @@ function setupRoomNavigation(grade) {
             if (inbox) inbox.classList.toggle("translate-x-full");
         };
 
-  window.launchFromInbox = async (topicSlug, discipline, notifGrade, chapterTitle) => {  
+window.launchFromInbox = (topicSlug, discipline, notifGrade, chapterTitle) => {  
     const grade = notifGrade || new URLSearchParams(window.location.search).get("grade") || "9";  
+    const subject = discipline || 'Science';  
     const chapter = chapterTitle || topicSlug;  
-  
-    // Dynamically resolve the top-level subject from curriculum  
-    let subject = discipline; // default: use discipline as-is  
-    try {  
-        const { loadCurriculum } = await import("../../js/curriculum/loader.js");  
-        const curriculum = await loadCurriculum(grade);  
-  
-        // If discipline is already a top-level key (e.g., "Physics" in class 11/12, "Mathematics" in any class), use it directly  
-        if (!curriculum[discipline]) {  
-            // Search all top-level subjects for this discipline as a nested sub-key  
-            for (const [topSubject, subData] of Object.entries(curriculum)) {  
-                if (typeof subData === 'object' && !Array.isArray(subData) && subData[discipline]) {  
-                    subject = topSubject; // e.g., "Biology" → "Science", "History" → "Social Science"  
-                    break;  
-                }  
-            }  
-        }  
-    } catch (e) {  
-        console.warn("Curriculum lookup failed, using discipline as subject:", e);  
-    }  
-  
     window.location.href = `../study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;  
 };
 
