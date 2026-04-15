@@ -4,17 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Curriculum — Ready4Exam</title>
+    <title>Chapter Selection — Ready4Exam</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="../js/shell.js"></script>
-<script src="../js/tailwind-config.js"></script>
-<link href="../css/global.css" rel="stylesheet">
+    <script src="../js/tailwind-config.js"></script>
+    <link href="../css/global.css" rel="stylesheet">
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 
     <script src="../js/firebase-master-config.js"></script>
@@ -39,17 +40,14 @@
             selectedQuiz = null;
         };
 
-        // Expose launch function globally for the HTML onclick inside the modal
         window.launchQuiz = (difficulty) => {
             if (!selectedQuiz) return;
-            const { tableId, title, grade } = selectedQuiz;
-            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}&subject=${encodeURIComponent(selectedQuiz.subject)}`;
+            const { tableId, title, grade, subject } = selectedQuiz;
+            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}&subject=${encodeURIComponent(subject)}`;
         };
 
         function openDifficultyModal(ctx) {
             const theme = (engine && engine.themes && engine.themes[ctx.subject]) ? engine.themes[ctx.subject] : { icon: 'fa-shapes', bg: 'bg-slate-50' };
-
-            // Remove existing modal if present
             const existing = document.getElementById('symmetric-difficulty-modal');
             if (existing) existing.remove();
 
@@ -58,14 +56,11 @@
             modal.className = `fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in`;
 
             let colorName = 'slate';
-            try {
-                if (theme.bg) colorName = theme.bg.split('-')[1];
-            } catch (e) { }
+            try { if (theme.bg) colorName = theme.bg.split('-')[1]; } catch (e) { }
 
             modal.innerHTML = `
                 <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative border-4 border-${colorName}-100">
                     <button id="close-sym-modal" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-red-50 hover:text-red-500 transition">✕</button>
-
                     <div class="text-center mb-8">
                         <div class="w-16 h-16 mx-auto bg-${colorName}-50 rounded-2xl flex items-center justify-center text-${colorName}-600 text-3xl mb-4 shadow-sm">
                             <i class="fas ${theme.icon}"></i>
@@ -75,7 +70,6 @@
                             Launching Quiz for ${ctx.subject} &gt; ${ctx.chapter}
                         </p>
                     </div>
-
                     <div class="space-y-4">
                         ${createCard('Simple', 'Foundation', 'bg-green-50', 'border-green-200', 'text-green-700', '🌱')}
                         ${createCard('Medium', 'Standard', 'bg-yellow-50', 'border-yellow-200', 'text-yellow-700', '⚡')}
@@ -83,7 +77,6 @@
                     </div>
                 </div>
             `;
-
             document.body.appendChild(modal);
             document.getElementById('close-sym-modal').onclick = closeModal;
         }
@@ -107,60 +100,51 @@
             const grade = params.get("grade") || "9";
             const subject = params.get("subject") || "Science";
 
-            document.getElementById("page-title").textContent = `${subject} (Class ${grade})`;
-            document.getElementById("back-link").href = `consoles/student.html?grade=${grade}`; // Fallback if history empty
+            // Fix for "Cannot set properties of null" error
+            const titleEl = document.getElementById("page-title");
+            if (titleEl) titleEl.textContent = `${subject} (Class ${grade})`;
+            
+            const backLink = document.getElementById("back-link");
+            if (backLink) backLink.href = `consoles/student.html?grade=${grade}`;
 
             try {
                 const curriculum = await loadCurriculum(grade);
                 engine = new SlugEngine(curriculum);
                 const data = curriculum[subject];
 
+                const container = document.getElementById("content-area");
                 if (!data) {
-                    document.getElementById("content-area").innerHTML = `<div class="text-center text-slate-400">No content found for ${subject}.</div>`;
+                    if (container) container.innerHTML = `<div class="text-center text-slate-400">No content found for ${subject}.</div>`;
                     return;
                 }
 
                 renderCurriculum(data, subject, grade);
             } catch (e) {
                 console.error(e);
-                document.getElementById("content-area").innerHTML = `<div class="text-center text-red-400">Failed to load curriculum.</div>`;
+                const container = document.getElementById("content-area");
+                if (container) container.innerHTML = `<div class="text-center text-red-400">Failed to load curriculum.</div>`;
             }
         };
 
         function renderCurriculum(data, subject, grade) {
             const container = document.getElementById("content-area");
+            if (!container) return;
             let html = "";
-
-            // Check structure: Array (Math/Science simple) or Object (Sub-categories)?
-            // Curriculum loader returns object with keys like "Physics", "Chemistry" etc. for Science
-            // Or "History", "Geography" for Social Science
-
             if (Array.isArray(data)) {
-                // Flat list (Maybe Math in some grades?)
-                // Treat as "General"
                 html += renderSection("General", data, subject, grade);
             } else {
-                // Categorized
-                // Order keys if needed?
                 Object.keys(data).forEach(category => {
                     html += renderSection(category, data[category], subject, grade);
                 });
             }
-
             container.innerHTML = html;
         }
 
         function renderSection(category, chapters, subject, grade) {
             if (!chapters || !chapters.length) return "";
-
             const grid = chapters.map(ch => {
                 const title = ch.chapter_title || ch.title || ch;
-                // Generate Table ID
-                // Note: In real app, table_name might be in the JSON. If not, generate it.
-                // Assuming we generate it strictly based on title for now.
-                // Or if the object has `table_name`, use it.
                 const tableId = ch.table_name || (engine ? engine.getQuizTableSlug(grade, subject, title) : "");
-
                 return `
                     <div onclick="startQuiz('${tableId}', '${title}', '${grade}')"
                          class="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-500 hover:shadow-md transition cursor-pointer flex items-center justify-between">
@@ -191,35 +175,36 @@
             `;
         }
 
-        // Init
+        // Initialize
         loadSelection();
     </script>
 </head>
 
 <body class="bg-cbse-light min-h-screen flex flex-col">
+    <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center w-full">
+        <div class="flex items-center space-x-4">
+            <a id="back-link" href="#"
+                class="p-2 bg-white text-cbse-blue font-bold rounded-xl shadow-md hover:scale-105 transition active:scale-95">🔙</a>
+            <div>
+                <h1 id="page-title" class="text-lg md:text-xl font-extrabold text-accent-gold leading-tight">Loading...</h1>
+                <p class="text-[10px] md:text-xs text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry</p>
+            </div>
+        </div>
+    </header>
 
-    <div id="app-header"></div>
-<script>R4E.renderHeader({
-    title: "Chapter Selection",
-    homePath: "../index.html",
-    homeIcon: "🔙",
-    showUserWelcome: false,
-    showLogout: false
-});</script>
-
-    <div class="flex-grow w-full p-4 md:p-8">
+    <main class="flex-grow w-full p-4 md:p-8">
         <div class="max-w-5xl mx-auto fade-in">
-
             <div id="content-area">
-                <!-- Dynamic Content -->
                 <div class="flex items-center justify-center h-64">
                     <div class="animate-pulse font-bold text-slate-300">Fetching Curriculum...</div>
                 </div>
             </div>
         </div>
-        <!-- Standard Footer -->
-        <div id="app-footer"></div>
-<script>R4E.renderFooter();</script>
+    </main>
+
+    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5 w-full">
+        <p>© 2025 Ready4Exam Academic Portal.</p>
+    </footer>
 </body>
 
 </html>
