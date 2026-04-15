@@ -8,25 +8,15 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="../../js/tailwind-config.js"></script>
+<link href="../../css/global.css" rel="stylesheet">
 
-<script>
-tailwind.config = {
-  theme:{
-    extend:{
-      fontFamily:{sans:['Inter'],serif:['Merriweather']},
-      colors:{'cbse-blue':'#133b6a','gold':'#ffbe0b','heading':'#0f172a'},
-      backgroundImage:{
-        'hero-grad':'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #22c55e 100%)'
-      }
-    }
-  }
-}
-</script>
+
 
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <style>
-body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidden;}
+
 .subject-card{width:100%;background:white;padding:1.6rem 1.2rem;border-radius:20px;
   border:1px solid rgba(0,0,0,.04);box-shadow:0 4px 12px rgba(0,0,0,.03);
   transition:.3s cubic-bezier(0.4, 0, 0.2, 1);cursor:pointer;}
@@ -37,7 +27,7 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
 .card-button{padding:.7rem 1.5rem;font-size:.9rem;font-weight:700;border-radius:12px;color:white;transition:.3s;width:100%;}
 .science{background:#059669;} .commerce{background:#2563eb;} .arts{background:#7c3aed;}
 .glass-nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);background:rgba(19,59,106,.95);border-bottom:1px solid rgba(255,255,255,0.1);}
-.fade-in{animation:fade .6s ease-out forwards;opacity:0;}@keyframes fade{to{opacity:1}}
+.fade-in{animation:fade .6s ease-out forwards;opacity:0;}
 .quote-card{
   background:linear-gradient(to right, #ffffff, #f1f5f9); border-left:6px solid #ffbe0b;
   border-radius:16px; padding:24px; margin-top:40px;
