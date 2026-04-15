@@ -225,32 +225,40 @@ function setupYearRibbon() {
 
 async function setupSubjectFilters(profile, grade) {
     const container = document.getElementById("subject-filters");
-    container.innerHTML = "";
+    container.innerHTML = ""; // Clear existing filters
 
-    let subjects = ["Science", "Mathematics", "Social Science", "English"]; // Default Fallback
+    let subjects = [];
 
-    // Try to load dynamic curriculum to know valid subjects
-    try {
-        const curriculum = await loadCurriculum(grade);
-        if(curriculum) subjects = Object.keys(curriculum);
-    } catch(e) {
-        console.log("Using default subjects");
-    }
-
+    // 1. Priority: Use the disciplines mapped to the student's profile (Commerce/Science/Humanities)
     if (profile && profile.mapped_disciplines && profile.mapped_disciplines.length > 0) {
         subjects = profile.mapped_disciplines;
+    } else {
+        // 2. Fallback: Load from the curriculum loader based on Grade
+        try {
+            const curriculum = await loadCurriculum(grade);
+            if (curriculum) subjects = Object.keys(curriculum);
+        } catch (e) {
+            console.error("Failed to load dynamic subjects:", e);
+            subjects = ["Science", "Mathematics", "Social Science", ]; // Hard fallback
+        }
     }
 
-    // Add "All Subjects" pill
-    const allPill = document.createElement("button");
-    allPill.className = `subject-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-cbse-blue text-white shadow-sm`;
-    allPill.textContent = "All Subjects";
-    allPill.onclick = () => filterBySubject("All", allPill);
-    container.appendChild(allPill);
+    // "All Subjects" removed per requirement.
+    // Set the first subject as the active default if not already set.
+    if (subjects.length > 0 && activeSubject === "All") {
+        activeSubject = subjects[0];
+    }
 
     subjects.forEach(subject => {
         const pill = document.createElement("button");
-        pill.className = `subject-pill px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all shadow-sm`;
+        const isActive = activeSubject === subject;
+        
+        pill.className = `subject-pill px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
+            isActive 
+            ? 'bg-cbse-blue text-white' 
+            : 'bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100'
+        }`;
+        
         pill.textContent = subject;
         pill.onclick = () => filterBySubject(subject, pill);
         container.appendChild(pill);
