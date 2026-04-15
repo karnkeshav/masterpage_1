@@ -898,9 +898,10 @@ function setupRoomNavigation(grade) {
                     card.innerHTML = `
                         <p class="text-[10px] font-bold uppercase text-slate-400 mb-1">${msg.sender_name || 'System'}</p>
                         <p class="text-sm font-medium mb-2">${msg.text}</p>
-                        ${msg.type === 'TEST_ASSIGNED' && msg.topicSlug ?
-                            ``<button onclick="launchFromInbox('${msg.topicSlug}', '${(msg.discipline || '').replace(/'/g, "\\'")}', '${msg.grade || ''}', '${(msg.chapter_title || '').replace(/'/g, "\\'")}')" ...>`                            : ''}
-                    `;
+                       ${msg.type === 'TEST_ASSIGNED' && msg.topicSlug ?  
+    `<button onclick="launchFromInbox('${msg.topicSlug}', '${(msg.discipline || '').replace(/'/g, "\\'")}', '${msg.grade || ''}', '${(msg.chapter_title || '').replace(/'/g, "\\'")}')" class="text-xs bg-slate-900 text-white px-2 py-1 rounded hover:bg-slate-800 transition">Take Test Now</button>`  
+    : ''}  
+`;
                     notificationContainer.appendChild(card);
                     count++;
                 });
