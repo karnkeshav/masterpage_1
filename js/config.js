@@ -4,8 +4,8 @@
 // We only keep the absolute essentials for the first paint
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; //
 import { createClient as createSupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { initializeFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 let firebaseApp = null;
 let firebaseAuth = null;
@@ -38,8 +38,11 @@ export async function initializeServices() {
           firebaseAuth = getAuth(firebaseApp); //
 
           // Initialize Firestore - Required for Admin Panel and User Access
-          firebaseDB = getFirestore(firebaseApp);
-
+         firebaseDB = initializeFirestore(firebaseApp, {
+          experimentalForceLongPolling: true,
+          useFetchStreams: false  
+              });
+  
           // Initialize Supabase (Essential for fetching questions)
           supabase = createSupabaseClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
             auth: { persistSession: false }
