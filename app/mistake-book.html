@@ -135,10 +135,12 @@ async function init(user) {
                     }
                 });
 
-                processData(scoreDocs);
                 
-                UI.clearSkeleton(container);
-                renderConsole(container);
+               processData(scoreDocs);
+
+                if (container) container.innerHTML = "";
+                renderConsole(container); 
+               
             } catch (e) {
                 console.error("Mistake Book Error:", e);
                 if (container) container.innerHTML = `<div class="text-center text-red-500 font-bold p-8">Failed to load data. Please refresh.</div>`;
