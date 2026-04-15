@@ -207,18 +207,42 @@ function setupYearRibbon() {
     const container = document.getElementById("year-ribbon");
     container.innerHTML = "";
 
-    // "All Years" pill
-    const allPill = document.createElement("button");
-    allPill.className = `year-pill px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap bg-cbse-blue text-white shadow-md`;
-    allPill.textContent = "All Years";
-    allPill.onclick = () => filterByYear("All", allPill);
-    container.appendChild(allPill);
-
+    // "All Years" removed to keep focus on specific upload status
     for (let year = 2026; year >= 2015; year--) {
+        const yearStr = year.toString();
+        
+        // Logic to determine signal:
+        // Check how many subjects have papers for this year in currentVaultData
+        const papersThisYear = currentVaultData.filter(d => d.year === yearStr);
+        const uniqueSubjects = new Set(papersThisYear.map(p => p.subject)).size;
+        
+        let signalClass = "";
+        let signalTooltip = "";
+
+        if (uniqueSubjects === 0) {
+            signalClass = "bg-slate-200"; // Empty
+        } else if (uniqueSubjects >= 3) {
+            signalClass = "bg-success-green"; // Fully Loaded (3+ subjects)
+        } else {
+            signalClass = "bg-warning-yellow"; // Partially Loaded
+        }
+
         const pill = document.createElement("button");
-        pill.className = `year-pill px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-white border border-slate-200 hover:border-cbse-blue hover:text-cbse-blue transition-all whitespace-nowrap shadow-sm`;
-        pill.textContent = year;
-        pill.onclick = () => filterByYear(year.toString(), pill);
+        const isActive = activeYear === yearStr;
+        
+        pill.className = `year-pill relative px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-sm ${
+            isActive 
+            ? 'bg-cbse-blue text-white' 
+            : 'bg-white text-slate-500 border border-slate-200 hover:border-cbse-blue'
+        }`;
+        
+        // Inner HTML with the status dot
+        pill.innerHTML = `
+            ${yearStr}
+            <span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${signalClass}"></span>
+        `;
+        
+        pill.onclick = () => filterByYear(yearStr, pill);
         container.appendChild(pill);
     }
 }
