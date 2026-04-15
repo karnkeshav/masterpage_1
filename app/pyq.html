@@ -309,16 +309,20 @@ function filterBySubject(subject, clickedPill) {
 
 
 
-        window.openPdfModal = (url, title) => {
-            if (!url || url === "#") {
-                alert("Document not available yet");
-                return;
-            }
-            document.getElementById("pdf-modal-title").textContent = title || "Document";
-            document.getElementById("pdf-iframe").src = url;
-            document.getElementById("pdf-loading").classList.remove("hidden");
-            document.getElementById("pdf-modal").classList.remove("hidden");
-        };
+     window.openPdfModal = (url, title) => {
+    if (!url || url === "#") {
+        alert("Document not available yet");
+        return;
+    }
+
+    document.getElementById("pdf-modal-title").textContent = title || "Document";
+
+    document.getElementById("pdf-iframe").src =
+        `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+
+    document.getElementById("pdf-loading").classList.remove("hidden");
+    document.getElementById("pdf-modal").classList.remove("hidden");
+};
 
         window.closePdfModal = () => {
             document.getElementById("pdf-modal").classList.add("hidden");
