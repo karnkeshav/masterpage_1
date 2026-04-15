@@ -796,10 +796,30 @@ function setupRoomNavigation(grade) {
             if (inbox) inbox.classList.toggle("translate-x-full");
         };
 
-window.launchFromInbox = (topicSlug, discipline, notifGrade, chapterTitle) => {  
+window.launchFromInbox = async (topicSlug, discipline, notifGrade, chapterTitle) => {  
     const grade = notifGrade || new URLSearchParams(window.location.search).get("grade") || "9";  
-    const subject = discipline || 'Science';  
     const chapter = chapterTitle || topicSlug;  
+  
+    let subject = discipline;  
+    try {  
+        const { loadCurriculum } = await import("../../js/curriculum/loader.js");  
+        const curriculum = await loadCurriculum(grade);  
+  
+        if (!curriculum[discipline]) {  
+            for (const [topSubject, subData] of Object.entries(curriculum)) {  
+                if (typeof subData === 'object' && !Array.isArray(subData)) {  
+                    const match = Object.keys(subData).some(k => k.toLowerCase().includes(discipline.toLowerCase()));  
+                    if (match) {  
+                        subject = topSubject;  
+                        break;  
+                    }  
+                }  
+            }  
+        }  
+    } catch (e) {  
+        console.warn("Curriculum lookup failed, using discipline as subject:", e);  
+    }  
+  
     window.location.href = `../study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;  
 };
 
