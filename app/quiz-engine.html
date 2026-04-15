@@ -14,35 +14,21 @@
   <title>Ready4Exam | Quiz Engine</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily:{ sans:['Inter','sans-serif'] },
-          colors:{
-            'cbse-blue':'#1a3e6a',
-            'cbse-light':'#f5f7fa',
-            'accent-gold':'#ffb703',
-            'success-green': '#16a34a',
-            'warning-yellow': '#ca8a04',
-            'danger-red': '#dc2626'
-          }
-        }
-      }
-    }
-  </script>
+<script src="../js/tailwind-config.js"></script>
+<link href="../css/global.css" rel="stylesheet">
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 
   <style>
     html, body { height: 100%; width: 100%; margin: 0; padding: 0; scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background-color: #f5f7fa; color: #1f2937; }
-    .option-label { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border: 2px solid transparent; }
-    .option-label:hover { border-color: #3b82f6; background-color: #eff6ff; }
-    .option-label.selected { border-color: #2563eb; background-color: #dbeafe; }
-    .result-card { animation: slideUp 0.5s ease-out; }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    #analysis-modal div::-webkit-scrollbar { width: 6px; }
-    #analysis-modal div::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+
+
+
+
+
+
   </style>
 
   <script src="../js/firebase-master-config.js"></script>

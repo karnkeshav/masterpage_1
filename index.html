@@ -17,31 +17,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script src="./js/tailwind-config.js"></script>
+<link href="./css/global.css" rel="stylesheet">
 <script src="js/firebase-master-config.js"></script>
 
-<script>
-tailwind.config = {
-  theme:{
-    extend:{
-      fontFamily:{sans:['Inter'],serif:['Merriweather']},
-      colors:{
-        'cbse-blue':'#133b6a',
-        'gold':'#ffbe0b',
-        'heading':'#0f172a'
-      },
-      backgroundImage:{
-        'hero-grad':'linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #133b6a 100%)'
-      }
-    }
-  }
-}
-</script>
+
 
 <style>
 /* --- BASE & UTILS --- */
-body { margin:0; background:#f8fafc; font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
-.fade-in { animation:fade .5s ease-out forwards; opacity:0; }
-@keyframes fade { to{opacity:1} }
+
+
+
 
 .whatsapp-float {
   position: fixed; bottom: 80px; right: 20px;
