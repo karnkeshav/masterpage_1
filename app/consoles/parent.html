@@ -69,6 +69,7 @@
             const overallAvg = await fetchChildData(profile);
             renderGrowthChart(overallAvg);
             listenToIntercom();
+            
         };
 
         async function listenToIntercom() {
@@ -148,8 +149,9 @@ onSnapshot(q, (snapshot) => {
     }  
 }, (error) => {  
     console.warn("Parent intercom listener error:", error.message);  
-});
 
+});
+        }
         async function fetchChildData(parentProfile) {
             try {
                 const { db } = await getInitializedClients();
