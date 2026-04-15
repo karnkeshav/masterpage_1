@@ -56,17 +56,19 @@
             100% { transform: translateX(-50%); }
         }
     </style>
+    <script src="./js/shell.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen">
 
 <!-- Header -->
-<header class="bg-cbse-blue shadow-md py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
-  <div class="flex justify-between items-center w-full max-w-7xl mx-auto">
-    <div>
-      <h1 class="text-xl font-black text-gold text-accent-gold">Ready4<span class="text-white">Exam</span></h1>
-    </div>
-  </div>
-</header>
+<div id="app-header"></div>
+<script>R4E.renderHeader({
+    title: 'Ready4<span class="text-white">Exam</span>',
+    homePath: "#",
+    showUserWelcome: false,
+    showLogout: false,
+    showInbox: false
+});</script>
 
 <!-- Section 1: Hero & Login -->
 <section class="bg-hero-grad text-white py-12 lg:py-20 px-4 relative overflow-hidden">
@@ -471,9 +473,8 @@
 </section>
 
 
-<footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-  <p>© 2025 Ready4Exam Academic Portal.</p>
-</footer>
+<div id="app-footer"></div>
+<script>R4E.renderFooter();</script>
 
 <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20need%20help%20regarding%20the%20platform." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
   <i class="fab fa-whatsapp"></i>
