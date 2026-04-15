@@ -7,6 +7,7 @@
 
     <link href="../../css/global.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../../js/shell.js"></script>
 
     <script>
       tailwind.config = {
@@ -36,46 +37,19 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
     <!-- Sovereignty Navigation -->
-    <header class="glass-panel sticky top-0 z-40 bg-cbse-blue shadow-lg py-3 px-6 grid grid-cols-3 items-center text-white border-b border-white/10 console-header-grid">
-        <div class="flex items-center space-x-4 justify-self-start">
-            <a href="../../index.html" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">🏠</a>
-            <div>
-                <h2 class="text-xl font-black leading-none tracking-tight text-accent-gold">Sovereignty Navigation</h2>
-                <p class="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">Ready4Exam • Multi-Discipline</p>
-            </div>
-        </div>
-
-        <div class="flex gap-4 items-center bg-cbse-blue/50 border border-white/10 rounded-xl px-4 py-2 justify-self-center">
-            <div class="flex items-center gap-2">
-                <span class="text-xs text-slate-300 font-bold uppercase">Grade:</span>
-                <select id="grade-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
-                    <option value="" disabled selected class="text-slate-800">Loading...</option>
-                </select>
-            </div>
-            <div class="h-4 w-px bg-white/20"></div>
-            <div class="flex items-center gap-2">
-                <span class="text-xs text-slate-300 font-bold uppercase">Section:</span>
-                <select id="section-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
-                    <option value="" disabled selected class="text-slate-800">Loading...</option>
-                </select>
-            </div>
-            <div class="h-4 w-px bg-white/20"></div>
-            <div class="flex items-center gap-2">
-                <span class="text-xs text-slate-300 font-bold uppercase">Discipline:</span>
-                <select id="discipline-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer">
-                    <option value="" disabled selected class="text-slate-800">Loading...</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="flex items-center space-x-3 justify-self-end">
-            <div class="hidden md:flex flex-col items-end">
-                <span id="user-welcome" class="text-xs font-bold text-white max-w-[200px] truncate">Authenticating...</span>
-                <span class="text-[10px] font-black text-accent-gold bg-blue-900/50 px-2 py-0.5 rounded uppercase tracking-wide">Specialist UI</span>
-            </div>
-            <button id="logout-nav-btn" class="logout-nav-btn w-10 h-10 flex items-center justify-center bg-danger-red/10 text-red-300 rounded-2xl hover:bg-danger-red hover:text-white transition shadow-sm" title="Sign Out">🚪</button>
-        </div>
-    </header>
+    <div id="app-header"></div>
+<script>R4E.renderHeader({
+    title: "Sovereignty Navigation",
+    subtitle: "Ready4Exam &bull; Multi-Discipline",
+    homePath: "../../index.html",
+    userWelcomeDefault: "Authenticating...",
+    roleBadge: "Specialist UI",
+    showLogout: true,
+    logoutId: "logout-nav-btn",
+    glass: true,
+    layout: "grid-3",
+    centerHtml: '<div class="flex gap-4 items-center bg-cbse-blue/50 border border-white/10 rounded-xl px-4 py-2 justify-self-center"><div class="flex items-center gap-2"><span class="text-xs text-slate-300 font-bold uppercase">Grade:</span><select id="grade-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"><option value="" disabled selected class="text-slate-800">Loading...</option></select></div><div class="h-4 w-px bg-white/20"></div><div class="flex items-center gap-2"><span class="text-xs text-slate-300 font-bold uppercase">Section:</span><select id="section-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"><option value="" disabled selected class="text-slate-800">Loading...</option></select></div><div class="h-4 w-px bg-white/20"></div><div class="flex items-center gap-2"><span class="text-xs text-slate-300 font-bold uppercase">Discipline:</span><select id="discipline-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"><option value="" disabled selected class="text-slate-800">Loading...</option></select></div></div>'
+});</script>
 
 
     <div id="loading" class="flex items-center justify-center min-h-[50vh]">
@@ -1048,5 +1022,7 @@
         });
 
     </script>
+<div id="app-footer"></div>
+<script>R4E.renderFooter();</script>
 </body>
 </html>

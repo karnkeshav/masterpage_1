@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Curriculum — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../js/shell.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -195,18 +196,14 @@
 
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
-    <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center w-full">
-        <div class="flex items-center space-x-4">
-            <a id="back-link" href="#"
-                class="p-2 bg-white text-cbse-blue font-bold rounded-xl shadow-md hover:scale-105 transition active:scale-95">🔙</a>
-            <div>
-                <h1 id="page-title" class="text-lg md:text-xl font-extrabold text-accent-gold leading-tight">Loading...
-                </h1>
-                <p class="text-[10px] md:text-xs text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by
-                    Ready4Industry</p>
-            </div>
-        </div>
-    </header>
+    <div id="app-header"></div>
+<script>R4E.renderHeader({
+    title: "Chapter Selection",
+    homePath: "../index.html",
+    homeIcon: "🔙",
+    showUserWelcome: false,
+    showLogout: false
+});</script>
 
     <div class="flex-grow w-full p-4 md:p-8">
         <div class="max-w-5xl mx-auto fade-in">
@@ -219,10 +216,8 @@
             </div>
         </div>
         <!-- Standard Footer -->
-        <footer
-            class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5 w-full">
-            <p>© 2025 Ready4Exam Academic Portal.</p>
-        </footer>
+        <div id="app-footer"></div>
+<script>R4E.renderFooter();</script>
 </body>
 
 </html>

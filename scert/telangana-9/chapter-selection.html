@@ -5,12 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Select Book & Chapter — Class 9 Telangana</title>
   <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../../js/shell.js"></script>
   <script>tailwind.config = { theme:{ extend:{ fontFamily:{sans:['Inter','sans-serif']}, colors:{'cbse-blue':'#1a3e6a','cbse-light':'#f5f7fa','accent-gold':'#ffb703'} } } }</script>
   <style>.topic-btn{ width:100%;padding:1rem;margin-bottom:.75rem;border-radius:.75rem;background:#fff;border:1px solid #d1d5db;cursor:pointer;text-align:left;box-shadow:0 2px 6px rgba(2,6,23,.05);transition:.2s; } .topic-btn:hover{background:#f5f7fa; transform: translateY(-1px);} .topic-btn.selected{border-color:#1a3e6a;background:#eff6ff;ring:2px solid #1a3e6a} .difficulty-btn{ padding:.6rem 1.25rem;border-radius:.75rem;font-weight:600;cursor:pointer;transition:.2s; opacity: 0.8; } .difficulty-btn:hover{opacity: 1;} .difficulty-btn.selected{opacity: 1; box-shadow:0 6px 18px rgba(26,62,106,.2); transform: scale(1.05);}</style>
   <script>window.__firebase_config = { apiKey: "AIzaSyAXdKiYRxBKAj280YcNuNwlKKDp85xpOWQ", authDomain: "quiz-signon.firebaseapp.com", projectId: "quiz-signon", storageBucket: "quiz-signon.appspot.com", messagingSenderId: "863414222321", appId: "1:863414222321:web:819f5564825308bcd9d850", measurementId: "G-4EFDM0CRYY", supabaseUrl: "https://zqhzekzilalbszpfwxhn.supabase.co", supabaseAnonKey: "sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys" };</script>
 </head>
 <body class="bg-cbse-light min-h-screen flex flex-col">
-<header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center"><div class="max-w-6xl mx-auto flex justify-between items-center px-6"><h1 class="text-2xl font-extrabold text-accent-gold">Ready4<span class="text-white">Exam</span></h1><button onclick="location.href='index.html'" class="text-white underline">← Back</button></div></header>
+<div id="app-header"></div>
+<script>R4E.renderHeader({
+    title: 'Ready4<span class="text-white">Exam</span>',
+    homePath: "../../index.html",
+    homeIcon: "🔙",
+    showUserWelcome: false,
+    showLogout: false
+});</script>
 <main class="flex-grow max-w-3xl mx-auto px-4 py-8 w-full">
   <h2 id="page-title" class="text-3xl font-extrabold text-cbse-blue mb-2 text-center">Select Book</h2>
   <p id="subject-desc" class="text-center text-gray-600 mb-8 font-medium"></p>
@@ -19,9 +27,8 @@
   <p id="error-msg" class="hidden text-center text-red-500 mb-4 font-semibold"></p>
   <div class="text-center sticky bottom-6 md:static"><button id="start-quiz" disabled class="w-full md:w-auto px-12 py-4 bg-cbse-blue text-white rounded-xl font-bold text-lg hover:bg-blue-800 transition shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">Start Quiz</button></div>
 </main>
-<footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-  <p>© 2025 Ready4Exam Academic Portal.</p>
-</footer>
+<div id="app-footer"></div>
+<script>R4E.renderFooter();</script>
 <script type="module">
 import curriculum from "./js/curriculum.js";
 import { transliterate as tr } from "https://cdn.jsdelivr.net/npm/transliteration/+esm";

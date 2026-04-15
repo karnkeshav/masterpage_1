@@ -8,6 +8,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../../js/shell.js"></script>
 
 <script>
 tailwind.config = {
@@ -62,17 +63,13 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
 
 <body class="flex flex-col min-h-screen">
 
-<header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center">
-  <div class="max-w-[1100px] mx-auto flex flex-col md:flex-row md:items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-black text-gold tracking-tight text-accent-gold">Ready4<span class="text-white">Exam</span></h1>
-      <p class="text-white text-xs opacity-80 font-medium tracking-wide uppercase mt-0.5">Ready4Exam • Powered by Ready4Industry</p>
-    </div>
-    <div class="hidden md:block text-white text-sm opacity-70 italic font-light">
-      Learn • Practice • Grow Strong
-    </div>
-  </div>
-</header>
+<div id="app-header"></div>
+<script>R4E.renderHeader({
+    title: 'Ready4<span class="text-white">Exam</span>',
+    homePath: "../../index.html",
+    showUserWelcome: false,
+    showLogout: false
+});</script>
 
 <main class="flex-grow w-full max-w-[1100px] mx-auto px-5 py-12 fade-in">
 
@@ -143,9 +140,8 @@ body{margin:0;background:#f8fafc;font-family:'Inter',sans-serif;overflow-x:hidde
 
 </main>
 
-<footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5">
-  <p>© 2025 Ready4Exam Academic Portal.</p>
-</footer>
+<div id="app-footer"></div>
+<script>R4E.renderFooter();</script>
 
 <script type="module">
 import { curriculum } from "./js/curriculum.js";
