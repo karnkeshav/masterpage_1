@@ -105,49 +105,50 @@
                 collection(db, "messages"),
                 where("school_id", "==", schoolId)
             );
-
-            onSnapshot(q, (snapshot) => {
-                feed.innerHTML = "";
-                const badge = document.getElementById("parent-inbox-badge");
-                if (badge) {
-                    badge.textContent = "0";
-                    badge.classList.add("hidden");
-                }
-                const docs = [];
-                snapshot.forEach(doc => docs.push(doc));
-                docs.sort((a,b) => {
-                    const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
-                    const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
-                    return tb - ta; // desc
-                });
-
-                docs.forEach(doc => {
-                    const data = doc.data();
-
-                    if(data.target_grade === targetGrade && data.target_section === targetSection) {
-                        const date = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : 'Just now';
-                        const toast = document.createElement('div');
-                        toast.className = 'bg-blue-50 border-l-4 border-blue-500 p-3 rounded shadow-sm text-xs relative';
-                        toast.innerHTML = `
-                            <div class="flex justify-between items-start mb-1">
-                                <span class="font-bold text-blue-700 uppercase tracking-widest text-[9px]">${data.sender || 'Admin'}</span>
-                                <span class="text-[9px] text-slate-400 font-bold">${date}</span>
-                            </div>
-                            <p class="text-slate-700 font-medium">${data.text}</p>
-                        `;
-                        feed.appendChild(toast);
-
-                        const badge = document.getElementById("parent-inbox-badge");
-                        if (badge) {
-                            badge.classList.remove("hidden");
-                            badge.textContent = parseInt(badge.textContent || "0") + 1;
-                        }
-                    }
-                });
-            }, (error) => {
-                console.warn("Parent intercom listener error:", error.message);
-            });
-        }
+onSnapshot(q, (snapshot) => {  
+    feed.innerHTML = "";  
+    const badge = document.getElementById("parent-inbox-badge");  
+  
+    // Read the priority count already set by renderSyncWallAndInbox  
+    const priorityCount = badge ? (parseInt(badge.textContent) || 0) : 0;  
+    let intercomCount = 0;  
+  
+    const docs = [];  
+    snapshot.forEach(doc => docs.push(doc));  
+    docs.sort((a, b) => {  
+        const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;  
+        const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;  
+        return tb - ta;  
+    });  
+  
+    docs.forEach(doc => {  
+        const data = doc.data();  
+        if (data.target_grade === targetGrade && data.target_section === targetSection) {  
+            const date = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : 'Just now';  
+            const toast = document.createElement('div');  
+            toast.className = 'bg-blue-50 border-l-4 border-blue-500 p-3 rounded shadow-sm text-xs relative';  
+            toast.innerHTML = `  
+                <div class="flex justify-between items-start mb-1">  
+                    <span class="font-bold text-blue-700 uppercase tracking-widest text-[9px]">${data.sender || 'Admin'}</span>  
+                    <span class="text-[9px] text-slate-400 font-bold">${date}</span>  
+                </div>  
+                <p class="text-slate-700 font-medium">${data.text}</p>  
+            `;  
+            feed.appendChild(toast);  
+            intercomCount++;  
+        }  
+    });  
+  
+    // Merge: priority inbox count + intercom message count  
+    const totalCount = priorityCount + intercomCount;  
+    if (badge) {  
+        badge.textContent = totalCount;  
+        if (totalCount > 0) badge.classList.remove("hidden");  
+        else badge.classList.add("hidden");  
+    }  
+}, (error) => {  
+    console.warn("Parent intercom listener error:", error.message);  
+});
 
         async function fetchChildData(parentProfile) {
             try {
