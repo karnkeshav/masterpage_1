@@ -38,6 +38,7 @@
     </style>
 
     <script src="../js/firebase-master-config.js"></script>
+    <script src="../js/firebase-automation-config.js"></script>
     <script src="../js/config.js" type="module"></script>
 
 </head>
@@ -323,67 +324,58 @@ function filterBySubject(subject, clickedPill) {
             document.getElementById("pdf-modal").classList.add("hidden");
             document.getElementById("pdf-iframe").src = "";
         };
-
-        async function loadPyqVault(grade, subject) {
-    const appDiv = document.getElementById("app");
-    appDiv.classList.remove("hidden");
-    document.getElementById("loading").classList.add("hidden");
-
+    
+async function loadPyqVault(grade, subject) {
     try {
-        const { auth, db } = await getInitializedClients();  
-        if (auth && auth.currentUser) {  
-            await auth.currentUser.getIdToken(true);  
-            }
-        if (!db) {
-            console.error("Database not initialized");
-            UI.showToast("Database initialization failed", "error");
-            return;
+        const { automationDB } = await getInitializedClients();
+        if (!automationDB) return;
+
+        // 1. Normalize Subject for the Query (Matches your DB Screenshot)
+        let querySubject = subject;
+        if (subject === "Maths" || subject === "Math" || subject === "Mathematics") {
+            querySubject = "Mathematics";
         }
+
+        // 2. Build Query
         let q;
-
-        let canonicalSubject = subject;
-        if (canonicalSubject) {
-            // Capitalize appropriately and map aliases
-            canonicalSubject = canonicalSubject.trim().replace(/\b\w/g, l => l.toUpperCase());
-            if (["Math", "Maths", "Mathematics"].includes(canonicalSubject)) {
-                canonicalSubject = "Mathematics";
-            }
-        }
-
-        if (canonicalSubject && canonicalSubject !== "All") {
-            q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()), where("subject", "==", canonicalSubject));
+        if (querySubject === "All") {
+            q = query(collection(automationDB, "Ready4Exam_Vault"), 
+                where("grade", "==", grade.toString()));
         } else {
-            q = query(collection(db, "Ready4Exam_Vault"), where("grade", "==", grade.toString()));
+            q = query(collection(automationDB, "Ready4Exam_Vault"), 
+                where("grade", "==", grade.toString()), 
+                where("subject", "==", querySubject));
         }
 
+        // 3. Execute and Store Data
         const snapshot = await getDocs(q);
-
-        currentVaultData = [];
-        snapshot.forEach(doc => {
-            currentVaultData.push({ id: doc.id, ...doc.data() });
+        currentVaultData = []; // Clear old data
+        
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            // Map the screenshot fields (qp_url, ms_url) to the local array
+            currentVaultData.push({
+                id: doc.id,
+                ...data,
+                // Ensure these exist for the renderGrid logic
+                year: data.year || "2022",
+                subject: data.subject || "Mathematics",
+                type: data.type || "board", // default if missing
+                set: data.set || "1"        // default if missing
+            });
         });
 
-
-        if (currentVaultData.length === 0) {
-            document.getElementById("pdf-grid").innerHTML = `
-                <div class="col-span-full py-16 text-center text-slate-500 glass-panel rounded-3xl border border-slate-100">
-                    <i class="fas fa-file-pdf text-4xl mb-3 text-slate-300"></i>
-                    <p class="font-bold">No papers available for this grade yet. Check back soon.</p>
-                </div>`;
-            return;
-        }
-
-
+        // 4. Update UI
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+        
         updateMasteryGauge();
         renderGrid();
 
     } catch (error) {
-        console.error("Error fetching PYQ Vault:", error);
-        UI.showToast("Failed to load vault data", "error");
+        console.error("Vault Load Error:", error);
     }
-}
-
-function updateMasteryGauge() {
+}function updateMasteryGauge() {
     // Calculate unique years covered in current data vs total decade (10)
     const uniqueYears = new Set(currentVaultData.map(d => d.year)).size;
     let percentage = Math.min(Math.round((uniqueYears / 10) * 100), 100);
