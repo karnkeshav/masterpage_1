@@ -205,41 +205,41 @@ await loadPyqVault(grade, "All");
 
 function setupYearRibbon() {
     const container = document.getElementById("year-ribbon");
+    
+    // Remove horizontal scroll and center/wrap the items
+    container.className = "flex flex-wrap gap-4 justify-center md:justify-start pb-4";
+    container.style.overflowX = "visible"; // Explicitly disable horizontal scroll
+    
     container.innerHTML = "";
 
-    // "All Years" removed to keep focus on specific upload status
-    for (let year = 2026; year >= 2015; year--) {
+    // Restrict range: 2026 down to 2022
+    for (let year = 2026; year >= 2022; year--) {
         const yearStr = year.toString();
         
-        // Logic to determine signal:
-        // Check how many subjects have papers for this year in currentVaultData
-        const papersThisYear = currentVaultData.filter(d => d.year === yearStr);
-        const uniqueSubjects = new Set(papersThisYear.map(p => p.subject)).size;
+        // Status Signal Logic (retained from existing setup)
+        const papersForYear = currentVaultData.filter(d => d.year === yearStr);
+        const subjectsFound = [...new Set(papersForYear.map(p => p.subject))];
         
-        let signalClass = "";
-        let signalTooltip = "";
-
-        if (uniqueSubjects === 0) {
-            signalClass = "bg-slate-200"; // Empty
-        } else if (uniqueSubjects >= 3) {
-            signalClass = "bg-success-green"; // Fully Loaded (3+ subjects)
-        } else {
-            signalClass = "bg-warning-yellow"; // Partially Loaded
+        let statusHtml = "";
+        if (papersForYear.length > 0) {
+            // Signal: Green for 3+ subjects (Full), Amber for less (Partial)
+            const color = subjectsFound.length >= 3 ? "bg-success-green" : "bg-warning-yellow";
+            statusHtml = `<span class="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${color} shadow-sm"></span>`;
         }
 
         const pill = document.createElement("button");
         const isActive = activeYear === yearStr;
         
-        pill.className = `year-pill relative px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-sm ${
+        // Retaining your high-quality glass-panel styling
+        pill.className = `year-pill relative px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm ${
             isActive 
-            ? 'bg-cbse-blue text-white' 
-            : 'bg-white text-slate-500 border border-slate-200 hover:border-cbse-blue'
+            ? 'bg-cbse-blue text-white ring-2 ring-cbse-blue/20 scale-105' 
+            : 'bg-white text-slate-500 border border-slate-200 hover:border-cbse-blue hover:text-cbse-blue'
         }`;
         
-        // Inner HTML with the status dot
         pill.innerHTML = `
             ${yearStr}
-            <span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${signalClass}"></span>
+            ${statusHtml}
         `;
         
         pill.onclick = () => filterByYear(yearStr, pill);
