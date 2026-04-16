@@ -13,9 +13,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+<!-- Firebase configs (ORDER IMPORTANT) -->
 <script src="../js/firebase-master-config.js"></script>
 <script src="../js/firebase-automation-config.js"></script>
-<script src="../js/config.js" type="module"></script>
+<script type="module" src="../js/config.js"></script>
 
 <style>
 body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
@@ -27,14 +28,18 @@ body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
 <!-- HEADER -->
 <div id="app-header"></div>
 <script>
-R4E.renderHeader({
-    title: "PYQ Vault",
-    homePath: "../index.html",
-    userWelcomeDefault: "Student",
-    roleBadge: "Grade --",
-    roleBadgeId: "context-badge",
-    showLogout: true,
-    logoutId: "logout-nav-btn"
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.R4E) {
+        R4E.renderHeader({
+            title: "PYQ Vault",
+            homePath: "../index.html",
+            userWelcomeDefault: "Student",
+            roleBadge: "Grade --",
+            roleBadgeId: "context-badge",
+            showLogout: true,
+            logoutId: "logout-nav-btn"
+        });
+    }
 });
 </script>
 
@@ -55,31 +60,48 @@ R4E.renderHeader({
     <div class="mb-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-            <select id="filter-subject" class="p-2 border rounded-lg"></select>
+            <div>
+                <label class="text-xs text-slate-400 font-bold">Subject</label>
+                <select id="filter-subject" class="p-2 border rounded-lg w-full"></select>
+            </div>
 
-            <select id="filter-difficulty" class="p-2 border rounded-lg">
-                <option value="all">All Difficulty</option>
-                <option value="standard">Standard</option>
-                <option value="basic">Basic</option>
-            </select>
+            <div>
+                <label class="text-xs text-slate-400 font-bold">Difficulty</label>
+                <select id="filter-difficulty" class="p-2 border rounded-lg w-full">
+                    <option value="all">All</option>
+                    <option value="standard">Standard</option>
+                    <option value="basic">Basic</option>
+                </select>
+            </div>
 
-            <select id="filter-type" class="p-2 border rounded-lg">
-                <option value="board_final">Board Final</option>
-                <option value="compartment">Compartment</option>
-            </select>
+            <div>
+                <label class="text-xs text-slate-400 font-bold">Paper Type</label>
+                <select id="filter-type" class="p-2 border rounded-lg w-full">
+                    <option value="board_final">Board Final</option>
+                    <option value="compartment">Compartment</option>
+                </select>
+            </div>
 
-            <select id="filter-set" class="p-2 border rounded-lg">
-                <option value="all">All Sets</option>
-                <option value="1">Set 1</option>
-                <option value="2">Set 2</option>
-                <option value="3">Set 3</option>
-            </select>
+            <div>
+                <label class="text-xs text-slate-400 font-bold">Set</label>
+                <select id="filter-set" class="p-2 border rounded-lg w-full">
+                    <option value="all">All Sets</option>
+                    <option value="1">Set 1</option>
+                    <option value="2">Set 2</option>
+                    <option value="3">Set 3</option>
+                </select>
+            </div>
 
         </div>
     </div>
 
     <!-- GRID -->
     <div id="pdf-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+    <!-- EMPTY STATE -->
+    <div id="no-pyq-msg" class="hidden text-center py-12 text-slate-400">
+        No papers found. Try changing filters.
+    </div>
 
 </div>
 
@@ -98,7 +120,7 @@ R4E.renderHeader({
     </div>
 </div>
 
-<!-- ONLY SCRIPT -->
+<!-- MAIN LOGIC -->
 <script type="module" src="../js/pyq.js"></script>
 
 </body>
