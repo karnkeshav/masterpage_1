@@ -1,5 +1,6 @@
 import { getInitializedClients } from "./config.js";
-import { studentDB } from "./firebase-master-config.js";
+
+const { studentDB } = await getInitializedClients(); ✅
 
 import {
 collection, query, where, getDocs,
