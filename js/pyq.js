@@ -3,8 +3,12 @@ import { getInitializedClients } from "./config.js";
 const { studentDB } = await getInitializedClients(); ✅
 
 import {
-collection, query, where, getDocs,
-addDoc, updateDoc
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 let data = [];
