@@ -263,7 +263,7 @@ async function loadVaultData(grade) {
     where("grade", "==", String(grade))
   );
 
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(collection(automationDB, "Ready4Exam_Vault"));
 
   const dedupe = new Map();
   snapshot.forEach((snapDoc) => {
