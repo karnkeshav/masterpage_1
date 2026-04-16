@@ -1,6 +1,6 @@
 import { getInitializedClients } from "./config.js";
 
-const { studentDB } = await getInitializedClients(); ✅
+const { studentDB } = await getInitializedClients();
 
 import {
   collection,
