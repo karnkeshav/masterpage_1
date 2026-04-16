@@ -93,6 +93,7 @@ async function bootForAuthenticatedUser(bootToken) {
   updateHeader(grade);
 
   await loadVaultData(grade);
+  console.log("🔥 PROJECT:", automationDB?.app?.options?.projectId);
   if (bootToken !== authBootToken) return;
 
   applyDefaultSelections();
