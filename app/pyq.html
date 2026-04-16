@@ -19,7 +19,19 @@
 <script type="module" src="../js/config.js"></script>
 
 <style>
-body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+  body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+
+  /* --- ADD THESE LINES BELOW --- */
+  #pdf-frame {
+    border: none;
+    background: #ffffff;
+    display: block; 
+  }
+  #pdf-modal > div {
+    position: relative;
+    z-index: 10000;
+  }
+  /* ------------------------------ */
 </style>
 </head>
 
@@ -110,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <script>R4E.renderFooter();</script>
 
 <!-- PDF MODAL -->
-<div id="pdf-modal" class="fixed inset-0 hidden bg-black/70 flex items-center justify-center">
+<div id="pdf-modal" class="fixed inset-0 hidden bg-black/80 flex items-center justify-center z-[9999] overflow-hidden">
     <div class="bg-white w-full max-w-5xl h-[90vh] flex flex-col rounded-xl">
         <div class="p-3 flex justify-between border-b">
             <span id="pdf-modal-title"></span>
