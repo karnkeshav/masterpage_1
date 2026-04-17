@@ -163,14 +163,37 @@
 
         // Get auth and db together once — pass db into loadChapterInsights
         const { auth, db } = await getInitializedClients();
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                await user.getIdToken(true);  
-                loadChapterInsights(db);
-            } else {
-                window.location.href = "../index.html";
-            }
-        });
+        // Change this:
+auth.onAuthStateChanged((user) => { 
+
+// To this (added 'async'):
+auth.onAuthStateChanged(async (user) => { 
+    if (user) {
+        // This 'await' was causing your error because the function above wasn't 'async'
+        await user.getIdToken(true);  
+        
+        // Now call the function to load your data
+        loadChapterInsights(db);
+
+        // --- MANUALLY UPDATE THE HEADER ---
+       function updateHeaderUI(user) {
+    // 1. Update the Grade Badge
+    const badge = document.getElementById('context-badge');
+    if (badge) {
+        badge.textContent = `Grade ${grade}`;
+    }
+
+    // 2. Update the User Name
+    // Note: We check for both ID and Class depending on how shell.js renders it
+    const nameDisplay = document.getElementById('user-welcome-name') || 
+                        document.querySelector('.user-welcome-name');
+    
+    if (nameDisplay) {
+        // Use displayName if available, otherwise fallback to the part of email before @
+        nameDisplay.textContent = user.displayName || user.email.split('@')[0];
+    }
+}
+});
     });
 </script>
 </head>
