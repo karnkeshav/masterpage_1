@@ -29,15 +29,18 @@ auth.onAuthStateChanged(async (user) => {
     if (user) {  
         await user.getIdToken(true);  
         document.getElementById('user-welcome').textContent = user.displayName || user.email || 'Student';  
-        updateHeaderUI(user);
+        updateHeaderUI();
         updatePageTitles();
         try {
             await loadChapterMetadata();
             await loadHistoricalQuestions();
         } catch (error) {
             console.error("Data Load Error:", error);
-            const container = document.getElementById('compendium-container');
-            if (container) container.innerHTML = `<p class="text-center text-red-500 py-8">Failed to load data.</p>`;
+            document.getElementById('app-content').innerHTML = `
+                <div class="p-8 text-center bg-red-50 border border-red-200 text-red-600 rounded-xl mt-8 shadow-sm">
+                    <h3 class="text-xl font-bold mb-2">Error Loading Data</h3>
+                    <p>Failed to retrieve chapter insights. Please try again later.</p>
+                </div>`;
         }
     } else {  
         window.location.href = "../index.html";  
@@ -52,17 +55,10 @@ auth.onAuthStateChanged(async (user) => {
 /**
  * UI: Updates the Header with User Info
  */
-function updateHeaderUI(user) {
+function updateHeaderUI() {
     // Update Grade Badge
     const badge = document.getElementById('context-badge');
     if (badge) badge.textContent = `Grade ${state.grade}`;
-
-    // Update Username (checks common classes used in shell.js)
-    const nameDisplay = document.querySelector('.user-welcome-name') || 
-                        document.getElementById('user-name');
-    if (nameDisplay) {
-        nameDisplay.textContent = user.displayName || user.email.split('@')[0];
-    }
 }
 
 /**
