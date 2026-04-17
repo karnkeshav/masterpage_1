@@ -167,7 +167,7 @@ function renderQuestions(questions) {
                                 <div class="absolute top-4 right-4 text-xs font-bold text-slate-400">Year: ${q.year || 'N/A'}</div>
                                 <div class="text-sm text-slate-800 font-medium mb-4 pr-16 leading-relaxed">
                                     ${q.question_text || ''}
-                                    ${q.image_url ? \`<img src="${q.image_url}" alt="Question Graphic" class="mt-3 max-h-48 rounded border border-slate-200">\` : ''}
+                                    ${q.image_url ? `<img src="${q.image_url}" alt="Question Graphic" class="mt-3 max-h-48 rounded border border-slate-200">` : ''}
                                 </div>
                                 <button onclick="document.getElementById('logic-${group}-${idx}').classList.toggle('hidden')"
                                         class="text-xs font-bold text-cbse-blue hover:text-accent-gold transition flex items-center gap-1">
