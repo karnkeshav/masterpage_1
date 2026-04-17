@@ -408,7 +408,6 @@ async function init(user) {
 
         initializeAuthListener(async (user) => {
             if (user) {
-                bindConsoleLogout("logout-nav-btn", "../index.html");
                 const welcome = document.getElementById("user-welcome");
                 if (welcome) welcome.textContent = user.displayName || "Scholar";
                 await init(user);
