@@ -13,30 +13,33 @@ let state = {
  * Main Entry Point
  */
 export async function initInsights() {
-    const { auth, db } = await getInitializedClients();
-    state.db = db;
+    try {
+        const clients = await getInitializedClients();
+        
+        // Safety Check: If config was missing, clients will be null or incomplete
+        if (!clients || !clients.auth) {
+            console.error("Auth client failed to initialize.");
+            return;
+        }
 
-    // Use 'async' callback to allow 'await' inside
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            try {
-                // Fix: Sync user token
+        const { auth, db } = clients;
+        state.db = db;
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
                 await user.getIdToken(true);
-                
-                // 1. Update UI Elements immediately
                 updateHeaderUI(user);
                 updatePageTitles();
-
-                // 2. Load Data from Firestore
                 await loadChapterMetadata();
                 await loadHistoricalQuestions();
-            } catch (err) {
-                console.error("Initialization Error:", err);
+            } else {
+                window.location.href = "../index.html";
             }
-        } else {
-            window.location.href = "../index.html";
-        }
-    });
+        });
+
+    } catch (err) {
+        console.error("Detailed Init Error:", err);
+    }
 }
 
 /**
