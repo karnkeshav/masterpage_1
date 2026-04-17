@@ -25,17 +25,14 @@ export async function initInsights() {
         const { auth, db } = clients;
         state.db = db;
 
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                await user.getIdToken(true);
-                updateHeaderUI(user);
-                updatePageTitles();
-                await loadChapterMetadata();
-                await loadHistoricalQuestions();
-            } else {
-                window.location.href = "../index.html";
-            }
-        });
+auth.onAuthStateChanged((user) => {   // ← NOT async  
+    if (user) {  
+        await user.getIdToken(true);   // ← SyntaxError: await in non-async function  
+        loadChapterInsights(db);  
+    } else {  
+        window.location.href = "../index.html";  
+    }  
+});
 
     } catch (err) {
         console.error("Detailed Init Error:", err);
