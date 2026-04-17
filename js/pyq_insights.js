@@ -25,9 +25,10 @@ export async function initInsights() {
         const { auth, db } = clients;
         state.db = db;
 
-auth.onAuthStateChanged((user) => {   // ← NOT async  
+auth.onAuthStateChanged(async (user) => {  
     if (user) {  
-        await user.getIdToken(true);   // ← SyntaxError: await in non-async function  
+        await user.getIdToken(true);  
+        document.getElementById('user-welcome').textContent = user.displayName || user.email || 'Student';  
         loadChapterInsights(db);  
     } else {  
         window.location.href = "../index.html";  
