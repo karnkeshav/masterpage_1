@@ -28,7 +28,7 @@ export async function initInsights() {
 auth.onAuthStateChanged(async (user) => {  
     if (user) {  
         await user.getIdToken(true);  
-        document.getElementById('user-welcome').textContent = user.displayName || user.email || 'Student';  
+        document.getElementById('user-welcome').textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'Student');
         updateHeaderUI();
         updatePageTitles();
         try {
@@ -67,10 +67,13 @@ function updateHeaderUI() {
 function updatePageTitles() {
     const headerTitle = document.getElementById('header-title');
     if (headerTitle) {
-        headerTitle.innerHTML = `
-            <span>${state.subject.replace(/_/g, ' ')}</span>
-            <span class="text-white opacity-80 text-lg font-medium ml-2">| ${state.chapterID.replace(/_/g, ' ')}</span>
-        `;
+        const span1 = document.createElement('span');
+        span1.textContent = state.subject.replace(/_/g, ' ');
+        const span2 = document.createElement('span');
+        span2.className = 'text-white opacity-80 text-lg font-medium ml-2';
+        span2.textContent = '| ' + state.chapterID.replace(/_/g, ' ');
+        headerTitle.innerHTML = '';
+        headerTitle.append(span1, span2);
     }
 }
 
