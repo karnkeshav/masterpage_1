@@ -19,15 +19,31 @@ export async function initInsights() {
     const { auth, db } = await getInitializedClients();
     state.db = db;
 
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            updateStaticUI();
-            await loadChapterData();
-            await loadHistoricalQuestions();
-        } else {
-            window.location.href = "../index.html";
+   auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        // --- ADD THESE LINES TO FIX THE HEADER ---
+        
+        // 1. Update the Grade Badge manually
+        const badge = document.getElementById('context-badge');
+        if (badge) {
+            badge.textContent = `Grade ${grade}`; 
         }
-    });
+
+        // 2. Update the User Name
+        // Most shell.js templates use a span with id "user-name" or class "user-welcome-name"
+        const nameDisplay = document.querySelector('.user-welcome-name') || document.getElementById('user-name');
+        if (nameDisplay) {
+            nameDisplay.textContent = user.displayName || user.email.split('@')[0];
+        }
+
+        // --- END OF HEADER FIX ---
+
+        await user.getIdToken(true);  
+        loadChapterInsights(db);
+    } else {
+        window.location.href = "../index.html";
+    }
+});
 }
 
 // --- Section 1: The Intelligence Grid (Metadata) ---
