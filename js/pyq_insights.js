@@ -28,8 +28,20 @@ export async function initInsights() {
 auth.onAuthStateChanged(async (user) => {  
     if (user) {  
         await user.getIdToken(true);  
-        document.getElementById('user-welcome').textContent = user.displayName || user.email || 'Student';  
-        loadChapterInsights(db);  
+        document.getElementById('user-welcome').textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'Student');
+        updateHeaderUI();
+        updatePageTitles();
+        try {
+            await loadChapterMetadata();
+            await loadHistoricalQuestions();
+        } catch (error) {
+            console.error("Data Load Error:", error);
+            document.getElementById('app-content').innerHTML = `
+                <div class="p-8 text-center bg-red-50 border border-red-200 text-red-600 rounded-xl mt-8 shadow-sm">
+                    <h3 class="text-xl font-bold mb-2">Error Loading Data</h3>
+                    <p>Failed to retrieve chapter insights. Please try again later.</p>
+                </div>`;
+        }
     } else {  
         window.location.href = "../index.html";  
     }  
@@ -43,17 +55,10 @@ auth.onAuthStateChanged(async (user) => {
 /**
  * UI: Updates the Header with User Info
  */
-function updateHeaderUI(user) {
+function updateHeaderUI() {
     // Update Grade Badge
     const badge = document.getElementById('context-badge');
     if (badge) badge.textContent = `Grade ${state.grade}`;
-
-    // Update Username (checks common classes used in shell.js)
-    const nameDisplay = document.querySelector('.user-welcome-name') || 
-                        document.getElementById('user-name');
-    if (nameDisplay) {
-        nameDisplay.textContent = user.displayName || user.email.split('@')[0];
-    }
 }
 
 /**
@@ -62,10 +67,13 @@ function updateHeaderUI(user) {
 function updatePageTitles() {
     const headerTitle = document.getElementById('header-title');
     if (headerTitle) {
-        headerTitle.innerHTML = `
-            <span>${state.subject.replace(/_/g, ' ')}</span>
-            <span class="text-white opacity-80 text-lg font-medium ml-2">| ${state.chapterID.replace(/_/g, ' ')}</span>
-        `;
+        const span1 = document.createElement('span');
+        span1.textContent = state.subject.replace(/_/g, ' ');
+        const span2 = document.createElement('span');
+        span2.className = 'text-white opacity-80 text-lg font-medium ml-2';
+        span2.textContent = '| ' + state.chapterID.replace(/_/g, ' ');
+        headerTitle.innerHTML = '';
+        headerTitle.append(span1, span2);
     }
 }
 
@@ -122,8 +130,61 @@ async function loadHistoricalQuestions() {
         return;
     }
 
-    // Sort and Render Logic (Simplified)
     const questions = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // ... insert your group-by-marks rendering logic here ...
-    // (Refer to original code for the full mapping function)
+    renderQuestions(questions);
+}
+
+function renderQuestions(questions) {
+    const container = document.getElementById('compendium-container');
+    if (questions.length === 0) {
+        container.innerHTML = `<p class="text-center text-slate-500 py-8">No historical questions found.</p>`;
+        return;
+    }
+
+    const grouped = { '1m': [], '2m': [], '3m': [], '5m': [], 'other': [] };
+    questions.forEach(q => {
+        const mark = (q.marks || '').toString().toLowerCase();
+        if (mark === '1' || mark === '1m') grouped['1m'].push(q);
+        else if (mark === '2' || mark === '2m') grouped['2m'].push(q);
+        else if (mark === '3' || mark === '3m') grouped['3m'].push(q);
+        else if (mark === '5' || mark === '5m') grouped['5m'].push(q);
+        else grouped['other'].push(q);
+    });
+
+    let html = '';
+    ['5m', '3m', '2m', '1m', 'other'].forEach(group => {
+        if (grouped[group].length > 0) {
+            html += `
+                <div class="mb-8">
+                    <h4 class="text-lg font-bold text-cbse-blue mb-4 border-b-2 border-slate-200 pb-2 flex items-center">
+                        <span class="bg-cbse-blue text-white text-xs px-2 py-1 rounded mr-2">${group.toUpperCase()}</span>
+                        Questions
+                    </h4>
+                    <div class="space-y-4">
+                        ${grouped[group].map((q, idx) => `
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group hover:border-cbse-blue transition">
+                                <div class="absolute top-4 right-4 text-xs font-bold text-slate-400">Year: ${q.year || 'N/A'}</div>
+                                <div class="text-sm text-slate-800 font-medium mb-4 pr-16 leading-relaxed">
+                                    ${q.question_text || ''}
+                                    ${q.image_url ? \`<img src="${q.image_url}" alt="Question Graphic" class="mt-3 max-h-48 rounded border border-slate-200">\` : ''}
+                                </div>
+                                <button onclick="document.getElementById('logic-${group}-${idx}').classList.toggle('hidden')"
+                                        class="text-xs font-bold text-cbse-blue hover:text-accent-gold transition flex items-center gap-1">
+                                    <i class="fas fa-magic"></i> Reveal Marking Logic
+                                </button>
+                                <div id="logic-${group}-${idx}" class="hidden mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-sm text-slate-700">
+                                    <div class="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                                        <i class="fas fa-check-double"></i> Step-wise Answer (Marking Scheme)
+                                    </div>
+                                    <div class="whitespace-pre-wrap">${q.answer_logic || 'Marking scheme not available.'}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    container.innerHTML = html;
 }
