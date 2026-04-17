@@ -200,8 +200,10 @@ function resolveGrade(user) {
 function normalizeSubject(value) {
   const raw = String(value || "").trim().toLowerCase();
   if (["math", "maths", "mathematics"].includes(raw)) return "Mathematics";
+
+   if (raw.includes("social")) return "Social Science";
   if (raw.includes("science")) return "Science";
-  if (raw.includes("social")) return "Social Science";
+ 
   if (raw.includes("english")) return "English";
   if (raw.includes("hindi")) return "Hindi";
   return String(value || "").trim();
