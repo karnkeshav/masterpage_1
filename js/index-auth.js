@@ -24,7 +24,6 @@ loginForm.addEventListener("submit", async (e) => {
 
     try {
         await authenticateWithCredentials(u, p);
-        const { getInitializedClients } = await import("./config.js");
         const { auth } = await getInitializedClients();
         if (auth.currentUser) {
             await routeUser(auth.currentUser);

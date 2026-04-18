@@ -51,10 +51,10 @@
 
       try {
           if (window.currentBoard === 'SCERT') {
-              const module = await import('./scert/telangana-9/js/curriculum.js');
+              const module = await import('../scert/telangana-9/js/curriculum.js');
               window.loadedSubjectsData = module.curriculum || module.default;
           } else {
-              const { loadCurriculum } = await import('./js/curriculum/loader.js');
+              const { loadCurriculum } = await import('./curriculum/loader.js');
               window.loadedSubjectsData = await loadCurriculum(grade);
           }
 
