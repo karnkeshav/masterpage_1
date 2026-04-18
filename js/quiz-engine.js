@@ -362,7 +362,7 @@ async function init() {
     // GUEST GATE: Guests are restricted to Simple difficulty only.
     // Redirect to login page if a guest tries Medium or Advanced via URL.
     if (isGuestMode && quizState.difficulty !== "Simple") {
-        window.location.href = "../index.html";
+        window.location.href = "../index.html#get-started";
         return;
     }
 
