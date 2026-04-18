@@ -215,12 +215,12 @@ export const curriculum = {
       },
       {
         "chapter_title": "Major Domains of the Earth",
-        "table_id": "social_major_earth_6_quiz",
+        "table_id": "social_major_domains_6_quiz",
         "section": "Social Science"
       },
       {
         "chapter_title": "Major Landforms of the Earth",
-        "table_id": "social_major_earth_6_v1_quiz",
+        "table_id": "social_major_landforms_6_quiz",
         "section": "Social Science"
       },
       {

@@ -239,8 +239,8 @@ export const curriculum = {
       { "chapter_title": "Population, Health & Environment", "table_id": "sociology_population_environment_12_quiz", "section": "Humanities" }
     ],
     "Social Change & Development": [
-      { "chapter_title": "Change in Rural Society", "table_id": "sociology_change_society_12_quiz", "section": "Humanities" },
-      { "chapter_title": "Change in Industrial Society", "table_id": "sociology_change_society_12_v1_quiz", "section": "Humanities" },
+      { "chapter_title": "Change in Rural Society", "table_id": "sociology_change_rural_12_quiz", "section": "Humanities" },
+      { "chapter_title": "Change in Industrial Society", "table_id": "sociology_change_industrial_12_quiz", "section": "Humanities" },
       { "chapter_title": "Social Movements", "table_id": "sociology_social_movements_12_quiz", "section": "Humanities" },
       { "chapter_title": "Mass Media & Communication", "table_id": "sociology_mass_communication_12_quiz", "section": "Humanities" },
       { "chapter_title": "Globalisation & Society", "table_id": "sociology_globalisation_society_12_quiz", "section": "Humanities" }
