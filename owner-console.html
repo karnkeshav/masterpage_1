@@ -35,7 +35,7 @@
     userWelcomeDefault: "Root Owner",
     roleBadge: "Sovereign",
     showLogout: true,
-    logoutId: "logout-btn"
+    logoutId: "logout-nav-btn"
 });</script>
 
         <div class="grid lg:grid-cols-3 gap-8">
@@ -159,7 +159,7 @@
         }
 
         // Handle Logout
-        document.getElementById('logout-btn').addEventListener('click', async () => {
+        document.getElementById('logout-nav-btn').addEventListener('click', async () => {
             if(confirm("Confirm Sign Out of Master Orchestration?")) {
                 try {
                     await signOut();

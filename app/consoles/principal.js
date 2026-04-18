@@ -1,22 +1,9 @@
 // app/consoles/principal.js
-import { guardConsole } from "../../js/guard.js";
+import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 import { fetchSchoolAnalytics } from "../../js/api.js";
-import { signOut } from "../../js/auth-paywall.js";
 
-// LOGOUT LOGIC
-const logoutBtn = document.getElementById('logout-btn');
-if(logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        if (confirm("Sign out of your Ready4Exam session?")) {
-            try {
-                await signOut();
-                window.location.href = "../../index.html";
-            } catch (err) {
-                console.error("Logout failed", err);
-            }
-        }
-    });
-}
+// LOGOUT LOGIC — use standard bindConsoleLogout for uniformity
+bindConsoleLogout("logout-nav-btn", "../../index.html");
 
 // GLOBAL GUARD
 guardConsole("principal");

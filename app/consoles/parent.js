@@ -1,23 +1,10 @@
 // app/consoles/parent.js
-import { guardConsole } from "../../js/guard.js";
-import { signOut } from "../../js/auth-paywall.js";
+import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 import { getInitializedClients } from "../../js/config.js";
 import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// LOGOUT LOGIC
-const logoutBtn = document.getElementById('logout-nav-btn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        if (confirm("Sign out of your Ready4Exam session?")) {
-            try {
-                await signOut();
-                window.location.href = "../../index.html";
-            } catch (err) {
-                console.error("Logout failed", err);
-            }
-        }
-    });
-}
+// LOGOUT LOGIC — use standard bindConsoleLogout for uniformity
+bindConsoleLogout("logout-nav-btn", "../../index.html");
 
 // GLOBAL GUARD
 guardConsole("parent");
