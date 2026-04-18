@@ -54,7 +54,7 @@ R4E.renderHeader = function(config) {
 
     // Layout class
     var layoutClass = layout === "grid-3"
-        ? "grid grid-cols-3 items-center"
+        ? "grid grid-cols-1 lg:grid-cols-3 items-center gap-y-2"
         : "flex justify-between items-center";
 
     var glassClass = glass ? " glass-panel border-b border-white/10" : "";
@@ -63,7 +63,7 @@ R4E.renderHeader = function(config) {
     var leftJustify = layout === "grid-3" ? " justify-self-start" : "";
     var leftHtml = ''
         + '<div class="flex items-center space-x-4' + leftJustify + '">'
-        +   '<a href="' + homePath + '" class="w-10 h-10 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">' + homeIcon + '</a>'
+        +   '<a href="' + homePath + '" class="w-11 h-11 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">' + homeIcon + '</a>'
         +   '<div>'
         +     '<h2' + titleId + ' class="text-xl font-black leading-none tracking-tight text-accent-gold">' + title + '</h2>'
         +     '<p class="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">' + subtitle + '</p>'
@@ -92,14 +92,14 @@ R4E.renderHeader = function(config) {
 
     // Inbox bell
     if (showInbox) {
-        rightHtml += '<button onclick="' + inboxOnclick + '" class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg hover:bg-indigo-200 transition relative">'
+        rightHtml += '<button onclick="' + inboxOnclick + '" class="w-11 h-11 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg hover:bg-indigo-200 transition relative">'
             + '🔔<span id="inbox-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full hidden">0</span>'
             + '</button>';
     }
 
     // Logout button
     if (showLogout) {
-        rightHtml += '<button id="' + logoutId + '" class="w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm" title="Sign Out">🚪</button>';
+        rightHtml += '<button id="' + logoutId + '" class="w-11 h-11 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm" title="Sign Out">🚪</button>';
     }
 
     rightHtml += '</div>';

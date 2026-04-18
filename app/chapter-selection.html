@@ -59,15 +59,31 @@
             let colorName = 'slate';
             try { if (theme.bg) colorName = theme.bg.split('-')[1]; } catch (e) { }
 
+            /* Static color hex map so we don't rely on dynamic Tailwind class names */
+            const twHex = {
+                slate:   { 50: '#f8fafc', 100: '#f1f5f9', 600: '#475569' },
+                red:     { 50: '#fef2f2', 100: '#fee2e2', 600: '#dc2626' },
+                orange:  { 50: '#fff7ed', 100: '#ffedd5', 600: '#ea580c' },
+                amber:   { 50: '#fffbeb', 100: '#fef3c7', 600: '#d97706' },
+                green:   { 50: '#f0fdf4', 100: '#dcfce7', 600: '#16a34a' },
+                emerald: { 50: '#ecfdf5', 100: '#d1fae5', 600: '#059669' },
+                teal:    { 50: '#f0fdfa', 100: '#ccfbf1', 600: '#0d9488' },
+                blue:    { 50: '#eff6ff', 100: '#dbeafe', 600: '#2563eb' },
+                indigo:  { 50: '#eef2ff', 100: '#e0e7ff', 600: '#4f46e5' },
+                purple:  { 50: '#faf5ff', 100: '#f3e8ff', 600: '#9333ea' },
+                pink:    { 50: '#fdf2f8', 100: '#fce7f3', 600: '#db2777' },
+            };
+            const ch = twHex[colorName] || twHex.slate;
+
             modal.innerHTML = `
-                <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative border-4 border-${colorName}-100">
+                <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative border-4" style="border-color:${ch[100]}">
                     <button id="close-sym-modal" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-red-50 hover:text-red-500 transition">✕</button>
                     <div class="text-center mb-8">
-                        <div class="w-16 h-16 mx-auto bg-${colorName}-50 rounded-2xl flex items-center justify-center text-${colorName}-600 text-3xl mb-4 shadow-sm">
+                        <div class="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-sm" style="background-color:${ch[50]};color:${ch[600]}">
                             <i class="fas ${theme.icon}"></i>
                         </div>
                         <h3 class="text-2xl font-black text-slate-900 mb-1">Select Difficulty</h3>
-                        <p class="text-xs font-bold text-${colorName}-600 uppercase tracking-widest">
+                        <p class="text-xs font-bold uppercase tracking-widest" style="color:${ch[600]}">
                             Launching Quiz for ${ctx.subject} &gt; ${ctx.chapter}
                         </p>
                     </div>
