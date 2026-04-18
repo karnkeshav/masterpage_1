@@ -1,6 +1,7 @@
 import { getInitializedClients } from './config.js';
 import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+
 // --- Global State ---
 let state = {
     grade: new URLSearchParams(window.location.search).get('grade') || '10',
@@ -12,6 +13,9 @@ let state = {
 /**
  * Main Entry Point
  */
+/**
+ * Main Entry Point - Updated to use automationDB for Intelligence Grid
+ */
 export async function initInsights() {
     try {
         const clients = await getInitializedClients();
@@ -22,30 +26,39 @@ export async function initInsights() {
             return;
         }
 
-        const { auth, db } = clients;
-        state.db = db;
+        // FIX: Pull automationDB (Vault) instead of standard db (Master)
+        const { auth, automationDB } = clients;
+        state.db = automationDB;
 
-auth.onAuthStateChanged(async (user) => {  
-    if (user) {  
-        await user.getIdToken(true);  
-        document.getElementById('user-welcome').textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'Student');
-        updateHeaderUI();
-        updatePageTitles();
-        try {
-            await loadChapterMetadata();
-            await loadHistoricalQuestions();
-        } catch (error) {
-            console.error("Data Load Error:", error);
-            document.getElementById('app-content').innerHTML = `
-                <div class="p-8 text-center bg-red-50 border border-red-200 text-red-600 rounded-xl mt-8 shadow-sm">
-                    <h3 class="text-xl font-bold mb-2">Error Loading Data</h3>
-                    <p>Failed to retrieve chapter insights. Please try again later.</p>
-                </div>`;
-        }
-    } else {  
-        window.location.href = "../index.html";  
-    }  
-});
+        auth.onAuthStateChanged(async (user) => {  
+            if (user) {  
+                await user.getIdToken(true);  
+                
+                // UI: Welcome message
+                const welcomeEl = document.getElementById('user-welcome');
+                if (welcomeEl) {
+                    welcomeEl.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'Student');
+                }
+
+                updateHeaderUI();
+                updatePageTitles();
+
+                try {
+                    // Fetch data from the Automation/Vault project
+                    await loadChapterMetadata();
+                    await loadHistoricalQuestions();
+                } catch (error) {
+                    console.error("Data Load Error:", error);
+                    document.getElementById('app-content').innerHTML = `
+                        <div class="p-8 text-center bg-red-50 border border-red-200 text-red-600 rounded-xl mt-8 shadow-sm">
+                            <h3 class="text-xl font-bold mb-2">Error Loading Data</h3>
+                            <p>Failed to retrieve chapter insights. Please try again later.</p>
+                        </div>`;
+                }
+            } else {  
+                window.location.href = "../index.html";  
+            }  
+        });
 
     } catch (err) {
         console.error("Detailed Init Error:", err);
