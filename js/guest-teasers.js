@@ -3,6 +3,56 @@
 // Provides reusable popups, banners, and flyers to encourage guest registration.
 
 /* ===========================
+   SHARED STYLES (injected once)
+   =========================== */
+
+let _stylesInjected = false;
+
+function injectTeaserStyles() {
+    if (_stylesInjected) return;
+    _stylesInjected = true;
+    const style = document.createElement('style');
+    style.id = 'guest-teaser-styles';
+    style.textContent = `
+        @keyframes teaserOverlayIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes teaserCardIn {
+            from { opacity: 0; transform: translateY(24px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes teaserIconFloat {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-5px); }
+        }
+        .teaser-cta-btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 40%, #818cf8 50%, #6366f1 60%, #4f46e5 100%);
+            background-size: 200% auto;
+            animation: teaserShimmer 3s ease infinite;
+        }
+        @keyframes teaserShimmer {
+            0%   { background-position: 0% center; }
+            50%  { background-position: 100% center; }
+            100% { background-position: 0% center; }
+        }
+        @keyframes guestBannerPulse {
+            0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 4px 20px rgba(79,70,229,0.35); }
+            50%      { transform: translateX(-50%) scale(1.03); box-shadow: 0 8px 30px rgba(79,70,229,0.55); }
+        }
+        body.has-guest-banner #app-footer { padding-bottom: 3.5rem; }
+        .teaser-feature-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .teaser-feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+/* ===========================
    TEASER MODAL (Reusable)
    =========================== */
 
@@ -26,23 +76,36 @@ export function showTeaserModal(opts) {
     const ctaText = opts.ctaText || "Register Now — It's Free";
     const ctaHref = opts.ctaHref || getIndexUrl();
     const secondaryText = opts.secondaryText || "Maybe Later";
+    const heroImg = getImagePath();
+
+    injectTeaserStyles();
 
     const modal = document.createElement('div');
     modal.id = 'guest-teaser-modal';
     modal.className = 'fixed inset-0 z-[60] flex items-center justify-center p-4';
-    modal.style.cssText = 'background:rgba(15,23,42,0.7);backdrop-filter:blur(6px);animation:fade 0.3s ease-out forwards;opacity:0;';
+    modal.style.cssText = 'background:rgba(15,23,42,0.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:teaserOverlayIn 0.3s ease-out forwards;opacity:0;';
     modal.innerHTML = `
-        <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative border border-slate-100" style="animation:slideUp 0.4s ease-out forwards;">
-            <button id="close-teaser-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center bg-slate-100 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition text-sm font-bold">✕</button>
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-3xl mb-4 shadow-sm border border-blue-100">${opts.icon}</div>
-                <h3 class="text-xl font-black text-slate-900 leading-tight">${opts.title}</h3>
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden" style="animation:teaserCardIn 0.45s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;">
+            <!-- Gradient hero with student image -->
+            <div class="relative h-40 bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 overflow-hidden">
+                <img src="${heroImg}" alt="" class="absolute right-0 bottom-0 h-full object-cover opacity-20 mix-blend-luminosity pointer-events-none" style="-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,0.6),transparent 70%);mask-image:linear-gradient(to left,rgba(0,0,0,0.6),transparent 70%);" onerror="this.style.display='none'" />
+                <div class="absolute -top-6 -left-6 w-24 h-24 bg-white/10 rounded-full"></div>
+                <div class="absolute bottom-2 right-12 w-16 h-16 bg-white/5 rounded-full"></div>
+                <div class="relative z-10 flex flex-col items-center justify-center h-full px-6">
+                    <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl mb-2 border border-white/30 shadow-lg" style="animation:teaserIconFloat 3s ease-in-out infinite">${opts.icon}</div>
+                    <h3 class="text-lg font-black text-white text-center leading-tight drop-shadow-md">${opts.title}</h3>
+                </div>
             </div>
-            <div class="text-sm text-slate-600 leading-relaxed mb-6">${opts.body}</div>
-            <a href="${ctaHref}" class="block w-full text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-4 px-6 rounded-2xl hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 text-sm tracking-wide">
-                ${ctaText}
-            </a>
-            <button id="dismiss-teaser-modal" class="block w-full text-center text-slate-400 font-bold text-xs mt-3 py-2 hover:text-slate-600 transition">${secondaryText}</button>
+            <!-- Close -->
+            <button id="close-teaser-modal" class="absolute top-3 right-3 w-9 h-9 flex items-center justify-center bg-white/20 backdrop-blur-sm rounded-full text-white/80 hover:bg-white hover:text-red-500 transition-all text-sm font-bold z-20 border border-white/20">✕</button>
+            <!-- Content -->
+            <div class="p-6">
+                <div class="text-sm text-slate-600 leading-relaxed mb-5">${opts.body}</div>
+                <a href="${ctaHref}" class="teaser-cta-btn block w-full text-center text-white font-black py-4 px-6 rounded-2xl shadow-lg shadow-indigo-200/40 hover:shadow-xl hover:shadow-indigo-300/60 transition-all active:scale-[0.97] text-sm tracking-wide">
+                    ${ctaText}
+                </a>
+                <button id="dismiss-teaser-modal" class="block w-full text-center text-slate-400 font-semibold text-xs mt-3 py-2 hover:text-slate-600 transition-colors">${secondaryText}</button>
+            </div>
         </div>
     `;
     document.body.appendChild(modal);
@@ -106,31 +169,18 @@ export function wireIndexDifficultyTeasers() {
 export function injectGuestQuizBanner() {
     if (document.getElementById('guest-register-banner')) return;
 
+    injectTeaserStyles();
+
     const banner = document.createElement('div');
     banner.id = 'guest-register-banner';
-    banner.className = 'fixed z-50 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 text-white py-2 px-4 flex items-center justify-center gap-2 rounded-full shadow-lg';
-    banner.style.cssText = 'bottom:1rem;left:50%;transform:translateX(-50%);max-width:min(92vw,420px);animation:guestBannerPulse 2.5s ease-in-out infinite;';
+    banner.className = 'fixed z-50 text-white py-2.5 px-5 flex items-center justify-center gap-3 rounded-full shadow-xl';
+    banner.style.cssText = 'bottom:1rem;left:50%;transform:translateX(-50%);max-width:min(92vw,420px);animation:guestBannerPulse 2.5s ease-in-out infinite;background:linear-gradient(135deg,rgba(79,70,229,0.92),rgba(37,99,235,0.92));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.15);';
     banner.innerHTML = `
         <span class="text-[11px] font-bold tracking-wide whitespace-nowrap"><i class="fas fa-gift mr-1"></i>Guest Mode</span>
-        <a href="${getIndexUrl()}" class="bg-white text-indigo-700 font-black text-[11px] px-3 py-1 rounded-full hover:bg-indigo-50 transition active:scale-95 whitespace-nowrap shadow-sm">
+        <a href="${getIndexUrl()}" class="bg-white text-indigo-700 font-black text-[11px] px-4 py-1.5 rounded-full hover:bg-indigo-50 transition active:scale-95 whitespace-nowrap shadow-sm border border-indigo-100">
             Register Free →
         </a>
     `;
-
-    // Inject animation keyframes
-    if (!document.getElementById('guest-banner-styles')) {
-        const style = document.createElement('style');
-        style.id = 'guest-banner-styles';
-        style.textContent = `
-            @keyframes guestBannerPulse {
-                0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 4px 20px rgba(79,70,229,0.35); }
-                50%      { transform: translateX(-50%) scale(1.04); box-shadow: 0 6px 28px rgba(79,70,229,0.6); }
-            }
-            /* Add bottom padding so the floating pill doesn't overlap footer */
-            body.has-guest-banner #app-footer { padding-bottom: 3.5rem; }
-        `;
-        document.head.appendChild(style);
-    }
 
     document.body.classList.add('has-guest-banner');
     document.body.appendChild(banner);
@@ -147,6 +197,9 @@ export function injectGuestQuizBanner() {
 export function injectResultsFlyer(grade) {
     const g = parseInt(grade, 10);
     const isBoardYear = (g === 10 || g === 12);
+    const heroImg = getImagePath();
+
+    injectTeaserStyles();
 
     // Remove any existing flyer
     const existing = document.getElementById('guest-results-flyer');
@@ -159,20 +212,20 @@ export function injectResultsFlyer(grade) {
     // Common features (all classes)
     const commonFeatures = `
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
-                <div class="text-2xl mb-2">📊</div>
+            <div class="teaser-feature-card bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/60 rounded-2xl p-5 text-center">
+                <div class="w-10 h-10 mx-auto mb-3 rounded-xl bg-blue-100 flex items-center justify-center text-xl shadow-sm">📊</div>
                 <h4 class="font-bold text-blue-800 text-sm">Knowledge Hub</h4>
-                <p class="text-xs text-blue-600 mt-1">Track mastery across every subject. See your strengths & blind spots in real-time.</p>
+                <p class="text-xs text-blue-600 mt-1.5 leading-relaxed">Track mastery across every subject. See your strengths & blind spots in real-time.</p>
             </div>
-            <div class="bg-purple-50 border border-purple-100 rounded-xl p-4 text-center">
-                <div class="text-2xl mb-2">📓</div>
+            <div class="teaser-feature-card bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200/60 rounded-2xl p-5 text-center">
+                <div class="w-10 h-10 mx-auto mb-3 rounded-xl bg-purple-100 flex items-center justify-center text-xl shadow-sm">📓</div>
                 <h4 class="font-bold text-purple-800 text-sm">Mistake Notebook</h4>
-                <p class="text-xs text-purple-600 mt-1">Every wrong answer is auto-saved. Review, retry, and eliminate repeat errors.</p>
+                <p class="text-xs text-purple-600 mt-1.5 leading-relaxed">Every wrong answer is auto-saved. Review, retry, and eliminate repeat errors.</p>
             </div>
-            <div class="bg-green-50 border border-green-100 rounded-xl p-4 text-center">
-                <div class="text-2xl mb-2">🎯</div>
+            <div class="teaser-feature-card bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200/60 rounded-2xl p-5 text-center">
+                <div class="w-10 h-10 mx-auto mb-3 rounded-xl bg-green-100 flex items-center justify-center text-xl shadow-sm">🎯</div>
                 <h4 class="font-bold text-green-800 text-sm">Student Dashboard</h4>
-                <p class="text-xs text-green-600 mt-1">Cognitive profiling, performance vectors, and personalized improvement paths.</p>
+                <p class="text-xs text-green-600 mt-1.5 leading-relaxed">Cognitive profiling, performance vectors, and personalized improvement paths.</p>
             </div>
         </div>
     `;
@@ -181,7 +234,7 @@ export function injectResultsFlyer(grade) {
     const boardYearContent = isBoardYear ? `
         <div class="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-5 mb-4">
             <div class="flex items-start gap-3 mb-3">
-                <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-2xl flex-shrink-0">📋</div>
+                <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">📋</div>
                 <div>
                     <h4 class="font-black text-amber-900 text-base">Class ${g} Board Exam Preparation</h4>
                     <p class="text-xs text-amber-700 mt-1 font-medium">CBSE is shifting away from rote learning — are you prepared?</p>
@@ -200,19 +253,25 @@ export function injectResultsFlyer(grade) {
     ` : '';
 
     flyer.innerHTML = `
-        <div class="bg-white rounded-3xl border-2 border-indigo-100 shadow-xl overflow-hidden">
-            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-5 text-center">
-                <h3 class="text-lg font-black tracking-tight">🚀 Unlock Your Full Potential</h3>
-                <p class="text-xs text-indigo-100 mt-1 font-medium">You just completed a quiz as Guest — here's what registered students get:</p>
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden">
+            <!-- Hero with student image -->
+            <div class="relative bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-700 text-white p-6 text-center overflow-hidden">
+                <img src="${heroImg}" alt="" class="absolute right-0 top-0 h-full object-cover opacity-15 mix-blend-luminosity pointer-events-none" style="-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,0.5),transparent 60%);mask-image:linear-gradient(to left,rgba(0,0,0,0.5),transparent 60%);" onerror="this.style.display='none'" />
+                <div class="absolute -top-10 -left-10 w-40 h-40 bg-white/5 rounded-full"></div>
+                <div class="absolute -bottom-6 right-20 w-24 h-24 bg-white/5 rounded-full"></div>
+                <div class="relative z-10">
+                    <h3 class="text-lg font-black tracking-tight drop-shadow-md">🚀 Unlock Your Full Potential</h3>
+                    <p class="text-xs text-indigo-100 mt-1 font-medium">You just completed a quiz as Guest — here's what registered students get:</p>
+                </div>
             </div>
-            <div class="p-5">
+            <div class="p-6">
                 ${boardYearContent}
                 ${commonFeatures}
-                <div class="mt-5 text-center">
-                    <a href="${getIndexUrl()}" class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black py-3.5 px-8 rounded-2xl hover:shadow-xl hover:shadow-indigo-200 transition-all active:scale-95 text-sm">
+                <div class="mt-6 text-center">
+                    <a href="${getIndexUrl()}" class="teaser-cta-btn inline-flex items-center gap-2 text-white font-black py-3.5 px-8 rounded-2xl shadow-lg shadow-indigo-200/40 hover:shadow-xl hover:shadow-indigo-300/60 transition-all active:scale-[0.97] text-sm">
                         <i class="fas fa-user-plus"></i> Register Free — Start Your Journey
                     </a>
-                    <p class="text-[10px] text-slate-400 mt-2">No credit card required. Get started in 30 seconds.</p>
+                    <p class="text-[10px] text-slate-400 mt-2.5">No credit card required. Get started in 30 seconds.</p>
                 </div>
             </div>
         </div>
@@ -339,4 +398,15 @@ function getIndexUrl() {
         return '../index.html';
     }
     return './index.html';
+}
+
+/**
+ * Get the path to the student hero image, working from any page depth.
+ */
+function getImagePath() {
+    const path = window.location.pathname;
+    if (path.includes('/app/')) {
+        return '../image_0.png';
+    }
+    return './image_0.png';
 }
