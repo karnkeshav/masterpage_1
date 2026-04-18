@@ -356,7 +356,7 @@ export function wireChapterSelectionTeaser() {
                     <div class="space-y-3">
                         <p>You're browsing as a guest. <strong>${difficulty}</strong> questions are crafted for registered students preparing seriously for exams.</p>
                         <div class="bg-green-50 border border-green-100 rounded-xl p-3">
-                            <p class="text-xs font-bold text-green-700"><i class="fas fa-check-circle mr-1"></i> Free registration includes:</p>
+                            <p class="text-xs font-bold text-green-700"><i class="fas fa-check-circle mr-1"></i> Registration includes:</p>
                             <ul class="text-xs text-green-600 mt-1 space-y-1 pl-4 list-disc">
                                 <li>All 3 difficulty levels — Simple, Medium, Advanced</li>
                                 <li>Auto-saved Mistake Notebook</li>
@@ -395,9 +395,9 @@ function getIndexUrl() {
     // Detect if we're in /app/ or root
     const path = window.location.pathname;
     if (path.includes('/app/')) {
-        return '../index.html#get-started';
+        return '../offering.html';
     }
-    return './index.html#get-started';
+    return './offering.html';
 }
 
 /**

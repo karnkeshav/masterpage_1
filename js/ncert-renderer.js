@@ -59,7 +59,7 @@ export async function initStudyContent() {
 
             await loadContent(grade, subject, chapter, user);
         } else {
-            window.location.href = "../index.html#get-started";
+            window.location.href = "../offering.html";
         }
     });
 }
