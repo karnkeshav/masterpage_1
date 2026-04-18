@@ -139,6 +139,9 @@ function changeDifficulty(level){
 <script type="module" src="../js/quiz-engine.js"></script>
 <script type="module">
     import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
+    import { bindConsoleLogout } from "../js/guard.js";
+
+    bindConsoleLogout("logout-nav-btn", "../index.html");
 
     const urlParams = new URLSearchParams(window.location.search);
     const isGuestMode = urlParams.get("mode") === "guest";
