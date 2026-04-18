@@ -126,10 +126,11 @@
 
 <script>
 function changeDifficulty(level){
+  // This will be overridden by guest-teasers.js for guests
   const url = new URL(window.location.href);
   const isGuest = url.searchParams.get("mode") === "guest";
-  // Guests can only use Simple difficulty; redirect to login for Medium/Advanced
   if (isGuest && level !== "Simple") {
+    // Fallback (overridden below by wireResultsDifficultyTeaser)
     window.location.href = "../index.html";
     return;
   }
@@ -146,11 +147,31 @@ function changeDifficulty(level){
 <script type="module">
     import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
     import { bindConsoleLogout } from "../js/guard.js";
+    import { injectGuestQuizBanner, injectResultsFlyer, wireResultsDifficultyTeaser } from "../js/guest-teasers.js";
 
     bindConsoleLogout("logout-nav-btn", "../index.html");
 
     const urlParams = new URLSearchParams(window.location.search);
     const isGuestMode = urlParams.get("mode") === "guest";
+
+    // Wire guest teasers if in guest mode
+    if (isGuestMode) {
+        injectGuestQuizBanner();
+        wireResultsDifficultyTeaser();
+
+        // Observe results screen becoming visible to inject the flyer
+        const resultsScreen = document.getElementById('results-screen');
+        if (resultsScreen) {
+            const observer = new MutationObserver(() => {
+                if (!resultsScreen.classList.contains('hidden')) {
+                    const grade = urlParams.get("grade") || urlParams.get("class") || "9";
+                    injectResultsFlyer(grade);
+                    observer.disconnect();
+                }
+            });
+            observer.observe(resultsScreen, { attributes: true, attributeFilter: ['class'] });
+        }
+    }
 
     initializeAuthListener(async (user) => {
         if (!user && !isGuestMode) {
