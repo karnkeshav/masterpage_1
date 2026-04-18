@@ -64,7 +64,7 @@ function injectTeaserStyles() {
  * @param {string} opts.icon - Emoji/icon for the header
  * @param {string} opts.title - Modal title
  * @param {string} opts.body - HTML body content
- * @param {string} [opts.ctaText] - CTA button text. Default: "Register Now — It's Free"
+ * @param {string} [opts.ctaText] - CTA button text. Default: "Get Started — Subscribe Today"
  * @param {string} [opts.ctaHref] - CTA link. Default: index page with registration anchor
  * @param {string} [opts.secondaryText] - Secondary button text (dismiss). Default: "Maybe Later"
  * @param {Function} [opts.onDismiss] - Optional callback when secondary/dismiss button is clicked
@@ -73,7 +73,7 @@ export function showTeaserModal(opts) {
     const existing = document.getElementById('guest-teaser-modal');
     if (existing) existing.remove();
 
-    const ctaText = opts.ctaText || "Register Now — It's Free";
+    const ctaText = opts.ctaText || "Get Started — Subscribe Today";
     const ctaHref = opts.ctaHref || getIndexUrl();
     const secondaryText = opts.secondaryText || "Maybe Later";
     const heroImg = getImagePath();
@@ -163,7 +163,7 @@ export function wireIndexDifficultyTeasers() {
    =========================== */
 
 /**
- * Inject a floating "Register Now" banner that persists during the guest quiz.
+ * Inject a floating "Get Started" banner that persists during the guest quiz.
  * Pulses gently to draw attention without being annoying.
  */
 export function injectGuestQuizBanner() {
@@ -178,7 +178,7 @@ export function injectGuestQuizBanner() {
     banner.innerHTML = `
         <span class="text-[11px] font-bold tracking-wide whitespace-nowrap"><i class="fas fa-gift mr-1"></i>Guest Mode</span>
         <a href="${getIndexUrl()}" class="bg-white text-indigo-700 font-black text-[11px] px-4 py-1.5 rounded-full hover:bg-indigo-50 transition active:scale-95 whitespace-nowrap shadow-sm border border-indigo-100">
-            Register Free →
+            Get Started — Subscribe Today →
         </a>
     `;
 
@@ -269,9 +269,9 @@ export function injectResultsFlyer(grade) {
                 ${commonFeatures}
                 <div class="mt-6 text-center">
                     <a href="${getIndexUrl()}" class="teaser-cta-btn inline-flex items-center gap-2 text-white font-black py-3.5 px-8 rounded-2xl shadow-lg shadow-indigo-200/40 hover:shadow-xl hover:shadow-indigo-300/60 transition-all active:scale-[0.97] text-sm">
-                        <i class="fas fa-user-plus"></i> Register Free — Start Your Journey
+                        <i class="fas fa-user-plus"></i> Get Started — Subscribe Today
                     </a>
-                    <p class="text-[10px] text-slate-400 mt-2.5">No credit card required. Get started in 30 seconds.</p>
+                    <p class="text-[10px] text-slate-400 mt-2.5">Unlock your full potential. Get started in 30 seconds.</p>
                 </div>
             </div>
         </div>
@@ -320,7 +320,7 @@ export function wireResultsDifficultyTeaser() {
                         </div>
                     </div>
                 `,
-                ctaText: "Register Free to Unlock"
+                ctaText: "Get Started — Subscribe Today"
             });
             return;
         }
@@ -367,7 +367,7 @@ export function wireChapterSelectionTeaser() {
                         <p class="text-xs text-slate-400 italic">Simple difficulty is available as Guest — try it now!</p>
                     </div>
                 `,
-                ctaText: "Register Free — 30 Seconds",
+                ctaText: "Get Started — Subscribe Today",
                 secondaryText: "Try Simple as Guest",
                 onDismiss: () => {
                     if (typeof origLaunch === 'function') {
@@ -395,9 +395,9 @@ function getIndexUrl() {
     // Detect if we're in /app/ or root
     const path = window.location.pathname;
     if (path.includes('/app/')) {
-        return '../index.html';
+        return '../index.html#get-started';
     }
-    return './index.html';
+    return './index.html#get-started';
 }
 
 /**

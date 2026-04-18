@@ -370,5 +370,5 @@ initializeAuthListener(async (user, profile) => {
         const welcome = document.getElementById("user-welcome");
         if (welcome) welcome.textContent = profile?.displayName || "Scholar";
         await init(user, profile);
-    } else { window.location.href = "../index.html"; }
+    } else { window.location.href = "../index.html#get-started"; }
 });

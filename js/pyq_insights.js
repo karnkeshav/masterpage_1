@@ -63,7 +63,7 @@ export async function initInsights() {
                         </div>`;
                 }
             } else {  
-                window.location.href = "../index.html";  
+                window.location.href = "../index.html#get-started";  
             }  
         });
 
