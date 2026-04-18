@@ -359,6 +359,13 @@ async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const isGuestMode = urlParams.get("mode") === "guest";
 
+    // GUEST GATE: Guests are restricted to Simple difficulty only.
+    // Redirect to login page if a guest tries Medium or Advanced via URL.
+    if (isGuestMode && quizState.difficulty !== "Simple") {
+        window.location.href = "../index.html";
+        return;
+    }
+
     try {
         await initializeServices();
         wireGoogleLogin();

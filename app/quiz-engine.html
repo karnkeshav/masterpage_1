@@ -127,6 +127,12 @@
 <script>
 function changeDifficulty(level){
   const url = new URL(window.location.href);
+  const isGuest = url.searchParams.get("mode") === "guest";
+  // Guests can only use Simple difficulty; redirect to login for Medium/Advanced
+  if (isGuest && level !== "Simple") {
+    window.location.href = "../index.html";
+    return;
+  }
   url.searchParams.set("difficulty", level);
   window.location.href = url.toString();
 }
