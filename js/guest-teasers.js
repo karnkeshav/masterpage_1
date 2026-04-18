@@ -8,6 +8,8 @@
 
 /**
  * Show a teaser modal encouraging registration.
+ * SECURITY: All opts values (icon, title, body, ctaText) are hardcoded by
+ * internal callers below — never from URL params or user input.
  * @param {Object} opts
  * @param {string} opts.icon - Emoji/icon for the header
  * @param {string} opts.title - Modal title
@@ -15,6 +17,7 @@
  * @param {string} [opts.ctaText] - CTA button text. Default: "Register Now — It's Free"
  * @param {string} [opts.ctaHref] - CTA link. Default: index page with registration anchor
  * @param {string} [opts.secondaryText] - Secondary button text (dismiss). Default: "Maybe Later"
+ * @param {Function} [opts.onDismiss] - Optional callback when secondary/dismiss button is clicked
  */
 export function showTeaserModal(opts) {
     const existing = document.getElementById('guest-teaser-modal');
@@ -44,7 +47,11 @@ export function showTeaserModal(opts) {
     `;
     document.body.appendChild(modal);
     document.getElementById('close-teaser-modal').onclick = () => modal.remove();
-    document.getElementById('dismiss-teaser-modal').onclick = () => modal.remove();
+    const dismissBtn = document.getElementById('dismiss-teaser-modal');
+    dismissBtn.onclick = () => {
+        modal.remove();
+        if (typeof opts.onDismiss === 'function') opts.onDismiss();
+    };
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
 }
 
@@ -302,20 +309,13 @@ export function wireChapterSelectionTeaser() {
                     </div>
                 `,
                 ctaText: "Register Free — 30 Seconds",
-                secondaryText: "Try Simple as Guest"
-            });
-            // Wire secondary to launch Simple in guest mode
-            setTimeout(() => {
-                const dismissBtn = document.getElementById('dismiss-teaser-modal');
-                if (dismissBtn) {
-                    dismissBtn.onclick = () => {
-                        document.getElementById('guest-teaser-modal')?.remove();
-                        if (typeof origLaunch === 'function') {
-                            origLaunch('Simple');
-                        }
-                    };
+                secondaryText: "Try Simple as Guest",
+                onDismiss: () => {
+                    if (typeof origLaunch === 'function') {
+                        origLaunch('Simple');
+                    }
                 }
-            }, 50);
+            });
             return;
         }
         // For authenticated users or Simple, use original behavior
