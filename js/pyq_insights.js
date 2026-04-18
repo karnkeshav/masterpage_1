@@ -93,6 +93,10 @@ function updatePageTitles() {
 /**
  * Backend: Fetch Grid Intelligence (Heatmap, Blueprint, etc.)
  */
+/**
+ * Backend: Fetch Grid Intelligence (Heatmap, Blueprint, etc.)
+ * Updated to preserve UI cards when data is missing.
+ */
 async function loadChapterMetadata() {
     const docRef = doc(state.db, 'Chapter_Analysis', `${state.grade}_${state.subject}_${state.chapterID}`);
     const snap = await getDoc(docRef);
@@ -100,7 +104,7 @@ async function loadChapterMetadata() {
     if (snap.exists()) {
         const data = snap.data();
         
-        // Populate Heatmap
+        // 1. Populate Heatmap
         if (data.heatmap) {
             document.getElementById('heatmap-container').innerHTML = data.heatmap.map(item => `
                 <div class="flex justify-between items-center mb-2">
@@ -110,9 +114,11 @@ async function loadChapterMetadata() {
                     </div>
                 </div>
             `).join('');
+        } else {
+            document.getElementById('heatmap-container').innerHTML = `<p class="text-xs text-slate-400 italic">No heatmap data.</p>`;
         }
 
-        // Populate Blueprint
+        // 2. Populate Blueprint
         if (data.blueprint) {
             document.getElementById('blueprint-1m').textContent = data.blueprint['1m'] || 0;
             document.getElementById('blueprint-2m').textContent = data.blueprint['2m'] || 0;
@@ -120,13 +126,34 @@ async function loadChapterMetadata() {
             document.getElementById('blueprint-5m').textContent = data.blueprint['5m'] || 0;
         }
 
-        // Populate AI Text Sections
+        // 3. Populate AI Text Sections
         if (data.forensics) document.getElementById('forensics-text').textContent = data.forensics;
         if (data.predictive) document.getElementById('predictive-text').textContent = data.predictive;
         if (data.industry_connection) document.getElementById('industry-connection-text').textContent = data.industry_connection;
 
     } else {
-        document.getElementById('grid-loading').innerHTML = `<p class="p-4 text-slate-500 italic">No intelligence data found.</p>`;
+        // --- THE FIX: Update internal elements instead of overwriting the whole grid ---
+        console.warn("No Intelligence document found. Keeping cards but showing empty states.");
+        
+        document.getElementById('heatmap-container').innerHTML = `<p class="text-xs text-slate-400 italic">No topic analysis available.</p>`;
+        
+        // Reset Blueprint to zero
+        ['1m', '2m', '3m', '5m'].forEach(id => {
+            const el = document.getElementById(`blueprint-${id}`);
+            if (el) el.textContent = '0';
+        });
+
+        // Update text sections to show "No data"
+        const textSections = {
+            'forensics-text': 'No forensic analysis available.',
+            'predictive-text': 'No predictive data found.',
+            'industry-connection-text': 'Real-world connection data currently unavailable.'
+        };
+
+        for (const [id, msg] of Object.entries(textSections)) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = msg;
+        }
     }
 }
 
