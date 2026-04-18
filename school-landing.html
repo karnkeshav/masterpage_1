@@ -22,7 +22,7 @@
     </style>
 </head>
 
-<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-center relative">
+<body class="bg-slate-50 min-h-screen flex flex-col relative">
 
     <!-- Global Header -->
     <div id="app-header"></div>
@@ -35,6 +35,7 @@
     extraRightHtml: '<button onclick="handleSignOut()" class="hidden md:flex items-center p-2 bg-red-500/20 text-red-200 border border-red-500/30 rounded-lg hover:bg-red-500 hover:text-white transition shadow-sm font-bold text-xs gap-2"><i class="fas fa-sign-out-alt"></i> Sign Out</button><button onclick="handleSignOut()" class="md:hidden p-2 bg-red-500/20 text-red-200 border border-red-500/30 rounded-lg hover:bg-red-500 hover:text-white transition">🚪</button>'
 });</script>
 
+    <div class="flex-1 flex flex-col items-center justify-center w-full">
     <div id="loading" class="text-center">
         <div class="animate-pulse font-bold text-slate-400 mb-2">Locating School Instance...</div>
         <div class="text-xs text-slate-300">Connecting to Master Ledger</div>
@@ -142,6 +143,7 @@
                 <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">IAM & Ledger</p>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Standard Footer -->
