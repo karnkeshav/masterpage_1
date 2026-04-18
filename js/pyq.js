@@ -21,6 +21,7 @@ let studentDB = null;
 
 let currentUser = null;
 let currentGrade = "10";
+let currentProfileName = null;
 
 let currentVaultData = [];
 let currentProgressMap = {};
@@ -98,7 +99,7 @@ async function bootForAuthenticatedUser(bootToken) {
     const userDoc = await getDoc(doc(studentDB, "users", currentUser.uid));
     if (userDoc.exists()) {
       const profile = userDoc.data();
-      currentUser._profileName = profile.displayName || null;
+      currentProfileName = profile.displayName || null;
     }
   } catch (e) { console.warn("Could not fetch user profile for header:", e); }
 
@@ -329,7 +330,7 @@ function updateHeader(grade) {
   if (badge) badge.textContent = `Grade ${grade}`;
   const welcome = document.getElementById("user-welcome");
   if (welcome && currentUser) {
-    welcome.textContent = currentUser._profileName || currentUser.displayName || "Student";
+    welcome.textContent = currentProfileName || currentUser.displayName || "Student";
   }
 }
 
