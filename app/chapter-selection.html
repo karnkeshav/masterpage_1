@@ -25,9 +25,11 @@
         import { loadCurriculum } from "../js/curriculum/loader.js";
         import { SlugEngine } from "../js/slug-engine.js";
         import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
+        import { wireChapterSelectionTeaser } from "../js/guest-teasers.js";
 
         let engine = null;
         let selectedQuiz = null;
+        window._r4eAuthUser = null; // Track auth state for guest-teasers.js
 
         /* Static color hex map so we don't rely on dynamic Tailwind class names */
         const twHex = {
@@ -59,7 +61,10 @@
         window.launchQuiz = (difficulty) => {
             if (!selectedQuiz) return;
             const { tableId, title, grade, subject } = selectedQuiz;
-            window.location.href = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}&subject=${encodeURIComponent(subject)}`;
+            let url = `quiz-engine.html?table=${tableId}&topic=${encodeURIComponent(title)}&grade=${grade}&difficulty=${difficulty}&subject=${encodeURIComponent(subject)}`;
+            // Append guest mode if user is not authenticated
+            if (!window._r4eAuthUser) url += '&mode=guest';
+            window.location.href = url;
         };
 
         function openDifficultyModal(ctx) {
@@ -196,6 +201,7 @@
         // Initialize
         initializeAuthListener(async (user) => {
             if (user) {
+                window._r4eAuthUser = user;
                 const profile = await ensureUserInFirestore(user);
                 const welcomeEl = document.getElementById("user-welcome");
                 if (welcomeEl) welcomeEl.textContent = profile?.displayName || "Student";
@@ -203,6 +209,9 @@
                 const grade = params.get("grade") || "9";
                 const badge = document.getElementById("context-badge");
                 if (badge) badge.textContent = `Grade ${grade}`;
+            } else {
+                // Guest user — wire teasers for Medium/Advanced
+                wireChapterSelectionTeaser();
             }
             loadSelection();
         });

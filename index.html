@@ -486,4 +486,15 @@
 <!-- WIDGET LOGIC -->
 <script type="module" src="./js/index-quiz-widget.js"></script>
 
+<!-- GUEST TEASERS: Wire Medium/Advanced locked buttons -->
+<script type="module">
+    import { wireIndexDifficultyTeasers } from './js/guest-teasers.js';
+    // Wait for DOM so the buttons exist
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', wireIndexDifficultyTeasers);
+    } else {
+        wireIndexDifficultyTeasers();
+    }
+</script>
+
 </body></html>
