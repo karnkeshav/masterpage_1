@@ -108,12 +108,12 @@ export function injectGuestQuizBanner() {
 
     const banner = document.createElement('div');
     banner.id = 'guest-register-banner';
-    banner.className = 'fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 text-white py-2.5 px-4 flex items-center justify-center gap-3 shadow-lg';
-    banner.style.cssText = 'animation: guestBannerPulse 3s ease-in-out infinite;';
+    banner.className = 'fixed z-50 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 text-white py-2 px-4 flex items-center justify-center gap-2 rounded-full shadow-lg';
+    banner.style.cssText = 'bottom:1rem;left:50%;transform:translateX(-50%);max-width:min(92vw,420px);animation:guestBannerPulse 2.5s ease-in-out infinite;';
     banner.innerHTML = `
-        <span class="text-xs font-bold tracking-wide"><i class="fas fa-gift mr-1.5"></i>You're in Guest Mode — Register FREE to unlock all features</span>
-        <a href="${getIndexUrl()}" class="bg-white text-indigo-700 font-black text-xs px-4 py-1.5 rounded-lg hover:bg-indigo-50 transition active:scale-95 whitespace-nowrap shadow-sm">
-            Register Now →
+        <span class="text-[11px] font-bold tracking-wide whitespace-nowrap"><i class="fas fa-gift mr-1"></i>Guest Mode</span>
+        <a href="${getIndexUrl()}" class="bg-white text-indigo-700 font-black text-[11px] px-3 py-1 rounded-full hover:bg-indigo-50 transition active:scale-95 whitespace-nowrap shadow-sm">
+            Register Free →
         </a>
     `;
 
@@ -123,11 +123,11 @@ export function injectGuestQuizBanner() {
         style.id = 'guest-banner-styles';
         style.textContent = `
             @keyframes guestBannerPulse {
-                0%, 100% { box-shadow: 0 -2px 20px rgba(79,70,229,0.3); }
-                50% { box-shadow: 0 -2px 30px rgba(79,70,229,0.6); }
+                0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 4px 20px rgba(79,70,229,0.35); }
+                50%      { transform: translateX(-50%) scale(1.04); box-shadow: 0 6px 28px rgba(79,70,229,0.6); }
             }
-            /* Bump sticky nav and footer up so banner doesn't overlap */
-            body.has-guest-banner #quiz-content .sticky { bottom: 50px !important; }
+            /* Add bottom padding so the floating pill doesn't overlap footer */
+            body.has-guest-banner #app-footer { padding-bottom: 3.5rem; }
         `;
         document.head.appendChild(style);
     }
