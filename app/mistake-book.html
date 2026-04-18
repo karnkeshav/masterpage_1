@@ -409,8 +409,9 @@ async function init(user) {
         initializeAuthListener(async (user) => {
             if (user) {
                 bindConsoleLogout("logout-nav-btn", "../index.html");
+                const profile = await ensureUserInFirestore(user);
                 const welcome = document.getElementById("user-welcome");
-                if (welcome) welcome.textContent = user.displayName || "Scholar";
+                if (welcome) welcome.textContent = profile?.displayName || "Scholar";
                 await init(user);
             } else { window.location.href = "../index.html"; }
         });
@@ -419,22 +420,17 @@ async function init(user) {
 
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
-    <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center w-full">
-        <div class="flex items-center space-x-4">
-            <a href="consoles/student.html" class="p-2 bg-white text-cbse-blue font-bold rounded-xl shadow-md hover:scale-105 transition active:scale-95">🔙</a>
-            <div>
-                <h1 id="page-title" class="text-lg md:text-xl font-extrabold text-accent-gold leading-tight">Mistake Book</h1>
-                <div class="flex items-center gap-2">
-                    <span id="user-welcome" class="text-[10px] text-white/70 font-bold">Scholar</span>
-                    <span id="context-badge" class="px-2 py-0.5 bg-accent-gold text-cbse-blue text-[9px] font-black rounded uppercase">Grade --</span>
-                </div>
-            </div>
-        </div>
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-2xl bg-red-100 text-danger-red flex items-center justify-center text-lg">🧠</div>
-            <button id="logout-nav-btn" class="p-2 text-white/50 hover:text-white transition"><i class="fas fa-sign-out-alt"></i></button>
-        </div>
-    </header>
+    <div id="app-header"></div>
+<script>R4E.renderHeader({
+    title: "Mistake Book",
+    homePath: "../index.html",
+    homeIcon: "🔙",
+    userWelcomeDefault: "Scholar",
+    roleBadge: "Grade --",
+    roleBadgeId: "context-badge",
+    showLogout: true,
+    logoutId: "logout-nav-btn"
+});</script>
 
     <main class="flex-grow max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
         <div class="mb-8">

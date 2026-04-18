@@ -22,7 +22,7 @@
 
     <script type="module">
         import { loadCurriculum } from "../js/curriculum/loader.js";
-        import { initializeAuthListener } from "../js/auth-paywall.js";
+        import { initializeAuthListener, ensureUserInFirestore } from "../js/auth-paywall.js";
         import { injectStyles } from "../js/ui-renderer.js";
         import { getInitializedClients } from "../js/config.js";
         import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -132,29 +132,34 @@
                 <div class="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">${badgeHtml}</div>`;
         }
 
-        initializeAuthListener((user) => {
-            loadSubjects(user);
+        initializeAuthListener(async (user) => {
             if (user) {
+                const profile = await ensureUserInFirestore(user);
+                const welcomeEl = document.getElementById("user-welcome");
+                if (welcomeEl) welcomeEl.textContent = profile?.displayName || "Student";
                 const params = new URLSearchParams(window.location.search);
                 const grade = params.get("grade") || "9";
+                const badge = document.getElementById("context-badge");
+                if (badge) badge.textContent = `Grade ${grade}`;
                 renderMilestones(user, grade);
             }
+            loadSubjects(user);
         });
     </script>
 </head>
 
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
-    <header class="bg-cbse-blue shadow-lg py-4 px-6 sticky top-0 z-40 flex justify-between items-center w-full">
-        <div class="flex items-center space-x-4">
-            <a href="consoles/student.html"
-                class="p-2 bg-white text-cbse-blue font-bold rounded-xl shadow-md hover:scale-105 transition active:scale-95">🔙</a>
-            <div>
-                <h2 class="text-lg md:text-xl font-extrabold text-accent-gold leading-tight">Curriculum</h2>
-                <p class="text-[10px] md:text-xs text-white opacity-80 italic tracking-wide">Ready4Exam • Powered by Ready4Industry</p>
-            </div>
-        </div>
-    </header>
+    <div id="app-header"></div>
+<script>R4E.renderHeader({
+    title: "Curriculum",
+    homePath: "../index.html",
+    homeIcon: "🔙",
+    userWelcomeDefault: "Student",
+    roleBadge: "Grade --",
+    roleBadgeId: "context-badge",
+    showLogout: false
+});</script>
 
     <main class="flex-grow flex flex-col items-center justify-center p-4 md:p-8 w-full">
         <div class="max-w-4xl w-full fade-in">
@@ -177,9 +182,8 @@
         </div>
     </main>
 
-    <footer class="bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 border-t border-white/5 w-full">
-        <p>© 2025 Ready4Exam Academic Portal.</p>
-    </footer>
+    <div id="app-footer"></div>
+<script>R4E.renderFooter();</script>
 
 </body>
 </html>

@@ -8,7 +8,8 @@ import {
   where,
   getDocs,
   doc,
-  setDoc
+  setDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -91,6 +92,15 @@ async function init() {
 async function bootForAuthenticatedUser(bootToken) {
   const grade = resolveGrade(currentUser);
   currentGrade = grade;
+
+  // Fetch Firestore profile for displayName
+  try {
+    const userDoc = await getDoc(doc(studentDB, "users", currentUser.uid));
+    if (userDoc.exists()) {
+      const profile = userDoc.data();
+      currentUser._profileName = profile.displayName || null;
+    }
+  } catch (e) { console.warn("Could not fetch user profile for header:", e); }
 
   updateHeader(grade);
 
@@ -319,7 +329,7 @@ function updateHeader(grade) {
   if (badge) badge.textContent = `Grade ${grade}`;
   const welcome = document.getElementById("user-welcome");
   if (welcome && currentUser) {
-    welcome.textContent = currentUser.displayName || "Student";
+    welcome.textContent = currentUser._profileName || currentUser.displayName || "Student";
   }
 }
 

@@ -1,6 +1,6 @@
 import { fetchChapterSummary, logQuizStart } from "./api.js";
 import { loadCurriculum } from "./curriculum/loader.js";
-import { initializeAuthListener } from "./auth-paywall.js";
+import { initializeAuthListener, ensureUserInFirestore } from "./auth-paywall.js";
 import { bindConsoleLogout } from "./guard.js";
 import * as UI from "./ui-renderer.js";
 
@@ -51,7 +51,8 @@ export async function initStudyContent() {
 
     initializeAuthListener(async (user) => {
         if (user) {
-            document.getElementById("user-welcome").textContent = user.displayName || "Scholar";
+            const profile = await ensureUserInFirestore(user);
+            document.getElementById("user-welcome").textContent = profile?.displayName || "Scholar";
             document.getElementById("context-badge").textContent = `Grade ${grade}`;
             document.getElementById("chapter-title").textContent = chapter;
             document.getElementById("subject-subtitle").textContent = `${subject} • Class ${grade}`;
