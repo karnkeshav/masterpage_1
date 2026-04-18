@@ -395,9 +395,9 @@ function getIndexUrl() {
     // Detect if we're in /app/ or root
     const path = window.location.pathname;
     if (path.includes('/app/')) {
-        return '../index.html#get-started';
+        return '../offering.html';
     }
-    return './index.html#get-started';
+    return './offering.html';
 }
 
 /**
