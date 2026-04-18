@@ -492,154 +492,154 @@ export const curriculum = {
     "Vasant (वसंत)": [
       {
         "chapter_title": "हम पंछी उन्मुक्त गगन के",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch1_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "दादी माँ",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch2_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "हिमालय की बेटियाँ",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch3_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "कठपुतली",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch4_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "मिठाईवाला",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch5_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "रक्त और हमारा शरीर",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch6_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "पापा खो गए",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch7_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "शाम एक किसान",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch8_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "चिड़िया की बच्ची",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch9_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "अपूर्व अनुभव",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch10_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "रहीम के दोहे",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch11_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "कंचा",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch12_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "एक तिनका",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch13_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "खानपान की बदलती तस्वीर",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch14_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "नीलकंठ",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch15_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "भोर और बरखा",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch16_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "वीर कुँवर सिंह",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch17_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "संघर्ष के कारण मैं तुनुकमिज़ाज हो गया: धनराज",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch18_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "विप्लव गायन",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_vasant_ch19_7_quiz",
         "section": "Hindi"
       }
     ],
     "Bal Mahabharat Katha (बाल महाभारत कथा) - Supplementary": [
       {
         "chapter_title": "परिचय एवं प्रारंभिक कथाएँ",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch1_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "कौरव-पांडव बाल्यकाल",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch2_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "लाख का घर",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch3_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "द्रौपदी स्वयंवर",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch4_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "इंद्रप्रस्थ की स्थापना",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch5_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "पांडवों का वनवास",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch6_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "युद्ध की तैयारी",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch7_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "भीष्म शर-शय्या पर",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch8_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "अभिमन्यु वध",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch9_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "कर्ण-अर्जुन युद्ध",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch10_7_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "युद्ध का अंत",
-        "table_id": "hindi_undefined_undefined_7_quiz",
+        "table_id": "hindi_bal_ch11_7_quiz",
         "section": "Hindi"
       }
     ]
@@ -648,77 +648,77 @@ export const curriculum = {
     "Ruchira (रुचिरा)": [
       {
         "chapter_title": "सुभाषितानि",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch1_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "दुर्बुद्धिः विनश्यति",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch2_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "स्वावलम्बनम्",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch3_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "हास्यबालकविसम्मेलनम्",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch4_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "सदाचारः",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch5_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "सङ्कल्पः सिद्धिदायकः",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch6_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "भारतजनताऽहम्",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch7_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "त्रिवर्णः ध्वजः",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch8_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "अहं अपि विद्यालयं गमिष्यामि",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch9_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "विश्वबन्धुत्वम्",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch10_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "समवायो हि दुर्जयः",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch11_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "कः रक्षति कः रक्षितः",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch12_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "अमृतं संस्कृतम्",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch13_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "अनारिकायाः जिज्ञासा",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch14_7_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "लालन्गीतम्",
-        "table_id": "sanskrit_undefined_undefined_7_quiz",
+        "table_id": "sanskrit_ruchira_ch15_7_quiz",
         "section": "Sanskrit"
       }
     ]

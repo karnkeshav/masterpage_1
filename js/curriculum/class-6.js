@@ -220,7 +220,7 @@ export const curriculum = {
       },
       {
         "chapter_title": "Major Landforms of the Earth",
-        "table_id": "social_major_earth_6_quiz",
+        "table_id": "social_major_earth_6_v1_quiz",
         "section": "Social Science"
       },
       {
@@ -445,149 +445,149 @@ export const curriculum = {
     "वसंत (Vasant)": [
       {
         "chapter_title": "वह चिड़िया जो (कविता)",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch1_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "बचपन",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch2_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "नादान दोस्त",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch3_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "चाँद से थोड़ी सी गप्पें (कविता)",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch4_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "अक्षरों का महत्व",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch5_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "पार नज़र के",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch6_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "साथी हाथ बढ़ाना (गीत)",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch7_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "ऐसे-ऐसे",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch8_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "टिकट अलबम",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch9_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "झाँसी की रानी (कविता)",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch10_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "जो देखकर भी नहीं देखते",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch11_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "संसार पुस्तक है",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch12_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "मैं सबसे छोटी होऊँ (कविता)",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch13_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "लोकगीत",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch14_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "नौकर",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch15_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "वन के मार्ग में (कविता)",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch16_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "प्राण (कविता)",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_vasant_ch17_6_quiz",
         "section": "Hindi"
       }
     ],
     "बाल राम कथा (Baal Ram Katha)": [
       {
         "chapter_title": "अवधपुरी में राम",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch1_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "जंगल और जनकपुर",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch2_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "दो वरदान",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch3_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "राम का वन गमन",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch4_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "चित्रकूट में भरत",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch5_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "दंडक वन में दस वर्ष",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch6_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "सोने का हिरन",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch7_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "सीता की खोज",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch8_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "राम और सुग्रीव",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch9_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "लंका में हनुमान",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch10_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "लंका विजय",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch11_6_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "अयोध्या वापसी",
-        "table_id": "hindi_undefined_undefined_6_quiz",
+        "table_id": "hindi_baal_ch12_6_quiz",
         "section": "Hindi"
       }
     ]

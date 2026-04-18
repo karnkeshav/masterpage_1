@@ -116,47 +116,47 @@ export const curriculum = {
 
   "Hindi": {
     "Kshitij - Part I (क्षितिज - भाग १)": [
-      { "chapter_title": "दो बैलों की कथा", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "ल्हासा की ओर", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "उपभोक्तावाद की संस्कृति", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "साँवले सपनों की याद", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "प्रेमचंद के फटे जूते", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "मेरे बचपन के दिन", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "एक कुत्ता और एक मैना", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "साखियाँ एवं सबद", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "वाख", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "सवैया", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "कैदी और कोकिला", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "ग्राम श्री", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "चंद्र गहना से लौटती बेर", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "मेघ आए", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "यमराज की दिशा", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "बच्चे काम पर जा रहे हैं", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" }
+      { "chapter_title": "दो बैलों की कथा", "table_id": "hindi_kshitij_ch1_9_quiz", "section": "Hindi" },
+      { "chapter_title": "ल्हासा की ओर", "table_id": "hindi_kshitij_ch2_9_quiz", "section": "Hindi" },
+      { "chapter_title": "उपभोक्तावाद की संस्कृति", "table_id": "hindi_kshitij_ch3_9_quiz", "section": "Hindi" },
+      { "chapter_title": "साँवले सपनों की याद", "table_id": "hindi_kshitij_ch4_9_quiz", "section": "Hindi" },
+      { "chapter_title": "नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया", "table_id": "hindi_kshitij_ch5_9_quiz", "section": "Hindi" },
+      { "chapter_title": "प्रेमचंद के फटे जूते", "table_id": "hindi_kshitij_ch6_9_quiz", "section": "Hindi" },
+      { "chapter_title": "मेरे बचपन के दिन", "table_id": "hindi_kshitij_ch7_9_quiz", "section": "Hindi" },
+      { "chapter_title": "एक कुत्ता और एक मैना", "table_id": "hindi_kshitij_ch8_9_quiz", "section": "Hindi" },
+      { "chapter_title": "साखियाँ एवं सबद", "table_id": "hindi_kshitij_ch9_9_quiz", "section": "Hindi" },
+      { "chapter_title": "वाख", "table_id": "hindi_kshitij_ch10_9_quiz", "section": "Hindi" },
+      { "chapter_title": "सवैया", "table_id": "hindi_kshitij_ch11_9_quiz", "section": "Hindi" },
+      { "chapter_title": "कैदी और कोकिला", "table_id": "hindi_kshitij_ch12_9_quiz", "section": "Hindi" },
+      { "chapter_title": "ग्राम श्री", "table_id": "hindi_kshitij_ch13_9_quiz", "section": "Hindi" },
+      { "chapter_title": "चंद्र गहना से लौटती बेर", "table_id": "hindi_kshitij_ch14_9_quiz", "section": "Hindi" },
+      { "chapter_title": "मेघ आए", "table_id": "hindi_kshitij_ch15_9_quiz", "section": "Hindi" },
+      { "chapter_title": "यमराज की दिशा", "table_id": "hindi_kshitij_ch16_9_quiz", "section": "Hindi" },
+      { "chapter_title": "बच्चे काम पर जा रहे हैं", "table_id": "hindi_kshitij_ch17_9_quiz", "section": "Hindi" }
     ],
     "Kritika - Part I (कृतिका - भाग १)": [
-      { "chapter_title": "इस जल प्रलय में", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "मेरे संग की औरतें", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "रीढ़ की हड्डी", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "माटी वाली", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" },
-      { "chapter_title": "किस तरह आखिरकार मैं हिंदी में आया", "table_id": "hindi_undefined_undefined_9_quiz", "section": "Hindi" }
+      { "chapter_title": "इस जल प्रलय में", "table_id": "hindi_kritika_ch1_9_quiz", "section": "Hindi" },
+      { "chapter_title": "मेरे संग की औरतें", "table_id": "hindi_kritika_ch2_9_quiz", "section": "Hindi" },
+      { "chapter_title": "रीढ़ की हड्डी", "table_id": "hindi_kritika_ch3_9_quiz", "section": "Hindi" },
+      { "chapter_title": "माटी वाली", "table_id": "hindi_kritika_ch4_9_quiz", "section": "Hindi" },
+      { "chapter_title": "किस तरह आखिरकार मैं हिंदी में आया", "table_id": "hindi_kritika_ch5_9_quiz", "section": "Hindi" }
     ]
   },
 
   "Sanskrit": {
     "Shemushi - Part I (शेमुषी - प्रथमो भागः)": [
-      { "chapter_title": "भारतीवसन्तगीतिः", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "स्वर्णकाकः", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "गोदोहनम्", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "कल्पतरुः", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "सूक्तिमौक्तिकम्", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "भ्रान्तो बालः", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "प्रत्यभिज्ञानम्", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "लौहतुला", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "सिकतासेतुः", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "जटायोः शौर्यम्", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "पर्यावरणम्", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" },
-      { "chapter_title": "वाङ्मनःप्राणस्वरूपम्", "table_id": "sanskrit_undefined_undefined_9_quiz", "section": "Sanskrit" }
+      { "chapter_title": "भारतीवसन्तगीतिः", "table_id": "sanskrit_shemushi_ch1_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "स्वर्णकाकः", "table_id": "sanskrit_shemushi_ch2_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "गोदोहनम्", "table_id": "sanskrit_shemushi_ch3_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "कल्पतरुः", "table_id": "sanskrit_shemushi_ch4_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "सूक्तिमौक्तिकम्", "table_id": "sanskrit_shemushi_ch5_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "भ्रान्तो बालः", "table_id": "sanskrit_shemushi_ch6_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "प्रत्यभिज्ञानम्", "table_id": "sanskrit_shemushi_ch7_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "लौहतुला", "table_id": "sanskrit_shemushi_ch8_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "सिकतासेतुः", "table_id": "sanskrit_shemushi_ch9_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "जटायोः शौर्यम्", "table_id": "sanskrit_shemushi_ch10_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "पर्यावरणम्", "table_id": "sanskrit_shemushi_ch11_9_quiz", "section": "Sanskrit" },
+      { "chapter_title": "वाङ्मनःप्राणस्वरूपम्", "table_id": "sanskrit_shemushi_ch12_9_quiz", "section": "Sanskrit" }
     ]
   }
 

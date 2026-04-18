@@ -425,151 +425,151 @@ export const curriculum = {
     "Vasant - Part III (वसंत - भाग ३)": [
       {
         "chapter_title": "ध्वनि",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch1_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "लाख की चूड़ियाँ",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch2_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "बस की यात्रा",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch3_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "दीवानों की हस्ती",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch4_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "चिट्ठियों की अनूठी दुनिया",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch5_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "भगवान के डाकिए",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch6_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "क्या निराश हुआ जाए",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch7_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "यह सबसे कठिन समय नहीं",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch8_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "कबीर की साखियाँ",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch9_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "कामचोर",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch10_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "जब सिनेमा ने बोलना सीखा",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch11_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "सुदामा चरित",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch12_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "जहाँ पहिया है",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch13_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "अकबरी लोटा",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch14_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "सूरदास के पद",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_vasant_ch15_8_quiz",
         "section": "Hindi"
       }
     ],
     "Durva - Part III (दुर्वा - भाग ३)": [
       {
         "chapter_title": "गुड़िया",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch1_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "दो कहानियाँ",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch2_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "उठ किसान",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch3_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "काँच की चूडियाँ",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch4_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "छोटे जादूगर",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch5_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "पत्ता",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch6_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "बच्चों के पत्र",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch7_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "सागर यात्रा",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch8_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "हम भी बनें",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch9_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "आओ हिंदी सीखें",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_durva_ch10_8_quiz",
         "section": "Hindi"
       }
     ],
     "Sanshipt Budhcharit (संक्षिप्त बुद्धचरित)": [
       {
         "chapter_title": "बुद्ध का गृहत्याग",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_sanshipt_ch1_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "ज्ञान प्राप्ति",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_sanshipt_ch2_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "धर्मचक्र प्रवर्तन",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_sanshipt_ch3_8_quiz",
         "section": "Hindi"
       },
       {
         "chapter_title": "महापरिनिर्वाण",
-        "table_id": "hindi_undefined_undefined_8_quiz",
+        "table_id": "hindi_sanshipt_ch4_8_quiz",
         "section": "Hindi"
       }
     ]
@@ -578,77 +578,77 @@ export const curriculum = {
     "Ruchira - Part III (रुचिरा - तृतीयो भागः)": [
       {
         "chapter_title": "सुभाषितानि",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch1_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "बिलस्य वाणी न कदापि मे श्रुता",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch2_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "डीजीभारतम्",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch3_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "सदैव पुरतो निधेहि चरणम्",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch4_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "कण्टकेनैव कण्टकम्",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch5_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "गृहं शून्यं सुतां विना",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch6_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "संसारसागरस्य नायकाः",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch7_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "सौरमण्डलम्",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch8_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "सप्तभगिन्यः",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch9_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "नीतिनवनीतम्",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch10_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "सावित्री बाई फुले",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch11_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "कः रक्षति कः रक्षितः",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch12_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "राजते भारतस्वर्णभूमिः",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch13_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "आर्यभटः",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch14_8_quiz",
         "section": "Sanskrit"
       },
       {
         "chapter_title": "प्रहेलिकाः",
-        "table_id": "sanskrit_undefined_undefined_8_quiz",
+        "table_id": "sanskrit_ruchira_ch15_8_quiz",
         "section": "Sanskrit"
       }
     ]
