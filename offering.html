@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pricing &amp; Plans | Ready4Exam</title>
+
+<!-- Standard script inclusions as in index.html -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script src="./js/tailwind-config.js"></script>
+<link href="./css/global.css" rel="stylesheet">
+<script src="js/firebase-master-config.js"></script>
+<script src="./js/shell.js"></script>
+
+<style>
+/* Hide scrollbar for horizontal scroll */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.asymmetric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+@media (min-width: 1280px) {
+    .asymmetric-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .legacy-row {
+      grid-column: span 2;
+    }
+}
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans selection:bg-success-green selection:text-white flex flex-col min-h-screen">
+
+<!-- Header -->
+<div id="app-header"></div>
+<script>R4E.renderHeader({
+    title: 'Ready4<span class="text-white">Exam</span>',
+    homePath: "index.html",
+    showUserWelcome: false,
+    showLogout: false,
+    showInbox: false,
+    glass: true
+});</script>
+
+<main class="pt-32 pb-24 px-6 md:px-12 lg:px-24 max-w-7xl mx-auto flex-grow">
+    <!-- Hero Section -->
+    <section class="mb-20 text-center md:text-left md:flex md:items-end md:justify-between">
+        <div class="max-w-2xl">
+            <span class="inline-block px-4 py-1.5 rounded-full bg-green-100 text-success-green font-bold text-xs uppercase tracking-widest mb-6">Subscription Plans</span>
+            <h1 class="text-5xl md:text-7xl font-black tracking-tight text-cbse-blue mb-6 leading-[1.1]">
+                Invest in your <br/><span class="text-success-green">Intellectual Growth.</span>
+            </h1>
+            <p class="text-slate-600 text-lg md:text-xl leading-relaxed max-w-xl">
+                Choose the trajectory for your academic journey. From focused practice to long-term legacy planning, Cognito Academy curates knowledge for the modern scholar.
+            </p>
+        </div>
+        <div class="hidden md:block pb-2">
+            <div class="flex -space-x-4">
+                <div class="w-12 h-12 rounded-full border-4 border-slate-50 bg-slate-200 overflow-hidden">
+                    <img alt="User" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1sHcqCkknUzyuJe_-AH1yVsdMZ9_Efvx43d0Sd9AUIf-vmXt_LihJYRZ2JceE5RiBuK3yZ8AxpImyZi4fKvX1sycAkSrSA3T0gF0xPaRpyCv3xQ03vuRRCxk_nb8-5jSQfrTXIAI0eTjRu8uaXWxBMe4B78t82JfDPwk-5i1r7a4JpGGE-6j7ZWJ-3e8rcUrzExdh_ANks2AypG7_36n1L7zD2niqAoxSFJQphq0rnEu_ZRp0elyzHpgSmZZitQr6URAdWrnzxZg"/>
+                </div>
+                <div class="w-12 h-12 rounded-full border-4 border-slate-50 bg-slate-300 overflow-hidden">
+                    <img alt="User" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhf0ggAZ1OUbq_t-zecpbkJNWVan_ZuleqeIc7amzwy24NAMEpxDHAKFOzeOThNKaMOB1q6FIpX4g4nlCtNHIVz1oj_pXT7m4cra3LdjYcwYKrr4mXEMghHvGIb_VsLiPAc4ObiMmvKZk3VuTk4kSTNctGmSJ4n8kv2bVSOoV1xofKhpZqIbr0NulbNnXrzpZ4xqhj-X-C9UpN044Fk3Fh3_YCNqs4UUaXsmyoKFjzsxtBVwFivA54fcTpdU1ykUDxCyGTevCZrrQ"/>
+                </div>
+                <div class="w-12 h-12 rounded-full border-4 border-slate-50 bg-slate-400 overflow-hidden">
+                    <img alt="User" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAxXV9eCRjivgUTGDfbqUW78FhUWwrZC7BAHVbsy2xEf1r_gabgNVlAuteyReO32fHxL7v5S4p1VDF_48iEw4l47nGV5e2jB6yO3vkXhnoPBV-UY0y3_js0n6ZjTh784M638yuur2pN-xMQrpirNbOuLa6IKg_mdgIRBmxCw7_-klqlUPugcSDlZj8D6UaYGJPAdaskWbfEnt6rZ3F7gf1H-5E-RYV2NztFaQYAx7u7LGeUGxQjcooTKR6IbB04HvXO2PqknMXKyE"/>
+                </div>
+                <div class="w-12 h-12 rounded-full border-4 border-slate-50 bg-cbse-blue flex items-center justify-center text-white text-xs font-bold">
+                    +12k
+                </div>
+            </div>
+            <p class="text-xs font-semibold text-slate-500 mt-3 uppercase tracking-tighter">Joined the academy this month</p>
+        </div>
+    </section>
+
+    <!-- Pricing Cards Grid -->
+    <div class="asymmetric-grid">
+        <!-- Tier A: The Practitioner -->
+        <div class="group bg-white p-8 rounded-xl flex flex-col justify-between transition-all duration-300 hover:translate-y-[-4px] shadow-sm hover:shadow-md border border-slate-200">
+            <div>
+                <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-cbse-blue mb-8 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-question-circle text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2 text-heading">The Practitioner</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-8">Precision practice for students targeting high-rigor CBSE alignment.</p>
+                <div class="mb-8">
+                    <span class="text-4xl font-black text-cbse-blue">₹499</span>
+                    <span class="text-slate-500 text-sm">/month</span>
+                </div>
+                <ul class="space-y-4 mb-10">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">Medium &amp; Advanced Quizzes</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">CBSE-Aligned Rigor</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">Instant Solutions</span>
+                    </li>
+                </ul>
+            </div>
+            <button class="w-full py-4 rounded-full bg-slate-100 text-slate-800 font-bold text-sm hover:bg-slate-200 transition-colors">Start Practicing</button>
+        </div>
+
+        <!-- Tier B: The Self-Strategist -->
+        <div class="group bg-white p-8 rounded-xl flex flex-col justify-between transition-all duration-300 hover:translate-y-[-4px] shadow-sm hover:shadow-md border border-slate-200">
+            <div>
+                <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-success-green mb-8 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-chart-line text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2 text-heading">Self-Strategist</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-8">A comprehensive console for students to track behavioral growth.</p>
+                <div class="mb-8">
+                    <span class="text-4xl font-black text-cbse-blue">₹999</span>
+                    <span class="text-slate-500 text-sm">/month</span>
+                </div>
+                <ul class="space-y-4 mb-10">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">Tier A Practitioner Access</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">Mistake Notebook &amp; Knowledge Hub</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">Behavioral Analytics Console</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">Diagnostic Performance Dashboard</span>
+                    </li>
+                </ul>
+            </div>
+            <button class="w-full py-4 rounded-full bg-cbse-blue text-white font-bold text-sm shadow-lg shadow-cbse-blue/20 hover:opacity-90 transition-opacity">Own Your Growth</button>
+        </div>
+
+        <!-- Tier C: The Sync Bundle -->
+        <div class="group bg-cbse-blue p-8 rounded-xl flex flex-col justify-between transition-all duration-300 hover:translate-y-[-4px] shadow-xl">
+            <div>
+                <div class="flex justify-between items-start mb-8">
+                    <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                        <i class="fas fa-users text-xl"></i>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-success-green text-white text-[10px] font-bold uppercase tracking-wider">Most Popular</span>
+                </div>
+                <h3 class="text-2xl font-bold mb-2 text-white">The Sync Bundle</h3>
+                <p class="text-blue-100 text-sm leading-relaxed mb-8">Bridging the gap between student ambition and parent support.</p>
+                <div class="mb-8">
+                    <span class="text-4xl font-black text-white">₹1,499</span>
+                    <span class="text-blue-200 text-sm">/month</span>
+                </div>
+                <ul class="space-y-4 mb-10">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-accent-gold mt-1"></i>
+                        <span class="text-sm text-white">Full Self-Strategist Console</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-accent-gold mt-1"></i>
+                        <span class="text-sm text-white">Parent Companion App</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-accent-gold mt-1"></i>
+                        <span class="text-sm text-white">Sync Wall Real-time Tracking</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-accent-gold mt-1"></i>
+                        <span class="text-sm text-white">Direct Command Nudges</span>
+                    </li>
+                </ul>
+            </div>
+            <button class="w-full py-4 rounded-full bg-white text-cbse-blue font-black text-sm hover:bg-slate-50 transition-colors">Sync Now</button>
+        </div>
+
+        <!-- Tier D: Board-Ready Add-on -->
+        <div class="group bg-white p-8 rounded-xl flex flex-col justify-between transition-all duration-300 hover:translate-y-[-4px] shadow-sm hover:shadow-md border border-slate-200 lg:col-start-1">
+            <div>
+                <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-cbse-blue mb-8 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-book text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2 text-heading">Board-Ready</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-8">Specific strategic tools for Class 10 &amp; 12 Board candidates.</p>
+                <div class="mb-8">
+                    <span class="text-2xl font-bold text-slate-400 line-through opacity-50">₹1,999</span>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-black text-cbse-blue">₹1,299</span>
+                        <span class="text-slate-500 text-sm">/month</span>
+                    </div>
+                </div>
+                <ul class="space-y-4 mb-10">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">PYQs &amp; Sample Paper Sims</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">Weightage &amp; Trend Analytics</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-success-green mt-1"></i>
+                        <span class="text-sm text-slate-700">2026 Marking System Guide</span>
+                    </li>
+                </ul>
+            </div>
+            <button class="w-full py-4 rounded-full bg-slate-100 text-slate-800 font-bold text-sm hover:bg-slate-200 transition-colors">Get Board-Ready</button>
+        </div>
+
+        <!-- Tier E: The Legacy Plan -->
+        <div class="legacy-row group relative overflow-hidden bg-slate-900 text-white p-12 rounded-3xl flex flex-col md:flex-row gap-12 transition-all duration-300 shadow-2xl">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-success-green/20 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+            <div class="flex-1 z-10">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-16 h-16 rounded-full bg-success-green flex items-center justify-center text-white shadow-lg shadow-success-green/30">
+                        <i class="fas fa-gem text-3xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-success-green mb-1 block">Foundational Mastery</span>
+                        <h3 class="text-3xl font-black leading-none">The Legacy Plan</h3>
+                    </div>
+                </div>
+                <p class="text-slate-300 text-lg leading-relaxed mb-8">The definitive roadmap for the student's journey from Class 9 through 12. Locked-in value for serious scholars.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-shield-alt text-success-green"></i>
+                        <span class="text-sm font-medium">3-Year Price Protection</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-route text-success-green"></i>
+                        <span class="text-sm font-medium">Professional Journey Line</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-infinity text-success-green"></i>
+                        <span class="text-sm font-medium">All Features C + D Included</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-headset text-success-green"></i>
+                        <span class="text-sm font-medium">Priority Counselor Support</span>
+                    </div>
+                </div>
+            </div>
+            <div class="md:w-72 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 flex flex-col justify-between z-10">
+                <div class="text-center md:text-left">
+                    <span class="text-slate-400 text-xs font-bold uppercase tracking-widest">36 Months Full Access</span>
+                    <div class="mt-4 mb-6">
+                        <span class="text-5xl font-black text-white">₹32k</span>
+                        <p class="text-slate-400 text-xs mt-2 italic">*Save 40% vs monthly</p>
+                    </div>
+                </div>
+                <button class="w-full py-4 rounded-full bg-success-green text-white font-black text-sm hover:scale-105 transition-transform">Begin Your Legacy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust Section -->
+    <section class="mt-32 pt-20 border-t border-slate-200">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 text-center md:text-left">
+            <div>
+                <h4 class="font-bold text-cbse-blue mb-4">Secure Learning</h4>
+                <p class="text-slate-600 text-sm leading-relaxed">Encrypted student data and secure payment gateways compliant with global standards.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-cbse-blue mb-4">Expert Curated</h4>
+                <p class="text-slate-600 text-sm leading-relaxed">Every question and analysis module is verified by leading CBSE academicians.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-cbse-blue mb-4">Flexible Scaling</h4>
+                <p class="text-slate-600 text-sm leading-relaxed">Upgrade or adjust your plan as your academic needs evolve during the session.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-cbse-blue mb-4">Legacy Support</h4>
+                <p class="text-slate-600 text-sm leading-relaxed">Dedicated counseling desk for Legacy and Sync Bundle members.</p>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>
