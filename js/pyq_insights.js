@@ -27,17 +27,24 @@ export async function initInsights() {
         }
 
         // FIX: Pull automationDB (Vault) instead of standard db (Master)
-        const { auth, automationDB } = clients;
+        const { auth, automationDB, db } = clients;
         state.db = automationDB;
 
         auth.onAuthStateChanged(async (user) => {  
             if (user) {  
                 await user.getIdToken(true);  
                 
-                // UI: Welcome message
+                // UI: Welcome message — use Firestore profile
+                let profileName = null;
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        profileName = userDoc.data().displayName;
+                    }
+                } catch (e) { console.warn("Could not fetch user profile for header:", e); }
                 const welcomeEl = document.getElementById('user-welcome');
                 if (welcomeEl) {
-                    welcomeEl.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'Student');
+                    welcomeEl.textContent = profileName || user.displayName || (user.email ? user.email.split('@')[0] : 'Student');
                 }
 
                 updateHeaderUI();

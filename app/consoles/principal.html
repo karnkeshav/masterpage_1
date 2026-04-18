@@ -42,6 +42,7 @@
         // Data Loader
         window.loadConsoleData = async (profile) => {
             console.log("Loading Principal Dashboard for:", profile.school_id);
+            document.getElementById("user-welcome").textContent = profile.displayName || "Principal";
             const schoolId = profile.school_id;
 
             // Strict Isolation: Fetch stats only for this schoolId

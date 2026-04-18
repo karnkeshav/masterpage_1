@@ -45,7 +45,7 @@ window.loadConsoleData = async (profile) => {
     }
 
     const welcomeEl = document.getElementById('user-welcome');
-    if (welcomeEl) welcomeEl.innerText = profile.email || "Admin User";
+    if (welcomeEl) welcomeEl.innerText = profile.displayName || profile.email || "Admin User";
 
     // Hide loading, show app
     const loadingEl = document.getElementById('loading');
