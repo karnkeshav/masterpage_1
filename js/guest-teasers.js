@@ -88,7 +88,7 @@ export function showTeaserModal(opts) {
         <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden" style="animation:teaserCardIn 0.45s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;">
             <!-- Gradient hero with student image -->
             <div class="relative h-40 bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 overflow-hidden">
-                <img src="${heroImg}" alt="" class="absolute right-0 bottom-0 h-full object-cover opacity-20 mix-blend-luminosity pointer-events-none" style="-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,0.6),transparent 70%);mask-image:linear-gradient(to left,rgba(0,0,0,0.6),transparent 70%);" onerror="this.style.display='none'" />
+                <img src="${heroImg}" alt="Students learning" class="absolute right-0 bottom-0 h-full object-cover opacity-20 mix-blend-luminosity pointer-events-none" style="-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,0.6),transparent 70%);mask-image:linear-gradient(to left,rgba(0,0,0,0.6),transparent 70%);" onerror="this.style.display='none'" />
                 <div class="absolute -top-6 -left-6 w-24 h-24 bg-white/10 rounded-full"></div>
                 <div class="absolute bottom-2 right-12 w-16 h-16 bg-white/5 rounded-full"></div>
                 <div class="relative z-10 flex flex-col items-center justify-center h-full px-6">
@@ -256,7 +256,7 @@ export function injectResultsFlyer(grade) {
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden">
             <!-- Hero with student image -->
             <div class="relative bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-700 text-white p-6 text-center overflow-hidden">
-                <img src="${heroImg}" alt="" class="absolute right-0 top-0 h-full object-cover opacity-15 mix-blend-luminosity pointer-events-none" style="-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,0.5),transparent 60%);mask-image:linear-gradient(to left,rgba(0,0,0,0.5),transparent 60%);" onerror="this.style.display='none'" />
+                <img src="${heroImg}" alt="Students learning" class="absolute right-0 top-0 h-full object-cover opacity-15 mix-blend-luminosity pointer-events-none" style="-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,0.5),transparent 60%);mask-image:linear-gradient(to left,rgba(0,0,0,0.5),transparent 60%);" onerror="this.style.display='none'" />
                 <div class="absolute -top-10 -left-10 w-40 h-40 bg-white/5 rounded-full"></div>
                 <div class="absolute -bottom-6 right-20 w-24 h-24 bg-white/5 rounded-full"></div>
                 <div class="relative z-10">
