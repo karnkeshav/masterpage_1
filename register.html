@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Ready4Exam Academy</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <link href="./css/global.css" rel="stylesheet">
+
+    <style>
+        .bg-glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
+        .border-glass { border: 1px border rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col font-sans">
+
+    <div id="app-header"></div>
+    <script src="./js/shell.js"></script>
+    <script>
+        R4E.renderHeader({ title: 'Ready4<span class="text-white">Exam</span>', glass: true });
+    </script>
+
+    <main class="flex-grow flex items-center justify-center px-6 py-24">
+        <div class="w-full max-w-2xl bg-glass border-glass p-8 md:p-12 rounded-3xl shadow-2xl">
+            
+            <div id="plan-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success-green/20 text-success-green text-[10px] font-black uppercase tracking-widest mb-6">
+                <i class="fas fa-crown"></i> <span id="selected-plan-text">Loading Plan...</span>
+            </div>
+
+            <h1 class="text-3xl md:text-4xl font-black mb-2 tracking-tight">Create Your Account</h1>
+            <p class="text-slate-400 text-sm mb-10">Join the league of modern scholars. Complete your profile to activate your dashboard.</p>
+
+            <form id="registration-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Full Name</label>
+                        <input type="text" id="reg-name" required class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Email Address</label>
+                        <input type="email" id="reg-email" required class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Current Class</label>
+                        <select id="reg-class" required class="w-full bg-slate-800 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green">
+                            <option value="">Select Class</option>
+                            <option value="6">Class 6</option>
+                            <option value="7">Class 7</option>
+                            <option value="8">Class 8</option>
+                            <option value="9">Class 9</option>
+                            <option value="10">Class 10 (Board)</option>
+                            <option value="11">Class 11</option>
+                            <option value="12">Class 12 (Board)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Academic Board</label>
+                        <select id="reg-board" required class="w-full bg-slate-800 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green">
+                            <option value="CBSE">CBSE</option>
+                            <option value="SCERT">SCERT (TS)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Secure Password</label>
+                    <input type="password" id="reg-password" required minlength="8" class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
+                </div>
+
+                <div class="bg-white/5 p-4 rounded-xl border border-white/5">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400 font-bold uppercase">Total Due Today</span>
+                        <span id="price-display" class="text-xl font-black text-success-green">₹0</span>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full py-4 rounded-xl bg-success-green text-white font-black hover:scale-[1.02] transition-transform shadow-lg shadow-success-green/20">
+                    Complete Secure Payment
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <div id="app-footer"></div>
+    <script>R4E.renderFooter();</script>
+
+    <script type="module" src="./js/register-handler.js"></script>
+</body>
+</html>
