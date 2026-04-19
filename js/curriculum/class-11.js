@@ -28,54 +28,54 @@ export const curriculum = {
       },
       {
         "chapter_title": "Work, Energy and Power",
-        "table_id": "Ch 6",
+        "table_id": "physics_work_energy_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "System of Particles and Rotational Motion",
-        "table_id": "Ch 7",
+        "table_id": "physics_system_rotational_11_quiz",
         "section": "Science"
       }
     ],
     "Physics Part II": [
       {
         "chapter_title": "Gravitation",
-        "table_id": "Ch 1",
+        "table_id": "physics_gravitation_gravitation_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Mechanical Properties of Solids",
-        "table_id": "Ch 2",
+        "table_id": "physics_mechanical_solids_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Mechanical Properties of Fluids",
-        "table_id": "Ch 3",
+        "table_id": "physics_mechanical_fluids_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Thermal Properties of Matter",
-        "table_id": "Ch 4",
+        "table_id": "physics_thermal_matter_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Thermodynamics",
-        "table_id": "Ch 5",
+        "table_id": "physics_thermodynamics_thermodynamics_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Kinetic Theory",
-        "table_id": "Ch 6",
+        "table_id": "physics_kinetic_theory_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Oscillations",
-        "table_id": "Ch 7",
+        "table_id": "physics_oscillations_oscillations_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Waves",
-        "table_id": "Ch 8",
+        "table_id": "physics_waves_waves_11_quiz",
         "section": "Science"
       }
     ]
@@ -126,22 +126,22 @@ export const curriculum = {
       },
       {
         "chapter_title": "s-Block Elements",
-        "table_id": "Ch 3",
+        "table_id": "chemistry_sblock_elements_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "p-Block Elements",
-        "table_id": "Ch 4",
+        "table_id": "chemistry_pblock_elements_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Organic Chemistry - Some Basic Principles and Techniques",
-        "table_id": "Ch 5",
+        "table_id": "chemistry_organic_techniques_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Hydrocarbons",
-        "table_id": "Ch 6",
+        "table_id": "chemistry_hydrocarbons_hydrocarbons_11_quiz",
         "section": "Science"
       }
     ]
@@ -150,7 +150,7 @@ export const curriculum = {
     "Biology": [
       {
         "chapter_title": "The Living World",
-        "table_id": "Ch 1",
+        "table_id": "biology_living_world_11_quiz",
         "section": "Science"
       },
       {
@@ -399,7 +399,7 @@ export const curriculum = {
       },
       {
         "chapter_title": "A Photograph (Poem)",
-        "table_id": "Ch 2",
+        "table_id": "english_photograph_poem_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
@@ -414,69 +414,69 @@ export const curriculum = {
       },
       {
         "chapter_title": "The Laburnum Top (Poem)",
-        "table_id": "Ch 5",
+        "table_id": "english_laburnum_poem_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "Landscape of the Soul",
-        "table_id": "Ch 6",
+        "table_id": "english_landscape_soul_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "The Voice of the Rain (Poem)",
-        "table_id": "Ch 7",
+        "table_id": "english_voice_poem_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "The Ailing Planet: The Green Movement's Role",
-        "table_id": "Ch 8",
+        "table_id": "english_ailing_planet_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "Childhood (Poem)",
-        "table_id": "Ch 9",
+        "table_id": "english_childhood_poem_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "Father to Son (Poem)",
-        "table_id": "Ch 10",
+        "table_id": "english_father_poem_11_quiz",
         "section": "Science/Commerce/Humanities"
       }
     ],
     "Snapshots (Supplementary Reader)": [
       {
         "chapter_title": "The Summer of the Beautiful White Horse",
-        "table_id": "Ch 1",
+        "table_id": "english_summer_horse_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "The Address",
-        "table_id": "Ch 2",
+        "table_id": "english_address_address_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "Ranga’s Marriage",
-        "table_id": "Ch 3",
+        "table_id": "english_ranga_marriage_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "Albert Einstein at School",
-        "table_id": "Ch 4",
+        "table_id": "english_albert_school_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "Mother’s Day",
-        "table_id": "Ch 5",
+        "table_id": "english_mothers_day_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "The Ghat of the Only World",
-        "table_id": "Ch 6",
+        "table_id": "english_ghat_world_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "Birth",
-        "table_id": "Ch 7",
+        "table_id": "english_birth_birth_11_quiz",
         "section": "Science/Commerce/Humanities"
       }
     ]
@@ -561,7 +561,7 @@ export const curriculum = {
       },
       {
         "chapter_title": "Private, Public and Global Enterprises",
-        "table_id": "Ch 3",
+        "table_id": "business_private_enterprises_11_quiz",
         "section": "Commerce"
       },
       {
@@ -649,7 +649,7 @@ export const curriculum = {
     "Introductory Microeconomics": [
       {
         "chapter_title": "Introduction",
-        "table_id": "Ch 1",
+        "table_id": "economics_microeconomics_intro_11_quiz",
         "section": "Commerce"
       },
       {
@@ -691,37 +691,37 @@ export const curriculum = {
       },
       {
         "chapter_title": "Liberalisation, Privatisation and Globalisation: An Appraisal",
-        "table_id": "Ch 3",
+        "table_id": "economics_liberalisation_appraisal_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Poverty",
-        "table_id": "Ch 4",
+        "table_id": "economics_poverty_poverty_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Human Capital Formation in India",
-        "table_id": "Ch 5",
+        "table_id": "economics_human_capital_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Rural Development",
-        "table_id": "Ch 6",
+        "table_id": "economics_rural_development_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Employment: Growth, Informalisation and Other Issues",
-        "table_id": "Ch 7",
+        "table_id": "economics_employment_issues_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Environment and Sustainable Development",
-        "table_id": "Ch 8",
+        "table_id": "economics_environment_development_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Comparative Development Experiences of India and its Neighbours",
-        "table_id": "Ch 9",
+        "table_id": "economics_comparative_neighbours_11_quiz",
         "section": "Commerce"
       }
     ]
@@ -770,12 +770,12 @@ export const curriculum = {
       },
       {
         "chapter_title": "Constitution as a Living Document",
-        "table_id": "Ch 9",
+        "table_id": "political_constitution_document_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "The Philosophy of The Constitution",
-        "table_id": "Ch 10",
+        "table_id": "political_philosophy_constitution_11_quiz",
         "section": "Humanities"
       }
     ]
@@ -1052,27 +1052,27 @@ export const curriculum = {
     "Understanding Society": [
       {
         "chapter_title": "Social Structure, Stratification and Social Processes in Society",
-        "table_id": "Ch 1",
+        "table_id": "sociology_social_structure_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Social Change and Social Order in Rural and Urban Society",
-        "table_id": "Ch 2",
+        "table_id": "sociology_social_change_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Environment and Society",
-        "table_id": "Ch 3",
+        "table_id": "sociology_environment_society_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Western Sociologists",
-        "table_id": "Ch 4",
+        "table_id": "sociology_western_sociologists_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Indian Sociologists",
-        "table_id": "Ch 5",
+        "table_id": "sociology_indian_sociologists_11_quiz",
         "section": "Humanities"
       }
     ]
@@ -1081,53 +1081,53 @@ export const curriculum = {
     "Aroh (Prose)": [
       {
         "chapter_title": "नमक का दरोगा (Namak Ka Daroga)",
-        "table_id": "H1",
+        "table_id": "hindi_aroh_ch1_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "मियां नसीरुद्दीन (Miyan Nasiruddin)",
-        "table_id": "H2",
+        "table_id": "hindi_aroh_ch2_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "अपू के साथ ढाई साल (Apu Ke Saath Dhaai Saal)",
-        "table_id": "H3",
+        "table_id": "hindi_aroh_ch3_11_quiz",
         "section": "Humanities"
       }
     ],
     "Aroh (Poetry)": [
       {
         "chapter_title": "कबीर के पद (Kabeer Ke Pad)",
-        "table_id": "H4",
+        "table_id": "hindi_aroh_ch4_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "मीरा के पद (Meera Ke Pad)",
-        "table_id": "H5",
+        "table_id": "hindi_aroh_ch5_11_quiz",
         "section": "Humanities"
       }
     ],
     "Vitan (Supplementary Reader)": [
       {
         "chapter_title": "भारतीय गायिकाओं में बेजोड़: लता मंगेशकर",
-        "table_id": "H6",
+        "table_id": "hindi_vitan_ch1_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "राजस्थान की रजत बूँदें",
-        "table_id": "H7",
+        "table_id": "hindi_vitan_ch2_11_quiz",
         "section": "Humanities"
       }
     ],
     "Antra (Supplementary Reader)": [
       {
         "chapter_title": "ईदगाह (Idgah)",
-        "table_id": "H8",
+        "table_id": "hindi_antra_ch1_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "दोपहर का भोजन (Dopeher Ka Bhojan)",
-        "table_id": "H9",
+        "table_id": "hindi_antra_ch2_11_quiz",
         "section": "Humanities"
       }
     ]
