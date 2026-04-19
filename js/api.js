@@ -666,6 +666,118 @@ export async function fetchGradeWisePerformance(schoolId) {
     }
 }
 
+/**
+ * Fetch subject-wise performance across all grades for a school.
+ * Returns { byGrade: { "6": { "Mathematics": { attempts, avgScore, students }, ... }, ... } }
+ */
+export async function fetchSubjectWisePerformance(schoolId) {
+    const { db } = await getInitializedClients();
+    if (!schoolId) return null;
+    try {
+        const q = query(
+            collection(db, "quiz_scores"),
+            where("school_id", "==", schoolId)
+        );
+        const snap = await getDocs(q);
+        const byGrade = {};
+        for (let g = 6; g <= 12; g++) byGrade[String(g)] = {};
+
+        snap.docs.forEach(d => {
+            const data = d.data();
+            const grade = String(data.classId || data.grade || data.class_id || "");
+            const subject = data.subject || "Unknown";
+            if (!byGrade[grade]) return;
+            if (!byGrade[grade][subject]) {
+                byGrade[grade][subject] = { attempts: 0, totalScore: 0, students: new Set() };
+            }
+            byGrade[grade][subject].attempts++;
+            byGrade[grade][subject].totalScore += (data.percentage || 0);
+            if (data.user_id) byGrade[grade][subject].students.add(data.user_id);
+        });
+
+        // Flatten sets to counts and compute averages
+        const result = {};
+        for (const [g, subjects] of Object.entries(byGrade)) {
+            result[g] = {};
+            for (const [subj, v] of Object.entries(subjects)) {
+                result[g][subj] = {
+                    attempts: v.attempts,
+                    avgScore: v.attempts > 0 ? Math.round(v.totalScore / v.attempts) : 0,
+                    uniqueStudents: v.students.size
+                };
+            }
+        }
+        return { byGrade: result };
+    } catch (e) {
+        console.error("[API] fetchSubjectWisePerformance failed", e);
+        return null;
+    }
+}
+
+/**
+ * Fetch students for a specific grade in a school, with section info.
+ * Returns [{ uid, displayName, grade, section, section_id }]
+ */
+export async function fetchStudentsForGrade(schoolId, grade) {
+    const { db } = await getInitializedClients();
+    if (!schoolId || !grade) return [];
+    try {
+        const q = query(
+            collection(db, "users"),
+            where("school_id", "==", schoolId),
+            where("role", "==", "student")
+        );
+        const snap = await getDocs(q);
+        return snap.docs
+            .map(d => {
+                const data = d.data();
+                return {
+                    uid: d.id,
+                    displayName: data.displayName || data.email || d.id,
+                    grade: String(data.classId || data.grade || data.class_id || ""),
+                    section: data.section || "",
+                    section_id: data.section_id || ""
+                };
+            })
+            .filter(s => s.grade === String(grade));
+    } catch (e) {
+        console.error("[API] fetchStudentsForGrade failed", e);
+        return [];
+    }
+}
+
+/**
+ * Fetch all quiz scores for students in a specific grade at a school.
+ * Returns [{ user_id, subject, topicSlug, percentage, difficulty }]
+ */
+export async function fetchScoresForGrade(schoolId, grade) {
+    const { db } = await getInitializedClients();
+    if (!schoolId || !grade) return [];
+    try {
+        const q = query(
+            collection(db, "quiz_scores"),
+            where("school_id", "==", schoolId)
+        );
+        const snap = await getDocs(q);
+        return snap.docs
+            .map(d => {
+                const data = d.data();
+                return {
+                    user_id: data.user_id,
+                    subject: data.subject || "Unknown",
+                    topicSlug: data.topicSlug || data.topic || "",
+                    percentage: data.percentage || 0,
+                    difficulty: data.difficulty || "Simple",
+                    classId: String(data.classId || data.grade || data.class_id || "")
+                };
+            })
+            .filter(s => s.classId === String(grade));
+    } catch (e) {
+        console.error("[API] fetchScoresForGrade failed", e);
+        return [];
+    }
+}
+
 export async function logQuizStart(userId, subject, topic, difficulty) {
     if (!userId) return;
     try {
