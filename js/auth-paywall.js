@@ -155,7 +155,7 @@ export async function routeUser(user) {
 
     // Deterministic Routing Table
     if (data.role === "owner" || data.tenantType === "owner") {
-        window.location.href = "owner-console.html";
+        window.location.href = "app/consoles/owner.html";
         return;
     }
 
@@ -209,10 +209,6 @@ export async function initializeAuthListener(onReady) {
             profile = await ensureUserInFirestore(user);
 
             if (profile) {
-                // Inject Lens for Owner
-                if (profile?.role === "owner") {
-                    import("./persona-lens.js").then(m => m.initPersonaLens()).catch(e => console.log(e));
-                }
                 // IMPORTANT: routeUser(user) is NOT called here automatically.
                 // This ensures index.html stays on the login screen even if a session exists.
             }
