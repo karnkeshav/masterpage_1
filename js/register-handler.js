@@ -1,6 +1,7 @@
 // js/register-handler.js — B2C Registration Logic
 
 import { getInitializedClients } from "./config.js";
+import { routeUser } from "./auth-paywall.js";
 import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -38,8 +39,8 @@ form.addEventListener('submit', async (e) => {
     const grade    = document.getElementById('reg-class').value;
     const board    = document.getElementById('reg-board').value;
 
-    // Derive a username from the email prefix
-    const username = email.split('@')[0];
+    // Derive a sanitised username from the email prefix
+    const username = email.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '').substring(0, 30);
 
     try {
         const { auth, db } = await getInitializedClients();
@@ -82,6 +83,7 @@ form.addEventListener('submit', async (e) => {
             username: username,
             email: email,
             role: "student",
+            tenantType: "individual",
             isB2C: true,
             subscriptionTier: selectedTier,
             class: parseInt(grade),
@@ -94,8 +96,8 @@ form.addEventListener('submit', async (e) => {
             createdAt: serverTimestamp()
         });
 
-        // 7. Route to Student Console
-        window.location.href = "./app/consoles/student.html";
+        // 7. Route via Sovereign Gateway
+        await routeUser(user);
 
     } catch (err) {
         console.error(err);
