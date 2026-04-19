@@ -86,10 +86,11 @@ function renderB2CRow(uid, data) {
         <td class="p-4 lg:p-6 text-sm font-bold text-indigo-400">₹${revenue}</td>
         <td class="p-4 lg:p-6 text-xs text-slate-500 font-medium">${expiry}</td>
         <td class="p-4 lg:p-6">
-            <button onclick="window.manageUser('${uid}')" class="w-11 h-11 bg-slate-800 hover:bg-slate-700 rounded-xl transition flex items-center justify-center" title="Manage User">
-                <i class="fas fa-edit"></i>
+            <button class="js-manage-user w-11 h-11 bg-slate-800 hover:bg-slate-700 rounded-xl transition flex items-center justify-center" title="Manage User" aria-label="Manage user">
+                <i class="fas fa-edit" aria-hidden="true"></i>
             </button>
         </td>`;
+    tr.querySelector(".js-manage-user").addEventListener("click", () => window.manageUser(uid));
     row.appendChild(tr);
 }
 
@@ -107,11 +108,11 @@ function renderSchoolCard(id, data) {
         <h4 class="text-lg lg:text-xl font-black text-white group-hover:text-indigo-400 transition">${data.name}</h4>
         <p class="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">${data.board || "N/A"} · ${data.max_licenses || 0} Licenses</p>
         <div class="grid grid-cols-2 gap-3 mt-6 lg:mt-8 w-full">
-            <a href="../../school-landing.html?schoolId=${id}" target="_blank"
+            <a href="../../school-landing.html?schoolId=${encodeURIComponent(id)}" target="_blank"
                class="bg-white text-black py-3 lg:py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-400 transition text-center">Launch Portal</a>
-            <button onclick="window.manageSchool('${id}')"
-                    class="bg-slate-800 text-white py-3 lg:py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition">Configs</button>
+            <button class="js-manage-school bg-slate-800 text-white py-3 lg:py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-700 transition">Configs</button>
         </div>`;
+    card.querySelector(".js-manage-school").addEventListener("click", () => window.manageSchool(id));
     grid.appendChild(card);
 }
 
@@ -198,7 +199,7 @@ function wireProvisionForm() {
         } catch (err) {
             // Self-healing: rollback orphaned Auth user if Firestore write fails
             if (createdUser) {
-                try { await createdUser.delete(); } catch (_) { /* ignore */ }
+                try { await createdUser.delete(); } catch (rollbackErr) { console.error("Failed to rollback orphaned Auth user:", rollbackErr); }
             }
             alert("Deployment Error: " + err.message);
         } finally {
@@ -218,11 +219,13 @@ window.switchTab = (tabId) => {
     document.querySelectorAll(".nav-link").forEach(l => {
         l.classList.remove("bg-indigo-600", "text-white");
         l.classList.add("text-slate-400");
+        l.setAttribute("aria-selected", "false");
     });
     const active = document.querySelector(`.nav-link[data-tab="${tabId}"]`);
     if (active) {
         active.classList.add("bg-indigo-600", "text-white");
         active.classList.remove("text-slate-400");
+        active.setAttribute("aria-selected", "true");
     }
 
     const title = document.getElementById("view-title");
