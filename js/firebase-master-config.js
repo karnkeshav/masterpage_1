@@ -8,6 +8,6 @@ window.__firebase_config = {
     measurementId: "G-4EFDM0CRYY",
     supabaseUrl: "https://zqhzekzilalbszpfwxhn.supabase.co",
     supabaseAnonKey: "sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys",
-    razorpayKeyId: "rzp_test_REPLACE_WITH_YOUR_KEY",
+    razorpayKeyId: "rzp_test_SfJB6lLq6zthpz",
     businessUpiVpa: "918520977573@paytm"
 };
