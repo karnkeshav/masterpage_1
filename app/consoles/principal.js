@@ -146,8 +146,8 @@ function renderTeacherInventory(teacherInv) {
                     <tr class="border-t border-slate-100 hover:bg-slate-50 transition">
                         <td class="px-6 py-3 text-slate-400 font-bold">${i + 1}</td>
                         <td class="px-6 py-3 font-bold text-slate-800">${esc(t.displayName)}</td>
-                        <td class="px-6 py-3 text-slate-600">${t.subjects.length > 0 ? t.subjects.map(s => esc(s)).join(', ') : '<span class="text-slate-400">—</span>'}</td>
-                        <td class="px-6 py-3 text-slate-600">${t.sections.length > 0 ? t.sections.map(s => esc(s)).join(', ') : '<span class="text-slate-400">—</span>'}</td>
+                        <td class="px-6 py-3 ${t.subjects.length > 0 ? 'text-slate-600' : 'text-slate-400'}">${t.subjects.length > 0 ? t.subjects.map(s => esc(s)).join(', ') : '\u2014'}</td>
+                        <td class="px-6 py-3 ${t.sections.length > 0 ? 'text-slate-600' : 'text-slate-400'}">${t.sections.length > 0 ? t.sections.map(s => esc(s)).join(', ') : '\u2014'}</td>
                     </tr>
                 `).join("")}
             </tbody>
