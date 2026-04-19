@@ -165,7 +165,12 @@
             <div class="bg-slate-900 rounded-[32px] border border-slate-800 overflow-hidden">
                 <div class="p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <h3 class="text-lg font-black">Individual Users</h3>
-                    <span class="text-[10px] font-black text-emerald-400 bg-emerald-900/30 px-3 py-1 rounded-full uppercase tracking-widest">Revenue Stream — Live</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-black text-emerald-400 bg-emerald-900/30 px-3 py-1 rounded-full uppercase tracking-widest">Revenue Stream — Live</span>
+                        <button class="js-add-b2c-user bg-indigo-600 hover:bg-indigo-500 text-white font-black px-4 py-2 rounded-xl transition text-xs uppercase tracking-widest">
+                            <i class="fas fa-plus mr-1" aria-hidden="true"></i>Add User
+                        </button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-slate-400">
@@ -301,6 +306,66 @@
             <div id="school-config-body" class="space-y-4">
                 <div class="animate-pulse text-slate-500 text-sm text-center py-8">Loading school data…</div>
             </div>
+        </div>
+    </div>
+
+    <!-- ═══════ USER MANAGEMENT MODAL ═══════ -->
+    <div id="user-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-[32px] w-full max-w-lg max-h-[90vh] overflow-y-auto p-8 space-y-5 relative">
+            <button class="js-close-user-modal absolute top-4 right-4 w-11 h-11 rounded-xl bg-slate-800 hover:bg-red-600 flex items-center justify-center transition text-lg" title="Close" aria-label="Close modal">✕</button>
+            <h2 id="user-modal-title" class="text-xl font-black">Add B2C User</h2>
+            <p class="text-xs text-slate-500">Manage sovereign individual user profiles and access credentials.</p>
+
+            <form id="user-management-form" class="space-y-4">
+                <input type="hidden" id="edit-user-id" value="">
+                <div>
+                    <label for="u-name" class="block text-xs font-bold text-slate-400 mb-1">Display Name</label>
+                    <input type="text" id="u-name" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" required>
+                </div>
+                <div>
+                    <label for="u-email" class="block text-xs font-bold text-slate-400 mb-1">Email</label>
+                    <input type="email" id="u-email" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="u-plan" class="block text-xs font-bold text-slate-400 mb-1">Subscription Tier</label>
+                        <select id="u-plan" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm outline-none">
+                            <option value="trial">Trial</option>
+                            <option value="foundation">Foundation</option>
+                            <option value="sync">Sync</option>
+                            <option value="board_ready">Board Ready</option>
+                            <option value="legacy">Legacy</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="u-class" class="block text-xs font-bold text-slate-400 mb-1">Class</label>
+                        <select id="u-class" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm outline-none">
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9" selected>9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="password-section">
+                    <label for="u-pass" class="block text-xs font-bold text-slate-400 mb-1">Password</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="u-pass" class="flex-1 bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none font-mono" required>
+                        <button type="button" class="js-gen-pass bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 rounded-xl transition text-xs" title="Generate Password" aria-label="Generate random password">
+                            <i class="fas fa-dice" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl transition shadow-lg shadow-indigo-900/50 text-xs uppercase tracking-widest mt-2">
+                    Save User
+                </button>
+                <button type="button" id="delete-user-btn" class="hidden w-full bg-red-900/40 hover:bg-red-700 text-red-300 font-black py-3 rounded-2xl transition text-xs uppercase tracking-widest">
+                    <i class="fas fa-trash mr-2" aria-hidden="true"></i>Revoke Access &amp; Delete
+                </button>
+            </form>
         </div>
     </div>
 
