@@ -8,6 +8,9 @@ import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs
 const form = document.getElementById('registration-form');
 const errorBox = document.getElementById('error-box');
 
+// --- Business UPI fallback (single source of truth from config) ---
+const BUSINESS_UPI_VPA = (window.__firebase_config && window.__firebase_config.businessUpiVpa) || '918520977573@paytm';
+
 // --- Tier ↔ Price Map (matches offering.html) ---
 const TIER_META = {
     practitioner: { label: "The Practitioner",  price: "₹499/mo",   amountPaise: 49900   },
@@ -25,16 +28,20 @@ const meta = TIER_META[selectedTier] || TIER_META.practitioner;
 document.getElementById('selected-plan-text').textContent = meta.label;
 document.getElementById('price-display').textContent = meta.price;
 
+// Populate manual UPI VPA from config (single source of truth)
+const upiEl = document.getElementById('manual-upi-vpa');
+if (upiEl) upiEl.textContent = BUSINESS_UPI_VPA;
+
 // --- Razorpay Payment Helper ---
 function openRazorpayCheckout({ amount, planLabel, prefill }) {
     return new Promise((resolve, reject) => {
         const cfg = window.__firebase_config || {};
         const keyId = cfg.razorpayKeyId;
 
-        if (!keyId || keyId.includes('REPLACE')) {
+        if (!keyId || /REPLACE|YOUR.?KEY/i.test(keyId)) {
             reject(new Error(
                 'Payment gateway is not configured yet. Please contact support or pay manually via UPI to ' +
-                (cfg.businessUpiVpa || '918520977573@paytm') + ' and share the screenshot.'
+                BUSINESS_UPI_VPA + ' and share the screenshot.'
             ));
             return;
         }
@@ -42,7 +49,7 @@ function openRazorpayCheckout({ amount, planLabel, prefill }) {
         if (typeof window.Razorpay === 'undefined') {
             reject(new Error(
                 'Payment gateway failed to load. Please refresh and try again, or pay manually via UPI to ' +
-                (cfg.businessUpiVpa || '918520977573@paytm') + '.'
+                BUSINESS_UPI_VPA + '.'
             ));
             return;
         }
@@ -79,8 +86,7 @@ function openRazorpayCheckout({ amount, planLabel, prefill }) {
                 ondismiss: function () {
                     reject(new Error('Payment was cancelled. Please try again.'));
                 },
-                confirm_close: true,
-                escape: false
+                confirm_close: true
             }
         };
 
