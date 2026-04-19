@@ -35,7 +35,7 @@ def verify_owner():
         page1 = context1.new_page()
         try:
             print("[TEST 1] Owner Console...")
-            page1.goto(f"{BASE_URL}/owner-console.html")
+            page1.goto(f"{BASE_URL}/app/consoles/owner.html")
 
             # Check for Header
             page1.wait_for_selector("h1:has-text('Master Orchestration Layer')", state="visible")

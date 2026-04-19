@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Owner Console — Master Orchestration</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="./js/shell.js"></script>
-<script src="./js/tailwind-config.js"></script>
-<link href="./css/global.css" rel="stylesheet">
+    <script src="../../js/shell.js"></script>
+<script src="../../js/tailwind-config.js"></script>
+<link href="../../css/global.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <script src="js/firebase-master-config.js"></script>
+    <script src="../../js/firebase-master-config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -31,7 +31,7 @@
 <script>R4E.renderHeader({
     title: "Master Orchestration",
     subtitle: "Ready4Exam &bull; Owner Console",
-    homePath: "index.html",
+    homePath: "../../index.html",
     userWelcomeDefault: "Root Owner",
     roleBadge: "Sovereign",
     showLogout: true,
@@ -145,9 +145,9 @@
     </div>
 
     <script type="module">
-        import { initializeAuthListener, signOut } from "./js/auth-paywall.js";
-        import { getInitializedClients } from "./js/config.js";
-        import { recordFinancialEvent, fetchB2CUsers } from "./js/api.js";
+        import { initializeAuthListener, signOut } from "../../js/auth-paywall.js";
+        import { getInitializedClients } from "../../js/config.js";
+        import { recordFinancialEvent, fetchB2CUsers } from "../../js/api.js";
         import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -163,7 +163,7 @@
             if(confirm("Confirm Sign Out of Master Orchestration?")) {
                 try {
                     await signOut();
-                    window.location.href = "index.html"; 
+                    window.location.href = "../../index.html"; 
                 } catch (err) {
                     console.error("Logout failed:", err);
                 }
@@ -180,7 +180,7 @@
                         <button id="timeout-login-btn" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm">Owner Login</button>
                     </div>`;
                  document.getElementById("timeout-login-btn").onclick = () => {
-                     signOut().then(() => window.location.href = "index.html");
+                     signOut().then(() => window.location.href = "../../index.html");
                  };
              }
         }, 8000);
@@ -202,7 +202,7 @@
                     </div>`;
 
                 document.getElementById("unauth-login-btn").onclick = () => {
-                    signOut().then(() => window.location.href = "index.html");
+                    signOut().then(() => window.location.href = "../../index.html");
                 };
             }
         });
@@ -324,7 +324,7 @@
                             </div>
                             <div class="flex gap-3">
                                 <a href="https://wa.me/${d.principal_phone}" target="_blank" class="bg-green-600 hover:bg-green-500 p-2 rounded-lg transition"><i class="fab fa-whatsapp"></i></a>
-                                <a href="school-landing.html?schoolId=${doc.id}" target="_blank" class="border border-slate-600 px-4 py-2 rounded-lg text-xs font-bold transition hover:bg-white hover:text-black">Launch Instance</a>
+                                <a href="../../school-landing.html?schoolId=${doc.id}" target="_blank" class="border border-slate-600 px-4 py-2 rounded-lg text-xs font-bold transition hover:bg-white hover:text-black">Launch Instance</a>
                             </div>
                         </div>`;
                 });

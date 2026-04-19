@@ -155,7 +155,7 @@ export async function routeUser(user) {
 
     // Deterministic Routing Table
     if (data.role === "owner" || data.tenantType === "owner") {
-        window.location.href = "owner-console.html";
+        window.location.href = "app/consoles/owner.html";
         return;
     }
 
