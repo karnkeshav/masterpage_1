@@ -146,7 +146,7 @@ function renderSubjectDashboard(subjectPerf) {
                 const cellColor = score >= 75 ? "bg-green-50 text-green-800" : score >= 50 ? "bg-amber-50 text-amber-800" : "bg-red-50 text-red-800";
                 const label = score >= 75 ? "Strong" : score >= 50 ? "Average" : "Weak";
                 html += `<td class="px-2 py-2 text-center">
-                    <button onclick="window.drillDownSubject('${esc(g)}','${esc(s)}')" class="w-full rounded-lg px-2 py-2 ${cellColor} cursor-pointer hover:shadow-md transition min-h-[44px]" title="Click to drill down">
+                    <button onclick="window.drillDownSubject('${esc(g)}','${esc(s)}')" aria-label="View ${esc(s)} performance for Grade ${esc(g)}" class="w-full rounded-lg px-2 py-2 ${cellColor} cursor-pointer hover:shadow-md transition min-h-[44px]" title="Click to drill down">
                         <div class="text-lg font-black">${score}%</div>
                         <div class="text-[9px] font-bold uppercase tracking-wide">${label}</div>
                         <div class="text-[9px] opacity-60">${d.uniqueStudents} student${d.uniqueStudents !== 1 ? 's' : ''}</div>
@@ -174,7 +174,7 @@ function renderGradeHeatmap(gradePerf) {
         const risk = data.avgScore >= 75 ? "Low" : data.avgScore >= 50 ? "Medium" : data.attempts === 0 ? "No Data" : "High";
         const riskStyle = getRiskStyle(risk);
         return `
-            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition relative overflow-hidden cursor-pointer group" onclick="window.drillDownGrade('${g}')">
+            <button type="button" aria-label="Drill down into Grade ${g} performance" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition relative overflow-hidden cursor-pointer group text-left w-full" onclick="window.drillDownGrade('${g}')">
                 <div class="absolute top-0 left-0 w-1 h-full ${riskStyle.border}"></div>
                 <div class="flex justify-between items-start mb-3">
                     <h3 class="text-lg font-black text-slate-900">Grade ${g}</h3>
@@ -186,7 +186,7 @@ function renderGradeHeatmap(gradePerf) {
                     <div class="flex justify-between"><span class="text-slate-500 font-bold">Active Students</span><span class="font-bold text-slate-900">${data.uniqueStudents}</span></div>
                 </div>
                 <div class="mt-3 text-center text-xs font-bold text-blue-500 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-search-plus mr-1"></i>Click to drill down</div>
-            </div>`;
+            </button>`;
     }).join("");
 }
 
