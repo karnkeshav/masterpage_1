@@ -3,37 +3,37 @@ export const curriculum = {
     "Physics Part I": [
       {
         "chapter_title": "Physical World",
-        "table_id": "physical_world_quiz",
+        "table_id": "physics_physical_world_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Units and Measurements",
-        "table_id": "units_measurements_quiz",
+        "table_id": "physics_units_measurements_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Motion in a Straight Line",
-        "table_id": "motion_line_quiz",
+        "table_id": "physics_motion_line_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Motion in a Plane",
-        "table_id": "motion_plane_quiz",
+        "table_id": "physics_motion_plane_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Laws of Motion",
-        "table_id": "laws_motion_quiz",
+        "table_id": "physics_laws_motion_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Work, Energy and Power",
-        "table_id": "physics_work_energy_11_quiz",
+        "table_id": "physics_work_power_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "System of Particles and Rotational Motion",
-        "table_id": "physics_system_rotational_11_quiz",
+        "table_id": "physics_system_motion_11_quiz",
         "section": "Science"
       }
     ],
@@ -84,54 +84,54 @@ export const curriculum = {
     "Chemistry Part I": [
       {
         "chapter_title": "Some Basic Concepts of Chemistry",
-        "table_id": "some_chemistry_quiz",
+        "table_id": "chemistry_some_chemistry_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Structure of Atom",
-        "table_id": "structure_atom_quiz",
+        "table_id": "chemistry_structure_atom_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Classification of Elements and Periodicity in Properties",
-        "table_id": "classification_properties_quiz",
+        "table_id": "chemistry_classification_properties_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Chemical Bonding and Molecular Structure",
-        "table_id": "chemical_structure_quiz",
+        "table_id": "chemistry_chemical_structure_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Thermodynamics",
-        "table_id": "thermodynamics_thermodynamics_quiz",
+        "table_id": "chemistry_thermodynamics_thermodynamics_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Equilibrium",
-        "table_id": "equilibrium_equilibrium_quiz",
+        "table_id": "chemistry_equilibrium_equilibrium_11_quiz",
         "section": "Science"
       }
     ],
     "Chemistry Part II": [
       {
         "chapter_title": "Redox Reactions",
-        "table_id": "redox_reactions_quiz",
+        "table_id": "chemistry_redox_reactions_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Hydrogen",
-        "table_id": "hydrogen_hydrogen_quiz",
+        "table_id": "chemistry_hydrogen_hydrogen_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "s-Block Elements",
-        "table_id": "chemistry_sblock_elements_11_quiz",
+        "table_id": "chemistry_s_elements_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "p-Block Elements",
-        "table_id": "chemistry_pblock_elements_11_quiz",
+        "table_id": "chemistry_p_elements_11_quiz",
         "section": "Science"
       },
       {
@@ -155,107 +155,107 @@ export const curriculum = {
       },
       {
         "chapter_title": "Biological Classification",
-        "table_id": "biological_classification_11_quiz",
+        "table_id": "biology_biological_classification_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Plant Kingdom",
-        "table_id": "plant_kingdom_11_quiz",
+        "table_id": "biology_plant_kingdom_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Animal Kingdom",
-        "table_id": "animal_kingdom_11_quiz",
+        "table_id": "biology_animal_kingdom_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Morphology of Flowering Plants",
-        "table_id": "morphology_plants_11_quiz",
+        "table_id": "biology_morphology_plants_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Anatomy of Flowering Plants",
-        "table_id": "anatomy_plants_11_quiz",
+        "table_id": "biology_anatomy_plants_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Structural Organisation in Animals",
-        "table_id": "structural_animals_11_quiz",
+        "table_id": "biology_structural_animals_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Cell: The Unit of Life",
-        "table_id": "cell_life_11_quiz",
+        "table_id": "biology_cell_life_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Biomolecules",
-        "table_id": "biomolecules_biomolecules_11_quiz",
+        "table_id": "biology_biomolecules_biomolecules_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Cell Cycle and Cell Division",
-        "table_id": "cell_division_11_quiz",
+        "table_id": "biology_cell_division_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Transport in Plants",
-        "table_id": "transport_plants_11_quiz",
+        "table_id": "biology_transport_plants_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Mineral Nutrition",
-        "table_id": "mineral_nutrition_11_quiz",
+        "table_id": "biology_mineral_nutrition_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Photosynthesis in Higher Plants",
-        "table_id": "photosynthesis_plants_11_quiz",
+        "table_id": "biology_photosynthesis_plants_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Respiration in Plants",
-        "table_id": "respiration_plants_11_quiz",
+        "table_id": "biology_respiration_plants_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Plant Growth and Development",
-        "table_id": "plant_development_11_quiz",
+        "table_id": "biology_plant_development_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Digestion and Absorption",
-        "table_id": "digestion_absorption_11_quiz",
+        "table_id": "biology_digestion_absorption_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Breathing and Exchange of Gases",
-        "table_id": "breathing_gases_11_quiz",
+        "table_id": "biology_breathing_gases_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Body Fluids and Circulation",
-        "table_id": "body_circulation_11_quiz",
+        "table_id": "biology_body_circulation_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Excretory Products and their Elimination",
-        "table_id": "excretory_elimination_11_quiz",
+        "table_id": "biology_excretory_elimination_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Locomotion and Movement",
-        "table_id": "locomotion_movement_11_quiz",
+        "table_id": "biology_locomotion_movement_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Neural Control and Coordination",
-        "table_id": "neural_coordination_11_quiz",
+        "table_id": "biology_neural_coordination_11_quiz",
         "section": "Science"
       },
       {
         "chapter_title": "Chemical Coordination and Integration",
-        "table_id": "chemical_integration_11_quiz",
+        "table_id": "biology_chemical_integration_11_quiz",
         "section": "Science"
       }
     ]
@@ -264,84 +264,84 @@ export const curriculum = {
     "Mathematics Part I": [
       {
         "chapter_title": "Sets",
-        "table_id": "sets_sets_11_quiz",
+        "table_id": "mathematics_sets_sets_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Relations and Functions",
-        "table_id": "relations_functions_quiz",
+        "table_id": "mathematics_relations_functions_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Trigonometric Functions",
-        "table_id": "trigonometric_functions_11_quiz",
+        "table_id": "mathematics_trigonometric_functions_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Principle of Mathematical Induction",
-        "table_id": "principle_induction_11_quiz",
+        "table_id": "mathematics_principle_induction_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Complex Numbers and Quadratic Equations",
-        "table_id": "complex_equations_11_quiz",
+        "table_id": "mathematics_complex_equations_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Linear Inequalities",
-        "table_id": "linear_inequalities_11_quiz",
+        "table_id": "mathematics_linear_inequalities_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Permutations and Combinations",
-        "table_id": "permutations_combinations_quiz",
+        "table_id": "mathematics_permutations_combinations_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Binomial Theorem",
-        "table_id": "binomial_theorem_11_quiz",
+        "table_id": "mathematics_binomial_theorem_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Sequences and Series",
-        "table_id": "sequences_series_quiz",
+        "table_id": "mathematics_sequences_series_11_quiz",
         "section": "Science/Commerce"
       }
     ],
     "Mathematics Part II": [
       {
         "chapter_title": "Straight Lines",
-        "table_id": "straight_lines_11_quiz",
+        "table_id": "mathematics_straight_lines_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Conic Sections",
-        "table_id": "conic_sections_11_quiz",
+        "table_id": "mathematics_conic_sections_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Introduction to Three Dimensional Geometry",
-        "table_id": "introduction_geometry_11_quiz",
+        "table_id": "mathematics_introduction_geometry_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Limits and Derivatives",
-        "table_id": "limits_derivatives_11_quiz",
+        "table_id": "mathematics_limits_derivatives_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Mathematical Reasoning",
-        "table_id": "mathematical_reasoning_11_quiz",
+        "table_id": "mathematics_mathematical_reasoning_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Statistics",
-        "table_id": "statistics_statistics_11_quiz",
+        "table_id": "mathematics_statistics_statistics_11_quiz",
         "section": "Science/Commerce"
       },
       {
         "chapter_title": "Probability",
-        "table_id": "probability_probability_11_quiz",
+        "table_id": "mathematics_probability_probability_11_quiz",
         "section": "Science/Commerce"
       }
     ]
@@ -350,42 +350,42 @@ export const curriculum = {
     "Applied Mathematics Textbook for Class XI": [
       {
         "chapter_title": "Numbers, Quantification and Numerical Applications",
-        "table_id": "numbers_applications_quiz",
+        "table_id": "applied_numbers_applications_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Algebra",
-        "table_id": "algebra_algebra_quiz",
+        "table_id": "applied_algebra_algebra_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Mathematical Reasoning",
-        "table_id": "mathematical_reasoning_11_quiz",
+        "table_id": "applied_mathematical_reasoning_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Calculus",
-        "table_id": "calculus_calculus_11_quiz",
+        "table_id": "applied_calculus_calculus_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Probability",
-        "table_id": "probability_probability_11_quiz",
+        "table_id": "applied_probability_probability_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Descriptive Statistics",
-        "table_id": "descriptive_statistics_11_quiz",
+        "table_id": "applied_descriptive_statistics_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Financial Mathematics",
-        "table_id": "financial_mathematics_11_quiz",
+        "table_id": "applied_financial_mathematics_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Coordinate Geometry",
-        "table_id": "coordinate_geometry_11_quiz",
+        "table_id": "applied_coordinate_geometry_11_quiz",
         "section": "Commerce"
       }
     ]
@@ -394,7 +394,7 @@ export const curriculum = {
     "Hornbill (Textbook)": [
       {
         "chapter_title": "The Portrait of a Lady",
-        "table_id": "portrait_lady_11_quiz",
+        "table_id": "english_portrait_lady_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
@@ -404,12 +404,12 @@ export const curriculum = {
       },
       {
         "chapter_title": "We’re Not Afraid to Die... if We Can All Be Together",
-        "table_id": "we_together_11_quiz",
+        "table_id": "english_we_together_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
         "chapter_title": "Discovering Tut: The Saga Continues",
-        "table_id": "discovering_continues_11_quiz",
+        "table_id": "english_discovering_continues_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
@@ -429,7 +429,7 @@ export const curriculum = {
       },
       {
         "chapter_title": "The Ailing Planet: The Green Movement's Role",
-        "table_id": "english_ailing_planet_11_quiz",
+        "table_id": "english_ailing_role_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
@@ -466,7 +466,7 @@ export const curriculum = {
       },
       {
         "chapter_title": "Mother’s Day",
-        "table_id": "english_mothers_day_11_quiz",
+        "table_id": "english_mother_day_11_quiz",
         "section": "Science/Commerce/Humanities"
       },
       {
@@ -485,64 +485,64 @@ export const curriculum = {
     "Financial Accounting Part I": [
       {
         "chapter_title": "Introduction to Accounting",
-        "table_id": "introduction_accounting_quiz",
+        "table_id": "accountancy_introduction_accounting_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Theory Base of Accounting",
-        "table_id": "theory_accounting_11_quiz",
+        "table_id": "accountancy_theory_accounting_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Recording of Transactions I",
-        "table_id": "recording_transactions_i_11_quiz",
+        "table_id": "accountancy_recording_i_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Recording of Transactions II",
-        "table_id": "recording_transactions_ii_11_quiz",
+        "table_id": "accountancy_recording_ii_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Bank Reconciliation Statement",
-        "table_id": "bank_statement_quiz",
+        "table_id": "accountancy_bank_statement_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Trial Balance and Rectification of Errors",
-        "table_id": "trial_errors_11_quiz",
+        "table_id": "accountancy_trial_errors_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Depreciation, Provisions and Reserves",
-        "table_id": "depreciation_reserves_11_quiz",
+        "table_id": "accountancy_depreciation_reserves_11_quiz",
         "section": "Commerce"
       }
     ],
     "Financial Accounting Part II": [
       {
         "chapter_title": "Accounting for Bills of Exchange",
-        "table_id": "accounting_exchange_11_quiz",
+        "table_id": "accountancy_accounting_exchange_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Financial Statements I",
-        "table_id": "financial_statements_i_11_quiz",
+        "table_id": "accountancy_financial_i_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Financial Statements II (With Adjustments)",
-        "table_id": "financial_adjustments_11_quiz",
+        "table_id": "accountancy_financial_adjustments_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Accounts from Incomplete Records",
-        "table_id": "accounts_records_11_quiz",
+        "table_id": "accountancy_accounts_records_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Computers in Accounting",
-        "table_id": "computers_accounting_11_quiz",
+        "table_id": "accountancy_computers_accounting_11_quiz",
         "section": "Commerce"
       }
     ]
@@ -551,12 +551,12 @@ export const curriculum = {
     "Business Studies Part I: Foundations of Business": [
       {
         "chapter_title": "Evolution and Fundamentals of Business",
-        "table_id": "evolution_business_11_quiz",
+        "table_id": "business_evolution_business_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Forms of Business Organisation",
-        "table_id": "forms_organisation_11_quiz",
+        "table_id": "business_forms_organisation_11_quiz",
         "section": "Commerce"
       },
       {
@@ -566,39 +566,39 @@ export const curriculum = {
       },
       {
         "chapter_title": "Business Services",
-        "table_id": "business_services_11_quiz",
+        "table_id": "business_business_services_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Emerging Modes of Business",
-        "table_id": "emerging_business_11_quiz",
+        "table_id": "business_emerging_business_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Social Responsibility of Business and Business Ethics",
-        "table_id": "social_ethics_11_quiz",
+        "table_id": "business_social_ethics_11_quiz",
         "section": "Commerce"
       }
     ],
     "Business Studies Part II: Finance and Trade": [
       {
         "chapter_title": "Sources of Business Finance",
-        "table_id": "sources_finance_11_quiz",
+        "table_id": "business_sources_finance_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Small Business",
-        "table_id": "small_business_11_quiz",
+        "table_id": "business_small_business_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "Internal Trade",
-        "table_id": "internal_trade_11_quiz",
+        "table_id": "business_internal_trade_11_quiz",
         "section": "Commerce"
       },
       {
         "chapter_title": "International Business",
-        "table_id": "international_business_11_quiz",
+        "table_id": "business_international_business_11_quiz",
         "section": "Commerce"
       }
     ]
@@ -649,7 +649,7 @@ export const curriculum = {
     "Introductory Microeconomics": [
       {
         "chapter_title": "Introduction",
-        "table_id": "economics_microeconomics_intro_11_quiz",
+        "table_id": "economics_introduction_introduction_11_quiz",
         "section": "Commerce"
       },
       {
@@ -701,7 +701,7 @@ export const curriculum = {
       },
       {
         "chapter_title": "Human Capital Formation in India",
-        "table_id": "economics_human_capital_11_quiz",
+        "table_id": "economics_human_india_11_quiz",
         "section": "Commerce"
       },
       {
@@ -765,7 +765,7 @@ export const curriculum = {
       },
       {
         "chapter_title": "Local Governments",
-        "table_id": "local_governments_11_quiz",
+        "table_id": "political_local_governments_11_quiz",
         "section": "Humanities"
       },
       {
@@ -877,146 +877,146 @@ export const curriculum = {
     "Fundamentals of Physical Geography": [
       {
         "chapter_title": "Geography as a Discipline",
-        "table_id": "as_discipline_quiz",
+        "table_id": "geography_geography_discipline_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "The Earth",
-        "table_id": "earth_earth_11_quiz",
+        "table_id": "geography_earth_earth_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Distribution of Oceans and Continents",
-        "table_id": "distribution_continents_11_quiz",
+        "table_id": "geography_distribution_continents_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Minerals and Rocks",
-        "table_id": "minerals_rocks_11_quiz",
+        "table_id": "geography_minerals_rocks_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Geomorphic Processes",
-        "table_id": "geomorphic_processes_11_quiz",
+        "table_id": "geography_geomorphic_processes_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Landforms and their Evolution",
-        "table_id": "landforms_evolution_11_quiz",
+        "table_id": "geography_landforms_evolution_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Composition and Structure of Atmosphere",
-        "table_id": "composition_atmosphere_11_quiz",
+        "table_id": "geography_composition_atmosphere_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Solar Radiation, Heat Balance and Temperature",
-        "table_id": "solar_temperature_11_quiz",
+        "table_id": "geography_solar_temperature_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Atmospheric Circulation and Weather Systems",
-        "table_id": "atmospheric_systems_11_quiz",
+        "table_id": "geography_atmospheric_systems_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Water in the Atmosphere",
-        "table_id": "water_atmosphere_11_quiz",
+        "table_id": "geography_water_atmosphere_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "World Climate and Climate Change",
-        "table_id": "world_change_11_quiz",
+        "table_id": "geography_world_change_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Water (Oceans)",
-        "table_id": "water_oceans_11_quiz",
+        "table_id": "geography_water_oceans_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Life on the Earth (Biosphere)",
-        "table_id": "life_biosphere_11_quiz",
+        "table_id": "geography_life_biosphere_11_quiz",
         "section": "Humanities"
       }
     ],
     "India: Physical Environment": [
       {
         "chapter_title": "Introduction",
-        "table_id": "introduction_introduction_11_quiz",
+        "table_id": "geography_introduction_introduction_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Structure and Physiography",
-        "table_id": "structure_physiography_11_quiz",
+        "table_id": "geography_structure_physiography_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Drainage System",
-        "table_id": "drainage_system_11_quiz",
+        "table_id": "geography_drainage_system_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Climate",
-        "table_id": "climate_climate_11_quiz",
+        "table_id": "geography_climate_climate_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Natural Vegetation",
-        "table_id": "natural_vegetation_11_quiz",
+        "table_id": "geography_natural_vegetation_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Soils",
-        "table_id": "soils_soils_11_quiz",
+        "table_id": "geography_soils_soils_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Natural Hazards and Disasters",
-        "table_id": "natural_disasters_11_quiz",
+        "table_id": "geography_natural_disasters_11_quiz",
         "section": "Humanities"
       }
     ],
     "Practical Work in Geography Part I": [
       {
         "chapter_title": "Introduction to Maps",
-        "table_id": "introduction_maps_11_quiz",
+        "table_id": "geography_introduction_maps_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Map Scales",
-        "table_id": "map_scales_11_quiz",
+        "table_id": "geography_map_scales_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Latitude, Longitude and Time",
-        "table_id": "latitude_time_11_quiz",
+        "table_id": "geography_latitude_time_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Map Projections",
-        "table_id": "map_projections_11_quiz",
+        "table_id": "geography_map_projections_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Topographical Maps",
-        "table_id": "topographical_maps_11_quiz",
+        "table_id": "geography_topographical_maps_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Aerial Photographs",
-        "table_id": "aerial_photographs_11_quiz",
+        "table_id": "geography_aerial_photographs_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Remote Sensing",
-        "table_id": "remote_sensing_11_quiz",
+        "table_id": "geography_remote_sensing_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Geographical Information System (GIS)",
-        "table_id": "geographical_gis_11_quiz",
+        "table_id": "geography_geographical_gis_11_quiz",
         "section": "Humanities"
       }
     ]
@@ -1052,12 +1052,12 @@ export const curriculum = {
     "Understanding Society": [
       {
         "chapter_title": "Social Structure, Stratification and Social Processes in Society",
-        "table_id": "sociology_social_structure_11_quiz",
+        "table_id": "sociology_social_society_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "Social Change and Social Order in Rural and Urban Society",
-        "table_id": "sociology_social_change_11_quiz",
+        "table_id": "sociology_social_society_11_quiz",
         "section": "Humanities"
       },
       {
@@ -1081,29 +1081,29 @@ export const curriculum = {
     "Aroh (Prose)": [
       {
         "chapter_title": "नमक का दरोगा (Namak Ka Daroga)",
-        "table_id": "hindi_aroh_ch1_11_quiz",
+        "table_id": "hindi_namak_daroga_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "मियां नसीरुद्दीन (Miyan Nasiruddin)",
-        "table_id": "hindi_aroh_ch2_11_quiz",
+        "table_id": "hindi_miyan_nasiruddin_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "अपू के साथ ढाई साल (Apu Ke Saath Dhaai Saal)",
-        "table_id": "hindi_aroh_ch3_11_quiz",
+        "table_id": "hindi_apu_saal_11_quiz",
         "section": "Humanities"
       }
     ],
     "Aroh (Poetry)": [
       {
         "chapter_title": "कबीर के पद (Kabeer Ke Pad)",
-        "table_id": "hindi_aroh_ch4_11_quiz",
+        "table_id": "hindi_kabeer_pad_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "मीरा के पद (Meera Ke Pad)",
-        "table_id": "hindi_aroh_ch5_11_quiz",
+        "table_id": "hindi_meera_pad_11_quiz",
         "section": "Humanities"
       }
     ],
@@ -1122,12 +1122,12 @@ export const curriculum = {
     "Antra (Supplementary Reader)": [
       {
         "chapter_title": "ईदगाह (Idgah)",
-        "table_id": "hindi_antra_ch1_11_quiz",
+        "table_id": "hindi_idgah_idgah_11_quiz",
         "section": "Humanities"
       },
       {
         "chapter_title": "दोपहर का भोजन (Dopeher Ka Bhojan)",
-        "table_id": "hindi_antra_ch2_11_quiz",
+        "table_id": "hindi_dopeher_bhojan_11_quiz",
         "section": "Humanities"
       }
     ]
