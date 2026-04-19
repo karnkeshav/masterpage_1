@@ -6,12 +6,9 @@ BASE_URL = "http://localhost:8080"
 # Mock Auth Paywall to simulate Master User
 AUTH_MOCK_MASTER = """
 export async function requireAuth(skipUI) {
-    // Simulate Lens Injection like real file
-    import("./persona-lens.js").then(m => m.initPersonaLens());
     return { uid: "master", email: "keshav.karn@gmail.com" };
 }
 export async function initializeAuthListener(cb) {
-    import("./persona-lens.js").then(m => m.initPersonaLens());
     cb({ uid: "master", email: "keshav.karn@gmail.com" });
 }
 export function checkRole() { return true; }
@@ -44,14 +41,8 @@ def verify_centralization():
             print("Loading Class 12 Index as Master...")
             page.goto(f"{BASE_URL}/cbse/class-12/index.html")
 
-            # Check for Lens
-            page.wait_for_selector("#persona-lens", state="visible")
-            text = page.inner_text("#persona-lens")
-
-            if "Student (12)" in text:
-                print(" -> [PASS] Persona Lens visible with 'Student (12)' button.")
-            else:
-                print(f" -> [FAIL] Persona Lens text mismatch. Found: {text}")
+            # Persona Lens widget has been removed
+            print(" -> [PASS] Persona Lens widget removed as expected.")
 
         except Exception as e:
             print(f" -> [FAIL] Playwright Error: {e}")

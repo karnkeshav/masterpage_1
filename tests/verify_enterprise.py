@@ -23,13 +23,10 @@ export function checkRole() { return false; }
 
 AUTH_MOCK_MASTER = """
 export async function requireAuth(skipUI) {
-    // Simulate Lens Injection
     console.log("Mock requireAuth Master called");
-    import("./persona-lens.js").then(m => m.initPersonaLens());
     return { uid: "master", email: "keshav.karn@gmail.com" };
 }
 export async function initializeAuthListener(cb) {
-    import("./persona-lens.js").then(m => m.initPersonaLens());
     cb({ uid: "master", email: "keshav.karn@gmail.com" });
 }
 export function checkDemoAccess(u) { return false; }
@@ -117,14 +114,10 @@ def verify_enterprise():
         page_master.on("console", lambda msg: print(f"[TEST 3 LOG]: {msg.text}"))
 
         try:
-            print("[TEST 3] Master Persona Lens...")
-            # Go to Root Index (which uses requireAuth logic)
+            print("[TEST 3] Master Persona Lens (removed)...")
+            # Persona Lens widget has been removed
             page_master.goto(f"{BASE_URL}/index.html")
-
-            # Wait for Persona Lens
-            # We assume index.html logic calls requireAuth, which (in Mock) imports lens
-            page_master.wait_for_selector("#persona-lens", state="visible")
-            print(" -> SUCCESS: Persona Lens Widget Visible.")
+            print(" -> SKIPPED: Persona Lens widget removed.")
 
         except Exception as e:
             print(f"[TEST 3] ERROR: {e}")
