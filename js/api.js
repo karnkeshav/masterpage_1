@@ -566,6 +566,106 @@ export async function fetchSchoolAnalytics(schoolId) {
     }
 }
 
+/**
+ * Fetch student inventory grouped by grade for a school.
+ * Returns { total, byGrade: { "6": count, ... "12": count } }
+ */
+export async function fetchStudentInventory(schoolId) {
+    const { db } = await getInitializedClients();
+    if (!schoolId) return null;
+    try {
+        const q = query(
+            collection(db, "users"),
+            where("school_id", "==", schoolId),
+            where("role", "==", "student")
+        );
+        const snap = await getDocs(q);
+        const byGrade = {};
+        for (let g = 6; g <= 12; g++) byGrade[String(g)] = 0;
+        snap.docs.forEach(d => {
+            const data = d.data();
+            const grade = String(data.classId || data.grade || data.class_id || "");
+            if (byGrade[grade] !== undefined) byGrade[grade]++;
+        });
+        return { total: snap.size, byGrade };
+    } catch (e) {
+        console.error("[API] fetchStudentInventory failed", e);
+        return null;
+    }
+}
+
+/**
+ * Fetch teacher inventory for a school.
+ * Returns { total, list: [{ uid, displayName, subjects, sections }] }
+ */
+export async function fetchTeacherInventory(schoolId) {
+    const { db } = await getInitializedClients();
+    if (!schoolId) return null;
+    try {
+        const q = query(
+            collection(db, "users"),
+            where("school_id", "==", schoolId),
+            where("role", "==", "teacher")
+        );
+        const snap = await getDocs(q);
+        const list = snap.docs.map(d => {
+            const data = d.data();
+            return {
+                uid: d.id,
+                displayName: data.displayName || data.email || d.id,
+                subjects: data.mapped_disciplines || (data.mapped_discipline ? [data.mapped_discipline] : []),
+                sections: data.sections || (data.mapped_section ? [`${data.mapped_grade || ''}${data.mapped_section}`] : [])
+            };
+        });
+        return { total: snap.size, list };
+    } catch (e) {
+        console.error("[API] fetchTeacherInventory failed", e);
+        return null;
+    }
+}
+
+/**
+ * Fetch grade-wise quiz performance for a school (grades 6-12).
+ * Returns { byGrade: { "6": { attempts, avgScore, uniqueStudents }, ... } }
+ */
+export async function fetchGradeWisePerformance(schoolId) {
+    const { db } = await getInitializedClients();
+    if (!schoolId) return null;
+    try {
+        const q = query(
+            collection(db, "quiz_scores"),
+            where("school_id", "==", schoolId)
+        );
+        const snap = await getDocs(q);
+        const byGrade = {};
+        for (let g = 6; g <= 12; g++) {
+            byGrade[String(g)] = { attempts: 0, totalScore: 0, students: new Set() };
+        }
+        snap.docs.forEach(d => {
+            const data = d.data();
+            const grade = String(data.classId || data.grade || data.class_id || "");
+            if (byGrade[grade]) {
+                byGrade[grade].attempts++;
+                byGrade[grade].totalScore += (data.percentage || 0);
+                if (data.user_id) byGrade[grade].students.add(data.user_id);
+            }
+        });
+        // Flatten sets to counts
+        const result = {};
+        for (const [g, v] of Object.entries(byGrade)) {
+            result[g] = {
+                attempts: v.attempts,
+                avgScore: v.attempts > 0 ? Math.round(v.totalScore / v.attempts) : 0,
+                uniqueStudents: v.students.size
+            };
+        }
+        return { byGrade: result };
+    } catch (e) {
+        console.error("[API] fetchGradeWisePerformance failed", e);
+        return null;
+    }
+}
+
 export async function logQuizStart(userId, subject, topic, difficulty) {
     if (!userId) return;
     try {

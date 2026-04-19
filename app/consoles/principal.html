@@ -6,68 +6,96 @@
     <title>Principal Console — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="../../js/shell.js"></script>
-<script src="../../js/tailwind-config.js"></script>
-<link href="../../css/global.css" rel="stylesheet">
+    <script src="../../js/tailwind-config.js"></script>
+    <link href="../../css/global.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-
     <script src="../../js/firebase-master-config.js"></script>
     <script src="../../js/config.js" type="module"></script>
-
     <script src="principal.js" type="module"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
+    <!-- Full-width header -->
+    <div id="app-header"></div>
+    <script>R4E.renderHeader({
+        title: "Institutional Health",
+        homePath: "../../index.html",
+        userWelcomeDefault: "Principal",
+        roleBadge: "School Admin",
+        showLogout: true,
+        logoutId: "logout-nav-btn"
+    });</script>
 
-    <div id="loading" class="flex items-center justify-center min-h-screen">
+    <div id="loading" class="flex items-center justify-center flex-grow">
         <div class="animate-pulse font-bold text-slate-400">Verifying Principal Access...</div>
     </div>
 
-    <div id="app" class="hidden max-w-7xl mx-auto p-4 md:p-8 fade-in">
-        <div id="app-header"></div>
-<script>R4E.renderHeader({
-    title: "Institutional Health",
-    homePath: "../../index.html",
-    userWelcomeDefault: "Principal",
-    roleBadge: "School Admin",
-    showLogout: true,
-    logoutId: "logout-nav-btn"
-});</script>
+    <div id="app" class="hidden max-w-7xl mx-auto w-full p-4 md:p-8 fade-in">
 
-        <div class="grid lg:grid-cols-3 gap-8 mb-12">
-            <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-bold text-slate-900">Performance Trend</h3>
-                    <select class="text-xs bg-slate-50 border-none rounded px-2 py-1 font-bold text-slate-500">
-                        <option>This Month</option>
-                    </select>
-                </div>
+        <!-- KPI Summary Row -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-blue-600 text-white p-5 rounded-2xl shadow-lg shadow-blue-600/20">
+                <div class="text-blue-200 font-bold text-[10px] uppercase tracking-widest mb-1"><i class="fas fa-user-graduate mr-1"></i> Total Students</div>
+                <div id="kpi-total-students" class="text-3xl font-black">--</div>
+                <div id="kpi-students-sub" class="text-xs font-medium opacity-80 mt-1">Grades 6–12</div>
+            </div>
+            <div class="bg-emerald-600 text-white p-5 rounded-2xl shadow-lg shadow-emerald-600/20">
+                <div class="text-emerald-200 font-bold text-[10px] uppercase tracking-widest mb-1"><i class="fas fa-chalkboard-teacher mr-1"></i> Total Teachers</div>
+                <div id="kpi-total-teachers" class="text-3xl font-black">--</div>
+                <div id="kpi-teachers-sub" class="text-xs font-medium opacity-80 mt-1">Faculty strength</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1"><i class="fas fa-chart-line mr-1"></i> Avg Mastery</div>
+                <div id="kpi-avg-mastery" class="text-3xl font-black text-slate-900">--%</div>
+                <div id="kpi-mastery-sub" class="text-xs font-medium text-slate-500 mt-1">School-wide average</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1"><i class="fas fa-clipboard-check mr-1"></i> Total Quizzes</div>
+                <div id="kpi-total-quizzes" class="text-3xl font-black text-slate-900">--</div>
+                <div id="kpi-quizzes-sub" class="text-xs font-medium text-slate-500 mt-1">Attempts logged</div>
+            </div>
+        </div>
+
+        <!-- Grade-Wise Student Inventory -->
+        <h3 class="text-lg font-black text-slate-900 mb-4"><i class="fas fa-school mr-2 text-blue-600"></i>Student Inventory (Grade 6–12)</h3>
+        <div id="grade-inventory" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-10">
+            <!-- Injected by JS -->
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid lg:grid-cols-2 gap-8 mb-10">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <h3 class="font-bold text-slate-900 mb-4"><i class="fas fa-chart-bar mr-2 text-blue-600"></i>Grade-Wise Avg Score</h3>
                 <div class="h-64">
-                    <canvas id="perfChart"></canvas>
+                    <canvas id="gradeBarChart"></canvas>
                 </div>
             </div>
-            <div class="space-y-4">
-                <div class="bg-blue-600 text-white p-6 rounded-3xl shadow-xl shadow-blue-600/20">
-                    <div class="text-blue-200 font-bold text-xs uppercase tracking-widest mb-1">Total Active Students</div>
-                    <div id="total-active" class="text-4xl font-black mb-2">--</div>
-                    <div id="total-active-trend" class="text-sm font-medium opacity-80">Syncing ledger...</div>
-                </div>
-                 <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <div class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">Critical Alerts</div>
-                    <div class="text-4xl font-black text-red-500 mb-2">3</div>
-                    <div class="text-sm font-medium text-slate-500">Classes requiring intervention</div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <h3 class="font-bold text-slate-900 mb-4"><i class="fas fa-chart-pie mr-2 text-emerald-600"></i>Student Distribution</h3>
+                <div class="h-64">
+                    <canvas id="studentDistChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <h3 class="text-xl font-black text-slate-900 mb-6">Class Heatmap</h3>
-        <div id="class-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Injected -->
+        <!-- Grade Performance Heatmap -->
+        <h3 class="text-lg font-black text-slate-900 mb-4"><i class="fas fa-fire mr-2 text-amber-500"></i>Grade Performance Heatmap</h3>
+        <div id="grade-heatmap" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            <!-- Injected by JS -->
         </div>
+
+        <!-- Teacher Inventory -->
+        <h3 class="text-lg font-black text-slate-900 mb-4"><i class="fas fa-users mr-2 text-emerald-600"></i>Teacher Inventory</h3>
+        <div id="teacher-inventory" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-10">
+            <div class="p-6 text-center text-slate-400 text-sm">Loading teacher data...</div>
+        </div>
+
     </div>
-<div id="app-footer"></div>
-<script>R4E.renderFooter();</script>
+
+    <div id="app-footer"></div>
+    <script>R4E.renderFooter();</script>
 </body>
 </html>
