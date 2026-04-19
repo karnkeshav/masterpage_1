@@ -232,8 +232,8 @@
             document.querySelectorAll('input[name="humanities-subject"]').forEach(cb => cb.checked = false);
 
             if (this.value === 'Commerce') commerceOpts.classList.remove('hidden');
-            if (this.value === 'Science') scienceOpts.classList.remove('hidden');
-            if (this.value === 'Humanities') humanitiesOpts.classList.remove('hidden');
+            else if (this.value === 'Science') scienceOpts.classList.remove('hidden');
+            else if (this.value === 'Humanities') humanitiesOpts.classList.remove('hidden');
         });
 
         commerceMath.addEventListener('change', function () {
