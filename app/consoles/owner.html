@@ -12,6 +12,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="../../js/firebase-master-config.js"></script>
 
@@ -42,38 +43,115 @@
     <div id="app" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 lg:py-10 space-y-8">
 
         <!-- ── KPI Bento Strip ── -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6">
                 <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">B2B Schools</p>
                 <p id="count-schools" class="text-3xl lg:text-4xl font-black text-white">0</p>
+                <p id="count-schools-active" class="text-[10px] text-emerald-400 font-bold mt-1">0 active</p>
             </div>
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6">
                 <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">B2C Users</p>
                 <p id="count-b2c" class="text-3xl lg:text-4xl font-black text-indigo-400">0</p>
+                <p id="count-b2c-paid" class="text-[10px] text-indigo-300 font-bold mt-1">0 paid</p>
             </div>
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">System</p>
-                <p class="text-lg font-black text-emerald-400">● Online</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Total Revenue</p>
+                <p id="count-revenue" class="text-3xl lg:text-4xl font-black text-emerald-400">₹0</p>
+                <p id="revenue-trend" class="text-[10px] text-slate-400 font-bold mt-1">Syncing…</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">License Utilization</p>
+                <div class="flex items-center gap-3">
+                    <p id="count-utilization" class="text-3xl lg:text-4xl font-black text-amber-400">0%</p>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                    <div id="utilization-bar" class="h-full bg-amber-400 rounded-full transition-all duration-700" style="width: 0%"></div>
+                </div>
             </div>
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6 flex items-center justify-center">
-                <button onclick="toggleProvisionModal(true)"
-                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3 rounded-xl transition shadow-lg shadow-indigo-900/50 text-xs uppercase tracking-widest">
+                <button class="js-provision-btn w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3 rounded-xl transition shadow-lg shadow-indigo-900/50 text-xs uppercase tracking-widest">
                     <i class="fas fa-plus mr-2" aria-hidden="true"></i>Provision School
                 </button>
             </div>
         </div>
 
+        <!-- ── Executive Charts Row ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-[32px] p-6 lg:p-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+                    <div>
+                        <h3 class="text-lg font-black">Revenue &amp; Growth</h3>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Monthly Trend</p>
+                    </div>
+                    <div class="flex gap-4 text-[10px] font-bold text-slate-500">
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500 inline-block"></span> B2B</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> B2C</span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-[32px] p-6 lg:p-8">
+                <h3 class="text-lg font-black mb-1">System Pulse</h3>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-6">Real-Time Health</p>
+                <div class="space-y-5">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-slate-400">Auth Service</span>
+                            <span id="pulse-auth" class="text-[10px] font-black text-emerald-400 uppercase">● Online</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1 rounded-full"><div class="h-full bg-emerald-400 rounded-full w-full"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-slate-400">Firestore</span>
+                            <span id="pulse-firestore" class="text-[10px] font-black text-emerald-400 uppercase">● Online</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1 rounded-full"><div class="h-full bg-emerald-400 rounded-full w-full"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-slate-400">Quiz Engine</span>
+                            <span id="pulse-quiz" class="text-[10px] font-black text-emerald-400 uppercase">● Online</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1 rounded-full"><div class="h-full bg-emerald-400 rounded-full w-full"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-slate-400">Supabase</span>
+                            <span id="pulse-supabase" class="text-[10px] font-black text-emerald-400 uppercase">● Online</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1 rounded-full"><div class="h-full bg-emerald-400 rounded-full w-full"></div></div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-800">
+                        <p class="text-[10px] text-slate-500 font-bold">Last Check: <span id="pulse-timestamp" class="text-slate-400">—</span></p>
+                        <p class="text-[10px] text-slate-500 font-bold mt-1">Uptime: <span id="pulse-uptime" class="text-emerald-400">—</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ── Tab Navigation ── -->
-        <div class="flex gap-2" role="tablist">
-            <button class="nav-link bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition" role="tab" aria-selected="true" data-tab="b2b" onclick="switchTab('b2b')">
+        <div class="flex flex-wrap gap-2" role="tablist">
+            <button class="nav-link bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition" role="tab" aria-selected="true" data-tab="b2b">
                 <i class="fas fa-building mr-1" aria-hidden="true"></i> B2B Schools
             </button>
-            <button class="nav-link text-slate-400 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" role="tab" aria-selected="false" data-tab="b2c" onclick="switchTab('b2c')">
+            <button class="nav-link text-slate-400 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" role="tab" aria-selected="false" data-tab="b2c">
                 <i class="fas fa-user mr-1" aria-hidden="true"></i> B2C Users
+            </button>
+            <button class="nav-link text-slate-400 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" role="tab" aria-selected="false" data-tab="ledger">
+                <i class="fas fa-file-invoice-dollar mr-1" aria-hidden="true"></i> Financial Ledger
             </button>
         </div>
 
-        <h2 id="view-title" class="text-2xl font-black tracking-tight">B2B Schools</h2>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h2 id="view-title" class="text-2xl font-black tracking-tight">B2B Schools</h2>
+            <div class="relative w-full sm:w-64">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs" aria-hidden="true"></i>
+                <input id="search-input" type="text" placeholder="Search…" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-indigo-500 outline-none transition">
+            </div>
+        </div>
 
         <!-- ═══════ TAB: B2B Schools ═══════ -->
         <div id="tab-b2b" class="tab-content">
@@ -97,10 +175,48 @@
                                 <th class="p-4 lg:p-6">Plan</th>
                                 <th class="p-4 lg:p-6">Revenue</th>
                                 <th class="p-4 lg:p-6">Expiry</th>
+                                <th class="p-4 lg:p-6">Status</th>
                                 <th class="p-4 lg:p-6">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="b2c-ledger-rows" class="divide-y divide-slate-800">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ TAB: Financial Ledger ═══════ -->
+        <div id="tab-ledger" class="tab-content hidden">
+            <div class="bg-slate-900 rounded-[32px] border border-slate-800 overflow-hidden">
+                <div class="p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <h3 class="text-lg font-black">Transaction History</h3>
+                    <div class="flex gap-2">
+                        <select id="ledger-filter-school" class="bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 px-3 py-1.5 outline-none">
+                            <option value="">All Schools</option>
+                        </select>
+                        <select id="ledger-filter-type" class="bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 px-3 py-1.5 outline-none">
+                            <option value="">All Types</option>
+                            <option value="LICENSE_ACTIVATION">License Activation</option>
+                            <option value="RENEWAL">Renewal</option>
+                            <option value="PAYMENT">Payment</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-400">
+                        <thead class="bg-slate-950/60 text-[10px] uppercase font-black text-slate-500">
+                            <tr>
+                                <th class="p-4 lg:p-6">Date</th>
+                                <th class="p-4 lg:p-6">School</th>
+                                <th class="p-4 lg:p-6">Type</th>
+                                <th class="p-4 lg:p-6">Amount</th>
+                                <th class="p-4 lg:p-6">Details</th>
+                                <th class="p-4 lg:p-6">Recorded By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-rows" class="divide-y divide-slate-800">
+                            <tr><td colspan="6" class="p-8 text-center text-slate-500 text-sm">Loading financial events…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -112,7 +228,7 @@
     <!-- ═══════ PROVISION MODAL ═══════ -->
     <div id="provision-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-[32px] w-full max-w-lg max-h-[90vh] overflow-y-auto p-8 space-y-5 relative">
-            <button onclick="toggleProvisionModal(false)" class="absolute top-4 right-4 w-11 h-11 rounded-xl bg-slate-800 hover:bg-red-600 flex items-center justify-center transition text-lg" title="Close" aria-label="Close modal">✕</button>
+            <button class="js-close-provision absolute top-4 right-4 w-11 h-11 rounded-xl bg-slate-800 hover:bg-red-600 flex items-center justify-center transition text-lg" title="Close" aria-label="Close modal">✕</button>
             <h2 class="text-xl font-black">Provision New School</h2>
             <p class="text-xs text-slate-500">Creates a tenant cluster with Auth user, Firestore document, and landing page link.</p>
 
@@ -174,6 +290,17 @@
                     Generate Tenant Cluster
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- ═══════ SCHOOL CONFIG MODAL ═══════ -->
+    <div id="school-config-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-[32px] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 space-y-6 relative">
+            <button class="js-close-school-config absolute top-4 right-4 w-11 h-11 rounded-xl bg-slate-800 hover:bg-red-600 flex items-center justify-center transition text-lg" title="Close" aria-label="Close modal">✕</button>
+            <h2 class="text-xl font-black">School Configuration</h2>
+            <div id="school-config-body" class="space-y-4">
+                <div class="animate-pulse text-slate-500 text-sm text-center py-8">Loading school data…</div>
+            </div>
         </div>
     </div>
 

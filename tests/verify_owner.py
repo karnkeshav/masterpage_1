@@ -37,15 +37,51 @@ def verify_owner():
             print("[TEST 1] Owner Console...")
             page1.goto(f"{BASE_URL}/app/consoles/owner.html")
 
-            # Check for Header
-            page1.wait_for_selector("h1:has-text('Master Orchestration Layer')", state="visible")
+            # Check for Command Center header (rendered by shell.js)
+            page1.wait_for_selector("text=Command Center", state="visible")
             print(" -> [PASS] Owner Console Loaded.")
 
-            # Check for Ledger Refresh button
-            if page1.is_visible("button:has-text('Refresh')"):
-                print(" -> [PASS] Ledger UI present.")
+            # Check for B2B Schools tab
+            if page1.is_visible("[data-tab='b2b']"):
+                print(" -> [PASS] B2B Schools tab present.")
             else:
-                print(" -> [FAIL] Ledger UI missing.")
+                print(" -> [FAIL] B2B Schools tab missing.")
+
+            # Check for B2C Users tab
+            if page1.is_visible("[data-tab='b2c']"):
+                print(" -> [PASS] B2C Users tab present.")
+            else:
+                print(" -> [FAIL] B2C Users tab missing.")
+
+            # Check for Financial Ledger tab
+            if page1.is_visible("[data-tab='ledger']"):
+                print(" -> [PASS] Financial Ledger tab present.")
+            else:
+                print(" -> [FAIL] Financial Ledger tab missing.")
+
+            # Check for Revenue chart canvas
+            if page1.is_visible("#revenueChart"):
+                print(" -> [PASS] Revenue chart present.")
+            else:
+                print(" -> [FAIL] Revenue chart missing.")
+
+            # Check for System Pulse section
+            if page1.is_visible("text=System Pulse"):
+                print(" -> [PASS] System Pulse section present.")
+            else:
+                print(" -> [FAIL] System Pulse section missing.")
+
+            # Check for Search input
+            if page1.is_visible("#search-input"):
+                print(" -> [PASS] Search input present.")
+            else:
+                print(" -> [FAIL] Search input missing.")
+
+            # Check for Provision School button
+            if page1.is_visible(".js-provision-btn"):
+                print(" -> [PASS] Provision School button present.")
+            else:
+                print(" -> [FAIL] Provision School button missing.")
 
         except Exception as e:
             print(f" -> [FAIL] Test 1 Error: {e}")
@@ -54,11 +90,6 @@ def verify_owner():
 
         # TEST 2: School Landing
         context2 = browser.new_context(viewport={'width': 1280, 'height': 800})
-        # No auth needed for landing usually, or it fetches from Firestore
-        # We need to mock Firestore fetch?
-        # school-landing.html uses getDoc.
-        # It's hard to mock Firestore directly without more complex interception.
-        # But we can check if page loads and shows "Locating School Instance..." or similar.
 
         page2 = context2.new_page()
         try:
@@ -69,7 +100,6 @@ def verify_owner():
             if page2.is_visible("#loading"):
                 print(" -> [PASS] School Landing Page loads (Loading State).")
             else:
-                # Maybe it loaded fast or failed?
                 print(" -> [INFO] Loading state not seen (might be fast or error).")
 
             # Check for structure
