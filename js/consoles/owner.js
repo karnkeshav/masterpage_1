@@ -17,6 +17,8 @@ import {
 // CONSTANTS & STATE
 // ═══════════════════════════════════════════════════════
 const SESSION_START = Date.now();
+const DEFAULT_B2C_PLAN_PRICE = 499;
+const PULSE_UPDATE_INTERVAL_MS = 30000;
 let revenueChart = null;
 let schoolsCache = [];   // cached school snapshots for search
 let b2cCache = [];       // cached B2C user snapshots for search
@@ -205,7 +207,7 @@ async function initRealtimeStreams() {
                 const data = eventDoc.data();
                 // Extract school ID from the document path: schools/{schoolId}/financial_events/{eventId}
                 const pathSegments = eventDoc.ref.path.split("/");
-                const schoolId = pathSegments.length >= 2 ? pathSegments[1] : "unknown";
+                const schoolId = (pathSegments.length >= 4 && pathSegments[0] === "schools") ? pathSegments[1] : "unknown";
                 financialCache.push({ id: eventDoc.id, schoolId, ...data });
                 totalRevenue += data.amount || 0;
             });
@@ -242,7 +244,7 @@ function updateRevenueChart() {
     b2cCache.forEach(u => {
         if (u.plan && u.plan !== "Free Tier" && u.plan !== "free") {
             const created = u.created_at?.toDate ? u.created_at.toDate() : new Date();
-            b2cByMonth[created.getMonth()] += parseFloat(String(u.revenue).replace(/[^0-9.]/g, "")) || 499;
+            b2cByMonth[created.getMonth()] += parseFloat(String(u.revenue).replace(/[^0-9.]/g, "")) || DEFAULT_B2C_PLAN_PRICE;
         }
     });
 
@@ -671,7 +673,7 @@ function manageUser(uid) {
 // ═══════════════════════════════════════════════════════
 function startSystemPulse() {
     updatePulse();
-    setInterval(updatePulse, 30000); // refresh every 30s
+    setInterval(updatePulse, PULSE_UPDATE_INTERVAL_MS);
 }
 
 function updatePulse() {
@@ -728,7 +730,8 @@ function toggleSchoolConfigModal(show) {
 // UTILITY: HTML escaping to prevent XSS
 // ═══════════════════════════════════════════════════════
 function escapeHtml(str) {
+    if (str == null) return "";
     const div = document.createElement("div");
-    div.appendChild(document.createTextNode(str));
+    div.appendChild(document.createTextNode(String(str)));
     return div.innerHTML;
 }
