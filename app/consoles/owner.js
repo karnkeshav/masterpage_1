@@ -1,7 +1,7 @@
-// js/consoles/owner.js — Modular Service Architecture for Owner Command Center
-import { guardConsole, bindConsoleLogout } from "../guard.js";
-import { getInitializedClients } from "../config.js";
-import { recordFinancialEvent } from "../api.js";
+// app/consoles/owner.js — Modular Service Architecture for Owner Command Center
+import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
+import { getInitializedClients } from "../../js/config.js";
+import { recordFinancialEvent } from "../../js/api.js";
 import {
     collection, query, where, orderBy, onSnapshot, getDocs,
     doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup
