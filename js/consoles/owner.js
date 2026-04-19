@@ -103,6 +103,20 @@ function wireEventListeners() {
     document.querySelectorAll(".js-gen-pass").forEach(btn => {
         btn.addEventListener("click", generateRandomPass);
     });
+
+    // Toggle password visibility
+    document.querySelectorAll(".js-toggle-pass").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const passInput = document.getElementById("u-pass");
+            if (!passInput) return;
+            const isHidden = passInput.type === "password";
+            passInput.type = isHidden ? "text" : "password";
+            const icon = btn.querySelector("i");
+            if (icon) {
+                icon.className = isHidden ? "fas fa-eye-slash" : "fas fa-eye";
+            }
+        });
+    });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -716,7 +730,7 @@ function openEditUserModal(uid) {
     document.getElementById("edit-user-id").value = uid;
     document.getElementById("u-name").value = user.displayName || "";
     document.getElementById("u-email").value = user.email || "";
-    document.getElementById("u-email").readOnly = true; // Cannot change email via Firestore
+    document.getElementById("u-email").readOnly = true; // Email is tied to Firebase Auth and cannot be changed from Firestore
     document.getElementById("u-plan").value = user.subscriptionTier || user.plan || "trial";
     document.getElementById("u-class").value = String(user.class || user.academicClass || "9");
 
@@ -797,7 +811,8 @@ async function handleUserFormSubmit(e) {
                     createdAt: serverTimestamp()
                 });
 
-                alert(`B2C user provisioned.\n\nEmail: ${email}\nPassword: ${password}`);
+                alert(`B2C user provisioned.\n\nEmail: ${email}\nCredentials have been copied to clipboard.`);
+                try { await navigator.clipboard.writeText(`Email: ${email}\nPassword: ${password}`); } catch (_) { /* clipboard may not be available */ }
             } catch (authErr) {
                 if (createdUser) {
                     try { await createdUser.delete(); } catch (rollbackErr) { console.error("Failed to rollback orphaned Auth user:", rollbackErr); }
@@ -844,9 +859,10 @@ async function confirmDeleteUser() {
 
     try {
         const { db } = await getInitializedClients();
-        // Soft-delete: mark as deleted for financial audit trail instead of hard-deleting
+        // Soft-delete: mark as deleted and revoke access for financial audit trail
         await updateDoc(doc(db, "users", uid), {
             status: "deleted",
+            accessExpiryDate: new Date().toISOString(),
             deletedAt: serverTimestamp()
         });
         alert("Sovereign access revoked.");
@@ -866,14 +882,13 @@ function toggleUserModal(show) {
 }
 
 function generateRandomPass() {
-    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*";
     let pass = "";
-    const array = new Uint32Array(10);
+    const array = new Uint32Array(12);
     crypto.getRandomValues(array);
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 12; i++) {
         pass += chars[array[i] % chars.length];
     }
-    pass += "R4E!";
     const passField = document.getElementById("u-pass");
     if (passField) passField.value = pass;
 }
