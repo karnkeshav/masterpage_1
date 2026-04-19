@@ -1,61 +1,109 @@
-// js/register-handler.js
-// Reads the selected plan from the URL query string and populates the registration form.
+// js/register-handler.js — B2C Registration Logic
 
-const PLANS = {
-  practitioner: { name: 'The Practitioner',  price: '₹499',  priceLabel: '₹499/month' },
-  strategist:   { name: 'Self-Strategist',   price: '₹999',  priceLabel: '₹999/month' },
-  sync:         { name: 'The Sync Bundle',   price: '₹1,499', priceLabel: '₹1,499/month' },
-  boardready:   { name: 'Board-Ready',       price: '₹1,299', priceLabel: '₹1,299/month' },
-  legacy:       { name: 'The Legacy Plan',   price: '₹32,000', priceLabel: '₹32,000 (36 months)' }
+import { getInitializedClients } from "./config.js";
+import { routeUser } from "./auth-paywall.js";
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const form = document.getElementById('registration-form');
+const errorBox = document.getElementById('error-box');
+
+// --- Tier ↔ Price Map (matches offering.html) ---
+const TIER_META = {
+    practitioner: { label: "The Practitioner",  price: "₹499/mo" },
+    strategist:   { label: "Self-Strategist",    price: "₹999/mo" },
+    sync:         { label: "The Sync Bundle",    price: "₹1,499/mo" },
+    board_ready:  { label: "Board-Ready",        price: "₹1,299/mo" },
+    legacy:       { label: "The Legacy Plan",    price: "₹32,000" }
 };
 
-function initRegisterPage() {
-  const params = new URLSearchParams(window.location.search);
-  const planKey = (params.get('plan') || '').toLowerCase();
-  const plan = PLANS[planKey];
+// 1. Detect Plan from URL
+const urlParams = new URLSearchParams(window.location.search);
+const selectedTier = urlParams.get('plan') || 'practitioner';
+const meta = TIER_META[selectedTier] || TIER_META.practitioner;
 
-  const planText = document.getElementById('selected-plan-text');
-  const priceDisplay = document.getElementById('price-display');
+document.getElementById('selected-plan-text').textContent = meta.label;
+document.getElementById('price-display').textContent = meta.price;
 
-  if (plan) {
-    if (planText) planText.textContent = plan.name;
-    if (priceDisplay) priceDisplay.textContent = plan.priceLabel;
-  } else {
-    if (planText) planText.textContent = 'No Plan Selected';
-    if (priceDisplay) priceDisplay.textContent = '—';
-  }
+// 2. Handle Form Submission
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Processing Secure Payment...";
+    errorBox.classList.add('hidden');
 
-  const form = document.getElementById('registration-form');
-  if (form) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
+    const email    = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const name     = document.getElementById('reg-name').value.trim();
+    const grade    = document.getElementById('reg-class').value;
+    const board    = document.getElementById('reg-board').value;
 
-      const name = document.getElementById('reg-name').value.trim();
-      const email = document.getElementById('reg-email').value.trim();
-      const studentClass = document.getElementById('reg-class').value;
-      const board = document.getElementById('reg-board').value;
+    // Derive a sanitised username from the email prefix
+    const username = email.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '').substring(0, 30);
 
-      if (!name || !email || !studentClass || !board) {
-        alert('Please fill in all required fields.');
-        return;
-      }
+    try {
+        const { auth, db } = await getInitializedClients();
 
-      const btn = document.getElementById('submit-btn');
-      btn.disabled = true;
-      btn.textContent = 'Processing…';
+        // 3. Create Firebase Auth User
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-      // Placeholder: integrate with a payment gateway or Firebase in a future iteration.
-      setTimeout(function () {
-        alert('Registration submitted for ' + (plan ? plan.name : 'selected plan') + '. We will contact you shortly.');
-        btn.disabled = false;
-        btn.textContent = 'Complete Secure Payment';
-      }, 1200);
-    });
-  }
-}
+        // 4. Calculate Activation & Expiry
+        const now = new Date();
+        const expiry = new Date();
+        if (selectedTier === 'legacy') {
+            expiry.setFullYear(now.getFullYear() + 3); // 3 Years
+        } else {
+            expiry.setDate(now.getDate() + 30); // 30 Days
+        }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initRegisterPage);
-} else {
-  initRegisterPage();
-}
+        const graceDate = new Date(expiry);
+        graceDate.setDate(expiry.getDate() + 5); // 5-Day Grace Period
+
+        // 5. Set Tier-Specific Module Flags
+        let activeModules = ["SimpleQuizzes"];
+        if (selectedTier === 'practitioner') {
+            activeModules.push("MediumQuizzes", "AdvancedQuizzes");
+        }
+        if (selectedTier === 'strategist' || selectedTier === 'sync' || selectedTier === 'legacy') {
+            activeModules.push("MediumQuizzes", "AdvancedQuizzes", "MistakeNotebook", "KnowledgeHub");
+        }
+        if (selectedTier === 'sync' || selectedTier === 'legacy') {
+            activeModules.push("ParentConsole");
+        }
+        if (selectedTier === 'board_ready' || selectedTier === 'legacy') {
+            activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
+        }
+
+        // 6. Save B2C Profile to Firestore
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            displayName: name,
+            username: username,
+            email: email,
+            role: "student",
+            tenantType: "individual",
+            isB2C: true,
+            subscriptionTier: selectedTier,
+            class: parseInt(grade),
+            board: board,
+            status: "active",
+            activationDate: serverTimestamp(),
+            accessExpiryDate: expiry,
+            gracePeriodEndDate: graceDate,
+            activeModules: activeModules,
+            createdAt: serverTimestamp()
+        });
+
+        // 7. Route via Sovereign Gateway
+        await routeUser(user);
+
+    } catch (err) {
+        console.error(err);
+        errorBox.textContent = err.message;
+        errorBox.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Complete Secure Payment";
+    }
+});
