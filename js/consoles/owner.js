@@ -4,13 +4,13 @@ import { getInitializedClients } from "../config.js";
 import { recordFinancialEvent } from "../api.js";
 import {
     collection, query, where, orderBy, onSnapshot, getDocs,
-    doc, setDoc, updateDoc, serverTimestamp, collectionGroup
+    doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import {
     getApps, initializeApp
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import {
-    getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary
+    getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as signOutSecondary
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // ═══════════════════════════════════════════════════════
@@ -80,6 +80,43 @@ function wireEventListeners() {
     const typeFilter = document.getElementById("ledger-filter-type");
     if (schoolFilter) schoolFilter.addEventListener("change", renderFilteredLedger);
     if (typeFilter) typeFilter.addEventListener("change", renderFilteredLedger);
+
+    // B2C User Management: Add User button
+    document.querySelectorAll(".js-add-b2c-user").forEach(btn => {
+        btn.addEventListener("click", () => openAddUserModal());
+    });
+
+    // User modal close
+    document.querySelectorAll(".js-close-user-modal").forEach(btn => {
+        btn.addEventListener("click", () => toggleUserModal(false));
+    });
+
+    // User modal form submit
+    const userForm = document.getElementById("user-management-form");
+    if (userForm) userForm.addEventListener("submit", handleUserFormSubmit);
+
+    // Delete user button
+    const deleteBtn = document.getElementById("delete-user-btn");
+    if (deleteBtn) deleteBtn.addEventListener("click", confirmDeleteUser);
+
+    // Generate random password
+    document.querySelectorAll(".js-gen-pass").forEach(btn => {
+        btn.addEventListener("click", generateRandomPass);
+    });
+
+    // Toggle password visibility
+    document.querySelectorAll(".js-toggle-pass").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const passInput = document.getElementById("u-pass");
+            if (!passInput) return;
+            const isHidden = passInput.type === "password";
+            passInput.type = isHidden ? "text" : "password";
+            const icon = btn.querySelector("i");
+            if (icon) {
+                icon.className = isHidden ? "fas fa-eye-slash" : "fas fa-eye";
+            }
+        });
+    });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -163,7 +200,10 @@ async function initRealtimeStreams() {
             if (countEl) countEl.textContent = snap.size;
 
             // Count paid users
-            const paidCount = b2cCache.filter(u => u.plan && u.plan !== "Free Tier" && u.plan !== "free").length;
+            const paidCount = b2cCache.filter(u => {
+                const tier = u.subscriptionTier || u.plan || "";
+                return tier && tier !== "Free Tier" && tier !== "free" && tier !== "trial";
+            }).length;
             const paidEl = document.getElementById("count-b2c-paid");
             if (paidEl) paidEl.textContent = `${paidCount} paid`;
 
@@ -242,8 +282,9 @@ function updateRevenueChart() {
 
     // Estimate B2C revenue from paid users
     b2cCache.forEach(u => {
-        if (u.plan && u.plan !== "Free Tier" && u.plan !== "free") {
-            const created = u.created_at?.toDate ? u.created_at.toDate() : new Date();
+        const tier = u.subscriptionTier || u.plan || "";
+        if (tier && tier !== "Free Tier" && tier !== "free" && tier !== "trial") {
+            const created = u.createdAt?.toDate ? u.createdAt.toDate() : (u.created_at?.toDate ? u.created_at.toDate() : new Date());
             b2cByMonth[created.getMonth()] += parseFloat(String(u.revenue).replace(/[^0-9.]/g, "")) || DEFAULT_B2C_PLAN_PRICE;
         }
     });
@@ -310,7 +351,7 @@ function renderB2CRow(uid, data) {
         : "N/A";
     const displayName = data.displayName || "Unnamed User";
     const initial = displayName.charAt(0).toUpperCase();
-    const plan = data.plan || "Free Tier";
+    const plan = data.subscriptionTier || data.plan || "Free Tier";
     const revenue = data.revenue || "0.00";
     const isActive = !data.accessExpiryDate || new Date(data.accessExpiryDate) > new Date();
     const statusBadge = isActive
@@ -318,14 +359,14 @@ function renderB2CRow(uid, data) {
         : '<span class="bg-red-900/30 text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Expired</span>';
 
     const tr = document.createElement("tr");
-    tr.className = "hover:bg-slate-900/30 transition";
+    tr.className = "hover:bg-slate-900/30 transition group";
     tr.innerHTML = `
         <td class="p-4 lg:p-6">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-indigo-600/20 flex items-center justify-center font-bold text-indigo-400 flex-shrink-0">${initial}</div>
                 <div class="min-w-0">
                     <div class="font-bold text-white text-sm truncate">${escapeHtml(displayName)}</div>
-                    <div class="text-[10px] text-slate-500 font-mono">${uid.substring(0, 10)}…</div>
+                    <div class="text-[10px] text-slate-500 font-mono">${escapeHtml(data.email || uid)}</div>
                 </div>
             </div>
         </td>
@@ -336,11 +377,17 @@ function renderB2CRow(uid, data) {
         <td class="p-4 lg:p-6 text-xs text-slate-500 font-medium">${expiry}</td>
         <td class="p-4 lg:p-6">${statusBadge}</td>
         <td class="p-4 lg:p-6">
-            <button class="js-manage-user w-11 h-11 bg-slate-800 hover:bg-slate-700 rounded-xl transition flex items-center justify-center" title="Manage User" aria-label="Manage user">
-                <i class="fas fa-edit" aria-hidden="true"></i>
-            </button>
+            <div class="flex gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                <button class="js-edit-user w-11 h-11 bg-slate-800 hover:bg-indigo-600 rounded-xl transition flex items-center justify-center" title="Edit User" aria-label="Edit user">
+                    <i class="fas fa-user-edit text-xs" aria-hidden="true"></i>
+                </button>
+                <button class="js-reset-pass w-11 h-11 bg-slate-800 hover:bg-amber-600 rounded-xl transition flex items-center justify-center" title="Reset Password" aria-label="Reset password">
+                    <i class="fas fa-key text-xs" aria-hidden="true"></i>
+                </button>
+            </div>
         </td>`;
-    tr.querySelector(".js-manage-user").addEventListener("click", () => manageUser(uid));
+    tr.querySelector(".js-edit-user").addEventListener("click", () => openEditUserModal(uid));
+    tr.querySelector(".js-reset-pass").addEventListener("click", () => triggerResetPassword(uid));
     row.appendChild(tr);
 }
 
@@ -459,7 +506,7 @@ function handleSearch(term) {
         const filtered = q ? b2cCache.filter(u =>
             (u.displayName || "").toLowerCase().includes(q) ||
             (u.email || "").toLowerCase().includes(q) ||
-            (u.plan || "").toLowerCase().includes(q) ||
+            (u.subscriptionTier || u.plan || "").toLowerCase().includes(q) ||
             (u.id || "").toLowerCase().includes(q)
         ) : b2cCache;
         renderB2CTable(filtered);
@@ -660,12 +707,190 @@ async function toggleSchoolStatus(schoolId, currentStatus) {
 }
 
 // ═══════════════════════════════════════════════════════
-// USER MANAGEMENT
+// USER MANAGEMENT — Sovereign B2C CRUD
 // ═══════════════════════════════════════════════════════
-function manageUser(uid) {
+function openAddUserModal() {
+    document.getElementById("user-modal-title").textContent = "Add B2C User";
+    document.getElementById("edit-user-id").value = "";
+    document.getElementById("user-management-form").reset();
+    document.getElementById("password-section").classList.remove("hidden");
+    const passInput = document.getElementById("u-pass");
+    if (passInput) passInput.required = true;
+    document.getElementById("delete-user-btn").classList.add("hidden");
+    // Reset email field to editable for new user
+    document.getElementById("u-email").readOnly = false;
+    toggleUserModal(true);
+}
+
+function openEditUserModal(uid) {
+    const user = b2cCache.find(u => u.id === uid);
+    if (!user) { alert("User not found in cache."); return; }
+
+    document.getElementById("user-modal-title").textContent = "Edit B2C Profile";
+    document.getElementById("edit-user-id").value = uid;
+    document.getElementById("u-name").value = user.displayName || "";
+    document.getElementById("u-email").value = user.email || "";
+    document.getElementById("u-email").readOnly = true; // Email is tied to Firebase Auth and cannot be changed from Firestore
+    document.getElementById("u-plan").value = user.subscriptionTier || user.plan || "trial";
+    document.getElementById("u-class").value = String(user.class || user.academicClass || "9");
+
+    // Hide password for edits — use Reset Password instead
+    document.getElementById("password-section").classList.add("hidden");
+    const passInput = document.getElementById("u-pass");
+    if (passInput) passInput.required = false;
+    document.getElementById("delete-user-btn").classList.remove("hidden");
+
+    toggleUserModal(true);
+}
+
+async function handleUserFormSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type='submit']");
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "PROCESSING…";
+
+    const uid = document.getElementById("edit-user-id").value;
+    const displayName = document.getElementById("u-name").value.trim();
+    const email = document.getElementById("u-email").value.trim();
+    const subscriptionTier = document.getElementById("u-plan").value;
+    const academicClass = parseInt(document.getElementById("u-class").value);
+
+    try {
+        const { db } = await getInitializedClients();
+
+        if (uid) {
+            // EDIT: Update existing B2C profile in Firestore
+            await updateDoc(doc(db, "users", uid), {
+                displayName,
+                subscriptionTier,
+                class: academicClass
+            });
+            alert("Sovereign profile updated.");
+        } else {
+            // ADD: Create new B2C user via secondary auth
+            const password = document.getElementById("u-pass").value;
+            if (!password || password.length < 6) {
+                alert("Password must be at least 6 characters.");
+                btn.disabled = false;
+                btn.textContent = originalText;
+                return;
+            }
+
+            let secApp = getApps().find(a => a.name === "SecondaryOnboarding");
+            if (!secApp) {
+                secApp = initializeApp(window.__firebase_config, "SecondaryOnboarding");
+            }
+            const secAuth = getAuth(secApp);
+
+            let createdUser = null;
+            try {
+                const cred = await createUserWithEmailAndPassword(secAuth, email, password);
+                createdUser = cred.user;
+
+                // Five-day grace period per B2C lifecycle
+                const now = new Date();
+                const expiry = new Date(now);
+                expiry.setFullYear(expiry.getFullYear() + 1);
+                const graceDate = new Date(expiry);
+                graceDate.setDate(graceDate.getDate() + 5);
+
+                await setDoc(doc(db, "users", createdUser.uid), {
+                    uid: createdUser.uid,
+                    displayName,
+                    email,
+                    role: "student",
+                    tenantType: "individual",
+                    isB2C: true,
+                    subscriptionTier,
+                    class: academicClass,
+                    status: "active",
+                    activationDate: serverTimestamp(),
+                    accessExpiryDate: expiry.toISOString(),
+                    gracePeriodEndDate: graceDate.toISOString(),
+                    createdAt: serverTimestamp()
+                });
+
+                alert(`B2C user provisioned.\n\nEmail: ${email}\nCredentials have been copied to clipboard.`);
+                try { await navigator.clipboard.writeText(`Email: ${email}\nPassword: ${password}`); } catch (_) { /* clipboard may not be available */ }
+            } catch (authErr) {
+                if (createdUser) {
+                    try { await createdUser.delete(); } catch (rollbackErr) { console.error("Failed to rollback orphaned Auth user:", rollbackErr); }
+                }
+                throw authErr;
+            } finally {
+                try { await signOutSecondary(secAuth); } catch (_) { /* ignore */ }
+            }
+        }
+
+        toggleUserModal(false);
+    } catch (err) {
+        alert("Operation failed: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+async function triggerResetPassword(uid) {
+    const user = b2cCache.find(u => u.id === uid);
+    const email = user?.email;
+    if (!email) { alert("No email found for this user."); return; }
+
+    if (!confirm(`Send an official Ready4Exam password reset link to ${email}?`)) return;
+
+    try {
+        const { auth } = await getInitializedClients();
+        await sendPasswordResetEmail(auth, email);
+        alert("Reset link dispatched to sovereign user.");
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
+async function confirmDeleteUser() {
+    const uid = document.getElementById("edit-user-id").value;
+    if (!uid) return;
+
     const user = b2cCache.find(u => u.id === uid);
     const displayName = user?.displayName || uid;
-    alert(`User Management for "${displayName}" (${uid}) — Feature in development.`);
+
+    if (!confirm(`DANGER: This will permanently revoke all access for "${displayName}". Proceed?`)) return;
+
+    try {
+        const { db } = await getInitializedClients();
+        // Soft-delete: mark as deleted and revoke access for financial audit trail
+        await updateDoc(doc(db, "users", uid), {
+            status: "deleted",
+            accessExpiryDate: new Date().toISOString(),
+            deletedAt: serverTimestamp()
+        });
+        alert("Sovereign access revoked.");
+        toggleUserModal(false);
+    } catch (err) {
+        alert("Delete failed: " + err.message);
+    }
+}
+
+function toggleUserModal(show) {
+    const modal = document.getElementById("user-modal");
+    if (modal) modal.classList.toggle("hidden", !show);
+    if (!show) {
+        const form = document.getElementById("user-management-form");
+        if (form) form.reset();
+    }
+}
+
+function generateRandomPass() {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*";
+    let pass = "";
+    const array = new Uint32Array(12);
+    crypto.getRandomValues(array);
+    for (let i = 0; i < 12; i++) {
+        pass += chars[array[i] % chars.length];
+    }
+    const passField = document.getElementById("u-pass");
+    if (passField) passField.value = pass;
 }
 
 // ═══════════════════════════════════════════════════════
