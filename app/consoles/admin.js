@@ -1,6 +1,6 @@
-import { getInitializedClients } from "./config.js";
-import { guardConsole, bindConsoleLogout } from "./guard.js";
-import { loadCurriculum } from "./curriculum/loader.js";
+import { getInitializedClients } from "../../js/config.js";
+import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
+import { loadCurriculum } from "../../js/curriculum/loader.js";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc, deleteDoc, getDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
