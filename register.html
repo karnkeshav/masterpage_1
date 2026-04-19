@@ -72,6 +72,99 @@
                     </div>
                 </div>
 
+                <!-- Stream & Subject Selection (visible only for Class 11/12) -->
+                <div id="stream-section" class="hidden space-y-6 transition-all">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Stream</label>
+                        <select id="reg-stream" class="w-full bg-slate-800 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green">
+                            <option value="">Select Stream</option>
+                            <option value="Commerce">Commerce</option>
+                            <option value="Science">Science</option>
+                            <option value="Humanities">Humanities</option>
+                        </select>
+                    </div>
+
+                    <!-- Commerce Sub-options -->
+                    <div id="commerce-options" class="hidden">
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Mathematics Option</label>
+                        <select id="reg-commerce-math" class="w-full bg-slate-800 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green">
+                            <option value="">Select Option</option>
+                            <option value="Maths">Mathematics</option>
+                            <option value="Applied Maths">Applied Mathematics</option>
+                            <option value="Other">Other (specify below)</option>
+                        </select>
+                        <div id="commerce-other-box" class="hidden mt-3">
+                            <input type="text" id="reg-commerce-other" placeholder="Enter your subject" class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
+                        </div>
+                    </div>
+
+                    <!-- Science Sub-options -->
+                    <div id="science-options" class="hidden">
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Subject Combination</label>
+                        <select id="reg-science-combo" class="w-full bg-slate-800 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green">
+                            <option value="">Select Combination</option>
+                            <option value="PCM">Physics, Chemistry, Mathematics</option>
+                            <option value="PCB">Physics, Chemistry, Biology</option>
+                            <option value="PCMB">Physics, Chemistry, Mathematics, Biology</option>
+                        </select>
+                    </div>
+
+                    <!-- Humanities Sub-options -->
+                    <div id="humanities-options" class="hidden">
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Select Core Subjects</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="History" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">History</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Geography" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Geography</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Political Science" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Political Science</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Economics" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Economics</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Psychology" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Psychology</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Sociology" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Sociology</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Philosophy" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Philosophy</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Home Science" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Home Science</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Fine Arts" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Fine Arts</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Physical Education" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Physical Education</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Music" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Music</span>
+                            </label>
+                            <label class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 cursor-pointer hover:bg-white/10 transition">
+                                <input type="checkbox" name="humanities-subject" value="Legal Studies" class="rounded border-white/20 bg-transparent text-success-green focus:ring-success-green">
+                                <span class="text-sm text-slate-300">Legal Studies</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Secure Password</label>
                     <input type="password" id="reg-password" required minlength="8" class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
@@ -94,6 +187,65 @@
     <div id="app-footer"></div>
     <script>R4E.renderFooter();</script>
 
+    <script>
+    // Stream & Subject conditional visibility logic
+    (function () {
+        const classSelect = document.getElementById('reg-class');
+        const streamSection = document.getElementById('stream-section');
+        const streamSelect = document.getElementById('reg-stream');
+        const commerceOpts = document.getElementById('commerce-options');
+        const scienceOpts = document.getElementById('science-options');
+        const humanitiesOpts = document.getElementById('humanities-options');
+        const commerceMath = document.getElementById('reg-commerce-math');
+        const commerceOtherBox = document.getElementById('commerce-other-box');
+
+        function resetStreamSection() {
+            streamSelect.value = '';
+            commerceOpts.classList.add('hidden');
+            scienceOpts.classList.add('hidden');
+            humanitiesOpts.classList.add('hidden');
+            commerceMath.value = '';
+            commerceOtherBox.classList.add('hidden');
+            document.getElementById('reg-commerce-other').value = '';
+            document.getElementById('reg-science-combo').value = '';
+            document.querySelectorAll('input[name="humanities-subject"]').forEach(cb => cb.checked = false);
+        }
+
+        classSelect.addEventListener('change', function () {
+            const val = this.value;
+            if (val === '11' || val === '12') {
+                streamSection.classList.remove('hidden');
+            } else {
+                streamSection.classList.add('hidden');
+                resetStreamSection();
+            }
+        });
+
+        streamSelect.addEventListener('change', function () {
+            commerceOpts.classList.add('hidden');
+            scienceOpts.classList.add('hidden');
+            humanitiesOpts.classList.add('hidden');
+            commerceMath.value = '';
+            commerceOtherBox.classList.add('hidden');
+            document.getElementById('reg-commerce-other').value = '';
+            document.getElementById('reg-science-combo').value = '';
+            document.querySelectorAll('input[name="humanities-subject"]').forEach(cb => cb.checked = false);
+
+            if (this.value === 'Commerce') commerceOpts.classList.remove('hidden');
+            if (this.value === 'Science') scienceOpts.classList.remove('hidden');
+            if (this.value === 'Humanities') humanitiesOpts.classList.remove('hidden');
+        });
+
+        commerceMath.addEventListener('change', function () {
+            if (this.value === 'Other') {
+                commerceOtherBox.classList.remove('hidden');
+            } else {
+                commerceOtherBox.classList.add('hidden');
+                document.getElementById('reg-commerce-other').value = '';
+            }
+        });
+    })();
+    </script>
     <script type="module" src="./js/register-handler.js"></script>
 </body>
 </html>

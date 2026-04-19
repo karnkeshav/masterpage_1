@@ -39,6 +39,29 @@ form.addEventListener('submit', async (e) => {
     const grade    = document.getElementById('reg-class').value;
     const board    = document.getElementById('reg-board').value;
 
+    // Stream & subject details (Class 11/12 only)
+    let stream = '';
+    let subjects = [];
+    if (grade === '11' || grade === '12') {
+        stream = document.getElementById('reg-stream').value;
+        if (stream === 'Commerce') {
+            const mathOption = document.getElementById('reg-commerce-math').value;
+            if (mathOption === 'Other') {
+                const custom = document.getElementById('reg-commerce-other').value.trim();
+                if (custom) subjects = [custom];
+            } else if (mathOption) {
+                subjects = [mathOption];
+            }
+        } else if (stream === 'Science') {
+            const combo = document.getElementById('reg-science-combo').value;
+            if (combo) subjects = [combo];
+        } else if (stream === 'Humanities') {
+            document.querySelectorAll('input[name="humanities-subject"]:checked').forEach(cb => {
+                subjects.push(cb.value);
+            });
+        }
+    }
+
     // Derive a sanitised username from the email prefix
     const username = email.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '').substring(0, 30);
 
@@ -77,7 +100,7 @@ form.addEventListener('submit', async (e) => {
         }
 
         // 6. Save B2C Profile to Firestore
-        await setDoc(doc(db, "users", user.uid), {
+        const profileData = {
             uid: user.uid,
             displayName: name,
             username: username,
@@ -94,7 +117,14 @@ form.addEventListener('submit', async (e) => {
             gracePeriodEndDate: graceDate,
             activeModules: activeModules,
             createdAt: serverTimestamp()
-        });
+        };
+
+        if (stream) {
+            profileData.stream = stream;
+            if (subjects.length > 0) profileData.subjects = subjects;
+        }
+
+        await setDoc(doc(db, "users", user.uid), profileData);
 
         // 7. Route via Sovereign Gateway
         await routeUser(user);
