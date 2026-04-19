@@ -3,353 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Console — Master Orchestration</title>
+    <title>Command Center — Ready4Exam</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="../../js/shell.js"></script>
-<script src="../../js/tailwind-config.js"></script>
-<link href="../../css/global.css" rel="stylesheet">
+    <script src="../../js/tailwind-config.js"></script>
+    <link href="../../css/global.css" rel="stylesheet">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <script src="../../js/firebase-master-config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
 
-        /* Define custom colors used in your project */
+    <script src="../../js/firebase-master-config.js"></script>
 
-    </style>
+    <!-- Modular Service Architecture: separate JS orchestrator -->
+    <script src="../../js/consoles/owner.js" type="module"></script>
 </head>
 
-<body class="bg-slate-900 text-white min-h-screen">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col">
 
-
+    <!-- Loading / Auth Gate -->
     <div id="loading" class="flex items-center justify-center min-h-screen">
-        <div class="animate-pulse font-bold text-slate-400">Verifying Sovereign Access...</div>
+        <div class="animate-pulse font-bold text-slate-400">Verifying Sovereign Access…</div>
     </div>
 
-    <div id="app" class="hidden max-w-7xl mx-auto p-8">
-        <div id="app-header"></div>
-<script>R4E.renderHeader({
-    title: "Master Orchestration",
-    subtitle: "Ready4Exam &bull; Owner Console",
-    homePath: "../../index.html",
-    userWelcomeDefault: "Root Owner",
-    roleBadge: "Sovereign",
-    showLogout: true,
-    logoutId: "logout-nav-btn"
-});</script>
+    <!-- Sovereign Header -->
+    <div id="app-header"></div>
+    <script>R4E.renderHeader({
+        title: "Command Center",
+        subtitle: "Ready4Exam &bull; Owner Console",
+        homePath: "../../index.html",
+        userWelcomeDefault: "Root Owner",
+        roleBadge: "Sovereign",
+        showLogout: true,
+        logoutId: "logout-nav-btn"
+    });</script>
 
-        <div class="grid lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-1 bg-slate-800 p-6 rounded-2xl border border-slate-700">
-                <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <span class="bg-indigo-500 w-8 h-8 rounded flex items-center justify-center text-xs">＋</span>
-                    Provision New School
-                </h2>
-                <form id="create-school-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">School Name</label>
-                        <input type="text" id="s-name" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Logo URL</label>
-                        <input type="url" id="s-logo" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" placeholder="https://..." required>
-                    </div>
+    <!-- ═══════════════════ MAIN APP ═══════════════════ -->
+    <div id="app" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 lg:py-10 space-y-8">
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">Total Strength</label>
-                            <input type="number" id="s-strength" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" placeholder="e.g. 500" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">Licenses</label>
-                            <input type="number" id="s-licenses" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" value="100">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">Board</label>
-                            <select id="s-board" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none">
-                                <option>CBSE</option>
-                                <option>ICSE</option>
-                                <option>SCERT</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">Area Type</label>
-                            <select id="s-area" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none">
-                                <option>Urban</option>
-                                <option>Rural</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">State</label>
-                            <input type="text" id="s-state" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" placeholder="State" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 mb-1">District</label>
-                            <input type="text" id="s-district" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm outline-none" placeholder="District" required>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Principal Email</label>
-                        <input type="email" id="s-email" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Principal Phone (WhatsApp)</label>
-                        <input type="tel" id="s-phone" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none" placeholder="919876543210" required>
-                    </div>
-
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-900/50 mt-4">
-                        Deploy School Instance
-                    </button>
-                </form>
+        <!-- ── KPI Bento Strip ── -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">B2B Schools</p>
+                <p id="count-schools" class="text-3xl lg:text-4xl font-black text-white">0</p>
             </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">B2C Users</p>
+                <p id="count-b2c" class="text-3xl lg:text-4xl font-black text-indigo-400">0</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6">
+                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">System</p>
+                <p class="text-lg font-black text-emerald-400">● Online</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6 flex items-center justify-center">
+                <button onclick="toggleProvisionModal(true)"
+                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3 rounded-xl transition shadow-lg shadow-indigo-900/50 text-xs uppercase tracking-widest">
+                    <i class="fas fa-plus mr-2" aria-hidden="true"></i>Provision School
+                </button>
+            </div>
+        </div>
 
-            <div class="lg:col-span-2 space-y-8">
-                <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-                    <div class="p-6 border-b border-slate-700 flex justify-between items-center">
-                        <h2 class="text-xl font-bold">Active Instances Ledger</h2>
-                        <button onclick="loadSchools()" class="text-xs font-bold text-slate-400 hover:text-white">Refresh</button>
-                    </div>
-                    <div id="school-list" class="divide-y divide-slate-700 max-h-[400px] overflow-y-auto">
-                        <div class="p-8 text-center text-slate-500 text-sm">Loading ledger...</div>
-                    </div>
+        <!-- ── Tab Navigation ── -->
+        <div class="flex gap-2" role="tablist">
+            <button class="nav-link bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition" role="tab" aria-selected="true" data-tab="b2b" onclick="switchTab('b2b')">
+                <i class="fas fa-building mr-1" aria-hidden="true"></i> B2B Schools
+            </button>
+            <button class="nav-link text-slate-400 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" role="tab" aria-selected="false" data-tab="b2c" onclick="switchTab('b2c')">
+                <i class="fas fa-user mr-1" aria-hidden="true"></i> B2C Users
+            </button>
+        </div>
+
+        <h2 id="view-title" class="text-2xl font-black tracking-tight">B2B Schools</h2>
+
+        <!-- ═══════ TAB: B2B Schools ═══════ -->
+        <div id="tab-b2b" class="tab-content">
+            <div id="school-ledger" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div class="col-span-full p-12 text-center text-slate-500 text-sm">Loading school instances…</div>
+            </div>
+        </div>
+
+        <!-- ═══════ TAB: B2C Individual Ledger ═══════ -->
+        <div id="tab-b2c" class="tab-content hidden">
+            <div class="bg-slate-900 rounded-[32px] border border-slate-800 overflow-hidden">
+                <div class="p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <h3 class="text-lg font-black">Individual Users</h3>
+                    <span class="text-[10px] font-black text-emerald-400 bg-emerald-900/30 px-3 py-1 rounded-full uppercase tracking-widest">Revenue Stream — Live</span>
                 </div>
-
-                <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-                    <div class="p-6 border-b border-slate-700 flex justify-between items-center">
-                        <h2 class="text-xl font-bold">B2C Individual Ledger</h2>
-                        <span class="text-xs font-bold text-emerald-400 bg-emerald-900/30 px-2 py-1 rounded">Revenue Stream</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-slate-400">
-                            <thead class="bg-slate-900/50 text-xs uppercase font-bold text-slate-500">
-                                <tr>
-                                    <th class="p-4">User ID</th>
-                                    <th class="p-4">Plan</th>
-                                    <th class="p-4">Status</th>
-                                    <th class="p-4 text-right">Revenue</th>
-                                </tr>
-                            </thead>
-                            <tbody id="b2c-list" class="divide-y divide-slate-700">
-                                </tbody>
-                        </table>
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-400">
+                        <thead class="bg-slate-950/60 text-[10px] uppercase font-black text-slate-500">
+                            <tr>
+                                <th class="p-4 lg:p-6">Identity</th>
+                                <th class="p-4 lg:p-6">Plan</th>
+                                <th class="p-4 lg:p-6">Revenue</th>
+                                <th class="p-4 lg:p-6">Expiry</th>
+                                <th class="p-4 lg:p-6">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="b2c-ledger-rows" class="divide-y divide-slate-800">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+
+    </div><!-- /app -->
+
+    <!-- ═══════ PROVISION MODAL ═══════ -->
+    <div id="provision-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-[32px] w-full max-w-lg max-h-[90vh] overflow-y-auto p-8 space-y-5 relative">
+            <button onclick="toggleProvisionModal(false)" class="absolute top-4 right-4 w-11 h-11 rounded-xl bg-slate-800 hover:bg-red-600 flex items-center justify-center transition text-lg" title="Close" aria-label="Close modal">✕</button>
+            <h2 class="text-xl font-black">Provision New School</h2>
+            <p class="text-xs text-slate-500">Creates a tenant cluster with Auth user, Firestore document, and landing page link.</p>
+
+            <form id="provision-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">School Name</label>
+                    <input type="text" id="prov-name" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Logo URL</label>
+                    <input type="url" id="prov-logo" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" placeholder="https://…">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Total Strength</label>
+                        <input type="number" id="prov-strength" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm outline-none" placeholder="e.g. 500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Licenses</label>
+                        <input type="number" id="prov-licenses" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm outline-none" value="100">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Board</label>
+                        <select id="prov-board" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm outline-none">
+                            <option>CBSE</option>
+                            <option>ICSE</option>
+                            <option>SCERT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Area Type</label>
+                        <select id="prov-area" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm outline-none">
+                            <option>Urban</option>
+                            <option>Rural</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">State</label>
+                        <input type="text" id="prov-state" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm outline-none" placeholder="State" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">District</label>
+                        <input type="text" id="prov-district" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm outline-none" placeholder="District" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Principal Email</label>
+                    <input type="email" id="prov-email" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Principal Phone (WhatsApp)</label>
+                    <input type="tel" id="prov-phone" class="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" placeholder="919876543210" required>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl transition shadow-lg shadow-indigo-900/50 text-xs uppercase tracking-widest mt-2">
+                    Generate Tenant Cluster
+                </button>
+            </form>
+        </div>
     </div>
 
-    <script type="module">
-        import { initializeAuthListener, signOut } from "../../js/auth-paywall.js";
-        import { getInitializedClients } from "../../js/config.js";
-        import { recordFinancialEvent, fetchB2CUsers } from "../../js/api.js";
-        import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signOut as signOutSecondary } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        function generateSchoolId(name, district) {
-            const suffix = Math.floor(1000 + Math.random() * 9000);
-            const base = (name + '-' + district + '-' + suffix).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            return base + '.ready4exam';
-        }
-
-        // Handle Logout
-        document.getElementById('logout-nav-btn').addEventListener('click', async () => {
-            if(confirm("Confirm Sign Out of Master Orchestration?")) {
-                try {
-                    await signOut();
-                    window.location.href = "../../index.html"; 
-                } catch (err) {
-                    console.error("Logout failed:", err);
-                }
-            }
-        });
-
-        // MASTER GUARD
-        const authTimeout = setTimeout(() => {
-             const loadingEl = document.getElementById("loading");
-             if (loadingEl && !loadingEl.classList.contains("hidden")) {
-                 loadingEl.innerHTML = `
-                    <div class="text-center">
-                        <p class="text-red-500 font-bold mb-4">AUTHENTICATION TIMEOUT</p>
-                        <button id="timeout-login-btn" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm">Owner Login</button>
-                    </div>`;
-                 document.getElementById("timeout-login-btn").onclick = () => {
-                     signOut().then(() => window.location.href = "../../index.html");
-                 };
-             }
-        }, 8000);
-
-        initializeAuthListener((user, profile) => {
-            clearTimeout(authTimeout);
-
-            // Access Granted only if role is 'owner'
-            if (user && profile && profile.role === "owner") {
-                document.getElementById("loading").classList.add("hidden");
-                document.getElementById("app").classList.remove("hidden");
-                loadSchools();
-                loadB2C();
-            } else {
-                document.getElementById("loading").innerHTML = `
-                    <div class="text-center">
-                        <p class="text-red-500 font-bold mb-4">UNAUTHORIZED ACCESS ATTEMPT LOGGED</p>
-                        <button id="unauth-login-btn" class="bg-white text-black px-6 py-2 rounded-full font-bold text-sm">Return to Gateway</button>
-                    </div>`;
-
-                document.getElementById("unauth-login-btn").onclick = () => {
-                    signOut().then(() => window.location.href = "../../index.html");
-                };
-            }
-        });
-
-        // School Deployment Logic
-        document.getElementById("create-school-form").onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector("button");
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = "Provisioning...";
-
-            let secAuth = null;
-            let createdUser = null;
-            const tempPassword = "Ready4Exam@2026";
-
-            try {
-                const { db } = await getInitializedClients();
-                const schoolName = document.getElementById("s-name").value;
-                const district = document.getElementById("s-district").value;
-                const schoolId = generateSchoolId(schoolName, district);
-
-                // Initialize SecondaryOnboarding Auth
-                let secApp = getApps().find(a => a.name === "SecondaryOnboarding");
-                if (!secApp) {
-                    secApp = initializeApp(window.__firebase_config, "SecondaryOnboarding");
-                }
-                secAuth = getAuth(secApp);
-
-                // Create Auth User
-                const userEmail = `ready4urexam+${schoolId}@gmail.com`;
-                const userCredential = await createUserWithEmailAndPassword(secAuth, userEmail, tempPassword);
-                createdUser = userCredential.user;
-                const newUid = createdUser.uid;
-
-                // Write School Data
-                const schoolData = {
-                    name: schoolName,
-                    logo_url: document.getElementById("s-logo").value,
-                    board: document.getElementById("s-board").value,
-                    max_licenses: parseInt(document.getElementById("s-licenses").value),
-                    total_strength: parseInt(document.getElementById("s-strength").value),
-                    state: document.getElementById("s-state").value,
-                    district: document.getElementById("s-district").value,
-                    area_type: document.getElementById("s-area").value,
-                    principal_email: document.getElementById("s-email").value,
-                    principal_phone: document.getElementById("s-phone").value,
-                    created_at: serverTimestamp(),
-                    status: "active",
-                    school_id: schoolId
-                };
-
-                await setDoc(doc(db, "schools", schoolId), schoolData);
-
-                // Write School Master User Document
-                await setDoc(doc(db, "users", newUid), {
-                    displayName: "School Master",
-                    email: userEmail,
-                    role: "school_master",
-                    tenantType: "school",
-                    school_id: schoolId,
-                    setupComplete: true,
-                    created_at: serverTimestamp()
-                });
-
-                await recordFinancialEvent(schoolId, "LICENSE_ACTIVATION", schoolData.max_licenses * 500, `Provisioning ${schoolData.max_licenses} licenses.`);
-
-                alert(`School Provisioned Successfully!\n\nID: ${schoolId}\nEmail: ${userEmail}\nPassword: ${tempPassword}`);
-                e.target.reset();
-                loadSchools();
-            } catch (err) {
-                // Self-healing: Delete orphaned Auth user if Firestore write fails
-                if (createdUser) {
-                    try {
-                        await createdUser.delete();
-                        console.log("Rolled back orphaned Auth user.");
-                    } catch (deleteErr) {
-                        console.error("Failed to rollback Auth user:", deleteErr);
-                    }
-                }
-                alert("Error: " + err.message);
-            } finally {
-                // Sign out secondary auth so we don't leak it or switch contexts
-                if (secAuth) {
-                    await signOutSecondary(secAuth);
-                }
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        };
-
-        // UI Loaders
-        window.loadSchools = async () => {
-            const list = document.getElementById("school-list");
-            try {
-                const { db } = await getInitializedClients();
-                const q = query(collection(db, "schools"), orderBy("created_at", "desc"));
-                const snap = await getDocs(q);
-
-                if (snap.empty) {
-                    list.innerHTML = `<div class="p-8 text-center text-slate-500">No schools provisioned yet.</div>`;
-                    return;
-                }
-
-                list.innerHTML = "";
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    list.innerHTML += `
-                        <div class="p-6 flex flex-col md:flex-row items-center gap-6 hover:bg-slate-800/50 transition">
-                            <img src="${d.logo_url}" class="w-12 h-12 rounded-full bg-white object-contain p-1">
-                            <div class="flex-1 text-center md:text-left">
-                                <h3 class="font-bold text-lg text-white">${d.name}</h3>
-                                <div class="text-xs text-slate-400 mt-1 flex gap-3 justify-center md:justify-start flex-wrap">
-                                    <span class="bg-slate-700 px-2 py-0.5 rounded text-slate-300">${d.board}</span>
-                                    <span>${d.max_licenses} Lic</span>
-                                    <span class="text-emerald-400">Active</span>
-                                    <span class="text-slate-600">ID: ${doc.id}</span>
-                                </div>
-                            </div>
-                            <div class="flex gap-3">
-                                <a href="https://wa.me/${d.principal_phone}" target="_blank" class="bg-green-600 hover:bg-green-500 p-2 rounded-lg transition"><i class="fab fa-whatsapp"></i></a>
-                                <a href="../../school-landing.html?schoolId=${doc.id}" target="_blank" class="border border-slate-600 px-4 py-2 rounded-lg text-xs font-bold transition hover:bg-white hover:text-black">Launch Instance</a>
-                            </div>
-                        </div>`;
-                });
-            } catch (err) {
-                list.innerHTML = `<div class="p-8 text-center text-red-400">Ledger Load Failed.</div>`;
-            }
-        };
-
-        window.loadB2C = async () => {
-            const list = document.getElementById("b2c-list");
-            const users = await fetchB2CUsers();
-            if (users.length === 0) {
-                list.innerHTML = `<tr><td colspan="4" class="p-4 text-center">No B2C data available.</td></tr>`;
-                return;
-            }
-            list.innerHTML = users.map(u => `
-                <tr class="hover:bg-slate-800/30">
-                    <td class="p-4 font-mono text-xs">${u.uid.substring(0,8)}...</td>
-                    <td class="p-4 text-white">${u.plan}</td>
-                    <td class="p-4"><span class="text-emerald-400 text-xs uppercase font-bold">${u.status}</span></td>
-                    <td class="p-4 text-right font-mono text-indigo-400">${u.revenue}</td>
-                </tr>`).join("");
-        };
-    </script>
-<div id="app-footer"></div>
-<script>R4E.renderFooter();</script>
+    <!-- Footer -->
+    <div id="app-footer"></div>
+    <script>R4E.renderFooter();</script>
 </body>
 </html>
