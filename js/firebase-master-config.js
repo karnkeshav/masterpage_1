@@ -7,5 +7,7 @@ window.__firebase_config = {
     appId: "1:863414222321:web:819f5564825308bcd9d850",
     measurementId: "G-4EFDM0CRYY",
     supabaseUrl: "https://zqhzekzilalbszpfwxhn.supabase.co",
-    supabaseAnonKey: "sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys"
+    supabaseAnonKey: "sb_publishable_YkwxnAk1xdI8n2GOhTn4VA_v7viBnys",
+    razorpayKeyId: "rzp_live_REPLACE_WITH_YOUR_KEY",
+    businessUpiVpa: "918520977573@paytm"
 };
