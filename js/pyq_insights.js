@@ -1,5 +1,5 @@
 import { getInitializedClients } from './config.js';
-import { doc, getDoc, collection, getDocs, query, where, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
 // --- Global State ---
@@ -161,7 +161,7 @@ async function loadChapterMetadata() {
 
 /**
  * Dynamically calculates the marks blueprint by counting questions in the vault.
- * Uses getCountFromServer for efficient, cost-effective aggregation.
+ * Uses getDocs for compatibility with Firestore security rules that block aggregation queries.
  */
 async function loadBlueprintFromQuestionVault() {
     const vaultRef = collection(state.db, 'question_text_vault');
@@ -176,8 +176,8 @@ async function loadBlueprintFromQuestionVault() {
                 where('chapter', '==', state.chapterID),
                 where('marks', '==', mark)
             );
-            const snapNum = await getCountFromServer(qNum);
-            const numCount = snapNum.data().count;
+            const snapNum = await getDocs(qNum);
+            const numCount = snapNum.size;
             console.log(`Blueprint: marks=${mark} (${typeof mark}), chapter=${state.chapterID}, count=${numCount}`);
 
             // Also query with string value and sum both counts
@@ -187,8 +187,8 @@ async function loadBlueprintFromQuestionVault() {
                 where('chapter', '==', state.chapterID),
                 where('marks', '==', String(mark))
             );
-            const snapStr = await getCountFromServer(qStr);
-            const strCount = snapStr.data().count;
+            const snapStr = await getDocs(qStr);
+            const strCount = snapStr.size;
             console.log(`Blueprint: marks=${String(mark)} (string), chapter=${state.chapterID}, count=${strCount}`);
 
             const count = numCount + strCount;
