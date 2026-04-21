@@ -169,7 +169,7 @@ async function loadBlueprintFromQuestionVault() {
     
     try {
         const countPromises = marksToQuery.map(async (mark) => {
-            // First try querying with the numeric value
+            // Query with numeric value
             const qNum = query(
                 vaultRef,
                 where('subject', '==', state.subject),
@@ -177,21 +177,22 @@ async function loadBlueprintFromQuestionVault() {
                 where('marks', '==', mark)
             );
             const snapNum = await getCountFromServer(qNum);
-            let count = snapNum.data().count;
-            console.log(`Blueprint: marks=${mark} (${typeof mark}), chapter=${state.chapterID}, count=${count}`);
+            const numCount = snapNum.data().count;
+            console.log(`Blueprint: marks=${mark} (${typeof mark}), chapter=${state.chapterID}, count=${numCount}`);
 
-            // If numeric query returned 0, retry with string value
-            if (count === 0) {
-                const qStr = query(
-                    vaultRef,
-                    where('subject', '==', state.subject),
-                    where('chapter', '==', state.chapterID),
-                    where('marks', '==', String(mark))
-                );
-                const snapStr = await getCountFromServer(qStr);
-                count = snapStr.data().count;
-                console.log(`Blueprint: marks=${String(mark)} (string fallback), chapter=${state.chapterID}, count=${count}`);
-            }
+            // Also query with string value and sum both counts
+            const qStr = query(
+                vaultRef,
+                where('subject', '==', state.subject),
+                where('chapter', '==', state.chapterID),
+                where('marks', '==', String(mark))
+            );
+            const snapStr = await getCountFromServer(qStr);
+            const strCount = snapStr.data().count;
+            console.log(`Blueprint: marks=${String(mark)} (string), chapter=${state.chapterID}, count=${strCount}`);
+
+            const count = numCount + strCount;
+            console.log(`Blueprint: marks=${mark} (num+str total), chapter=${state.chapterID}, count=${count}`);
 
             const el = document.getElementById(`blueprint-${mark}m`);
             if (el) el.textContent = count;
