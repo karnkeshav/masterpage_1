@@ -1,5 +1,5 @@
 import { getInitializedClients } from './config.js';
-import { doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, collection, getDocs, query, where, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 
 // --- Global State ---
@@ -10,9 +10,6 @@ let state = {
     db: null
 };
 
-/**
- * Main Entry Point
- */
 /**
  * Main Entry Point - Updated to use automationDB for Intelligence Grid
  */
@@ -53,6 +50,7 @@ export async function initInsights() {
                 try {
                     // Fetch data from the Automation/Vault project
                     await loadChapterMetadata();
+                    await loadBlueprintFromQuestionVault();
                     await loadHistoricalQuestions();
                 } catch (error) {
                     console.error("Data Load Error:", error);
@@ -99,9 +97,6 @@ function updatePageTitles() {
 
 /**
  * Backend: Fetch Grid Intelligence (Heatmap, Blueprint, etc.)
- */
-/**
- * Backend: Fetch Grid Intelligence (Heatmap, Blueprint, etc.)
  * Updated to preserve UI cards when data is missing.
  */
 async function loadChapterMetadata() {
@@ -125,7 +120,7 @@ async function loadChapterMetadata() {
             document.getElementById('heatmap-container').innerHTML = `<p class="text-xs text-slate-400 italic">No heatmap data.</p>`;
         }
 
-        // 2. Populate Blueprint
+        // 2. Populate Blueprint (will be overridden by loadBlueprintFromQuestionVault if available)
         if (data.blueprint) {
             document.getElementById('blueprint-1m').textContent = data.blueprint['1m'] || 0;
             document.getElementById('blueprint-2m').textContent = data.blueprint['2m'] || 0;
@@ -144,7 +139,7 @@ async function loadChapterMetadata() {
         
         document.getElementById('heatmap-container').innerHTML = `<p class="text-xs text-slate-400 italic">No topic analysis available.</p>`;
         
-        // Reset Blueprint to zero
+        // Reset Blueprint to zero (will be populated by loadBlueprintFromQuestionVault)
         ['1m', '2m', '3m', '5m'].forEach(id => {
             const el = document.getElementById(`blueprint-${id}`);
             if (el) el.textContent = '0';
@@ -161,6 +156,38 @@ async function loadChapterMetadata() {
             const el = document.getElementById(id);
             if (el) el.textContent = msg;
         }
+    }
+}
+
+/**
+ * Dynamically calculates the marks blueprint by counting questions in the vault.
+ * Uses getCountFromServer for efficient, cost-effective aggregation.
+ */
+async function loadBlueprintFromQuestionVault() {
+    const vaultRef = collection(state.db, 'question_text_vault');
+    const marksToQuery = ['1', '2', '3', '5'];
+    
+    try {
+        // Execute counts in parallel for performance
+        const countPromises = marksToQuery.map(async (mark) => {
+            const q = query(
+                vaultRef,
+                where('subject', '==', state.subject),
+                where('chapter', '==', state.chapterID),
+                where('marks', '==', mark.toString())
+            );
+            const snapshot = await getCountFromServer(q);
+            const count = snapshot.data().count;
+            
+            const el = document.getElementById(`blueprint-${mark}m`);
+            if (el) el.textContent = count;
+        });
+
+        await Promise.all(countPromises);
+        console.log("Blueprint loaded from question_text_vault successfully.");
+    } catch (error) {
+        console.error("Error counting questions from vault:", error);
+        // Keep the default values set by loadChapterMetadata
     }
 }
 
