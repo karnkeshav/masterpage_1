@@ -99,5 +99,16 @@ service cloud.firestore {
         allow write: if isAdmin() || isOwner();
       }
     }
+
+    // Question Vault Collection
+    match /question_vault/{paperId} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin() || isOwner();
+      match /questions/{questionId} {
+        allow read: if isLoggedIn();
+        allow write: if isAdmin() || isOwner();
+      }
+    }
+    }
   }
 }

@@ -164,42 +164,53 @@ async function loadChapterMetadata() {
  * Uses getDocs for compatibility with Firestore security rules that block aggregation queries.
  */
 async function loadBlueprintFromQuestionVault() {
-    const vaultRef = collection(state.db, 'question_text_vault');
+    const vaultRef = collection(state.db, 'question_vault');
     const marksToQuery = [1, 2, 3, 5];
     
     try {
+        // Step 1: Query the question_vault collection where subject == state.subject to get all matching paper documents.
+        const paperQuery = query(vaultRef, where('subject', '==', state.subject));
+        const paperSnap = await getDocs(paperQuery);
+
         const countPromises = marksToQuery.map(async (mark) => {
-            // Query with numeric value
-            const qNum = query(
-                vaultRef,
-                where('subject', '==', state.subject),
-                where('chapter', '==', state.chapterID),
-                where('marks', '==', mark)
-            );
-            const snapNum = await getDocs(qNum);
-            const numCount = snapNum.size;
-            console.log(`Blueprint: marks=${mark} (${typeof mark}), chapter=${state.chapterID}, count=${numCount}`);
+            let totalCount = 0;
 
-            // Also query with string value and sum both counts
-            const qStr = query(
-                vaultRef,
-                where('subject', '==', state.subject),
-                where('chapter', '==', state.chapterID),
-                where('marks', '==', String(mark))
-            );
-            const snapStr = await getDocs(qStr);
-            const strCount = snapStr.size;
-            console.log(`Blueprint: marks=${String(mark)} (string), chapter=${state.chapterID}, count=${strCount}`);
+            // Step 2: For each paper document returned, query its questions subcollection
+            const questionPromises = paperSnap.docs.map(async (paperDoc) => {
+                const questionsRef = collection(state.db, `question_vault/${paperDoc.id}/questions`);
 
-            const count = numCount + strCount;
-            console.log(`Blueprint: marks=${mark} (num+str total), chapter=${state.chapterID}, count=${count}`);
+                // Query with numeric value
+                const qNum = query(
+                    questionsRef,
+                    where('chapter', '==', state.chapterID),
+                    where('marks', '==', mark)
+                );
+                const snapNum = await getDocs(qNum);
+                const numCount = snapNum.size;
+
+                // Also query with string value and sum both counts
+                const qStr = query(
+                    questionsRef,
+                    where('chapter', '==', state.chapterID),
+                    where('marks', '==', String(mark))
+                );
+                const snapStr = await getDocs(qStr);
+                const strCount = snapStr.size;
+
+                return numCount + strCount;
+            });
+
+            const counts = await Promise.all(questionPromises);
+            totalCount = counts.reduce((acc, count) => acc + count, 0);
+
+            console.log(`Blueprint: marks=${mark} (num+str total), chapter=${state.chapterID}, count=${totalCount}`);
 
             const el = document.getElementById(`blueprint-${mark}m`);
-            if (el) el.textContent = count;
+            if (el) el.textContent = totalCount;
         });
 
         await Promise.all(countPromises);
-        console.log("Blueprint loaded from question_text_vault successfully.");
+        console.log("Blueprint loaded from question_vault successfully.");
     } catch (error) {
         console.error("Error counting questions from vault:", error);
         ['1m', '2m', '3m', '5m'].forEach(id => {
