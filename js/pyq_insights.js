@@ -165,20 +165,35 @@ async function loadChapterMetadata() {
  */
 async function loadBlueprintFromQuestionVault() {
     const vaultRef = collection(state.db, 'question_text_vault');
-    const marksToQuery = ['1', '2', '3', '5'];
+    const marksToQuery = [1, 2, 3, 5];
     
     try {
-        // Execute counts in parallel for performance
         const countPromises = marksToQuery.map(async (mark) => {
-            const q = query(
+            // Query with numeric value
+            const qNum = query(
                 vaultRef,
                 where('subject', '==', state.subject),
                 where('chapter', '==', state.chapterID),
-                where('marks', '==', mark.toString())
+                where('marks', '==', mark)
             );
-            const snapshot = await getCountFromServer(q);
-            const count = snapshot.data().count;
-            
+            const snapNum = await getCountFromServer(qNum);
+            const numCount = snapNum.data().count;
+            console.log(`Blueprint: marks=${mark} (${typeof mark}), chapter=${state.chapterID}, count=${numCount}`);
+
+            // Also query with string value and sum both counts
+            const qStr = query(
+                vaultRef,
+                where('subject', '==', state.subject),
+                where('chapter', '==', state.chapterID),
+                where('marks', '==', String(mark))
+            );
+            const snapStr = await getCountFromServer(qStr);
+            const strCount = snapStr.data().count;
+            console.log(`Blueprint: marks=${String(mark)} (string), chapter=${state.chapterID}, count=${strCount}`);
+
+            const count = numCount + strCount;
+            console.log(`Blueprint: marks=${mark} (num+str total), chapter=${state.chapterID}, count=${count}`);
+
             const el = document.getElementById(`blueprint-${mark}m`);
             if (el) el.textContent = count;
         });
@@ -187,7 +202,10 @@ async function loadBlueprintFromQuestionVault() {
         console.log("Blueprint loaded from question_text_vault successfully.");
     } catch (error) {
         console.error("Error counting questions from vault:", error);
-        // Keep the default values set by loadChapterMetadata
+        ['1m', '2m', '3m', '5m'].forEach(id => {
+            const el = document.getElementById(`blueprint-${id}`);
+            if (el) el.textContent = '!';
+        });
     }
 }
 
