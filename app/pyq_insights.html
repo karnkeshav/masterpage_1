@@ -1,147 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chapter Insight — Ready4Exam</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="../js/shell.js"></script>
-    <script src="../js/tailwind-config.js"></script>
-    <link href="../css/global.css" rel="stylesheet">
-
-    <script src="../js/firebase-master-config.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <script type="module">
-        import { initInsights } from '../js/pyq_insights.js';
-        initInsights();
-    </script>
-</head>
-<body class="bg-slate-50 min-h-screen flex flex-col font-['Inter']">
-
-    <div id="app-header"></div>
-    <script>
-        R4E.renderHeader({
-            title: "PYQ Insights",
-            titleId: "header-title",
-            homePath: "../index.html",
-            homeIcon: "🔙",
-            showUserWelcome: true,
-            roleBadge: "Grade --",
-            roleBadgeId: "context-badge",
-            showLogout: false
-        });
-    </script>
-
-    <main id="app-content" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8">
-        
-        <section class="mb-10">
-            <h3 class="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                <i class="fas fa-brain text-blue-600"></i> The Intelligence Grid
-            </h3>
-
-            <div id="grid-loading" class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col">
-                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <i class="fas fa-fire text-orange-500 text-xs"></i> Concept Heatmap
-                    </h4>
-                    <div id="heatmap-container" class="space-y-4">
-                        <p class="text-xs text-slate-400 italic">Analyzing topic frequency...</p>
-                    </div>
-                </div>
-
-               <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <i class="fas fa-bullseye text-blue-500 text-xs"></i> Marks Blueprint
-    </h4>
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
-        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <div class="text-[10px] font-bold text-slate-400 uppercase">1 Mark</div>
-            <div id="blueprint-1m" class="text-xl font-black text-slate-700">-</div>
-        </div>
-        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <div class="text-[10px] font-bold text-slate-400 uppercase">2 Marks</div>
-            <div id="blueprint-2m" class="text-xl font-black text-slate-700">-</div>
-        </div>
-        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <div class="text-[10px] font-bold text-slate-400 uppercase">3 Marks</div>
-            <div id="blueprint-3m" class="text-xl font-black text-slate-700">-</div>
-        </div>
-        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <div class="text-[10px] font-bold text-slate-400 uppercase">4 Marks</div>
-            <div id="blueprint-4m" class="text-xl font-black text-slate-700">-</div>
-        </div>
-        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-            <div class="text-[10px] font-bold text-slate-400 uppercase">5 Marks</div>
-            <div id="blueprint-5m" class="text-xl font-black text-slate-700">-</div>
-        </div>
-    </div>
-</div>
-
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <i class="fas fa-microscope text-purple-500 text-xs"></i> Forensics
-                    </h4>
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm">
-                        <p id="forensics-text" class="text-slate-600 leading-relaxed italic">Decoding paper patterns...</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <i class="fas fa-crystal-ball text-green-500 text-xs"></i> Predictive
-                    </h4>
-                    <div class="bg-green-50/50 p-4 rounded-xl border border-green-100 text-sm">
-                        <p id="predictive-text" class="text-green-800 font-medium">Calculating probability...</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <div class="grid lg:grid-cols-4 gap-8">
-            <div class="lg:col-span-1">
-                <div class="bg-slate-900 rounded-3xl p-6 text-white sticky top-8 shadow-xl">
-                    <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-lightbulb text-yellow-400"></i>
-                    </div>
-                    <h4 class="text-xl font-bold mb-3 tracking-tight">Real-World Application</h4>
-                    <p id="industry-connection-text" class="text-sm opacity-70 leading-relaxed">
-                        Connecting this chapter to the global industry...
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-    <div>
-        <h3 class="text-2xl font-black text-slate-900">Historical Compendium</h3>
-        <p class="text-slate-500 text-sm">2022 — 2025 Board Archive</p>
-    </div>
-    <div id="marks-filter" class="flex flex-wrap gap-2">
-        <button data-filter="all" class="filter-btn active px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-slate-900 text-white transition-all">ALL</button>
-        <button data-filter="1" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">1M</button>
-        <button data-filter="2" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">2M</button>
-        <button data-filter="3" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">3M</button>
-        <button data-filter="4" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">4M</button>
-        <button data-filter="5" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">5M</button>
-    </div>
-</div>
-
-                    <div id="compendium-container" class="space-y-4">
-                        <div class="text-center py-12">
-                            <i class="fas fa-circle-notch fa-spin text-slate-300 text-2xl mb-4"></i>
-                            <p class="text-slate-400 text-sm">Retrieving archives from the vault...</p>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </div>
-
-    </main>
-
-    <div id="app-footer"></div>
-    <script>R4E.renderFooter();</script>
-</body>
+<!-- app/pyq_insights.html -->  
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Chapter Insight — Ready4Exam</title>  
+      
+    <script src="https://cdn.tailwindcss.com"></script>  
+    <script src="../js/shell.js"></script>  
+    <script src="../js/tailwind-config.js"></script>  
+    <link href="../css/global.css" rel="stylesheet">  
+  
+    <script src="../js/firebase-master-config.js"></script>  
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  
+  
+    <script type="module">  
+        import { initInsights } from '../js/pyq_insights.js';  
+        initInsights();  
+    </script>  
+</head>  
+<body class="bg-slate-50 min-h-screen flex flex-col font-['Inter']">  
+  
+    <div id="app-header"></div>  
+    <script>  
+        R4E.renderHeader({  
+            title: "PYQ Insights",  
+            titleId: "header-title",  
+            homePath: "../index.html",  
+            showUserWelcome: true,  
+            userWelcomeDefault: "Student",  
+            roleBadge: "Grade --",  
+            roleBadgeId: "context-badge",  
+            showLogout: true,  
+            logoutId: "logout-nav-btn"  
+        });  
+    </script>  
+  
+    <main id="app-content" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8">  
+  
+        <!-- Back button in body (same as study-content.html) -->  
+        <div class="mb-8">  
+            <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">  
+                <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back  
+            </a>  
+        </div>  
+          
+        <section class="mb-10">  
+            <h3 class="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">  
+                <i class="fas fa-brain text-blue-600"></i> The Intelligence Grid  
+            </h3>  
+  
+            <div id="grid-loading" class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">  
+                  
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col">  
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">  
+                        <i class="fas fa-fire text-orange-500 text-xs"></i> Concept Heatmap  
+                    </h4>  
+                    <div id="heatmap-container" class="space-y-4">  
+                        <p class="text-xs text-slate-400 italic">Analyzing topic frequency...</p>  
+                    </div>  
+                </div>  
+  
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">  
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">  
+                        <i class="fas fa-bullseye text-blue-500 text-xs"></i> Marks Blueprint  
+                    </h4>  
+                    <!-- Now dynamically populated by JS -->  
+                    <div id="blueprint-container" class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">  
+                        <p class="text-xs text-slate-400 italic col-span-full">Loading blueprint...</p>  
+                    </div>  
+                </div>  
+  
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">  
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">  
+                        <i class="fas fa-microscope text-purple-500 text-xs"></i> Forensics  
+                    </h4>  
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm">  
+                        <p id="forensics-text" class="text-slate-600 leading-relaxed italic">Decoding paper patterns...</p>  
+                    </div>  
+                </div>  
+  
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">  
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">  
+                        <i class="fas fa-crystal-ball text-green-500 text-xs"></i> Predictive  
+                    </h4>  
+                    <div class="bg-green-50/50 p-4 rounded-xl border border-green-100 text-sm">  
+                        <p id="predictive-text" class="text-green-800 font-medium">Calculating probability...</p>  
+                    </div>  
+                </div>  
+            </div>  
+        </section>  
+  
+        <div class="grid lg:grid-cols-4 gap-8">  
+            <div class="lg:col-span-1">  
+                <div class="bg-slate-900 rounded-3xl p-6 text-white sticky top-8 shadow-xl">  
+                    <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center mb-4">  
+                        <i class="fas fa-lightbulb text-yellow-400"></i>  
+                    </div>  
+                    <h4 class="text-xl font-bold mb-3 tracking-tight">Real-World Application</h4>  
+                    <p id="industry-connection-text" class="text-sm opacity-70 leading-relaxed">  
+                        Connecting this chapter to the global industry...  
+                    </p>  
+                </div>  
+            </div>  
+  
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">  
+                <div>  
+                    <h3 class="text-2xl font-black text-slate-900">Historical Compendium</h3>  
+                    <p class="text-slate-500 text-sm">2022 — 2025 Board Archive</p>  
+                </div>  
+                <!-- Dynamically populated by JS based on actual marks in data -->  
+                <div id="marks-filter" class="flex flex-wrap gap-2">  
+                </div>  
+            </div>  
+  
+                    <div id="compendium-container" class="space-y-4">  
+                        <div class="text-center py-12">  
+                            <i class="fas fa-circle-notch fa-spin text-slate-300 text-2xl mb-4"></i>  
+                            <p class="text-slate-400 text-sm">Retrieving archives from the vault...</p>  
+                        </div>  
+                    </div>  
+                </section>  
+            </div>  
+        </div>  
+  
+    </main>  
+  
+    <div id="app-footer"></div>  
+    <script>R4E.renderFooter();</script>  
+</body>  
 </html>
