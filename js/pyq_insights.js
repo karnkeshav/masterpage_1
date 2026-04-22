@@ -14,6 +14,7 @@ let state = {
     subject: new URLSearchParams(window.location.search).get('subject') || 'Mathematics',  
     chapterID: new URLSearchParams(window.location.search).get('chapter') || 'Real_Numbers',  
     db: null  
+    rawQuestions: [] // Store fetched data here for filtering
 };  
   
 const normalizeChapter = (slug) => slug.replace(/_/g, ' ').trim();  
@@ -52,6 +53,7 @@ async function runDeepAnalysis() {
   
         const snap = await getDocs(q);  
         const questions = snap.docs.map(d => ({ id: d.id, ...d.data() }));  
+        state.rawQuestions = questions; // Save to state
   
         console.log(`Fetched ${questions.length} questions for ${chapterName}`);  
   
@@ -83,11 +85,13 @@ async function runDeepAnalysis() {
         });  
   
         // Update all UI sections  
-        renderBlueprint(blueprint);  
-        renderHeatmap(topicMap, questions.length);  
-        renderForensics(subjectiveCount, questions.length);  
-        renderPredictive(topicMap);  
-        renderCompendium(questions);  
+       renderBlueprint(blueprint);  
+renderHeatmap(topicMap, questions.length);  
+renderForensics(subjectiveCount, questions.length);  
+renderPredictive(topicMap);  
+renderCompendium(questions); // Initial render
+setupFilterListeners(); // Initialize the buttons
+        
   
         // Load static metadata (real-world connection)  
         await loadMeta();  
@@ -231,7 +235,42 @@ function updateHeaderUI() {
     const badge = document.getElementById('context-badge');  
     if (badge) badge.textContent = `Grade ${state.grade}`;  
 }  
+
+function setupFilterListeners() {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => {
+        btn.onclick = () => {
+            // UI Toggle
+            buttons.forEach(b => b.classList.remove('bg-slate-900', 'text-white'));
+            buttons.forEach(b => b.classList.add('bg-white', 'text-slate-600'));
+            btn.classList.add('bg-slate-900', 'text-white');
+            btn.classList.remove('bg-white', 'text-slate-600');
+
+            const filterValue = btn.getAttribute('data-filter');
+            
+            if (filterValue === 'all') {
+                renderCompendium(state.rawQuestions);
+            } else {
+                const filtered = state.rawQuestions.filter(q => String(q.marks) === filterValue);
+                renderCompendium(filtered);
+            }
+        };
+    });
+}
+
+function renderCompendium(questions) {  
+    const container = document.getElementById('compendium-container');  
+    if (!container) return;  
   
+    if (questions.length === 0) {  
+        container.innerHTML = `
+            <div class="text-center py-10 border-2 border-dashed border-slate-100 rounded-3xl">
+                <p class="text-slate-400 text-sm italic">No questions found for this selection.</p>
+            </div>`;  
+        return;  
+    }  
+}
+
 function updatePageTitles() {  
     const headerTitle = document.getElementById('header-title');  
     if (headerTitle) {  
