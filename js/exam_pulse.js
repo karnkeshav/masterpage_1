@@ -6,7 +6,7 @@ import {
     getDocs,
     doc,
     getDoc,
-    orderBy // Added for index alignment
+    orderBy 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 let state = {
@@ -21,8 +21,9 @@ export async function initExamPulse() {
 
     clients.auth.onAuthStateChanged(async (user) => {
         if (user) {
+            // FIXED: Added missing function call and definition
             await syncStudentHeader(user);
-            updateNavigationUI(); // Set correct breadcrumb text on load
+            updateNavigationUI(); 
             
             if (state.subject) {
                 showView('analysis-dashboard-view');
@@ -36,10 +37,25 @@ export async function initExamPulse() {
     });
 }
 
+// FIXED: Defined the missing function
+async function syncStudentHeader(user) {
+    const welcomeEl = document.getElementById('user-welcome');
+    if (!welcomeEl) return;
+    try {
+        const userDoc = await getDoc(doc(state.db, "users", user.uid));
+        if (userDoc.exists()) {
+            welcomeEl.textContent = userDoc.data().displayName || user.email.split('@')[0];
+        } else {
+            welcomeEl.textContent = user.displayName || user.email.split('@')[0];
+        }
+    } catch (e) {
+        welcomeEl.textContent = user.displayName || user.email.split('@')[0];
+    }
+}
+
 // SMART NAVIGATION LOGIC
 window.handleBack = () => {
     if (state.subject) {
-        // If viewing a subject, go back to the selection grid
         state.subject = null;
         const url = new URL(window.location);
         url.searchParams.delete('subject');
@@ -48,7 +64,6 @@ window.handleBack = () => {
         updateNavigationUI();
         showView('subject-selection-view');
     } else {
-        // If already on selection grid, go back to console
         window.location.href = "consoles/student.html";
     }
 };
@@ -76,8 +91,7 @@ async function runPulseAnalysis() {
     document.getElementById('subject-tag').textContent = state.subject;
 
     try {
-        // ALIGNING QUERY TO YOUR ENABLED COMPOSITE INDEX
-        // Using orderBy('chapter') forces Firestore to use the existing index CICAgNi47oMK
+        // MATCHES YOUR COMPOSITE INDEX EXACTLY
         const q = query(
             collectionGroup(state.db, 'questions'), 
             where('subject', '==', state.subject),
@@ -95,7 +109,7 @@ async function runPulseAnalysis() {
         const totalMarksAcrossYears = questions.reduce((acc, q) => acc + (q.marks || 0), 0);
         const metrics = aggregateChapterMetrics(questions);
 
-        // Rendering Logic
+        // Render Weightage
         weightageContainer.innerHTML = metrics
             .sort((a, b) => b.marks - a.marks)
             .map(c => {
@@ -112,7 +126,7 @@ async function runPulseAnalysis() {
                     </div>`;
             }).join('');
 
-        // MCQs & Subjective Lists
+        // Render MCQs and Subjective
         document.getElementById('mcq-hub-list').innerHTML = metrics.sort((a,b) => b.mcqs - a.mcqs).slice(0, 3).map(c => `
             <div class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
                 <span class="text-xs font-bold">${c.name}</span>
@@ -127,22 +141,16 @@ async function runPulseAnalysis() {
 
     } catch (err) {
         console.error("Forensic Analysis Error:", err);
-        // If error persists, it's likely index propagation. Show user-friendly message.
-        weightageContainer.innerHTML = `<div class="p-4 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold">
-            Data is currently synchronizing with the 2026 Archive. Please hard-refresh (Ctrl+F5) in 2 minutes.
+        weightageContainer.innerHTML = `<div class="p-4 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-bold uppercase tracking-tight">
+            Security nodes are synchronizing. Hard-refresh (Ctrl+F5) in 60 seconds.
         </div>`;
     }
 }
 
-// ... (keep aggregateChapterMetrics, showView, and syncStudentHeader as they were)
-
-/**
- * Groups raw question data into analytical metrics
- */
 function aggregateChapterMetrics(questions) {
     const chapters = {};
     questions.forEach(q => {
-        const name = q.chapter || 'Foundational Concepts';
+        const name = q.chapter || 'Foundation';
         if (!chapters[name]) {
             chapters[name] = { name, marks: 0, mcqs: 0, subjective: 0 };
         }
@@ -153,12 +161,10 @@ function aggregateChapterMetrics(questions) {
     return Object.values(chapters);
 }
 
-/**
- * UI View Controller
- */
 function showView(viewId) {
     const views = ['subject-selection-view', 'analysis-dashboard-view'];
     views.forEach(v => {
-        document.getElementById(v).classList.toggle('hidden', v !== viewId);
+        const el = document.getElementById(v);
+        if(el) el.classList.toggle('hidden', v !== viewId);
     });
 }
