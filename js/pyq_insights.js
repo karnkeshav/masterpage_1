@@ -1,4 +1,5 @@
 import { getInitializedClients } from './config.js';  
+import { ensureUserInFirestore } from "./auth-paywall.js"; // Added to fetch profile data
 import {  
     doc,  
     getDoc,  
@@ -13,7 +14,7 @@ let state = {
     grade: new URLSearchParams(window.location.search).get('grade') || '10',  
     subject: new URLSearchParams(window.location.search).get('subject') || 'Mathematics',  
     chapterID: new URLSearchParams(window.location.search).get('chapter') || 'Real_Numbers', 
-    rawQuestions: [], // Local cache for filtering
+    rawQuestions: [], 
     db: null  
 };  
   
@@ -27,7 +28,9 @@ export async function initInsights() {
   
         clients.auth.onAuthStateChanged(async (user) => {  
             if (user) {  
-                updateHeaderUI();  
+                // Fetch user profile to get the display name
+                const profile = await ensureUserInFirestore(user); 
+                updateHeaderUI(profile); // Pass profile to update name
                 updatePageTitles();  
                 await runDeepAnalysis();  
             } else {  
@@ -38,13 +41,36 @@ export async function initInsights() {
         console.error("Init Error:", err);  
     }  
 }  
-  
+
+/** UI UPDATING FUNCTIONS **/
+
+function updateHeaderUI(profile) {  
+    // 1. Update Grade Badge
+    const badge = document.getElementById('context-badge');  
+    if (badge) badge.textContent = `Grade ${state.grade}`;  
+    
+    // 2. Update User Name (Fix for "Student" showing instead of actual name)
+    const nameEl = document.getElementById('user-welcome');
+    if (nameEl) {
+        nameEl.textContent = profile?.displayName || "Student";
+    }
+}
+
+function updatePageTitles() {  
+    const headerTitle = document.getElementById('header-title');  
+    if (headerTitle) {  
+        headerTitle.innerHTML = `  
+            ${state.subject}  
+            <span class="text-white opacity-60 text-lg font-normal ml-2">| ${normalizeChapter(state.chapterID)}</span>  
+        `;  
+    }  
+}
+
 async function runDeepAnalysis() {  
     const chapterName = normalizeChapter(state.chapterID);  
     const container = document.getElementById('compendium-container');  
   
     try {  
-        // Single efficient fetch for the chapter
         const q = query(  
             collectionGroup(state.db, 'questions'),  
             where('subject', '==', state.subject),  
@@ -55,7 +81,6 @@ async function runDeepAnalysis() {
         const questions = snap.docs.map(d => ({ id: d.id, ...d.data() }));  
         state.rawQuestions = questions; 
   
-        // Statistical Processing  
         const blueprint = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };  
         const topicMap = {};  
         let subjectiveCount = 0;  
@@ -73,13 +98,10 @@ async function runDeepAnalysis() {
             }  
         });  
   
-        // UI Rendering Logic
         renderBlueprint(blueprint);  
         renderHeatmap(topicMap, questions.length);  
         renderForensics(subjectiveCount, questions.length);  
         renderPredictive(topicMap);  
-        
-        // Render ALL by default
         renderCompendium(questions); 
         setupFilterListeners(); 
         
@@ -92,9 +114,7 @@ async function runDeepAnalysis() {
         }  
     }  
 }  
-
-/** UI RENDERING FUNCTIONS **/
-
+  
 function renderBlueprint(data) {  
     const set = (id, val) => {  
         const el = document.getElementById(id);  
@@ -106,7 +126,7 @@ function renderBlueprint(data) {
     set('blueprint-4m', data['4'] || 0);
     set('blueprint-5m', data['5'] || 0);  
 } 
-
+  
 function renderCompendium(questions) {  
     const container = document.getElementById('compendium-container');  
     if (!container) return;  
@@ -147,7 +167,6 @@ function setupFilterListeners() {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
         btn.onclick = () => {
-            // UI State Change
             buttons.forEach(b => {
                 b.classList.remove('bg-slate-900', 'text-white');
                 b.classList.add('bg-white', 'text-slate-600');
@@ -156,7 +175,6 @@ function setupFilterListeners() {
             btn.classList.remove('bg-white', 'text-slate-600');
 
             const filterValue = btn.getAttribute('data-filter');
-            
             if (filterValue === 'all') {
                 renderCompendium(state.rawQuestions);
             } else {
@@ -167,22 +185,7 @@ function setupFilterListeners() {
     });
 }
 
-function updatePageTitles() {  
-    const headerTitle = document.getElementById('header-title');  
-    if (headerTitle) {  
-        headerTitle.innerHTML = `  
-            ${state.subject}  
-            <span class="text-white opacity-60 text-lg font-normal ml-2">| ${normalizeChapter(state.chapterID)}</span>  
-        `;  
-    }  
-}
-
-function updateHeaderUI() {  
-    const badge = document.getElementById('context-badge');  
-    if (badge) badge.textContent = `Grade ${state.grade}`;  
-}
-
-// Analytics Visuals
+// Stats & Metadata remains same
 function renderHeatmap(topicMap, total) {
     const container = document.getElementById('heatmap-container');
     if (!container || total === 0) return;
@@ -200,7 +203,7 @@ function renderForensics(subCount, total) {
     const el = document.getElementById('forensics-text');
     if (!el || total === 0) return;
     const ratio = (subCount / total) * 100;
-    el.innerHTML = ratio > 65 ? `<strong>Weightage:</strong> Highly subjective focus.` : ratio < 35 ? `<strong>Weightage:</strong> Objective-heavy patterns.` : `<strong>Weightage:</strong> Balanced exam pattern.`;
+    el.innerHTML = ratio > 65 ? `<strong>Weightage Pattern:</strong> Highly subjective. Focus on formal steps and diagrams.` : ratio < 35 ? `<strong>Weightage Pattern:</strong> Objective-heavy. Focus on speed and conceptual clarity.` : `<strong>Weightage Pattern:</strong> Balanced mix of theoretical and objective questions.`;
 }
 
 function renderPredictive(topicMap) {
@@ -209,7 +212,7 @@ function renderPredictive(topicMap) {
     const entries = Object.entries(topicMap);
     if (entries.length === 0) return;
     const topTopic = entries.reduce((a, b) => a[1] > b[1] ? a : b)[0];
-    el.innerHTML = `High Probability: <span class="font-bold underline">"${topTopic}"</span>`;
+    el.innerHTML = `Probability High for: <span class="font-bold underline decoration-green-300">"${topTopic}"</span>`;
 }
 
 async function loadMeta() {
