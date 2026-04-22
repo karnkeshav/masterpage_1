@@ -12,10 +12,10 @@ import {
 let state = {  
     grade: new URLSearchParams(window.location.search).get('grade') || '10',  
     subject: new URLSearchParams(window.location.search).get('subject') || 'Mathematics',  
-    chapterID: new URLSearchParams(window.location.search).get('chapter') || 'Real_Numbers',  
+    chapterID: new URLSearchParams(window.location.search).get('chapter') || 'Real_Numbers', 
+    rawQuestions: [], // Store fetched data here for filtering
     db: null  
-    rawQuestions: [] // Store fetched data here for filtering
-};  
+   };  
   
 const normalizeChapter = (slug) => slug.replace(/_/g, ' ').trim();  
   
