@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Pattern Pulse — Ready4Exam</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../js/shell.js"></script>
+    <script src="../js/tailwind-config.js"></script>
+    <link href="../css/global.css" rel="stylesheet">
+
+    <script src="../js/firebase-master-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script type="module">
+        import { initExamPulse } from './exam_pulse.js';
+        initExamPulse();
+    </script>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col font-['Inter']">
+
+    <div id="app-header"></div>
+    <script>
+        R4E.renderHeader({
+            title: "Exam Pattern Pulse",
+            titleId: "header-title",
+            homePath: "../index.html",
+            homeIcon: "🔙",
+            showUserWelcome: true,
+            roleBadge: "Grade --",
+            roleBadgeId: "context-badge",
+            showLogout: false
+        });
+    </script>
+
+    <main id="app-content" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8">
+        
+        <header class="mb-10">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden relative">
+                <div class="z-10">
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                        <i class="fas fa-satellite-dish animate-pulse"></i> Live Forensics (2022-2025)
+                    </span>
+                    <h1 id="pulse-subject-title" class="text-4xl font-black text-slate-900 mb-2">Analyzing Subject...</h1>
+                    <p class="text-slate-500 text-lg max-w-xl">Deep pattern recognition across 12 sets of question papers to pinpoint your high-yield topics.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 z-10">
+                    <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="text-xs font-bold text-slate-400 uppercase">Sets Analyzed</div>
+                        <div class="text-2xl font-black text-slate-800">12</div>
+                    </div>
+                    <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="text-xs font-bold text-slate-400 uppercase">Confidence</div>
+                        <div class="text-2xl font-black text-green-600">98%</div>
+                    </div>
+                </div>
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"></div>
+            </div>
+        </header>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-2 space-y-8">
+                <section class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-8">
+                        <h3 class="text-xl font-black text-slate-900 flex items-center gap-3">
+                            <i class="fas fa-chart-line text-blue-500"></i> Cumulative Weightage (100%)
+                        </h3>
+                    </div>
+                    
+                    <div id="weightage-table-container" class="space-y-6">
+                        <div class="animate-pulse space-y-4">
+                            <div class="h-12 bg-slate-50 rounded-xl"></div>
+                            <div class="h-12 bg-slate-50 rounded-xl"></div>
+                            <div class="h-12 bg-slate-50 rounded-xl"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-slate-900 rounded-[2rem] p-8 text-white">
+                        <h4 class="text-lg font-bold mb-6 flex items-center gap-3">
+                            <i class="fas fa-bolt text-yellow-400"></i> MCQ Power-Hubs
+                        </h4>
+                        <div id="mcq-leaderboard" class="space-y-4">
+                            <p class="text-slate-400 text-sm italic">Identifying 1-mark clusters...</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm">
+                        <h4 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
+                            <i class="fas fa-pen-nib text-blue-500"></i> Subjective Hot-Zones
+                        </h4>
+                        <div id="long-answer-roadmap" class="space-y-4">
+                            <p class="text-slate-400 text-sm italic">Mapping 5-mark recurrences...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 space-y-8">
+                <section class="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-200/50">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
+                        <i class="fas fa-sync fa-spin-slow"></i> Cyclical Patterns
+                    </h3>
+                    <div id="cycle-analysis-text" class="text-sm leading-relaxed space-y-4 opacity-90 font-medium">
+                        Calculating topic return probability based on gap-year analysis...
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm">
+                    <h3 class="text-lg font-black text-slate-900 mb-6 uppercase tracking-tight">Strategic Priority</h3>
+                    <div id="priority-list" class="space-y-3">
+                        </div>
+                </section>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="app-footer"></div>
+    <script>R4E.renderFooter();</script>
+</body>
+</html>
