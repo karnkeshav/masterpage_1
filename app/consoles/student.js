@@ -22,6 +22,7 @@ window.loadConsoleData = async (profile) => {
     console.log("Loading Class Hub for:", profile.displayName);
     document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
 
+    // 1. Determine Grade First
     let grade = "9";
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("grade")) grade = urlParams.get("grade");
@@ -29,16 +30,23 @@ window.loadConsoleData = async (profile) => {
     else if (profile.grade) grade = profile.grade;
     else if (profile.class_id) grade = profile.class_id;
 
+    // 2. Apply Visibility Logic for Grade-Specific Features (Class 10 and 12 only)
+    if (grade === "10" || grade === "12") {
+        const pyqBtn = document.getElementById("btn-pyq-vault");
+        const pulseBtn = document.getElementById("btn-exam-pulse");
+        
+        if (pyqBtn) pyqBtn.classList.remove("hidden");
+        if (pulseBtn) pulseBtn.classList.remove("hidden");
+    }
+
+    // 3. Update UI Elements with Detected Grade
     document.getElementById("class-title").textContent = `Class ${grade} Hub`;
     document.getElementById("context-badge").textContent = `Grade ${grade}`;
     const hubTitleEl = document.getElementById("knowledge-hub-title");
     if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
 
     setupRoomNavigation(grade);
-    if (grade === "10" || grade === "12") {
-        const pyqBtn = document.getElementById("btn-pyq-vault");
-        if (pyqBtn) pyqBtn.classList.remove("hidden");
-    }
+    
     await generateKnowledgeHub(profile, grade);
     await loadStudentStats(profile.uid, grade);
     renderInbox();
@@ -607,7 +615,6 @@ window.loadStudentStats = async (uid, grade) => {
 
             diagnosticRows += `
                 <div class="p-2 mb-1 rounded-lg border ${cfg.bg} ${cfg.border} flex flex-col justify-between">
-                    <!-- Row 1: Header -->
                     <div class="flex justify-between items-center mb-1">
                         <div class="flex items-center gap-2">
                             <i class="fas ${cfg.icon} ${cfg.text}"></i>
@@ -620,12 +627,10 @@ window.loadStudentStats = async (uid, grade) => {
                         </div>
                     </div>
 
-                    <!-- Row 2: Diagnostic Note -->
                     <div class="text-[9px] font-medium text-slate-500 leading-tight mb-1">
                         <span class="font-bold text-success-green">Strong:</span> ${sanitize(d.strong).substring(0, 15)} | <span class="font-bold text-danger-red">Weak:</span> ${sanitize(d.weak).substring(0, 15)}
                     </div>
 
-                    <!-- Row 3: Visual Hint (Mini-Spark) -->
                     <div class="h-1 w-full bg-slate-200 rounded-full overflow-hidden">
                         <div class="h-full ${cfg.bar} rounded-full" style="width: ${overallAvg}%"></div>
                     </div>
