@@ -14,6 +14,8 @@ let firebaseDB = null;         // Master DB (student progress)
 let automationDB = null;       // Vault DB
 let automationStorage = null;
 
+let automationAuth = null; // ✅ ADDED
+
 let supabase = null;
 let analyticsInstance = null;
 
@@ -31,13 +33,13 @@ export async function initializeServices() {
 
       const cfg = window.__firebase_config;
       const autoCfg = window.__automation_firebase_config = {
-    apiKey: "AIzaSyBibeP6f_OWGLgorKIx_1D_qXZfDKcURNM",
-    authDomain: "ready4exam-automation.firebaseapp.com",
-    projectId: "ready4exam-automation",
-    storageBucket: "ready4exam-automation.appspot.com", // Ensure this matches your PDF storage
-    messagingSenderId: "642756751654",
-    appId: "1:642756751654:web:15a64377c207fdb5a0d1e7"
-};
+        apiKey: "AIzaSyBibeP6f_OWGLgorKIx_1D_qXZfDKcURNM",
+        authDomain: "ready4exam-automation.firebaseapp.com",
+        projectId: "ready4exam-automation",
+        storageBucket: "ready4exam-automation.appspot.com",
+        messagingSenderId: "642756751654",
+        appId: "1:642756751654:web:15a64377c207fdb5a0d1e7"
+      };
 
       if (!cfg?.apiKey) throw new Error("Master Firebase config missing");
 
@@ -53,6 +55,8 @@ export async function initializeServices() {
       // --- AUTOMATION PROJECT (Vault) ---
       if (autoCfg?.apiKey) {
         automationApp = initializeApp(autoCfg, "automation");
+
+        automationAuth = getAuth(automationApp); // ✅ ADDED
 
         automationDB = initializeFirestore(automationApp, {
           experimentalForceLongPolling: true,
@@ -96,8 +100,9 @@ export async function initializeServices() {
 function getClients() {
   return {
     auth: firebaseAuth,
+    automationAuth: automationAuth, // ✅ ADDED
     db: firebaseDB,
-    studentDB: firebaseDB,      // ✅ SAME DB (clean, no duplication)
+    studentDB: firebaseDB,
     automationDB: automationDB,
     storage: automationStorage,
     supabase
