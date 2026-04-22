@@ -149,7 +149,9 @@ async function loadBlueprintFromQuestionVault() {
             );
 
             const snap = await getDocs(q);
-
+            console.log(`Query returned ${snap.size} docs for ${mark}m marks`);
+            if (snap.empty) console.warn(`No documents found for marks=${mark}`);
+            
             console.log(`Blueprint → ${mark}m:`, snap.size);
 
             const el = document.getElementById(`blueprint-${mark}m`);
