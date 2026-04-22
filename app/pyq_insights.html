@@ -114,17 +114,20 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-3">
-                <section class="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                        <div>
-                            <h3 class="text-2xl font-black text-slate-900">Historical Compendium</h3>
-                            <p class="text-slate-500 text-sm">2022 — 2025 Board Archive</p>
-                        </div>
-                        <div class="flex gap-2">
-                           <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase">Verified Questions</span>
-                        </div>
-                    </div>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+        <h3 class="text-2xl font-black text-slate-900">Historical Compendium</h3>
+        <p class="text-slate-500 text-sm">2022 — 2025 Board Archive</p>
+    </div>
+    <div id="marks-filter" class="flex flex-wrap gap-2">
+        <button data-filter="all" class="filter-btn active px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-slate-900 text-white transition-all">ALL</button>
+        <button data-filter="1" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">1M</button>
+        <button data-filter="2" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">2M</button>
+        <button data-filter="3" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">3M</button>
+        <button data-filter="4" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">4M</button>
+        <button data-filter="5" class="filter-btn px-3 py-1 text-[10px] font-bold rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">5M</button>
+    </div>
+</div>
 
                     <div id="compendium-container" class="space-y-4">
                         <div class="text-center py-12">
