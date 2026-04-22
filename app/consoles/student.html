@@ -77,24 +77,33 @@
     <div id="app" class="hidden max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
 
         <!-- Action Bar -->
-        <div class="flex justify-end gap-4 mb-8">
+       <div class="flex md:justify-end gap-3 mb-10 overflow-x-auto no-scrollbar snap-x snap-mandatory px-4 md:px-0 -mx-4 md:mx-0">
+            
             <a id="btn-mistakes" href="../mistake-book.html"
-                class="peel-back-anim px-6 py-3 bg-white border border-slate-100 text-slate-700 font-black uppercase text-xs rounded-xl hover:shadow-lg transition flex items-center gap-2">
+                class="snap-center flex-shrink-0 px-5 py-3 bg-white border border-slate-100 text-slate-700 font-black uppercase text-[10px] rounded-xl hover:shadow-lg transition flex items-center gap-2 shadow-sm">
                 <i class="fas fa-book-open text-danger-red"></i> Mistake Notebook
             </a>
-            <a id="start-new-quiz-btn" href="#"
-                class="peel-back-anim px-6 py-3 bg-cbse-blue text-white font-black uppercase text-xs rounded-xl hover:shadow-xl hover:shadow-blue-900/20 transition flex items-center gap-2">
-                Start New Quiz <i class="fas fa-arrow-right"></i>
-            </a>
-            <a id="btn-pyq-vault" href="../pyq.html"
-                class="hidden peel-back-anim px-6 py-3 bg-accent-gold text-cbse-blue font-black uppercase text-xs rounded-xl hover:shadow-lg transition flex items-center gap-2">
-                <b>Previous year question paper</b>
-            </a>
+
             <a id="btn-exam-pulse" href="../exam_pulse.html"
-                class="peel-back-anim px-6 py-3 bg-white border border-slate-100 text-slate-700 font-black uppercase text-xs rounded-xl hover:shadow-lg transition flex items-center gap-2">
+                class="snap-center flex-shrink-0 px-5 py-3 bg-white border border-slate-100 text-slate-700 font-black uppercase text-[10px] rounded-xl hover:shadow-lg transition flex items-center gap-2 shadow-sm">
                 <i class="fas fa-satellite-dish text-blue-600"></i> Exam Pulse
             </a>
+
+            <a id="btn-pyq-vault" href="../pyq.html"
+                class="snap-center flex-shrink-0 px-5 py-3 bg-accent-gold text-cbse-blue font-black uppercase text-[10px] rounded-xl hover:shadow-lg transition flex items-center gap-2">
+                <i class="fas fa-history"></i> PYQ Paper
+            </a>
+
+            <a id="start-new-quiz-btn" href="#"
+                class="snap-center flex-shrink-0 px-5 py-3 bg-cbse-blue text-white font-black uppercase text-[10px] rounded-xl hover:shadow-xl hover:shadow-blue-900/20 transition flex items-center gap-2">
+                New Quiz <i class="fas fa-bolt text-accent-gold"></i>
+            </a>
         </div>
+
+        <style>
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        </style>
 
 
         
