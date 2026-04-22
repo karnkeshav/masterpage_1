@@ -13,9 +13,9 @@ let state = {
     grade: new URLSearchParams(window.location.search).get('grade') || '10',  
     subject: new URLSearchParams(window.location.search).get('subject') || 'Mathematics',  
     chapterID: new URLSearchParams(window.location.search).get('chapter') || 'Real_Numbers', 
-    rawQuestions: [], // Store fetched data here for filtering
+    rawQuestions: [], // Local cache for filtering
     db: null  
-   };  
+};  
   
 const normalizeChapter = (slug) => slug.replace(/_/g, ' ').trim();  
   
@@ -44,7 +44,7 @@ async function runDeepAnalysis() {
     const container = document.getElementById('compendium-container');  
   
     try {  
-        // Single efficient fetch for the entire chapter  
+        // Single efficient fetch for the chapter
         const q = query(  
             collectionGroup(state.db, 'questions'),  
             where('subject', '==', state.subject),  
@@ -53,47 +53,36 @@ async function runDeepAnalysis() {
   
         const snap = await getDocs(q);  
         const questions = snap.docs.map(d => ({ id: d.id, ...d.data() }));  
-        state.rawQuestions = questions; // Save to state
+        state.rawQuestions = questions; 
   
-        console.log(`Fetched ${questions.length} questions for ${chapterName}`);  
-  
-        // Debug: log first doc's fields so you can see what's available  
-        if (questions.length > 0) {  
-            console.log("Sample document fields:", Object.keys(questions[0]));  
-            console.log("Sample document:", questions[0]);  
-        }  
-  
-        // Data Processing  
+        // Statistical Processing  
         const blueprint = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };  
         const topicMap = {};  
         let subjectiveCount = 0;  
   
         questions.forEach(q => {  
-            // Blueprint — marks could be number or string  
             const m = String(q.marks);  
             if (blueprint.hasOwnProperty(m)) blueprint[m]++;  
   
-            // Heatmap — try multiple possible field names for topic  
             const t = q.topic || q.concept || q.sub_topic || q.subtopic || 'General';  
             topicMap[t] = (topicMap[t] || 0) + 1;  
   
-            // Forensics — try multiple possible field names for type  
             const qType = (q.question_type || q.type || '').toLowerCase();  
             if (qType.includes('subjective') || qType.includes('long') || qType.includes('short')) {  
                 subjectiveCount++;  
             }  
         });  
   
-        // Update all UI sections  
-       renderBlueprint(blueprint);  
-renderHeatmap(topicMap, questions.length);  
-renderForensics(subjectiveCount, questions.length);  
-renderPredictive(topicMap);  
-renderCompendium(questions); // Initial render
-setupFilterListeners(); // Initialize the buttons
+        // UI Rendering Logic
+        renderBlueprint(blueprint);  
+        renderHeatmap(topicMap, questions.length);  
+        renderForensics(subjectiveCount, questions.length);  
+        renderPredictive(topicMap);  
         
-  
-        // Load static metadata (real-world connection)  
+        // Render ALL by default
+        renderCompendium(questions); 
+        setupFilterListeners(); 
+        
         await loadMeta();  
   
     } catch (err) {  
@@ -103,9 +92,9 @@ setupFilterListeners(); // Initialize the buttons
         }  
     }  
 }  
-  
-/** UI RENDERING FUNCTIONS **/  
-  
+
+/** UI RENDERING FUNCTIONS **/
+
 function renderBlueprint(data) {  
     const set = (id, val) => {  
         const el = document.getElementById(id);  
@@ -114,85 +103,23 @@ function renderBlueprint(data) {
     set('blueprint-1m', data['1'] || 0);  
     set('blueprint-2m', data['2'] || 0);  
     set('blueprint-3m', data['3'] || 0);  
-    set('blueprint-4m', data['4'] || 0); // New Line
+    set('blueprint-4m', data['4'] || 0);
     set('blueprint-5m', data['5'] || 0);  
 } 
-  
-function renderHeatmap(topicMap, total) {  
-    const container = document.getElementById('heatmap-container');  
-    if (!container) return;  
-  
-    if (total === 0) {  
-        container.innerHTML = `<p class="text-xs text-slate-400 italic">No data available.</p>`;  
-        return;  
-    }  
-  
-    container.innerHTML = '';  
-  
-    Object.entries(topicMap)  
-        .sort((a, b) => b[1] - a[1])  
-        .slice(0, 4)  
-        .forEach(([topic, count]) => {  
-            const perc = Math.round((count / total) * 100);  
-            container.innerHTML += `  
-                <div>  
-                    <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">  
-                        <span>${topic}</span>  
-                        <span>${perc}%</span>  
-                    </div>  
-                    <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">  
-                        <div class="bg-blue-600 h-full rounded-full" style="width: ${perc}%"></div>  
-                    </div>  
-                </div>  
-            `;  
-        });  
-}  
-  
-function renderForensics(subCount, total) {  
-    const el = document.getElementById('forensics-text');  
-    if (!el) return;  
-  
-    if (total === 0) {  
-        el.innerHTML = `<strong>No data available</strong> to analyze patterns.`;  
-        return;  
-    }  
-  
-    const ratio = (subCount / total) * 100;  
-  
-    if (ratio > 65) {  
-        el.innerHTML = `<strong>Weightage Pattern:</strong> This chapter is highly subjective. Focus on writing formal steps and diagrams.`;  
-    } else if (ratio < 35) {  
-        el.innerHTML = `<strong>Weightage Pattern:</strong> Objective-heavy. Focus on speed and conceptual clarity for MCQs.`;  
-    } else {  
-        el.innerHTML = `<strong>Weightage Pattern:</strong> Balanced mix of theoretical and objective questions.`;  
-    }  
-}  
-  
-function renderPredictive(topicMap) {  
-    const el = document.getElementById('predictive-text');  
-    if (!el) return;  
-  
-    const entries = Object.entries(topicMap);  
-    if (entries.length === 0) {  
-        el.innerHTML = `No topic data available for prediction.`;  
-        return;  
-    }  
-  
-    const topTopic = entries.reduce((a, b) => a[1] > b[1] ? a : b)[0];  
-    el.innerHTML = `Probability High for: <span class="font-bold underline decoration-green-300">"${topTopic}"</span>`;  
-}  
-  
+
 function renderCompendium(questions) {  
     const container = document.getElementById('compendium-container');  
     if (!container) return;  
   
     if (questions.length === 0) {  
-        container.innerHTML = `<p class="text-slate-400 italic">No historical data available for this selection.</p>`;  
+        container.innerHTML = `
+            <div class="text-center py-10 border-2 border-dashed border-slate-100 rounded-3xl">
+                <p class="text-slate-400 text-sm italic">No records found for this mark selection.</p>
+            </div>`;  
         return;  
     }  
   
     container.innerHTML = questions.map(q => {  
-        // Try every possible field name for question text  
         const text = q.question_text || q.text_en || q.text || 'Question text unavailable.';  
         const topic = q.topic || q.concept || q.sub_topic || q.subtopic || 'General';  
         const marks = q.marks || '?';  
@@ -216,33 +143,15 @@ function renderCompendium(questions) {
     }).join('');  
 }  
   
-async function loadMeta() {  
-    try {  
-        const docRef = doc(state.db, 'Chapter_Analysis', `${state.grade}_${state.subject}_${state.chapterID}`);  
-        const snap = await getDoc(docRef);  
-        if (snap.exists()) {  
-            const el = document.getElementById('industry-connection-text');  
-            if (el) {  
-                el.textContent = snap.data().real_world || "No industry connection data available.";  
-            }  
-        }  
-    } catch (err) {  
-        console.warn("Meta load failed:", err);  
-    }  
-}  
-  
-function updateHeaderUI() {  
-    const badge = document.getElementById('context-badge');  
-    if (badge) badge.textContent = `Grade ${state.grade}`;  
-}  
-
 function setupFilterListeners() {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
         btn.onclick = () => {
-            // UI Toggle
-            buttons.forEach(b => b.classList.remove('bg-slate-900', 'text-white'));
-            buttons.forEach(b => b.classList.add('bg-white', 'text-slate-600'));
+            // UI State Change
+            buttons.forEach(b => {
+                b.classList.remove('bg-slate-900', 'text-white');
+                b.classList.add('bg-white', 'text-slate-600');
+            });
             btn.classList.add('bg-slate-900', 'text-white');
             btn.classList.remove('bg-white', 'text-slate-600');
 
@@ -258,19 +167,6 @@ function setupFilterListeners() {
     });
 }
 
-function renderCompendium(questions) {  
-    const container = document.getElementById('compendium-container');  
-    if (!container) return;  
-  
-    if (questions.length === 0) {  
-        container.innerHTML = `
-            <div class="text-center py-10 border-2 border-dashed border-slate-100 rounded-3xl">
-                <p class="text-slate-400 text-sm italic">No questions found for this selection.</p>
-            </div>`;  
-        return;  
-    }  
-}
-
 function updatePageTitles() {  
     const headerTitle = document.getElementById('header-title');  
     if (headerTitle) {  
@@ -279,4 +175,49 @@ function updatePageTitles() {
             <span class="text-white opacity-60 text-lg font-normal ml-2">| ${normalizeChapter(state.chapterID)}</span>  
         `;  
     }  
+}
+
+function updateHeaderUI() {  
+    const badge = document.getElementById('context-badge');  
+    if (badge) badge.textContent = `Grade ${state.grade}`;  
+}
+
+// Analytics Visuals
+function renderHeatmap(topicMap, total) {
+    const container = document.getElementById('heatmap-container');
+    if (!container || total === 0) return;
+    container.innerHTML = '';
+    Object.entries(topicMap).sort((a,b)=>b[1]-a[1]).slice(0,4).forEach(([topic, count]) => {
+        const perc = Math.round((count / total) * 100);
+        container.innerHTML += `<div><div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
+            <span>${topic}</span><span>${perc}%</span></div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-blue-600 h-full rounded-full" style="width: ${perc}%"></div></div></div>`;
+    });
+}
+
+function renderForensics(subCount, total) {
+    const el = document.getElementById('forensics-text');
+    if (!el || total === 0) return;
+    const ratio = (subCount / total) * 100;
+    el.innerHTML = ratio > 65 ? `<strong>Weightage:</strong> Highly subjective focus.` : ratio < 35 ? `<strong>Weightage:</strong> Objective-heavy patterns.` : `<strong>Weightage:</strong> Balanced exam pattern.`;
+}
+
+function renderPredictive(topicMap) {
+    const el = document.getElementById('predictive-text');
+    if (!el) return;
+    const entries = Object.entries(topicMap);
+    if (entries.length === 0) return;
+    const topTopic = entries.reduce((a, b) => a[1] > b[1] ? a : b)[0];
+    el.innerHTML = `High Probability: <span class="font-bold underline">"${topTopic}"</span>`;
+}
+
+async function loadMeta() {
+    try {
+        const docRef = doc(state.db, 'Chapter_Analysis', `${state.grade}_${state.subject}_${state.chapterID}`);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+            document.getElementById('industry-connection-text').textContent = snap.data().real_world || "No industry connection data available.";
+        }
+    } catch (err) { console.warn("Meta load failed", err); }
 }
