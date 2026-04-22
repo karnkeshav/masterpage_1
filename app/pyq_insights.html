@@ -16,11 +16,10 @@
 
     <script type="module">
         import { initInsights } from '../js/pyq_insights.js';
-        // Single call to start everything
         initInsights();
     </script>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
+<body class="bg-slate-50 min-h-screen flex flex-col font-['Inter']">
 
     <div id="app-header"></div>
     <script>
@@ -40,50 +39,59 @@
         
         <section class="mb-10">
             <h3 class="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                <i class="fas fa-brain text-accent-gold"></i> The Intelligence Grid
+                <i class="fas fa-brain text-blue-600"></i> The Intelligence Grid
             </h3>
 
             <div id="grid-loading" class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                    <h4 class="font-bold text-slate-800 mb-4">Concept Heatmap</h4>
-                    <div id="heatmap-container" class="space-y-3">
-                        <p class="text-xs text-slate-400 italic">Loading...</p>
+                
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col">
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-fire text-orange-500 text-xs"></i> Concept Heatmap
+                    </h4>
+                    <div id="heatmap-container" class="space-y-4">
+                        <p class="text-xs text-slate-400 italic">Analyzing topic frequency...</p>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                    <h4 class="font-bold text-slate-800 mb-4">Marks Blueprint</h4>
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-bullseye text-blue-500 text-xs"></i> Marks Blueprint
+                    </h4>
                     <div class="grid grid-cols-2 gap-3 text-center">
-                        <div class="bg-slate-50 p-2 rounded-lg border">
-                            <div class="text-xs font-bold text-slate-400">1 Mark</div>
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">1 Mark</div>
                             <div id="blueprint-1m" class="text-xl font-black text-slate-700">-</div>
                         </div>
-                        <div class="bg-slate-50 p-2 rounded-lg border">
-                            <div class="text-xs font-bold text-slate-400">2 Marks</div>
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">2 Marks</div>
                             <div id="blueprint-2m" class="text-xl font-black text-slate-700">-</div>
                         </div>
-                        <div class="bg-slate-50 p-2 rounded-lg border">
-                            <div class="text-xs font-bold text-slate-400">3 Marks</div>
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">3 Marks</div>
                             <div id="blueprint-3m" class="text-xl font-black text-slate-700">-</div>
                         </div>
-                        <div class="bg-slate-50 p-2 rounded-lg border">
-                            <div class="text-xs font-bold text-slate-400">5 Marks</div>
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">5 Marks</div>
                             <div id="blueprint-5m" class="text-xl font-black text-slate-700">-</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                    <h4 class="font-bold text-slate-800 mb-4">Forensics</h4>
-                    <div class="bg-red-50/50 p-3 rounded-lg border border-red-100 text-sm">
-                        <span id="forensics-text">Analyzing...</span>
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-microscope text-purple-500 text-xs"></i> Forensics
+                    </h4>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm">
+                        <p id="forensics-text" class="text-slate-600 leading-relaxed italic">Decoding paper patterns...</p>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                    <h4 class="font-bold text-slate-800 mb-4">Predictive</h4>
-                    <div class="bg-green-50/50 p-3 rounded-lg border border-green-100 text-sm">
-                        <span id="predictive-text">Calculating...</span>
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-crystal-ball text-green-500 text-xs"></i> Predictive
+                    </h4>
+                    <div class="bg-green-50/50 p-4 rounded-xl border border-green-100 text-sm">
+                        <p id="predictive-text" class="text-green-800 font-medium">Calculating probability...</p>
                     </div>
                 </div>
             </div>
@@ -91,17 +99,34 @@
 
         <div class="grid lg:grid-cols-4 gap-8">
             <div class="lg:col-span-1">
-                <div class="bg-gradient-to-br from-slate-900 to-cbse-blue rounded-3xl p-6 text-white">
-                    <h4 class="text-xl font-bold mb-3">Real-World</h4>
-                    <p id="industry-connection-text" class="text-sm opacity-90">Loading connection...</p>
+                <div class="bg-slate-900 rounded-3xl p-6 text-white sticky top-8 shadow-xl">
+                    <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-lightbulb text-yellow-400"></i>
+                    </div>
+                    <h4 class="text-xl font-bold mb-3 tracking-tight">Real-World Application</h4>
+                    <p id="industry-connection-text" class="text-sm opacity-70 leading-relaxed">
+                        Connecting this chapter to the global industry...
+                    </p>
                 </div>
             </div>
 
             <div class="lg:col-span-3">
-                <section class="bg-white rounded-3xl p-6 shadow-sm border">
-                    <h3 class="text-2xl font-black text-slate-900 mb-4">Historical Compendium</h3>
-                    <div id="compendium-container">
-                        <p class="text-slate-400">Retrieving archives...</p>
+                <section class="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h3 class="text-2xl font-black text-slate-900">Historical Compendium</h3>
+                            <p class="text-slate-500 text-sm">2022 — 2025 Board Archive</p>
+                        </div>
+                        <div class="flex gap-2">
+                           <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase">Verified Questions</span>
+                        </div>
+                    </div>
+
+                    <div id="compendium-container" class="space-y-4">
+                        <div class="text-center py-12">
+                            <i class="fas fa-circle-notch fa-spin text-slate-300 text-2xl mb-4"></i>
+                            <p class="text-slate-400 text-sm">Retrieving archives from the vault...</p>
+                        </div>
                     </div>
                 </section>
             </div>
