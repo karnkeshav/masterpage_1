@@ -13,7 +13,7 @@ const BUSINESS_UPI_VPA = (window.__firebase_config && window.__firebase_config.b
 
 // --- Tier ↔ Price Map (matches offering.html) ---
 const TIER_META = {
-    practitioner: { label: "The Practitioner",  price: "₹499/mo",   amountPaise: 49900   },
+    practitioner: { label: "The Practitioner",  price: "₹49/mo",   amountPaise: 4900   },
     strategist:   { label: "Self-Strategist",    price: "₹999/mo",   amountPaise: 99900   },
     sync:         { label: "The Sync Bundle",    price: "₹1,499/mo", amountPaise: 149900  },
     board_ready:  { label: "Board-Ready",        price: "₹1,299/mo", amountPaise: 129900  },
