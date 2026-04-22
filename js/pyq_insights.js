@@ -258,18 +258,6 @@ function setupFilterListeners() {
     });
 }
 
-function renderCompendium(questions) {  
-    const container = document.getElementById('compendium-container');  
-    if (!container) return;  
-  
-    if (questions.length === 0) {  
-        container.innerHTML = `
-            <div class="text-center py-10 border-2 border-dashed border-slate-100 rounded-3xl">
-                <p class="text-slate-400 text-sm italic">No questions found for this selection.</p>
-            </div>`;  
-        return;  
-    }  
-}
 
 function updatePageTitles() {  
     const headerTitle = document.getElementById('header-title');  
