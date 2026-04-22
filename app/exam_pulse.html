@@ -45,7 +45,8 @@
             homePath: "../index.html",
             homeIcon: "🏠",
             userWelcomeDefault: "Student",
-            roleBadge: "Analysis Mode",
+            roleBadge: "Pattern Analysis",
+            roleBadgeId: "context-badge",
             showUserWelcome: true,
             showLogout: true
         });
@@ -71,7 +72,7 @@
                         <i class="fas fa-calculator"></i>
                     </div>
                     <h3 class="text-2xl font-black text-slate-900 mb-2">Mathematics</h3>
-                    <p class="text-sm text-slate-500 mb-6">Algebra, Calculus, and Geometry weightage trends.</p>
+                    <div class="text-xs font-bold text-cbse-blue uppercase tracking-widest mb-4">Calculus & Algebra Focus</div>
                     <span class="text-cbse-blue font-bold text-sm flex items-center gap-2">Analyze Pulse <i class="fas fa-arrow-right"></i></span>
                 </button>
 
@@ -80,7 +81,7 @@
                         <i class="fas fa-flask"></i>
                     </div>
                     <h3 class="text-2xl font-black text-slate-900 mb-2">Science</h3>
-                    <p class="text-sm text-slate-500 mb-6">Physics, Chemistry, and Biology pattern mapping.</p>
+                    <div class="text-xs font-bold text-purple-600 uppercase tracking-widest mb-4">Concept Repetition Mapping</div>
                     <span class="text-purple-600 font-bold text-sm flex items-center gap-2">Analyze Pulse <i class="fas fa-arrow-right"></i></span>
                 </button>
 
@@ -89,7 +90,7 @@
                         <i class="fas fa-landmark"></i>
                     </div>
                     <h3 class="text-2xl font-black text-slate-900 mb-2">Social Science</h3>
-                    <p class="text-sm text-slate-500 mb-6">History, Civics, and Geography high-yield zones.</p>
+                    <div class="text-xs font-bold text-amber-600 uppercase tracking-widest mb-4">High-Yield History Zones</div>
                     <span class="text-amber-600 font-bold text-sm flex items-center gap-2">Analyze Pulse <i class="fas fa-arrow-right"></i></span>
                 </button>
             </div>
@@ -99,36 +100,42 @@
             <div class="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden">
                 <div class="z-10 relative">
                     <div class="flex items-center gap-2 mb-2">
-                        <span id="subject-tag" class="px-2 py-0.5 bg-cbse-blue text-white rounded text-[10px] font-black uppercase tracking-widest">Mathematics</span>
-                        <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-black uppercase tracking-widest">Live Archive (2022-25)</span>
+                        <span id="subject-tag" class="px-2 py-0.5 bg-cbse-blue text-white rounded text-[10px] font-black uppercase tracking-widest">---</span>
+                        <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-black uppercase tracking-widest">Sets Analyzed: 12</span>
                     </div>
-                    <h2 class="text-3xl font-black text-slate-900 mb-2">Pattern Analysis</h2>
-                    <p class="text-slate-500 font-medium max-w-xl">Intelligence harvested from 12 sets of board question papers.</p>
+                    <h2 class="text-3xl font-black text-slate-900 mb-2">Intelligence Dashboard</h2>
+                    <p class="text-slate-500 font-medium max-w-xl">Deep pattern recognition from the 2022-2025 Board Archive.</p>
                 </div>
                 <div class="absolute -right-10 -top-10 w-64 h-64 bg-cbse-blue/5 rounded-full blur-3xl"></div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
                 <div class="lg:col-span-2 space-y-8">
                     <section class="bg-white rounded-[2.5rem] p-8 border border-slate-200">
                         <h3 class="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
-                            <i class="fas fa-chart-pie text-cbse-blue"></i> Cumulative Weightage (100%)
+                            <i class="fas fa-chart-pie text-cbse-blue"></i> Cumulative Mark Weightage (100%)
                         </h3>
-                        <div id="weightage-container" class="space-y-5"></div>
+                        <div id="weightage-container" class="space-y-6">
+                            <div class="animate-pulse space-y-3">
+                                <div class="h-10 bg-slate-100 rounded-xl"></div>
+                                <div class="h-10 bg-slate-100 rounded-xl"></div>
+                            </div>
+                        </div>
                     </section>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white">
-                            <h4 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <h4 class="text-lg font-bold mb-6 flex items-center gap-2">
                                 <i class="fas fa-bolt text-accent-gold"></i> MCQ Power-Hubs
                             </h4>
-                            <div id="mcq-hub-list" class="space-y-3"></div>
+                            <div id="mcq-hub-list" class="space-y-4"></div>
                         </div>
                         <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200">
-                            <h4 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <h4 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                                 <i class="fas fa-pen-nib text-cbse-blue"></i> Subjective Hot-Zones
                             </h4>
-                            <div id="subjective-zone-list" class="space-y-3"></div>
+                            <div id="subjective-zone-list" class="space-y-4"></div>
                         </div>
                     </div>
                 </div>
@@ -136,11 +143,18 @@
                 <div class="lg:col-span-1 space-y-8">
                     <section class="bg-cbse-blue rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-900/20">
                         <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                            <i class="fas fa-sync fa-spin-slow"></i> Cyclical Patterns
+                            <i class="fas fa-sync fa-spin-slow"></i> Predictive Intelligence
                         </h3>
-                        <div id="cyclical-prediction" class="text-sm leading-relaxed opacity-90 italic"></div>
+                        <div id="cyclical-prediction" class="space-y-6">
+                            </div>
+                    </section>
+
+                    <section class="bg-white rounded-[2.5rem] p-8 border border-slate-200">
+                        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Strategic Priority</h3>
+                        <div id="priority-list" class="space-y-3"></div>
                     </section>
                 </div>
+
             </div>
         </div>
     </main>
