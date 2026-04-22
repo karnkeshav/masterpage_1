@@ -62,7 +62,7 @@ async function runDeepAnalysis() {
         }  
   
         // Data Processing  
-        const blueprint = { '1': 0, '2': 0, '3': 0, '5': 0 };  
+        const blueprint = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };  
         const topicMap = {};  
         let subjectiveCount = 0;  
   
@@ -110,8 +110,9 @@ function renderBlueprint(data) {
     set('blueprint-1m', data['1'] || 0);  
     set('blueprint-2m', data['2'] || 0);  
     set('blueprint-3m', data['3'] || 0);  
+    set('blueprint-4m', data['4'] || 0); // New Line
     set('blueprint-5m', data['5'] || 0);  
-}  
+} 
   
 function renderHeatmap(topicMap, total) {  
     const container = document.getElementById('heatmap-container');  
