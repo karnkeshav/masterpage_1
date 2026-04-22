@@ -25,14 +25,17 @@ export async function initInsights() {
         state.db = clients.automationDB;
 
         clients.auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                updateHeaderUI();
-                updatePageTitles();
-                await runDeepAnalysis(); // This powers everything
-            } else {
-                window.location.href = "../offering.html";
-            }
-        });
+    if (!user) {
+        window.location.href = "../offering.html";
+        return;
+    }
+
+    await user.getIdToken(true);   // 🔥 important
+
+    updateHeaderUI();
+    updatePageTitles();
+    await runDeepAnalysis();
+});
     } catch (err) {
         console.error("Init Error:", err);
     }
