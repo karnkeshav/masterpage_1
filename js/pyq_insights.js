@@ -24,18 +24,20 @@ export async function initInsights() {
         if (!clients) return;
         state.db = clients.automationDB;
 
-        clients.auth.onAuthStateChanged(async (user) => {
-    if (!user) {
-        window.location.href = "../offering.html";
-        return;
-    }
+        // 🔥 ONLY CHANGE: use automationAuth instead of auth
+        clients.automationAuth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = "../offering.html";
+                return;
+            }
 
-    await user.getIdToken(true);   // 🔥 important
+            await user.getIdToken(true);
 
-    updateHeaderUI();
-    updatePageTitles();
-    await runDeepAnalysis();
-});
+            updateHeaderUI();
+            updatePageTitles();
+            await runDeepAnalysis();
+        });
+
     } catch (err) {
         console.error("Init Error:", err);
     }
@@ -46,7 +48,6 @@ async function runDeepAnalysis() {
     const container = document.getElementById('compendium-container');
 
     try {
-        // 1. Single efficient fetch for the entire chapter history
         const q = query(
             collectionGroup(state.db, 'questions'),
             where('subject', '==', state.subject),
@@ -56,32 +57,26 @@ async function runDeepAnalysis() {
         const snap = await getDocs(q);
         const questions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // 2. Data Processing (One loop for all cards)
         const blueprint = { '1': 0, '2': 0, '3': 0, '5': 0 };
         const topicMap = {};
         let subjectiveCount = 0;
 
         questions.forEach(q => {
-            // Count Blueprint Marks
             const m = String(q.marks);
             if (blueprint.hasOwnProperty(m)) blueprint[m]++;
             
-            // Map Heatmap Topics
             const t = q.topic || 'General';
             topicMap[t] = (topicMap[t] || 0) + 1;
 
-            // Pattern for Forensics
             if (q.type?.toLowerCase() === 'subjective') subjectiveCount++;
         });
 
-        // 3. Update the UI Components
         renderBlueprint(blueprint);
         renderHeatmap(topicMap, questions.length);
         renderForensics(subjectiveCount, questions.length, chapterName);
         renderPredictive(topicMap);
         renderCompendium(questions);
 
-        // 4. Load static meta (Real world)
         loadMeta();
 
     } catch (err) {
@@ -103,7 +98,6 @@ function renderHeatmap(topicMap, total) {
     const container = document.getElementById('heatmap-container');
     container.innerHTML = '';
     
-    // Sort topics by frequency and take top 4
     Object.entries(topicMap)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 4)
