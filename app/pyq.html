@@ -43,18 +43,32 @@
 document.addEventListener("DOMContentLoaded", () => {
     if (window.R4E) {
         R4E.renderHeader({
-            title: "PYQ Vault",
-            homePath: "../index.html",
-            userWelcomeDefault: "Student",
-            roleBadge: "Grade --",
-            roleBadgeId: "context-badge",
-            showLogout: true,
-            logoutId: "logout-nav-btn"
+        title: "Study Library",
+        titleId: "page-title",
+        // This makes the header title/logo act as a back button
+        homePath: "javascript:history.back()", 
+        // This ensures the back arrow icon is shown in the header itself
+        homeIcon: "back", 
+        userWelcomeDefault: "Student",
+        roleBadge: "Grade --",
+        roleBadgeId: "context-badge",
+        showLogout: true,
+        logoutId: "logout-nav-btn"
         });
     }
 });
 </script>
+<main id="app-content" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8">
+    
+    <div class="mb-6">
+         <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold text-sm transition group">
+            <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back
+        </a>
+    </div>
 
+    <section class="mb-10">
+      
+  
 <!-- LOADING -->
 <div id="loading" class="flex items-center justify-center flex-grow py-20">
     <div class="animate-pulse font-bold text-slate-400">Loading Vault...</div>
