@@ -54,11 +54,12 @@
 
     <main id="app-content" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8 fade-in">
         
-        <div class="mb-8">
-             <a href="app/exam_pulse.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
-                <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back to Console
-            </a>
-        </div>
+     <div class="mb-8">
+    <button onclick="window.handleBack()" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group bg-transparent border-none cursor-pointer">
+        <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> 
+        <span id="back-text">Back</span>
+    </button>
+</div>
 
         <div id="subject-selection-view">
             <div class="text-center mb-10">
