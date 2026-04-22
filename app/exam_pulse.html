@@ -15,98 +15,100 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script type="module">
-        // Stepping out of app/ to find js/
         import { initExamPulse } from '../js/exam_pulse.js';
         initExamPulse();
     </script>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col font-['Inter']">
+<body class="bg-cbse-light min-h-screen flex flex-col font-['Inter']">
 
     <div id="app-header"></div>
     <script>
         R4E.renderHeader({
-            title: "Exam Pattern Pulse",
+            title: "Exam Pulse",
             titleId: "header-title",
             homePath: "../index.html",
-            homeIcon: "🔙",
+            homeIcon: "🏠",
             showUserWelcome: true,
-            roleBadge: "Grade --",
+            roleBadge: "Analysis Mode",
             roleBadgeId: "context-badge",
-            showLogout: false
+            showLogout: true
         });
     </script>
 
-    <main id="app-content" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8">
+    <main id="app-content" class="flex-grow max-w-7xl mx-auto w-full p-4 md:p-8 fade-in">
         
-        <header class="mb-10">
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden">
-                <div class="z-10">
-                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                        <i class="fas fa-satellite-dish animate-pulse"></i> Live Forensics (2022-2025)
-                    </span>
-                    <h1 id="pulse-subject-title" class="text-4xl font-black text-slate-900 mb-2">Analyzing Subject...</h1>
-                    <p class="text-slate-500 text-lg max-w-xl">Deep pattern recognition across 12 sets of question papers to pinpoint high-yield topics.</p>
-                </div>
-                <div class="grid grid-cols-2 gap-4 z-10">
-                    <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Sets Analyzed</div>
-                        <div class="text-2xl font-black text-slate-800">12</div>
-                    </div>
-                    <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Confidence</div>
-                        <div class="text-2xl font-black text-green-600">98%</div>
-                    </div>
-                </div>
-                <div class="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"></div>
-            </div>
-        </header>
+        <div class="mb-8">
+            <a href="consoles/student.html" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
+                <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back to Console
+            </a>
+        </div>
 
-        <div class="grid lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-8">
-                <section class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200">
-                    <h3 class="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <i class="fas fa-chart-line text-blue-500"></i> Cumulative Weightage (100%)
-                    </h3>
-                    <div id="weightage-table-container" class="space-y-6">
-                        <div class="animate-pulse space-y-4">
-                            <div class="h-12 bg-slate-50 rounded-xl w-full"></div>
-                            <div class="h-12 bg-slate-50 rounded-xl w-full"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="grid md:grid-cols-2 gap-8">
-                    <div class="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl shadow-slate-200">
-                        <h4 class="text-lg font-bold mb-6 flex items-center gap-3">
-                            <i class="fas fa-bolt text-yellow-400"></i> MCQ Power-Hubs
-                        </h4>
-                        <div id="mcq-leaderboard" class="space-y-4"></div>
-                    </div>
-                    <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm">
-                        <h4 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
-                            <i class="fas fa-pen-nib text-blue-500"></i> Subjective Hot-Zones
-                        </h4>
-                        <div id="long-answer-roadmap" class="space-y-4"></div>
-                    </div>
-                </div>
+        <div id="subject-selection-view" class="hidden">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">Pattern Pulse</h1>
+                <p class="text-slate-500 font-medium">Select a subject to analyze 4-year board exam trends.</p>
             </div>
 
-            <div class="lg:col-span-1 space-y-8">
-                <section class="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-100">
-                    <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
-                        <i class="fas fa-sync fa-spin-slow text-blue-200"></i> Cyclical Patterns
-                    </h3>
-                    <div id="cycle-analysis-text" class="text-sm leading-relaxed space-y-4 opacity-90 font-medium italic">
-                        Calculating topic return probability...
+            <div class="grid md:grid-cols-3 gap-8">
+                <button onclick="selectSubject('Mathematics')" class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-cbse-blue transition-all group text-left">
+                    <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-cbse-blue text-3xl mb-6 group-hover:bg-cbse-blue group-hover:text-white transition-colors">
+                        <i class="fas fa-calculator"></i>
                     </div>
-                </section>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">Mathematics</h3>
+                    <p class="text-sm text-slate-500 mb-6">Calculus, Algebra, and Geometry weightage analytics.</p>
+                    <span class="text-cbse-blue font-bold text-sm flex items-center gap-2">Explore Pulse <i class="fas fa-arrow-right"></i></span>
+                </button>
 
-                <section class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm">
-                    <h3 class="text-lg font-black text-slate-900 mb-6 uppercase tracking-tight">Strategic Priority</h3>
-                    <div id="priority-list" class="space-y-3"></div>
-                </section>
+                <button onclick="selectSubject('Science')" class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-purple-600 transition-all group text-left">
+                    <div class="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 text-3xl mb-6 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">Science</h3>
+                    <p class="text-sm text-slate-500 mb-6">Physics, Chemistry, and Biology pattern forensics.</p>
+                    <span class="text-purple-600 font-bold text-sm flex items-center gap-2">Explore Pulse <i class="fas fa-arrow-right"></i></span>
+                </button>
+
+                <button onclick="selectSubject('Social Science')" class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-amber-600 transition-all group text-left">
+                    <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-3xl mb-6 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                        <i class="fas fa-landmark"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">Social Science</h3>
+                    <p class="text-sm text-slate-500 mb-6">History, Civics, and Geography high-yield zones.</p>
+                    <span class="text-amber-600 font-bold text-sm flex items-center gap-2">Explore Pulse <i class="fas fa-arrow-right"></i></span>
+                </button>
             </div>
         </div>
+
+        <div id="analysis-dashboard-view" class="hidden space-y-10">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="z-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span id="subject-tag" class="px-3 py-1 bg-cbse-blue text-white rounded-full text-[10px] font-black uppercase tracking-widest">Mathematics</span>
+                        <span class="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest">2022-2025 Data</span>
+                    </div>
+                    <h1 id="pulse-title" class="text-4xl font-black text-slate-900 mb-2">Pattern Pulse Analysis</h1>
+                    <p class="text-slate-500 text-lg max-w-xl">We've scanned 12 sets of board papers to identify the following intelligence.</p>
+                </div>
+                <div class="absolute -right-20 -top-20 w-80 h-80 bg-cbse-blue/5 rounded-full blur-3xl"></div>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <section class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200">
+                        <h3 class="text-xl font-black text-slate-900 mb-8">Cumulative Weightage</h3>
+                        <div id="weightage-table-container" class="space-y-6"></div>
+                    </section>
+                </div>
+                <div class="lg:col-span-1 space-y-8">
+                    <section class="bg-slate-900 rounded-[2.5rem] p-8 text-white">
+                        <h4 class="text-lg font-bold mb-6 italic text-blue-400">"Why study this?"</h4>
+                        <p id="forensics-insight" class="text-sm leading-relaxed opacity-80 font-medium italic">Analyzing the trend cycle...</p>
+                    </section>
+                    <div id="long-answer-container" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <div id="app-footer"></div>
