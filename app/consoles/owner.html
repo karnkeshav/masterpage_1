@@ -86,13 +86,21 @@
         </div>
 
         <div class="flex flex-wrap gap-2" role="tablist">
-            <button class="nav-link bg-indigo-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition" data-tab="b2b">B2B Schools</button>
-            <button class="nav-link text-slate-400 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" data-tab="b2c">B2C Users</button>
-            <button class="nav-link text-slate-400 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" data-tab="ledger">Financial Ledger</button>
+            <button class="nav-link bg-indigo-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition" role="tab" aria-selected="true" data-tab="b2b">
+                <i class="fas fa-building mr-1"></i> B2B Schools
+            </button>
+            <button class="nav-link text-slate-400 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" role="tab" aria-selected="false" data-tab="b2c">
+                <i class="fas fa-user mr-1"></i> B2C Users
+            </button>
+            <button class="nav-link text-slate-400 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" role="tab" aria-selected="false" data-tab="ledger">
+                <i class="fas fa-file-invoice-dollar mr-1"></i> Financial Ledger
+            </button>
         </div>
 
         <div id="tab-b2b" class="tab-content">
-            <div id="school-ledger" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+            <div id="school-ledger" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div class="col-span-full p-12 text-center text-slate-500 text-sm">Loading school instances…</div>
+            </div>
         </div>
 
         <div id="tab-b2c" class="tab-content hidden">
@@ -140,81 +148,119 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="provision-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-[40px] w-full max-w-xl p-10 space-y-6 relative shadow-2xl">
+    </div><div id="provision-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-[40px] w-full max-w-2xl p-8 lg:p-10 space-y-6 relative shadow-2xl overflow-y-auto max-h-[90vh]">
             <button class="js-close-provision absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-500 transition">✕</button>
             
             <div class="text-center">
                 <h2 class="text-2xl font-black mb-1">Provision School Tenant</h2>
-                <p class="text-xs text-slate-500">Complete setup only after verifying payment receipt.</p>
+                <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Comprehensive Data Capture & Revenue Sync</p>
             </div>
 
-            <form id="provision-form" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2">
+            <form id="provision-form" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-slate-400 mb-1">School Full Name</label>
-                        <input type="text" id="prov-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" required>
+                        <input type="text" id="prov-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" placeholder="e.g. Delhi Public School" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">School Logo URL</label>
+                        <input type="url" id="prov-logo" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" placeholder="https://...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Educational Board</label>
+                        <select id="prov-board" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none">
+                            <option value="CBSE">CBSE</option>
+                            <option value="ICSE">ICSE</option>
+                            <option value="SCERT">SCERT</option>
+                            <option value="Other">Other State Board</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Total Strength</label>
+                        <input type="number" id="prov-strength" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" placeholder="Total Students" required>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-400 mb-1">Licenses Authorized</label>
-                        <input type="number" id="prov-licenses" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" value="100">
+                        <input type="number" id="prov-licenses" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" value="100" required>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-amber-400 mb-1">Amount Paid (₹)</label>
-                        <input type="number" id="prov-amount-paid" class="w-full bg-slate-800 border-2 border-amber-500/30 rounded-xl p-3 text-sm focus:border-amber-400 outline-none font-bold text-white" placeholder="0" required>
+                        <input type="number" id="prov-amount-paid" class="w-full bg-slate-800 border-2 border-amber-500/30 rounded-xl p-3 text-sm focus:border-amber-400 outline-none font-bold text-white" placeholder="Manual Receipt" required>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">State</label>
-                        <input type="text" id="prov-state" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" required>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Area Type</label>
+                        <select id="prov-area" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none">
+                            <option value="Urban">Urban</option>
+                            <option value="Rural">Rural</option>
+                            <option value="Semi-Urban">Semi-Urban</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-400 mb-1">District</label>
-                        <input type="text" id="prov-district" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" required>
+                        <input type="text" id="prov-district" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" placeholder="District" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">State</label>
+                        <input type="text" id="prov-state" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" placeholder="State" required>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">Principal Email (Login Identity)</label>
-                    <input type="email" id="prov-email" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" required>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Principal Email (Login ID)</label>
+                        <input type="email" id="prov-email" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Contact Phone (WhatsApp)</label>
+                        <input type="tel" id="prov-phone" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none" placeholder="91..." required>
+                    </div>
                 </div>
 
                 <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-5 rounded-2xl transition shadow-xl shadow-indigo-900/40 text-sm uppercase tracking-widest mt-4">
-                    Deploy Tenant & Record Revenue
+                    Deploy Tenant & Sync Financials
                 </button>
             </form>
         </div>
     </div>
 
     <div id="user-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-[32px] w-full max-w-lg p-8 space-y-5 relative">
-            <button class="js-close-user-modal absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">✕</button>
+        <div class="bg-slate-900 border border-slate-700 rounded-[32px] w-full max-w-lg p-8 space-y-5 relative shadow-2xl">
+            <button class="js-close-user-modal absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-500 transition">✕</button>
             <h2 id="user-modal-title" class="text-xl font-black">Edit B2C Profile</h2>
+            
             <form id="user-management-form" class="space-y-4">
                 <input type="hidden" id="edit-user-id">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">Name</label>
-                    <input type="text" id="u-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" required>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Display Name</label>
+                    <input type="text" id="u-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none focus:border-indigo-500" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1">Tier</label>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Subscription Tier</label>
                         <select id="u-plan" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none">
                             <option value="practitioner">Practitioner</option>
                             <option value="strategist">Strategist</option>
                             <option value="sync">Sync</option>
+                            <option value="board_ready">Board Ready</option>
+                            <option value="legacy">Legacy</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-emerald-400 mb-1">Revenue (₹)</label>
-                        <input type="number" id="u-revenue" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none">
+                        <input type="number" id="u-revenue" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" placeholder="0">
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 py-4 rounded-xl font-black uppercase text-xs">Update Profile</button>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-xl transition text-xs uppercase tracking-widest">
+                    Update Sovereign Profile
+                </button>
             </form>
         </div>
     </div>
