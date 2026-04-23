@@ -2,6 +2,7 @@
 
 import { getInitializedClients } from "./config.js";
 import { routeUser } from "./auth-paywall.js";
+import { recordFinancialEvent } from "./api.js";
 import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -13,8 +14,8 @@ const BUSINESS_UPI_VPA = (window.__firebase_config && window.__firebase_config.b
 
 // --- Tier ↔ Price Map (matches offering.html) ---
 const TIER_META = {
-    practitioner: { label: "The Practitioner",  price: "₹10/mo",   amountPaise: 1000   },
-    strategist:   { label: "Self-Strategist",    price: "₹999/mo",   amountPaise: 99900   },
+    practitioner: { label: "The Practitioner",  price: "₹10/mo",    amountPaise: 1000   },
+    strategist:   { label: "Self-Strategist",    price: "₹999/mo",    amountPaise: 99900   },
     sync:         { label: "The Sync Bundle",    price: "₹1,499/mo", amountPaise: 149900  },
     board_ready:  { label: "Board-Ready",        price: "₹1,299/mo", amountPaise: 129900  },
     legacy:       { label: "The Legacy Plan",    price: "₹32,000",   amountPaise: 3200000 }
@@ -28,7 +29,6 @@ const meta = TIER_META[selectedTier] || TIER_META.practitioner;
 document.getElementById('selected-plan-text').textContent = meta.label;
 document.getElementById('price-display').textContent = meta.price;
 
-// Populate manual UPI VPA from config (single source of truth)
 const upiEl = document.getElementById('manual-upi-vpa');
 if (upiEl) upiEl.textContent = BUSINESS_UPI_VPA;
 
@@ -39,18 +39,12 @@ function openRazorpayCheckout({ amount, planLabel, prefill }) {
         const keyId = cfg.razorpayKeyId;
 
         if (!keyId || /REPLACE|YOUR.?KEY/i.test(keyId)) {
-            reject(new Error(
-                'Payment gateway is not configured yet. Please contact support or pay manually via UPI to ' +
-                BUSINESS_UPI_VPA + ' and share the screenshot.'
-            ));
+            reject(new Error('Payment gateway config missing. Contact support or pay via UPI to ' + BUSINESS_UPI_VPA));
             return;
         }
 
         if (typeof window.Razorpay === 'undefined') {
-            reject(new Error(
-                'Payment gateway failed to load. Please refresh and try again, or pay manually via UPI to ' +
-                BUSINESS_UPI_VPA + '.'
-            ));
+            reject(new Error('Payment gateway failed to load. Please refresh.'));
             return;
         }
 
@@ -60,43 +54,15 @@ function openRazorpayCheckout({ amount, planLabel, prefill }) {
             currency: "INR",
             name: "Ready4Exam Academy",
             description: planLabel + " Subscription",
-            handler: function (response) {
-                resolve(response.razorpay_payment_id);
-            },
-            prefill: {
-                name: prefill.name,
-                email: prefill.email
-            },
-            notes: {
-                plan: selectedTier,
-                tier: planLabel
-            },
-            theme: {
-                color: "#1e40af"
-            },
-            method: {
-                card: true,
-                netbanking: true,
-                upi: true,
-                wallet: true,
-                emi: false,
-                paylater: false
-            },
-            modal: {
-                ondismiss: function () {
-                    reject(new Error('Payment was cancelled. Please try again.'));
-                },
-                confirm_close: true
-            }
+            handler: (res) => resolve(res.razorpay_payment_id),
+            prefill: { name: prefill.name, email: prefill.email },
+            notes: { plan: selectedTier, tier: planLabel },
+            theme: { color: "#1e40af" },
+            modal: { ondismiss: () => reject(new Error('Payment cancelled.')), confirm_close: true }
         };
 
         const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response) {
-            reject(new Error(
-                (response.error && response.error.description) ||
-                'Payment failed. Please try again or use a different payment method.'
-            ));
-        });
+        rzp.on('payment.failed', (res) => reject(new Error(res.error.description || 'Payment failed.')));
         rzp.open();
     });
 }
@@ -115,75 +81,50 @@ form.addEventListener('submit', async (e) => {
     const grade    = document.getElementById('reg-class').value;
     const board    = document.getElementById('reg-board').value;
 
-    // Stream & subject details (Class 11/12 only)
-    let stream = '';
-    let subjects = [];
+    let stream = '', subjects = [];
     if (grade === '11' || grade === '12') {
         stream = document.getElementById('reg-stream').value;
         if (stream === 'Commerce') {
             const mathOption = document.getElementById('reg-commerce-math').value;
-            if (mathOption === 'Other') {
-                const custom = document.getElementById('reg-commerce-other').value.trim();
-                if (custom) subjects = [custom];
-            } else if (mathOption) {
-                subjects = [mathOption];
-            }
+            subjects = mathOption === 'Other' ? [document.getElementById('reg-commerce-other').value.trim()] : [mathOption];
         } else if (stream === 'Science') {
-            const combo = document.getElementById('reg-science-combo').value;
-            if (combo) subjects = [combo];
+            subjects = [document.getElementById('reg-science-combo').value];
         } else if (stream === 'Humanities') {
-            document.querySelectorAll('input[name="humanities-subject"]:checked').forEach(cb => {
-                subjects.push(cb.value);
-            });
+            document.querySelectorAll('input[name="humanities-subject"]:checked').forEach(cb => subjects.push(cb.value));
         }
     }
 
-    // Derive a sanitised username from the email prefix
     const username = email.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '').substring(0, 30);
 
     try {
-        // --- Step 1: Open Razorpay Checkout ---
         const paymentId = await openRazorpayCheckout({
             amount: meta.amountPaise,
             planLabel: meta.label,
             prefill: { name, email }
         });
 
-        submitBtn.textContent = "Payment Successful — Creating Account...";
+        submitBtn.textContent = "Payment Successful — Finalizing...";
 
-        // --- Step 2: Create Firebase Auth User ---
         const { auth, db } = await getInitializedClients();
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // --- Step 3: Calculate Activation & Expiry ---
         const now = new Date();
         const expiry = new Date();
-        if (selectedTier === 'legacy') {
-            expiry.setFullYear(now.getFullYear() + 3); // 3 Years
-        } else {
-            expiry.setDate(now.getDate() + 30); // 30 Days
-        }
+        if (selectedTier === 'legacy') expiry.setFullYear(now.getFullYear() + 3);
+        else expiry.setDate(now.getDate() + 30);
 
         const graceDate = new Date(expiry);
-        graceDate.setDate(expiry.getDate() + 5); // 5-Day Grace Period
+        graceDate.setDate(expiry.getDate() + 5);
 
-        // --- Step 4: Set Tier-Specific Module Flags ---
         let activeModules = ["SimpleQuizzes"];
-        if (selectedTier === 'practitioner') {
-            activeModules.push("MediumQuizzes", "AdvancedQuizzes");
-        }
-        if (selectedTier === 'strategist' || selectedTier === 'sync' || selectedTier === 'legacy') {
-            activeModules.push("MediumQuizzes", "AdvancedQuizzes", "MistakeNotebook", "KnowledgeHub");
-        }
-        if (selectedTier === 'sync' || selectedTier === 'legacy') {
-            activeModules.push("ParentConsole");
-        }
-        if (selectedTier === 'board_ready' || selectedTier === 'legacy') {
-            activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
-        }
+        if (selectedTier === 'practitioner') activeModules.push("MediumQuizzes", "AdvancedQuizzes");
+        if (['strategist', 'sync', 'legacy'].includes(selectedTier)) activeModules.push("MediumQuizzes", "AdvancedQuizzes", "MistakeNotebook", "KnowledgeHub");
+        if (['sync', 'legacy'].includes(selectedTier)) activeModules.push("ParentConsole");
+        if (['board_ready', 'legacy'].includes(selectedTier)) activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
 
-        // --- Step 5: Save B2C Profile to Firestore ---
+        const revenueAmt = (meta.amountPaise / 100);
+
         const profileData = {
             uid: user.uid,
             displayName: name,
@@ -194,7 +135,7 @@ form.addEventListener('submit', async (e) => {
             isB2C: true,
             subscriptionTier: selectedTier,
             class: parseInt(grade),
-            revenue: (meta.amountPaise / 100), // ADD THIS LINE: Saves revenue in Rupees
+            revenue: revenueAmt,
             board: board,
             status: "active",
             activationDate: serverTimestamp(),
@@ -210,9 +151,17 @@ form.addEventListener('submit', async (e) => {
             if (subjects.length > 0) profileData.subjects = subjects;
         }
 
+        // Save User Profile
         await setDoc(doc(db, "users", user.uid), profileData);
 
-        // --- Step 6: Route via Sovereign Gateway ---
+        // SYNC WITH FINANCIAL LEDGER
+        await recordFinancialEvent(
+            "B2C_REVENUE",
+            "PAYMENT",
+            revenueAmt,
+            `B2C Registration: ${meta.label} for ${email} (ID: ${paymentId})`
+        );
+
         await routeUser(user);
 
     } catch (err) {
