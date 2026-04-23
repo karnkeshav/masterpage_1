@@ -38,6 +38,14 @@ window.loadConsoleData = async (profile) => {
         if (pyqBtn) pyqBtn.classList.remove("hidden");
         if (pulseBtn) pulseBtn.classList.remove("hidden");
     }
+    else {
+    // ADD THIS TO ENSURE OTHER GRADES NEVER SEE IT
+    const pyqBtn = document.getElementById("btn-pyq-vault");
+    const pulseBtn = document.getElementById("btn-exam-pulse");
+    
+    if (pyqBtn) pyqBtn.classList.add("hidden");
+    if (pulseBtn) pulseBtn.classList.add("hidden");
+}
 
     // 3. Update UI Elements with Detected Grade
     document.getElementById("class-title").textContent = `Class ${grade} Hub`;
