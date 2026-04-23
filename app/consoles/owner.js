@@ -346,14 +346,15 @@ function renderB2CTable(users) {
 function renderB2CRow(uid, data) {
     const row = document.getElementById("b2c-ledger-rows");
     if (!row) return;
-    const expiry = data.accessExpiryDate
-        ? new Date(data.accessExpiryDate).toLocaleDateString()
-        : "N/A";
     const displayName = data.displayName || "Unnamed User";
     const initial = displayName.charAt(0).toUpperCase();
     const plan = data.subscriptionTier || data.plan || "Free Tier";
     const revenue = data.revenue || "0.00";
-    const isActive = !data.accessExpiryDate || new Date(data.accessExpiryDate) > new Date();
+    const expiryDate = data.accessExpiryDate?.toDate ? data.accessExpiryDate.toDate() : 
+                       (data.accessExpiryDate ? new Date(data.accessExpiryDate) : null);
+    
+    const expiry = expiryDate ? expiryDate.toLocaleDateString() : "N/A";
+    const isActive = expiryDate ? expiryDate > new Date() : true;
     const statusBadge = isActive
         ? '<span class="bg-emerald-900/30 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Active</span>'
         : '<span class="bg-red-900/30 text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Expired</span>';
@@ -755,6 +756,7 @@ async function handleUserFormSubmit(e) {
     const email = document.getElementById("u-email").value.trim();
     const subscriptionTier = document.getElementById("u-plan").value;
     const academicClass = parseInt(document.getElementById("u-class").value);
+    const manualRevenue = parseFloat(document.getElementById("u-revenue").value) || 0; // ADD THIS
 
     try {
         const { db } = await getInitializedClients();
@@ -765,6 +767,7 @@ async function handleUserFormSubmit(e) {
                 displayName,
                 subscriptionTier,
                 class: academicClass
+                revenue: manualRevenue // ADD THIS
             });
             alert("Sovereign profile updated.");
         } else {
@@ -808,6 +811,7 @@ async function handleUserFormSubmit(e) {
                     activationDate: serverTimestamp(),
                     accessExpiryDate: expiry.toISOString(),
                     gracePeriodEndDate: graceDate.toISOString(),
+                    revenue: manualRevenue, // ADD THIS
                     createdAt: serverTimestamp()
                 });
 
