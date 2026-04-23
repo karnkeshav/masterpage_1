@@ -194,6 +194,7 @@ form.addEventListener('submit', async (e) => {
             isB2C: true,
             subscriptionTier: selectedTier,
             class: parseInt(grade),
+            revenue: (meta.amountPaise / 100), // ADD THIS LINE: Saves revenue in Rupees
             board: board,
             status: "active",
             activationDate: serverTimestamp(),
