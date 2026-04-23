@@ -12,8 +12,6 @@ var R4E = R4E || {};
  * @param {string}  config.title            - Page title displayed in gold (e.g. "Class Hub")
  * @param {string} [config.titleId]         - Optional id attribute on the <h2> title element
  * @param {string} [config.subtitle]        - Subtitle text. Default: "Ready4Exam &bull; Powered by Ready4Industry"
- * @param {string}  config.homePath         - href for the home/back button (e.g. "../../index.html")
- * @param {string} [config.homeIcon]        - Emoji for home button. Default: "🏠". Use "🔙" for back navigation.
  * @param {string} [config.userWelcomeDefault] - Default text for #user-welcome. Default: "Student"
  * @param {boolean}[config.showUserWelcome] - Whether to show user-welcome + role badge. Default: true
  * @param {string} [config.roleBadge]       - Role badge text (e.g. "Admin Role", "Grade --"). Omit to hide badge.
@@ -37,8 +35,6 @@ R4E.renderHeader = function(config) {
     var title = c.title || "Ready4Exam";
     var titleId = c.titleId ? ' id="' + c.titleId + '"' : '';
     var subtitle = c.subtitle !== undefined ? c.subtitle : "Ready4Exam &bull; Powered by Ready4Industry";
-    var homePath = c.homePath || "#";
-    var homeIcon = c.homeIcon || "🏠";
     var userDefault = c.userWelcomeDefault || "Student";
     var showUser = c.showUserWelcome !== false;
     var roleBadge = c.roleBadge || "";
@@ -63,7 +59,6 @@ R4E.renderHeader = function(config) {
     var leftJustify = layout === "grid-3" ? " justify-self-start" : "";
     var leftHtml = ''
         + '<div class="flex items-center space-x-4' + leftJustify + '">'
-        +   '<a href="' + homePath + '" class="w-11 h-11 flex items-center justify-center bg-white text-cbse-blue font-bold rounded-2xl shadow-sm hover:scale-105 transition active:scale-95 text-lg">' + homeIcon + '</a>'
         +   '<div>'
         +     '<h2' + titleId + ' class="text-xl font-black leading-none tracking-tight text-accent-gold">' + title + '</h2>'
         +     '<p class="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">' + subtitle + '</p>'
