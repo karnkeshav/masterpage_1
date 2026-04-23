@@ -108,6 +108,7 @@ form.addEventListener('submit', async (e) => {
         const { auth, db } = await getInitializedClients();
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        const parentEmail = document.getElementById('reg-parent-email')?.value.trim() || '';
 
         const now = new Date();
         const expiry = new Date();
@@ -130,6 +131,7 @@ form.addEventListener('submit', async (e) => {
             displayName: name,
             username: username,
             email: email,
+            parentEmail: parentEmail, // ADD THIS: Captures the linked parent ID
             role: "student",
             tenantType: "individual",
             isB2C: true,
