@@ -238,11 +238,36 @@ function updatePulse() {
 function renderB2CTable(users) {
     const tbody = document.getElementById("b2c-ledger-rows");
     if (!tbody) return;
+
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-slate-500 italic">No B2C users found in the registry.</td></tr>';
+        return;
+    }
+
     tbody.innerHTML = users.map(u => {
+        // 1. Identity Logic
         const initial = (u.displayName || "U").charAt(0).toUpperCase();
-        const statusBadge = u.status === 'active' 
+        
+        // 2. Crash-Proof Expiry & Status Logic
+        const expiryRaw = u.accessExpiryDate;
+        let expiryDisp = "N/A";
+        let isActive = false;
+
+        if (expiryRaw) {
+            // Convert Firestore Timestamp or String to JS Date Object
+            const dateObj = expiryRaw.toDate ? expiryRaw.toDate() : new Date(expiryRaw);
+            
+            if (!isNaN(dateObj.getTime())) {
+                expiryDisp = dateObj.toLocaleDateString();
+                // Compare with current time to determine actual status
+                isActive = dateObj > new Date();
+            }
+        }
+
+        // 3. Status Badge Logic (Uses time comparison instead of just a string)
+        const statusBadge = isActive 
             ? '<span class="bg-emerald-900/30 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Active</span>'
-            : '<span class="bg-red-900/30 text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Inactive</span>';
+            : '<span class="bg-red-900/30 text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Expired</span>';
 
         return `
         <tr class="hover:bg-slate-900/40 transition group">
@@ -256,12 +281,14 @@ function renderB2CTable(users) {
                     </div>
                 </div>
             </td>
-            <td class="p-6 text-[10px] font-black uppercase text-slate-400">${u.subscriptionTier}</td>
+            <td class="p-6 text-[10px] font-black uppercase text-slate-400">${escapeHtml(u.subscriptionTier || 'trial')}</td>
             <td class="p-6 font-bold text-emerald-400">₹${u.revenue || 0}</td>
-            <td class="p-6 text-xs text-slate-500">${u.accessExpiryDate?.toDate ? u.accessExpiryDate.toDate().toLocaleDateString() : 'N/A'}</td>
+            <td class="p-6 text-xs text-slate-500">${expiryDisp}</td>
             <td class="p-6">${statusBadge}</td>
             <td class="p-6 text-right">
-                <button onclick="openEditUserModal('${u.id}')" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-indigo-400 hover:bg-indigo-600 hover:text-white transition"><i class="fas fa-user-edit text-xs"></i></button>
+                <button onclick="openEditUserModal('${u.id}')" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-indigo-400 hover:bg-indigo-600 hover:text-white transition">
+                    <i class="fas fa-user-edit text-xs"></i>
+                </button>
             </td>
         </tr>`;
     }).join('');
