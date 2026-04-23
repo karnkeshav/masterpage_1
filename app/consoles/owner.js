@@ -766,7 +766,7 @@ async function handleUserFormSubmit(e) {
             await updateDoc(doc(db, "users", uid), {
                 displayName,
                 subscriptionTier,
-                class: academicClass
+                class: academicClass,
                 revenue: manualRevenue // ADD THIS
             });
             alert("Sovereign profile updated.");
