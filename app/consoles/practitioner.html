@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practitioner Dashboard | Ready4Exam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <link href="./css/global.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-white min-h-screen font-sans flex overflow-hidden">
+
+    <aside class="w-1/3 bg-slate-800/50 border-r border-white/10 p-10 flex flex-col justify-between hidden md:flex">
+        <div>
+            <div class="mb-12">
+                <span class="text-success-green font-black tracking-widest text-xs uppercase">Current Plan</span>
+                <h1 class="text-3xl font-extrabold mt-1">Practitioner</h1>
+            </div>
+
+            <div class="space-y-8">
+                <div>
+                    <h3 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Your Active Benefits</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3 text-sm"><i class="fas fa-check-circle text-success-green"></i> Simple Difficulty Quizzes</li>
+                        <li class="flex items-center gap-3 text-sm"><i class="fas fa-check-circle text-success-green"></i> Medium Difficulty Quizzes</li>
+                        <li class="flex items-center gap-3 text-sm"><i class="fas fa-check-circle text-success-green"></i> Advanced Difficulty Quizzes</li>
+                    </ul>
+                </div>
+
+                <div class="pt-8 border-t border-white/5">
+                    <h3 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Unlock with Higher Plans</h3>
+                    <ul class="space-y-4">
+                        <li class="opacity-50 flex items-start gap-3 text-xs">
+                            <i class="fas fa-lock mt-1"></i>
+                            <div><strong class="block text-white">Mistake Notebook</strong>Track every error and automate revisions.</div>
+                        </li>
+                        <li class="opacity-50 flex items-start gap-3 text-xs">
+                            <i class="fas fa-lock mt-1"></i>
+                            <div><strong class="block text-white">PYQ Insights</strong>Analyze 10 years of Board patterns.</div>
+                        </li>
+                        <li class="opacity-50 flex items-start gap-3 text-xs">
+                            <i class="fas fa-lock mt-1"></i>
+                            <div><strong class="block text-white">Parent Console</strong>Real-time performance sync for home.</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <a href="offering.html" class="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-center font-bold hover:bg-white/10 transition">
+            View All Plans & Upgrade
+        </a>
+    </aside>
+
+    <main class="flex-grow flex flex-col relative bg-glass">
+        <header class="p-6 flex justify-between items-center border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-success-green/20 flex items-center justify-center text-success-green">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div>
+                    <span class="block text-xs text-slate-400">Welcome Back,</span>
+                    <span id="user-display-name" class="font-bold">Scholar</span>
+                </div>
+            </div>
+            <button onclick="logout()" class="text-slate-500 hover:text-white transition text-sm">Sign Out</button>
+        </header>
+
+        <section class="flex-grow flex items-center justify-center p-12">
+            <div class="max-w-md w-full text-center">
+                <div class="mb-8">
+                    <i class="fas fa-vial text-6xl text-success-green mb-6"></i>
+                    <h2 class="text-4xl font-black mb-4 tracking-tight">Ready to Test?</h2>
+                    <p class="text-slate-400">Your subscription allows unlimited access to all difficulty levels for your class.</p>
+                </div>
+
+                <div class="grid gap-4">
+                    <a href="quiz-engine.html" class="group relative overflow-hidden p-6 rounded-2xl bg-success-green text-white font-black text-xl hover:scale-[1.02] transition-all shadow-xl shadow-success-green/20">
+                        <span class="relative z-10">TAKE A TEST</span>
+                        <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                    </a>
+                    
+                    <div class="flex items-center justify-center gap-6 mt-6">
+                        <div class="text-center">
+                            <span class="block text-xs font-black text-slate-500 uppercase">Simple</span>
+                            <i class="fas fa-circle text-[8px] text-green-400"></i>
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs font-black text-slate-500 uppercase">Medium</span>
+                            <i class="fas fa-circle text-[8px] text-yellow-400"></i>
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs font-black text-slate-500 uppercase">Advanced</span>
+                            <i class="fas fa-circle text-[8px] text-red-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { getInitializedClients } from "./js/config.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const { auth, db } = await getInitializedClients();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    document.getElementById('user-display-name').textContent = data.displayName;
+                    
+                    // Security: Redirect if NOT practitioner
+                    if (data.subscriptionTier !== 'practitioner') {
+                        window.location.href = 'index.html';
+                    }
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        window.logout = () => signOut(auth);
+    </script>
+</body>
+</html>
