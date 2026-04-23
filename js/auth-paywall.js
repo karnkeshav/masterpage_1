@@ -139,7 +139,6 @@ export async function authenticateWithCredentials(username, password) {
         throw e;
     }
 }
-
 export async function routeUser(user) {
     if (!user) return;
     const { db } = await getInitializedClients();
@@ -153,12 +152,13 @@ export async function routeUser(user) {
 
     const data = snap.data();
 
-    // Deterministic Routing Table
+    // 1. Owner Routing
     if (data.role === "owner" || data.tenantType === "owner") {
         window.location.href = "app/consoles/owner.html";
         return;
     }
 
+    // 2. School/B2B Routing
     if (data.tenantType === "school") {
         if ((data.role === "school_master" || data.role === "gateway") && data.school_id) {
             window.location.href = `school-landing.html?schoolId=${data.school_id}`;
@@ -168,20 +168,27 @@ export async function routeUser(user) {
         return;
     }
 
+    // 3. Individual/B2C Routing (Practitioner Integration)
     if (data.tenantType === "individual") {
-        window.location.href = "app/consoles/student.html";
+        // Direct practitioners to their specific console based on subscription tier
+        if (data.subscriptionTier === 'practitioner') {
+            window.location.href = "app/consoles/practitioner.html";
+        } else {
+            // Default routing for other B2C students (Strategist, Sync, Legacy)
+            window.location.href = "app/consoles/student.html";
+        }
         return;
     }
 
-    // Fallback: Route by school_id if tenantType is missing (handles legacy data)
+    // Fallback Routing
     if (!data.tenantType && data.school_id && data.role) {
-        console.warn("[AUTH] routeUser: Missing tenantType, falling back to school_id routing. Role:", data.role);
         window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
         return;
     }
 
     await signOut();
 }
+
 
 /**
  * Updated to prevent automatic routing on page load.
