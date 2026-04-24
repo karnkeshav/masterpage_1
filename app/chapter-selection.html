@@ -126,9 +126,6 @@
             // Fix for "Cannot set properties of null" error
             const titleEl = document.getElementById("page-title");
             if (titleEl) titleEl.textContent = `${subject} (Class ${grade})`;
-            
-            const backLink = document.getElementById("back-link");
-            if (backLink) backLink.href = `consoles/student.html?grade=${grade}`;
 
             try {
                 const curriculum = await loadCurriculum(grade);
@@ -229,7 +226,12 @@
     showLogout: false
 });</script>
 
-    <main class="flex-grow w-full p-4 md:p-8">
+    <main class="flex-grow w-full p-4 md:p-8 relative">
+        <div class="absolute top-4 left-4 md:top-8 md:left-8">
+             <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
+                <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back
+            </a>
+        </div>
         <div class="max-w-5xl mx-auto fade-in">
             <div id="content-area">
                 <div class="flex items-center justify-center h-64">
