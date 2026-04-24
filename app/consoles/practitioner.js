@@ -2,6 +2,7 @@
 import { getInitializedClients } from "../../js/config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { bindConsoleLogout } from "../../js/guard.js";
 
 async function initPractitioner() {
     const { auth, db } = await getInitializedClients();
@@ -31,7 +32,7 @@ async function initPractitioner() {
 
             // Update UI with Firebase Data
             // Header Welcome
-            const welcomeEl = document.querySelector('[data-user-welcome]');
+            const welcomeEl = document.getElementById('user-welcome');
             if (welcomeEl) welcomeEl.textContent = data.displayName || "Scholar";
 
             // Role Badge (Grade)
@@ -46,14 +47,7 @@ async function initPractitioner() {
     });
 
     // Global Logout for the shell.js button
-    window.logout = async () => {
-        try {
-            await signOut(auth);
-            window.location.href = "../../index.html";
-        } catch (err) {
-            console.error("Signout failed:", err);
-        }
-    };
+    bindConsoleLogout("logout-nav-btn", "../../index.html");
 }
 
 // Execute on load

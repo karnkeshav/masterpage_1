@@ -1,4 +1,5 @@
 import { getInitializedClients } from './config.js';
+import { bindConsoleLogout } from './guard.js';
 import { 
     collectionGroup, 
     query, 
@@ -17,6 +18,7 @@ let state = {
 export async function initExamPulse() {
     const clients = await getInitializedClients();
     if (!clients) return;
+    bindConsoleLogout("logout-nav-btn", "consoles/student.html");
     // The Question Vault (Ready4Exam_Vault/{paper}/questions) lives in the
     // automation Firebase project, NOT the master/student project.
     state.db = clients.automationDB;

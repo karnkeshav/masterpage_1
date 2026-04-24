@@ -58,7 +58,12 @@
     showLogout: false
 });</script>
 
-<main class="flex-grow w-full max-w-[1100px] mx-auto px-5 py-12 fade-in">
+<main class="flex-grow w-full max-w-[1100px] mx-auto px-5 py-12 fade-in relative">
+    <div class="absolute top-4 left-4 md:top-8 md:left-8">
+        <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
+            <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back
+        </a>
+    </div>
 
   <section class="hero text-center">
     <span class="bg-gold/20 text-gold px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 inline-block">2025 - 2026 Academic Session</span>

@@ -126,7 +126,12 @@
         };
     </script>
 </head>
-<body class="bg-cbse-light min-h-screen flex flex-col items-center justify-center py-10 px-4">
+<body class="bg-cbse-light min-h-screen flex flex-col items-center justify-center py-10 px-4 relative">
+    <div class="absolute top-4 left-4 md:top-8 md:left-8">
+        <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
+            <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back
+        </a>
+    </div>
 <div id="app-header"></div>
 <script>R4E.renderHeader({
     title: "Cognitive Priming",

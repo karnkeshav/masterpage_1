@@ -11,7 +11,12 @@
     <script src="../js/firebase-master-config.js"></script>
 <script src="../js/config.js" type="module"></script>
 </head>
-<body class="bg-red-50 text-slate-800 min-h-screen">
+<body class="bg-red-50 text-slate-800 min-h-screen relative">
+    <div class="absolute top-4 left-4 md:top-8 md:left-8">
+        <a href="javascript:history.back()" class="inline-flex items-center gap-2 text-slate-400 hover:text-cbse-blue font-bold text-sm transition group">
+            <i class="fas fa-arrow-left group-hover:-translate-x-1 transition"></i> Back
+        </a>
+    </div>
     <div class="max-w-4xl mx-auto p-6">
         <div id="app-header"></div>
 <script>R4E.renderHeader({
