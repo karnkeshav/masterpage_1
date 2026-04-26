@@ -1,6 +1,7 @@
 // js/pyq.js - Optimized for Zero-Waste Reads & Dynamic UI
 
 import { getInitializedClients } from "./config.js";
+import { loadCurriculum } from "./curriculum/loader.js";
 import {
   collection,
   query,
@@ -79,12 +80,26 @@ async function bootForAuthenticatedUser(bootToken) {
   currentProfileName = profile.displayName || "Student";
   updateHeader(currentGrade);
 
-  // 2. DISCOVERY: Fetch ALL subject/year pairs for this grade ONCE.
-  // This populates the dropdown and ribbon without loading full PDF data
-  await runDiscovery(currentGrade);
+  // 2. DISCOVERY: Load subjects locally from static curriculum (Zero Cost)
+  try {
+    const curriculum = await loadCurriculum(currentGrade);
+    discoveryData = Object.keys(curriculum).map(subject => ({ subject: normalizeSubject(subject) }));
+  } catch (error) {
+    console.error("Failed to load curriculum:", error);
+    // Fallback if curriculum fails
+    discoveryData = [
+      { subject: "Mathematics" }, { subject: "Science" }, { subject: "Social Science" },
+      { subject: "English" }, { subject: "Hindi" }
+    ];
+  }
 
-  // 3. FETCH DETAIL: Load the default grid (2025 Mathematics)
-  await loadVaultData(currentGrade, activeSubject, activeYear);
+  // Ensure activeSubject exists in discoveryData or fallback to first
+  if (!discoveryData.some(d => d.subject === activeSubject)) {
+      activeSubject = discoveryData[0]?.subject || "Mathematics";
+  }
+
+  // 3. FETCH DETAIL: Load the default grid (all years for subject)
+  await loadPyqVault(currentGrade, activeSubject);
   if (bootToken !== authBootToken) return;
 
   await loadProgress(currentUser.uid, currentGrade);
@@ -98,35 +113,24 @@ async function bootForAuthenticatedUser(bootToken) {
 
 // --- OPTIMIZED DATA FETCHING ---
 
-async function runDiscovery(grade) {
-  // Fetches just enough to build filters. Costs 1 bulk read for the grade.
-  const q = query(collection(automationDB, "Ready4Exam_Vault"), where("grade", "==", String(grade)));
-  const snap = await getDocs(q);
-  discoveryData = [];
-  snap.forEach(d => {
-    const data = d.data();
-    discoveryData.push({
-      subject: normalizeSubject(data.subject),
-      year: String(data.year)
-    });
-  });
-}
-
-async function loadVaultData(grade, subject, year) {
+async function loadPyqVault(grade, subject) {
   if (!automationDB) return;
-  const cacheKey = `${grade}_${subject}_${year}`;
+
+  // Ensure subject is capitalized for DB matching (e.g. Mathematics, Science)
+  const normSub = subject.replace(/\b\w/g, c => c.toUpperCase());
+  const cacheKey = `${grade}_${normSub}`;
   
   if (vaultCache[cacheKey]) {
     currentVaultData = vaultCache[cacheKey];
     return;
   }
 
-  // REPLACEMENT: Fetch only what is visible. Reads ~5 docs instead of 500.
+  // OPTIMIZED: Fetch all years for the selected grade and subject.
+  // Costs ~20 reads per subject selection, allowing instant year switching.
   const q = query(
     collection(automationDB, "Ready4Exam_Vault"),
     where("grade", "==", String(grade)),
-    where("subject", "==", subject),
-    where("year", "==", String(year))
+    where("subject", "==", normSub)
   );
 
   const snapshot = await getDocs(q);
@@ -174,12 +178,13 @@ function setupYearRibbon() {
   // FIXED: Ribbon now reflects active counts for the current grade
   for (let year = 2026; year >= 2022; year--) {
     const yearStr = String(year);
-    const count = discoveryData.filter(d => d.year === yearStr && d.subject === activeSubject).length;
+    // Since discoveryData no longer has year, we count from currentVaultData
+    const count = currentVaultData.filter(d => d.year === yearStr).length;
     if (count === 0 && yearStr !== activeYear) continue; // Hide empty years for this subject
 
     const isActive = activeYear === yearStr;
     const btn = document.createElement("button");
-    btn.className = `px-5 py-2 rounded-xl text-sm font-bold border transition-all ${isActive ? "bg-cbse-blue text-white shadow-lg" : "bg-white text-slate-600 border-slate-200"}`;
+    btn.className = `px-5 py-2 rounded-xl text-sm font-bold border transition-all whitespace-nowrap flex-shrink-0 ${isActive ? "bg-cbse-blue text-white shadow-lg" : "bg-white text-slate-600 border-slate-200"}`;
     btn.dataset.year = yearStr;
     btn.innerHTML = `<span>${yearStr}</span> <span class="text-[10px] opacity-60 ml-1">(${count})</span>`;
     container.appendChild(btn);
@@ -193,7 +198,7 @@ function bindEventsOnce() {
   document.getElementById("filter-subject")?.addEventListener("change", async (e) => {
     activeSubject = normalizeSubject(e.target.value);
     showLoading(`Updating ${activeSubject}...`);
-    await loadVaultData(currentGrade, activeSubject, activeYear);
+    await loadPyqVault(currentGrade, activeSubject);
     setupYearRibbon(); // Update counts
     renderGrid();
     hideLoadingShowApp();
@@ -203,11 +208,9 @@ function bindEventsOnce() {
     const btn = e.target.closest("button[data-year]");
     if (!btn) return;
     activeYear = btn.dataset.year;
-    showLoading(`Switching to ${activeYear}...`);
-    await loadVaultData(currentGrade, activeSubject, activeYear);
+    // ZERO LATENCY: No fetching, just render from memory
     setupYearRibbon(); 
     renderGrid();
-    hideLoadingShowApp();
   });
 
   ["filter-difficulty", "filter-type", "filter-set"].forEach(id => {
