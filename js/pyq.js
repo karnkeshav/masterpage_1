@@ -1,32 +1,29 @@
-// js/pyq.js
+// js/pyq.js - Optimized for Cost & Safety
 
 import { getInitializedClients } from "./config.js";
-
 import {
   collection,
   query,
   where,
   getDocs,
   doc,
-  setDoc,
-  getDoc
+  getDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // --- STATE MANAGEMENT ---
-let auth = null;
-let automationDB = null;
-let studentDB = null;
-
+let auth, automationDB, studentDB;
 let currentUser = null;
 let currentGrade = "10";
 let currentProfileName = null;
 
+// CACHE: Stores data in memory to prevent re-fetching the same selection
+let vaultCache = {}; 
 let currentVaultData = [];
 let currentProgressMap = {};
 
-let activeYear = "2022";
+let activeYear = "2025"; 
 let activeSubject = "Mathematics";
 let activeDifficulty = "all";
 let activeType = "board_final";
@@ -41,432 +38,143 @@ document.addEventListener("DOMContentLoaded", init);
 
 // --- INITIALIZATION ---
 async function init() {
-  showLoading("Loading Vault...");
-
+  showLoading("Initializing Secure Vault...");
   try {
     const clients = await getInitializedClients();
     auth = clients.auth;
     automationDB = clients.automationDB;
     studentDB = clients.studentDB || clients.db;
 
-    if (!auth || !automationDB || !studentDB) {
-      showFatal("Firebase services are not ready.");
-      return;
-    }
+    if (authUnsubscribe) authUnsubscribe();
 
-    if (authUnsubscribe) {
-      authUnsubscribe();
-      authUnsubscribe = null;
-    }
-
-    authUnsubscribe = onAuthStateChanged(
-      auth,
-      async (user) => {
-        const bootToken = ++authBootToken;
-        currentUser = user || null;
-        window.currentUser = currentUser;
-
-        if (!currentUser) {
-          showLoggedOutState();
-          return;
-        }
-
-        try {
-          showLoading("Loading your vault...");
-          await bootForAuthenticatedUser(bootToken);
-        } catch (error) {
-          console.error("Vault init failed:", error);
-          showFatal("Failed to load vault data.");
-        }
-      },
-      (error) => {
-        console.error("Auth state error:", error);
-        showFatal("Authentication error.");
+    authUnsubscribe = onAuthStateChanged(auth, async (user) => {
+      const bootToken = ++authBootToken;
+      currentUser = user || null;
+      if (!currentUser) {
+        showLoggedOutState();
+        return;
       }
-    );
+      try {
+        await bootForAuthenticatedUser(bootToken);
+      } catch (error) {
+        console.error("Vault init failed:", error);
+        showFatal("Failed to load your secure vault.");
+      }
+    });
   } catch (error) {
-    console.error("Init error:", error);
-    showFatal("Failed to initialize page.");
+    showFatal("System services unavailable.");
   }
 }
 
 async function bootForAuthenticatedUser(bootToken) {
-  const grade = resolveGrade(currentUser);
-  currentGrade = grade;
+  // 1. Resolve Grade (Security: Verify assigned grade from Firestore profile)
+  const profileDoc = await getDoc(doc(studentDB, "users", currentUser.uid));
+  const profile = profileDoc.exists() ? profileDoc.data() : {};
+  
+  const assignedGrade = String(profile.classId || profile.grade || "10");
+  const urlGrade = new URLSearchParams(window.location.search).get("grade");
+  
+  // Only admins can override grade via URL
+  currentGrade = urlGrade && (profile.role === 'admin' || profile.role === 'owner') ? urlGrade : assignedGrade;
+  
+  currentProfileName = profile.displayName || "Student";
+  updateHeader(currentGrade);
 
-  // Fetch Firestore profile for displayName
-  try {
-    const userDoc = await getDoc(doc(studentDB, "users", currentUser.uid));
-    if (userDoc.exists()) {
-      const profile = userDoc.data();
-      currentProfileName = profile.displayName || null;
-    }
-  } catch (e) { console.warn("Could not fetch user profile for header:", e); }
-
-  updateHeader(grade);
-
-  // FETCH: Vault data (Papers)
-  await loadVaultData(grade);
+  // 2. Fetch data for DEFAULT selection only (Significant cost reduction)
+  await loadVaultData(currentGrade, activeSubject, activeYear);
   if (bootToken !== authBootToken) return;
 
-  // FETCH: User Progress (Completion status)
-  await loadProgress(currentUser.uid);
-  if (bootToken !== authBootToken) return;
-
-  applyDefaultSelections();
+  // 3. Load Progress (Limited to current user & grade)
+  await loadProgress(currentUser.uid, currentGrade);
+  
   setupYearRibbon();
   setupFilters();
   bindEventsOnce();
-  
   renderGrid();
   hideLoadingShowApp();
 }
 
-// --- DATA FETCHING ---
+// --- OPTIMIZED DATA FETCHING ---
 
-async function loadVaultData(grade) {
-  if (!automationDB) {
-    currentVaultData = [];
+async function loadVaultData(grade, subject, year) {
+  if (!automationDB) return;
+  const cacheKey = `${grade}_${subject}_${year}`;
+  
+  // Use cache if available (Costs 0 reads)
+  if (vaultCache[cacheKey]) {
+    currentVaultData = vaultCache[cacheKey];
     return;
   }
 
-  // CORRECT: Using 'q' to filter by grade (Fixes permission issues)
+  // Server-side filtering: Reads only ~5 docs instead of 500
   const q = query(
     collection(automationDB, "Ready4Exam_Vault"),
-    where("grade", "==", String(grade))
+    where("grade", "==", String(grade)),
+    where("subject", "==", subject),
+    where("year", "==", String(year))
   );
 
   const snapshot = await getDocs(q);
-  const dedupe = new Map();
-
+  const data = [];
   snapshot.forEach((snapDoc) => {
-    const item = normalizeVaultItem({
-      id: snapDoc.id,
-      ...snapDoc.data()
-    });
-
-    if (!item.code) return;
-
-    const key = [
-      item.year,
-      item.subject,
-      item.exam_type,
-      item.difficulty,
-      item.set,
-      item.code
-    ].join("|");
-
-    dedupe.set(key, item);
+    data.push(normalizeVaultItem({ id: snapDoc.id, ...snapDoc.data() }));
   });
 
-  currentVaultData = Array.from(dedupe.values()).sort((a, b) => {
-    const yearA = Number(a.year || 0);
-    const yearB = Number(b.year || 0);
-    if (yearA !== yearB) return yearB - yearA;
-
-    const setA = Number(a.set || 0);
-    const setB = Number(b.set || 0);
-    if (setA !== setB) return setA - setB;
-
-    return String(a.code).localeCompare(String(b.code));
-  });
+  vaultCache[cacheKey] = data;
+  currentVaultData = data;
 }
 
-async function loadProgress(uid) {
-  if (!uid || !studentDB) {
-    currentProgressMap = {};
-    return;
-  }
-
+async function loadProgress(uid, grade) {
   const q = query(
     collection(studentDB, "user_progress"),
-    where("user_id", "==", uid)
+    where("user_id", "==", uid),
+    where("grade", "==", String(grade))
   );
-
   const snapshot = await getDocs(q);
-
   currentProgressMap = {};
   snapshot.forEach((snapDoc) => {
-    const data = snapDoc.data() || {};
-    if (data.code) {
-      currentProgressMap[String(data.code)] = Boolean(data.completed);
-    }
+    const data = snapDoc.data();
+    if (data.code) currentProgressMap[String(data.code)] = Boolean(data.completed);
   });
 }
 
-// --- UTILS & NORMALIZATION ---
-
-function resolveGrade(user) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlGrade = urlParams.get("grade");
-  if (urlGrade) return String(urlGrade);
-
-  if (user?.classId) return String(user.classId);
-  if (user?.grade) return String(user.grade);
-  if (user?.class_id) return String(user.class_id);
-
-  return "10";
-}
-
-function normalizeSubject(value) {
-  const raw = String(value || "").trim().toLowerCase();
-  if (["math", "maths", "mathematics"].includes(raw)) return "Mathematics";
-
-   if (raw.includes("social")) return "Social Science";
-  if (raw.includes("science")) return "Science";
- 
-  if (raw.includes("english")) return "English";
-  if (raw.includes("hindi")) return "Hindi";
-  return String(value || "").trim();
-}
-
-function normalizeExamType(value) {
-  const raw = String(value || "").trim().toLowerCase();
-  if (raw.includes("comp")) return "compartment";
-  if (raw.includes("board") || raw.includes("final") || raw === "main") return "board_final";
-  return raw || "board_final";
-}
-
-function normalizeDifficulty(value) {
-  const raw = String(value || "").trim().toLowerCase();
-  if (raw === "basic") return "basic";
-  if (raw === "standard") return "standard";
-  return "all";
-}
-
-function normalizeSet(value, code) {
-  if (value !== undefined && value !== null && String(value).trim() !== "") {
-    return String(value).trim();
-  }
-  return extractSetFromCode(code) || "";
-}
-
-function extractSetFromCode(code) {
-  const raw = String(code || "").trim();
-  if (!raw) return "";
-  const parts = raw.split("_");
-  return parts.length ? String(parts[parts.length - 1]).trim() : "";
-}
-
-function normalizeCode(code) {
-  return String(code || "").trim().replace(/-/g, "_");
-}
-
-function normalizeVaultItem(raw) {
-  const code = normalizeCode(raw.code);
-  const year = String(raw.year || "").trim() || "2022";
-  const subject = normalizeSubject(raw.subject || "Mathematics");
-  const examType = normalizeExamType(raw.exam_type || raw.type || "board_final");
-  const difficulty = normalizeDifficulty(raw.difficulty || "all");
-  const set = normalizeSet(raw.set, code);
-
-  return {
-    id: raw.id || code,
-    ...raw,
-    code,
-    year,
-    subject,
-    exam_type: examType,
-    difficulty,
-    set
-  };
-}
-
-// --- UI HELPERS ---
-
-function showLoading(message) {
-  const loading = document.getElementById("loading");
-  const app = document.getElementById("app");
-  if (loading) {
-    loading.classList.remove("hidden");
-    loading.innerHTML = `<div class="animate-pulse font-bold text-slate-400">${escapeHtml(message || "Loading...")}</div>`;
-  }
-  if (app) app.classList.add("hidden");
-}
-
-function hideLoadingShowApp() {
-  const loading = document.getElementById("loading");
-  const app = document.getElementById("app");
-  if (loading) loading.classList.add("hidden");
-  if (app) app.classList.remove("hidden");
-}
-
-function showFatal(message) {
-  const loading = document.getElementById("loading");
-  const app = document.getElementById("app");
-  if (app) app.classList.add("hidden");
-  if (loading) {
-    loading.classList.remove("hidden");
-    loading.innerHTML = `
-      <div class="text-center max-w-md mx-auto px-4">
-        <div class="w-14 h-14 mx-auto rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl mb-3">
-          <i class="fas fa-triangle-exclamation"></i>
-        </div>
-        <div class="font-bold text-slate-700">${escapeHtml(message || "Something went wrong.")}</div>
-      </div>
-    `;
-  }
-}
-
-function showLoggedOutState() {
-  const loading = document.getElementById("loading");
-  const app = document.getElementById("app");
-  if (app) app.classList.add("hidden");
-  if (loading) {
-    loading.classList.remove("hidden");
-    loading.innerHTML = `
-      <div class="text-center max-w-md mx-auto px-4">
-        <div class="w-14 h-14 mx-auto rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xl mb-3">
-          <i class="fas fa-user-lock"></i>
-        </div>
-        <div class="font-bold text-slate-700">Please sign in to access the vault.</div>
-      </div>
-    `;
-  }
-}
-
-function updateHeader(grade) {
-  const badge = document.getElementById("context-badge");
-  if (badge) badge.textContent = `Grade ${grade}`;
-  const welcome = document.getElementById("user-welcome");
-  if (welcome && currentUser) {
-    welcome.textContent = currentProfileName || currentUser.displayName || "Student";
-  }
-}
-
-// --- FILTERING LOGIC ---
-
-function resolveSubjectOptions() {
-  const fromData = [...new Set(
-    currentVaultData
-      .map((item) => normalizeSubject(item.subject))
-      .filter(Boolean)
-  )];
-  if (!fromData.length) fromData.push("Mathematics");
-  return fromData;
-}
-
-function resolveAvailableSets(subject, year, examType, difficulty) {
-  const subjectNorm = normalizeSubject(subject);
-  const filtered = currentVaultData.filter((item) => {
-    const matchYear = !year || item.year === String(year);
-    const matchSubject = item.subject === subjectNorm;
-    const matchType = !examType || item.exam_type === examType;
-    const matchDifficulty = !difficulty || difficulty === "all" || item.difficulty === difficulty;
-    return matchYear && matchSubject && matchType && matchDifficulty;
-  });
-  const setValues = [...new Set(filtered.map((item) => String(item.set || "")).filter(Boolean))];
-  return setValues.sort((a, b) => Number(a) - Number(b));
-}
-
-function applyDefaultSelections() {
-  const years = [...new Set(currentVaultData.map((item) => String(item.year)).filter(Boolean))];
-  if (years.length && !years.includes(activeYear)) {
-    activeYear = years[0];
-  }
-}
-
-function setupYearRibbon() {
-  const container = document.getElementById("year-ribbon");
-  if (!container) return;
-  container.innerHTML = "";
-
-  for (let year = 2026; year >= 2022; year--) {
-    const yearStr = String(year);
-    const count = currentVaultData.filter((item) => item.year === yearStr).length;
-    const isActive = activeYear === yearStr;
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = [
-      "relative px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border",
-      isActive
-        ? "bg-cbse-blue text-white border-cbse-blue scale-[1.02]"
-        : "bg-white text-slate-600 border-slate-200 hover:border-cbse-blue hover:text-cbse-blue"
-    ].join(" ");
-
-    btn.dataset.year = yearStr;
-    btn.innerHTML = `
-      <span>${yearStr}</span>
-      <span class="ml-2 text-[10px] font-black ${isActive ? "text-white/90" : "text-slate-400"}">(${count})</span>
-    `;
-    container.appendChild(btn);
-  }
-}
-
-function setupFilters() {
-  const subjectSelect = document.getElementById("filter-subject");
-  const difficultySelect = document.getElementById("filter-difficulty");
-  const typeSelect = document.getElementById("filter-type");
-  const setSelect = document.getElementById("filter-set");
-
-  if (!subjectSelect || !difficultySelect || !typeSelect || !setSelect) return;
-
-  const subjects = resolveSubjectOptions();
-  subjectSelect.innerHTML = "";
-  subjects.forEach((subject) => {
-    const opt = document.createElement("option");
-    opt.value = subject;
-    opt.textContent = subject;
-    subjectSelect.appendChild(opt);
-  });
-  subjectSelect.value = activeSubject;
-
-  difficultySelect.disabled = normalizeSubject(activeSubject) !== "Mathematics";
-  difficultySelect.value = activeDifficulty;
-  typeSelect.value = activeType;
-
-  const sets = resolveAvailableSets(activeSubject, activeYear, activeType, activeDifficulty);
-  setSelect.innerHTML = `<option value="all">All Sets</option>`;
-  sets.forEach((setValue) => {
-    const opt = document.createElement("option");
-    opt.value = String(setValue);
-    opt.textContent = `Set ${setValue}`;
-    setSelect.appendChild(opt);
-  });
-  setSelect.value = activeSet;
-}
-
-// --- EVENTS ---
+// --- UI UPDATES ON SELECTION ---
 
 function bindEventsOnce() {
   if (listenersBound) return;
   listenersBound = true;
 
-  document.getElementById("filter-subject")?.addEventListener("change", (e) => {
+  document.getElementById("filter-subject")?.addEventListener("change", async (e) => {
     activeSubject = normalizeSubject(e.target.value);
-    if (activeSubject !== "Mathematics") activeDifficulty = "all";
-    activeSet = "all";
-    setupFilters();
+    showLoading(`Loading ${activeSubject}...`);
+    await loadVaultData(currentGrade, activeSubject, activeYear);
     renderGrid();
+    hideLoadingShowApp();
+  });
+
+  document.getElementById("year-ribbon")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-year]");
+    if (!btn) return;
+    activeYear = btn.dataset.year;
+    showLoading(`Switching to ${activeYear}...`);
+    await loadVaultData(currentGrade, activeSubject, activeYear);
+    setupYearRibbon(); 
+    renderGrid();
+    hideLoadingShowApp();
   });
 
   document.getElementById("filter-difficulty")?.addEventListener("change", (e) => {
     activeDifficulty = normalizeDifficulty(e.target.value);
-    activeSet = "all";
-    setupFilters();
     renderGrid();
   });
 
   document.getElementById("filter-type")?.addEventListener("change", (e) => {
     activeType = normalizeExamType(e.target.value);
-    activeSet = "all";
-    setupFilters();
     renderGrid();
   });
 
   document.getElementById("filter-set")?.addEventListener("change", (e) => {
     activeSet = String(e.target.value || "all");
-    renderGrid();
-  });
-
-  document.getElementById("year-ribbon")?.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-year]");
-    if (!btn) return;
-    activeYear = btn.dataset.year;
-    activeSet = "all";
-    setupYearRibbon();
-    setupFilters();
     renderGrid();
   });
 
@@ -576,16 +284,11 @@ function openPdfModal(url, title) {
     alert("Document not available yet.");
     return;
   }
-
   const modal = document.getElementById("pdf-modal");
   const modalTitle = document.getElementById("pdf-modal-title");
   const iframe = document.getElementById("pdf-frame");
-
   if (!modal || !modalTitle || !iframe) return;
-
-  // LOCK SCROLL
   document.body.style.overflow = "hidden";
-
   modalTitle.textContent = title || "Document Viewer";
   iframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
   modal.classList.remove("hidden");
@@ -594,11 +297,8 @@ function openPdfModal(url, title) {
 function closePdfModal() {
   const modal = document.getElementById("pdf-modal");
   const iframe = document.getElementById("pdf-frame");
-
   if (modal) modal.classList.add("hidden");
   if (iframe) iframe.src = "about:blank";
-
-  // UNLOCK SCROLL
   document.body.style.overflow = "auto";
 }
 
@@ -611,7 +311,6 @@ async function toggleProgress(item) {
       alert("Please sign in first.");
       return;
     }
-
     const uid = currentUser.uid;
     const code = String(item.code || "").trim();
     if (!code) return;
@@ -621,7 +320,6 @@ async function toggleProgress(item) {
     renderGrid();
 
     const progressDocId = `${uid}__${code}`;
-
     await setDoc(
       doc(studentDB, "user_progress", progressDocId),
       {
@@ -644,11 +342,110 @@ async function toggleProgress(item) {
   }
 }
 
+// --- HELPERS (Essential for operation) ---
+
+function normalizeSubject(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (["math", "maths", "mathematics"].includes(raw)) return "Mathematics";
+  if (raw.includes("social")) return "Social Science";
+  if (raw.includes("science")) return "Science";
+  if (raw.includes("english")) return "English";
+  if (raw.includes("hindi")) return "Hindi";
+  return String(value || "").trim();
+}
+
+function normalizeExamType(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw.includes("comp")) return "compartment";
+  if (raw.includes("board") || raw.includes("final") || raw === "main") return "board_final";
+  return raw || "board_final";
+}
+
+function normalizeDifficulty(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "basic") return "basic";
+  if (raw === "standard") return "standard";
+  return "all";
+}
+
+function normalizeCode(code) {
+  return String(code || "").trim().replace(/-/g, "_");
+}
+
+function normalizeVaultItem(raw) {
+  const code = normalizeCode(raw.code);
+  const year = String(raw.year || "").trim() || "2022";
+  const subject = normalizeSubject(raw.subject || "Mathematics");
+  const examType = normalizeExamType(raw.exam_type || raw.type || "board_final");
+  const difficulty = normalizeDifficulty(raw.difficulty || "all");
+  return {
+    id: raw.id || code,
+    ...raw,
+    code,
+    year,
+    subject,
+    exam_type: examType,
+    difficulty
+  };
+}
+
+function setupYearRibbon() {
+  const container = document.getElementById("year-ribbon");
+  if (!container) return;
+  container.innerHTML = "";
+  for (let year = 2026; year >= 2022; year--) {
+    const yearStr = String(year);
+    const isActive = activeYear === yearStr;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = [
+      "relative px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border",
+      isActive ? "bg-cbse-blue text-white border-cbse-blue" : "bg-white text-slate-600 border-slate-200"
+    ].join(" ");
+    btn.dataset.year = yearStr;
+    btn.innerHTML = `<span>${yearStr}</span>`;
+    container.appendChild(btn);
+  }
+}
+
+function setupFilters() {
+  const subjectSelect = document.getElementById("filter-subject");
+  if (subjectSelect) subjectSelect.value = activeSubject;
+}
+
+function updateHeader(grade) {
+  const badge = document.getElementById("context-badge");
+  if (badge) badge.textContent = `Grade ${grade}`;
+  const welcome = document.getElementById("user-welcome");
+  if (welcome) welcome.textContent = currentProfileName || "Student";
+}
+
+function showLoading(message) {
+  const loading = document.getElementById("loading");
+  if (loading) {
+    loading.classList.remove("hidden");
+    loading.innerHTML = `<div class="animate-pulse font-bold text-slate-400">${message}</div>`;
+  }
+  document.getElementById("app")?.classList.add("hidden");
+}
+
+function hideLoadingShowApp() {
+  document.getElementById("loading")?.classList.add("hidden");
+  document.getElementById("app")?.classList.remove("hidden");
+}
+
+function showFatal(message) {
+  const loading = document.getElementById("loading");
+  if (loading) {
+    loading.classList.remove("hidden");
+    loading.innerHTML = `<div class="text-red-500 font-bold">${message}</div>`;
+  }
+}
+
+function showLoggedOutState() {
+  showFatal("Please sign in to access the vault.");
+}
+
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
