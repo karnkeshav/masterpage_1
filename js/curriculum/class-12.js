@@ -270,7 +270,9 @@ export const curriculum = {
       { "chapter_title": "Manufacturing Industries", "table_id": "geography_manufacturing_industries_12_quiz", "section": "Humanities" },
       { "chapter_title": "Transport, Communication & Trade", "table_id": "geography_transport_trade_12_quiz", "section": "Humanities" }
     ]
-  }
+  },
+
+  "Hindi": []
 
 };
 

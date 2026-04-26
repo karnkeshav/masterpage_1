@@ -81,7 +81,11 @@ export const curriculum = {
       { "chapter_title": "Statistics", "table_id": "mathematics_statistics_statistics_10_quiz", "section": "Mathematics" },
       { "chapter_title": "Probability", "table_id": "mathematics_probability_probability_10_quiz", "section": "Mathematics" }
     ]
-  }
+  },
+
+  "English": [],
+
+  "Hindi": []
 };
 
 export default curriculum;
