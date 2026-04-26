@@ -100,6 +100,12 @@ service cloud.firestore {
       }
     }
 
+    // Subject Analysis Collection
+    match /Subject_Analysis/{subjectId} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin() || isOwner();
+    }
+
     // Question Vault Collection
     match /question_vault/{paperId} {
       allow read: if isLoggedIn();

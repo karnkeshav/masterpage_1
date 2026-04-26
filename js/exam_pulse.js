@@ -1,10 +1,6 @@
 import { getInitializedClients } from './config.js';
 import { bindConsoleLogout } from './guard.js';
 import { 
-    collectionGroup, 
-    query, 
-    where, 
-    getDocs,
     doc,
     getDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -101,23 +97,11 @@ async function runPulseAnalysis() {
     document.getElementById('subject-tag').textContent = state.subject;
 
     try {
-        // No orderBy — avoids requiring a composite index and avoids dropping
-        // docs that are missing the sort field. Sorting happens client-side.
-        const q = query(
-            collectionGroup(state.db, 'questions'),
-            where('subject', '==', state.subject)
-        );
+        const docRef = doc(state.db, 'Subject_Analysis', state.subject);
+        const docSnap = await getDoc(docRef);
 
-        const snap = await getDocs(q);
-        const records = snap.docs.map(d => ({
-            data: d.data(),
-            paperId: d.ref.parent.parent ? d.ref.parent.parent.id : null
-        }));
-        const paperIds = new Set(records.map(r => r.paperId).filter(Boolean));
-
-        if (setsEl) setsEl.textContent = `Sets Analyzed: ${paperIds.size}`;
-
-        if (records.length === 0) {
+        if (!docSnap.exists()) {
+            if (setsEl) setsEl.textContent = `Sets Analyzed: 0`;
             weightageContainer.innerHTML = `<p class="text-slate-400 text-sm">No archive data found for ${state.subject}.</p>`;
             if (mcqEl) mcqEl.innerHTML = `<p class="text-xs text-white/60 font-medium">No MCQ data yet.</p>`;
             if (subjEl) subjEl.innerHTML = `<p class="text-xs text-slate-400 font-medium">No long-answer data yet.</p>`;
@@ -126,9 +110,14 @@ async function runPulseAnalysis() {
             return;
         }
 
-        const totalMarksAcrossYears = records.reduce((acc, r) => acc + (Number(r.data.marks) || 0), 0);
-        const metrics = aggregateChapterMetrics(records);
-        const totalPapers = paperIds.size;
+        const data = docSnap.data();
+        const totalPapers = data.total_papers || 0;
+        const totalMarksAcrossYears = data.total_marks || 0;
+
+        if (setsEl) setsEl.textContent = `Sets Analyzed: ${totalPapers}`;
+
+        // chapters data should be an array of objects: { name, marks, mcqs, subjective, paperCount }
+        const metrics = data.chapters || [];
 
         // Cumulative Mark Weightage
         const byMarks = metrics.slice().sort((a, b) => b.marks - a.marks);
@@ -217,27 +206,7 @@ async function runPulseAnalysis() {
     }
 }
 
-function aggregateChapterMetrics(records) {
-    const chapters = {};
-    records.forEach(({ data, paperId }) => {
-        const name = data.chapter || 'Foundation';
-        if (!chapters[name]) {
-            chapters[name] = { name, marks: 0, mcqs: 0, subjective: 0, _papers: new Set() };
-        }
-        const marks = Number(data.marks) || 0;
-        chapters[name].marks += marks;
-        if (marks === 1) chapters[name].mcqs++;
-        if (marks >= 3) chapters[name].subjective++;
-        if (paperId) chapters[name]._papers.add(paperId);
-    });
-    return Object.values(chapters).map(c => ({
-        name: c.name,
-        marks: c.marks,
-        mcqs: c.mcqs,
-        subjective: c.subjective,
-        paperCount: c._papers.size
-    }));
-}
+
 
 function showView(viewId) {
     const views = ['subject-selection-view', 'analysis-dashboard-view'];
