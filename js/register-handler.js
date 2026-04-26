@@ -131,7 +131,7 @@ form.addEventListener('submit', async (e) => {
             throw new Error(errData.error || 'Failed to create order');
         }
 
-        const { orderId } = await orderRes.json();
+        const { orderId, verificationToken } = await orderRes.json();
 
         // Step 2: Open Razorpay Checkout
         const rzpResponse = await openRazorpayCheckout({
@@ -151,6 +151,7 @@ form.addEventListener('submit', async (e) => {
                 razorpay_order_id: rzpResponse.razorpay_order_id,
                 razorpay_payment_id: rzpResponse.razorpay_payment_id,
                 razorpay_signature: rzpResponse.razorpay_signature,
+                verificationToken: verificationToken,
                 password: password // Sent securely over HTTPS so server can create user
             })
         });

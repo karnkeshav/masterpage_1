@@ -1,5 +1,6 @@
 const Razorpay = require('razorpay');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 
 // Ensure Firebase is initialized
 if (!admin.apps.length) {
@@ -21,7 +22,8 @@ const TIER_META = {
 
 module.exports = async (req, res) => {
     // Handle CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -55,6 +57,7 @@ module.exports = async (req, res) => {
         };
 
         const order = await instance.orders.create(options);
+        const verificationToken = crypto.randomBytes(32).toString('hex');
 
         // Store Pending Registration
         await db.collection('pending_registrations').doc(order.id).set({
@@ -68,11 +71,12 @@ module.exports = async (req, res) => {
             board,
             stream: stream || '',
             subjects: subjects || [],
+            verificationToken,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             status: 'pending'
         });
 
-        return res.status(200).json({ orderId: order.id });
+        return res.status(200).json({ orderId: order.id, verificationToken });
 
     } catch (error) {
         console.error("Create order failed:", error);

@@ -12,7 +12,8 @@ const db = admin.firestore();
 
 module.exports = async (req, res) => {
     // Handle CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -25,9 +26,9 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, password } = req.body;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, verificationToken, password } = req.body;
 
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !password) {
+        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !verificationToken || !password) {
             return res.status(400).json({ error: 'Missing required parameters' });
         }
 
@@ -50,6 +51,10 @@ module.exports = async (req, res) => {
         }
 
         const data = orderSnap.data();
+
+        if (data.verificationToken !== verificationToken) {
+            return res.status(403).json({ error: 'Invalid verification token' });
+        }
 
         // Prevent double processing
         if (data.status === 'completed') {
