@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
             .update(razorpay_order_id + "|" + razorpay_payment_id)
             .digest('hex');
 
-        if (generated_signature !== razorpay_signature) {
+        if (!crypto.timingSafeEqual(Buffer.from(generated_signature, 'hex'), Buffer.from(razorpay_signature, 'hex'))) {
             return res.status(400).json({ error: 'Invalid payment signature' });
         }
 
