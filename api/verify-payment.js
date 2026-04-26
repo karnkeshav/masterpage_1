@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
             .update(razorpay_order_id + "|" + razorpay_payment_id)
             .digest('hex');
 
-        if (!crypto.timingSafeEqual(Buffer.from(generated_signature, 'hex'), Buffer.from(razorpay_signature, 'hex'))) {
+        if (generated_signature !== razorpay_signature) {
             return res.status(400).json({ error: 'Invalid payment signature' });
         }
 
@@ -61,12 +61,21 @@ module.exports = async (req, res) => {
              return res.status(200).json({ success: true, message: 'Already processed' });
         }
 
-        // 3. Create Firebase Auth User
-        const userRecord = await admin.auth().createUser({
-            email: data.email,
-            password: password,
-            displayName: data.name
-        });
+        // 3. Create Firebase Auth User (Idempotent)
+        let userRecord;
+        try {
+            userRecord = await admin.auth().createUser({
+                email: data.email,
+                password: password,
+                displayName: data.name
+            });
+        } catch (authError) {
+            if (authError.code === 'auth/email-already-exists') {
+                userRecord = await admin.auth().getUserByEmail(data.email);
+            } else {
+                throw authError;
+            }
+        }
 
         // 4. Compute Expiry and Modules
         const now = new Date();
@@ -115,10 +124,15 @@ module.exports = async (req, res) => {
             }
         }
 
-        await db.collection('users').doc(userRecord.uid).set(profileData);
+        // 5, 6 & 7: Atomic Batch Write
+        const batch = db.batch();
+
+        // 5. Write Active Profile to Firestore
+        batch.set(db.collection('users').doc(userRecord.uid), profileData);
 
         // 6. Record Financial Event
-        await db.collection('schools').doc('B2C_REVENUE').collection('financial_events').add({
+        const eventRef = db.collection('schools').doc('B2C_REVENUE').collection('financial_events').doc();
+        batch.set(eventRef, {
             type: "PAYMENT",
             amount: revenueAmt,
             details: `B2C Registration: ${data.planID} for ${data.email} (ID: ${razorpay_payment_id})`,
@@ -127,11 +141,13 @@ module.exports = async (req, res) => {
         });
 
         // 7. Cleanup Pending Order (or mark completed)
-        await orderDocRef.update({
+        batch.update(orderDocRef, {
              status: 'completed',
              uid: userRecord.uid,
              completedAt: admin.firestore.FieldValue.serverTimestamp()
         });
+
+        await batch.commit();
 
         return res.status(200).json({ success: true });
 
