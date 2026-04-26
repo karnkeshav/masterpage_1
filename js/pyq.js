@@ -1,3 +1,13 @@
+
+// Sanitization helper
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+}
 // js/pyq.js - Optimized for Zero-Waste Reads & Dynamic UI
 
 import { getInitializedClients } from "./config.js";
@@ -11,6 +21,7 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { loadCurriculum } from "./curriculum/loader.js";
 
 // --- STATE MANAGEMENT ---
 let auth, automationDB, studentDB;
@@ -84,7 +95,7 @@ async function bootForAuthenticatedUser(bootToken) {
   await runDiscovery(currentGrade);
 
   // 3. FETCH DETAIL: Load the default grid (2025 Mathematics)
-  await loadVaultData(currentGrade, activeSubject, activeYear);
+  await loadPyqVault(currentGrade, activeSubject, activeYear);
   if (bootToken !== authBootToken) return;
 
   await loadProgress(currentUser.uid, currentGrade);
@@ -100,7 +111,7 @@ async function bootForAuthenticatedUser(bootToken) {
 
 async function runDiscovery(grade) {
   // Fetches just enough to build filters. Costs 1 bulk read for the grade.
-  const q = query(collection(automationDB, "Ready4Exam_Vault"), where("grade", "==", String(grade)));
+  const q = query(collection(automationDB, "pyq_vault"), where("grade", "==", String(grade)));
   const snap = await getDocs(q);
   discoveryData = [];
   snap.forEach(d => {
@@ -112,7 +123,7 @@ async function runDiscovery(grade) {
   });
 }
 
-async function loadVaultData(grade, subject, year) {
+async function loadPyqVault(grade, subject, year) {
   if (!automationDB) return;
   const cacheKey = `${grade}_${subject}_${year}`;
   
@@ -123,7 +134,7 @@ async function loadVaultData(grade, subject, year) {
 
   // REPLACEMENT: Fetch only what is visible. Reads ~5 docs instead of 500.
   const q = query(
-    collection(automationDB, "Ready4Exam_Vault"),
+    collection(automationDB, "pyq_vault"),
     where("grade", "==", String(grade)),
     where("subject", "==", subject),
     where("year", "==", String(year))
@@ -193,7 +204,7 @@ function bindEventsOnce() {
   document.getElementById("filter-subject")?.addEventListener("change", async (e) => {
     activeSubject = normalizeSubject(e.target.value);
     showLoading(`Updating ${activeSubject}...`);
-    await loadVaultData(currentGrade, activeSubject, activeYear);
+    await loadPyqVault(currentGrade, activeSubject, activeYear);
     setupYearRibbon(); // Update counts
     renderGrid();
     hideLoadingShowApp();
@@ -204,7 +215,7 @@ function bindEventsOnce() {
     if (!btn) return;
     activeYear = btn.dataset.year;
     showLoading(`Switching to ${activeYear}...`);
-    await loadVaultData(currentGrade, activeSubject, activeYear);
+    await loadPyqVault(currentGrade, activeSubject, activeYear);
     setupYearRibbon(); 
     renderGrid();
     hideLoadingShowApp();
@@ -265,13 +276,13 @@ function renderGrid() {
     card.dataset.index = String(index);
     card.innerHTML = `
       <div class="flex justify-between items-start mb-4">
-        <span class="px-3 py-1 bg-indigo-50 text-cbse-blue text-xs font-black rounded-lg">${item.year}</span>
+        <span class="px-3 py-1 bg-indigo-50 text-cbse-blue text-xs font-black rounded-lg">${esc(item.year)}</span>
         <span class="text-[10px] font-bold text-slate-400 uppercase">${item.exam_type}</span>
       </div>
       <div class="flex-grow flex flex-col items-center text-center py-4">
         <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 text-3xl mb-3"><i class="fas fa-file-pdf"></i></div>
         <h4 class="font-bold text-slate-800 text-sm mb-1">${item.code}</h4>
-        <p class="text-xs text-slate-500">${item.subject} • Set ${item.set || '-'}</p>
+        <p class="text-xs text-slate-500">${esc(item.subject)} • Set ${item.set || '-'}</p>
       </div>
       <div class="mt-4 pt-4 border-t grid grid-cols-2 gap-2">
         <button data-action="open-qp" class="py-2 text-[10px] font-bold bg-slate-50 rounded-xl hover:bg-cbse-blue hover:text-white transition-colors">View QP</button>

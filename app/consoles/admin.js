@@ -1,7 +1,17 @@
+
+// Sanitization helper
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+}
 import { getInitializedClients } from "../../js/config.js";
 import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 import { loadCurriculum } from "../../js/curriculum/loader.js";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, setDoc, deleteDoc, getDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, onSnapshot, orderBy, arrayUnion, arrayRemove, setDoc, deleteDoc, getDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
@@ -1212,7 +1222,7 @@ function renderBucket(elementId, users, type) {
             const streamBadge = u.stream ? `<span class="ml-2 text-[9px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200">[${u.stream}]</span>` : '';
             return `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="p-2 font-bold text-slate-700">${nameOrEmail}${streamBadge}</td>
+                    <td class="p-2 font-bold text-slate-700">${esc(nameOrEmail)}${streamBadge}</td>
                     <td class="p-2">${parentText}</td>
                     <td class="p-2 text-right">
                         <div class="flex gap-1 justify-end flex-wrap items-center">
@@ -1227,7 +1237,7 @@ function renderBucket(elementId, users, type) {
         } else if (type === 'teacher') {
             return `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
+                    <td class="p-4 font-bold text-slate-700">${esc(nameOrEmail)}</td>
                     <td class="p-4 text-xs font-bold text-slate-500">${(u.mapped_disciplines || [u.mapped_discipline]).filter(Boolean).join(', ') || 'Unassigned'}</td>
                     <td class="p-4 text-xs font-bold text-slate-500">${(u.sections || [u.mapped_section]).filter(Boolean).join(', ') || 'Unassigned'}</td>
                     <td class="p-4 text-right">
@@ -1243,9 +1253,9 @@ function renderBucket(elementId, users, type) {
         } else {
             return `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="p-4 font-bold text-slate-700">${nameOrEmail}</td>
+                    <td class="p-4 font-bold text-slate-700">${esc(nameOrEmail)}</td>
                     <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest bg-purple-100 text-purple-700">${u.role}</span></td>
-                    <td class="p-4 text-xs font-bold text-slate-500">${u.school_id}</td>
+                    <td class="p-4 text-xs font-bold text-slate-500">${esc(u.school_id)}</td>
                     <td class="p-4 text-right">
                         <div class="flex gap-1 justify-end flex-wrap items-center">
                             <span class="text-success-green font-bold text-xs"><i class="fas fa-check-circle"></i> Active</span>
@@ -1336,10 +1346,26 @@ window.deleteUser = async (userId, displayName, role = '') => {
     let msg = `Are you sure you want to delete "${displayName}"? This removes their Firestore profile. Firebase Auth account must be deleted separately from Firebase Console.`;
     if (role === 'teacher') {
         msg = `WARNING: Are you sure you want to delete teacher "${displayName}"? Classes assigned to this teacher will lose their subject instructor. This cannot be undone.`;
+    } else if (role === 'student') {
+        msg = `Are you sure you want to delete student "${displayName}"? Their parent will be unlinked. Quiz data will be retained for audit purposes.`;
     }
     if (!confirm(msg)) return;
     try {
         const { db } = await getInitializedClients();
+
+        if (role === 'student') {
+            const stuDoc = await getDoc(doc(db, "users", userId));
+            if (stuDoc.exists()) {
+                const stuData = stuDoc.data();
+                if (stuData.parent_id) {
+                    await updateDoc(doc(db, "users", stuData.parent_id), {
+                        linked_children: arrayRemove(userId),
+                        updated_at: serverTimestamp()
+                    });
+                }
+            }
+        }
+
         await deleteDoc(doc(db, "users", userId));
         alert(`"${displayName}" has been removed from the registry.`);
     } catch(e) {

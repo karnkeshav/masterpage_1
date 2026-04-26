@@ -46,6 +46,9 @@ function removeSkeleton(container) {
 
     // Reset container completely (final guarantee)
     container.innerHTML = "";
+    container.style.opacity = '1';
+    container.style.visibility = 'visible';
+    container.style.zIndex = '1';
 }
 
 async function init(user, profile) {

@@ -1,3 +1,13 @@
+
+// Sanitization helper
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+}
 // app/consoles/teacher.js
 import { getInitializedClients } from "../../js/config.js";
 
@@ -65,7 +75,7 @@ window.showStudentDetail = (uid) => {
 
 
 function filterSectionsForGrade(grade) {
-    const allSections = window.teacherProfile?.sections || (window.teacherProfile?.mapped_section ? [`${window.teacherProfile?.mapped_grade || 'Unassigned'}${window.teacherProfile.mapped_section}`] : []);
+    const allSections = window.teacherProfile?.sections || (window.teacherProfile?.mapped_section ? [`${(window.teacherProfile?.mapped_grade == null ? 'Unassigned' : window.teacherProfile.mapped_grade)}${window.teacherProfile.mapped_section}`] : []);
     const filtered = allSections.filter(s => s.replace(/[A-Z]/g, '') === grade);
     const sectionSelect = document.getElementById('section-select');
     sectionSelect.innerHTML = filtered.map(s =>
@@ -122,7 +132,7 @@ async function init(user) {
     window.teacherProfile = user;
 
     // Populate dropdowns from teacher profile
-    const sections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || 'Unassigned'}${user.mapped_section}`] : []);
+    const sections = user?.sections || (user?.mapped_section ? [`${(user?.mapped_grade == null ? 'Unassigned' : user.mapped_grade)}${user.mapped_section}`] : []);
     const disciplines = user?.mapped_disciplines || (user?.mapped_discipline ? [user.mapped_discipline] : []);
 
     const sectionSelect = document.getElementById('section-select');

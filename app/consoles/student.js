@@ -1,3 +1,13 @@
+
+// Sanitization helper
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+}
 // app/consoles/student.js
 import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 import { getInitializedClients } from "../../js/config.js";
@@ -20,7 +30,7 @@ guardConsole("student");
 
 window.loadConsoleData = async (profile) => {
     console.log("Loading Class Hub for:", profile.displayName);
-    document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
+    const uw = document.getElementById("user-welcome"); if (uw) uw.textContent = (profile.displayName || "Student");
 
     // 1. Determine Grade First
     let grade = "9";
@@ -48,8 +58,8 @@ window.loadConsoleData = async (profile) => {
 }
 
     // 3. Update UI Elements with Detected Grade
-    document.getElementById("class-title").textContent = `Class ${grade} Hub`;
-    document.getElementById("context-badge").textContent = `Grade ${grade}`;
+    const ct = document.getElementById("class-title"); if (ct) ct.textContent = `Class ${grade} Hub`;
+    const cb = document.getElementById("context-badge"); if (cb) cb.textContent = `Grade ${grade}`;
     const hubTitleEl = document.getElementById("knowledge-hub-title");
     if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
 
@@ -201,12 +211,12 @@ function renderKnowledgeHub(profile) {
 }
 
 window.routeToLibrary = (subject) => {
-    const gradeBadge = document.getElementById("context-badge").textContent;
-    const grade = gradeBadge.replace("Grade ", "").trim();
-
-    if (!grade || grade === "undefined") {
-        console.error("Grade not found in context badge.");
-        return;
+    let grade = window.currentUserProfile?.grade;
+    if (!grade && window.currentUserProfile?.classId) {
+        grade = window.currentUserProfile.classId.split('-')[0];
+    }
+    if (!grade) {
+        grade = '9';
     }
 
     window.location.href = `../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
@@ -395,7 +405,7 @@ window.loadStudentStats = async (uid, grade) => {
         // --- UI RENDERING ---
 
         // 1. Volume Dashboard
-        document.getElementById("stat-coverage").textContent = `${uniqueTouchedChapters.size} Chapters Touched`;
+        const sc = document.getElementById("stat-coverage"); if (sc) sc.textContent = `${uniqueTouchedChapters.size} Chapters Touched`;
 
         // Radial Chart Update
         const coveragePercent = Math.min((uniqueTouchedChapters.size / totalChapters) * 100, 100);
@@ -427,12 +437,12 @@ window.loadStudentStats = async (uid, grade) => {
         // 2. Latest Achievement
         if (latestQuiz && document.getElementById("stat-subject")) {
             document.getElementById("stat-subject").innerHTML = `${sanitize(latestQuiz.chapter)} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
-            document.getElementById("stat-subject-label").textContent = "Latest Achievement:";
+            const ssl = document.getElementById("stat-subject-label"); if (ssl) ssl.textContent = "Latest Achievement:";
         }
 
         // 3. Average Mastery
         const avg = Math.round(totalScoreSum / snapshot.size);
-        document.getElementById("stat-avg").textContent = `${avg}%`;
+        const sa = document.getElementById("stat-avg"); if (sa) sa.textContent = `${avg}%`;
 
         // Update Radial Donut
         const avgRadial = document.getElementById("stat-avg-radial");
@@ -588,7 +598,7 @@ window.loadStudentStats = async (uid, grade) => {
 
         const badgeEl = document.getElementById("global-badge");
         if (badgeEl) {
-            badgeEl.textContent = globalBadgeText;
+            if (badgeEl) badgeEl.textContent = globalBadgeText;
             badgeEl.className = `px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${globalBadgeClass}`;
         }
 

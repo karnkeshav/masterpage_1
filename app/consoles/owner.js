@@ -1,3 +1,13 @@
+
+// Sanitization helper
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+}
 // app/consoles/owner.js — Modular Production Architecture for Owner Command Center
 import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 import { getInitializedClients } from "../../js/config.js";
@@ -50,7 +60,8 @@ async function initRealtimeStreams() {
     const { db } = await getInitializedClients();
 
     // STREAM 1: B2C Individual Users (Capturing Parent Linkage)
-    onSnapshot(
+    if (window._unsubUsers) window._unsubUsers();
+    window._unsubUsers = onSnapshot(
         query(collection(db, "users"), where("tenantType", "==", "individual")),
         (snap) => {
             b2cCache = [];
@@ -65,7 +76,8 @@ async function initRealtimeStreams() {
     );
 
     // STREAM 2: B2B Schools (Restored Detailed Mapping)
-    onSnapshot(
+    if (window._unsubSchools) window._unsubSchools();
+    window._unsubSchools = onSnapshot(
         query(collection(db, "schools"), orderBy("created_at", "desc")),
         (snap) => {
             schoolsCache = [];
@@ -80,7 +92,8 @@ async function initRealtimeStreams() {
     );
 
     // STREAM 3: Consolidated Financial Ledger (High Integrity Split)
-    onSnapshot(
+    if (window._unsubFinancial) window._unsubFinancial();
+    window._unsubFinancial = onSnapshot(
         query(collectionGroup(db, "financial_events"), orderBy("timestamp", "desc")),
         (snap) => {
             financialCache = [];

@@ -1,3 +1,13 @@
+
+// Sanitization helper
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+}
 import { getInitializedClients } from './config.js';
 import { bindConsoleLogout } from './guard.js';
 import { 
@@ -118,7 +128,7 @@ async function runPulseAnalysis() {
         if (setsEl) setsEl.textContent = `Sets Analyzed: ${paperIds.size}`;
 
         if (records.length === 0) {
-            weightageContainer.innerHTML = `<p class="text-slate-400 text-sm">No archive data found for ${state.subject}.</p>`;
+            weightageContainer.innerHTML = `<p class="text-slate-400 text-sm">No archive data found for ${esc(state.subject)}.</p>`;
             if (mcqEl) mcqEl.innerHTML = `<p class="text-xs text-white/60 font-medium">No MCQ data yet.</p>`;
             if (subjEl) subjEl.innerHTML = `<p class="text-xs text-slate-400 font-medium">No long-answer data yet.</p>`;
             if (cyclicalEl) cyclicalEl.innerHTML = `<p class="text-xs text-white/70 font-medium">No cyclical pattern detected yet.</p>`;
@@ -137,7 +147,7 @@ async function runPulseAnalysis() {
             return `
                 <div class="group">
                     <div class="flex justify-between text-[10px] font-black uppercase mb-1.5">
-                        <span class="text-slate-600">${c.name}</span>
+                        <span class="text-slate-600">${esc(c.name)}</span>
                         <span class="text-cbse-blue bg-blue-50 px-1.5 rounded">${perc}%</span>
                     </div>
                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -153,7 +163,7 @@ async function runPulseAnalysis() {
                 ? `<p class="text-xs text-white/60 font-medium">No MCQ data in this archive.</p>`
                 : byMcq.map(c => `
                     <div class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <span class="text-xs font-bold">${c.name}</span>
+                        <span class="text-xs font-bold">${esc(c.name)}</span>
                         <span class="text-[10px] font-black bg-accent-gold text-slate-900 px-2 rounded">${c.mcqs} Hits</span>
                     </div>`).join('');
         }
@@ -165,7 +175,7 @@ async function runPulseAnalysis() {
                 ? `<p class="text-xs text-slate-400 font-medium">No long-answer data in this archive.</p>`
                 : bySubjective.map(c => `
                     <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <span class="text-xs font-bold text-slate-700">${c.name}</span>
+                        <span class="text-xs font-bold text-slate-700">${esc(c.name)}</span>
                         <span class="text-[10px] font-black bg-cbse-blue text-white px-2 rounded">${c.subjective} Longs</span>
                     </div>`).join('');
         }
@@ -181,7 +191,7 @@ async function runPulseAnalysis() {
                     return `
                         <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-bold">${c.name}</span>
+                                <span class="text-xs font-bold">${esc(c.name)}</span>
                                 <span class="text-[10px] font-black bg-accent-gold text-slate-900 px-2 rounded">${label}</span>
                             </div>
                             <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
@@ -203,7 +213,7 @@ async function runPulseAnalysis() {
                         : { label: 'Medium', cls: 'bg-slate-100 text-slate-700' };
                     return `
                         <div class="flex justify-between items-center p-3 rounded-xl border border-slate-100">
-                            <span class="text-xs font-bold text-slate-700">${c.name}</span>
+                            <span class="text-xs font-bold text-slate-700">${esc(c.name)}</span>
                             <span class="text-[10px] font-black px-2 py-0.5 rounded ${tier.cls}">${tier.label}</span>
                         </div>`;
                 }).join('');

@@ -496,4 +496,31 @@
     }
 </script>
 
-</body></html>
+
+<script>
+    // Request Curriculum local logic
+    window.handleRequestSubmit = function(event) {
+        event.preventDefault();
+        const board = document.getElementById('reqBoard').value || '';
+        const cls = document.getElementById('reqClass').value || '';
+        const contact = document.getElementById('reqContact').value || '';
+
+        const bodyStr = `Hi Ready4Exam,\n\nI want to request curriculum access:\nBoard: ${board}\nClass: ${cls}\nContact: ${contact}`;
+        const encodedBody = encodeURIComponent(bodyStr);
+        const mailtoLink = `mailto:ready4urexam@gmail.com?subject=Curriculum Request&body=${encodedBody}`;
+
+        window.location.href = mailtoLink;
+    };
+
+    // Clear login fields on page load using setTimeout
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            if (usernameInput) usernameInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+        }, 100);
+    });
+</script>
+</body>
+</html>

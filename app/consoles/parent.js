@@ -1,3 +1,13 @@
+
+// Sanitization helper
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+}
 // app/consoles/parent.js
 import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 import { getInitializedClients } from "../../js/config.js";
@@ -56,7 +66,8 @@ async function listenToIntercom() {
         collection(db, "messages"),
         where("school_id", "==", schoolId)
     );
-onSnapshot(q, (snapshot) => {  
+if (window._unsubIntercom) window._unsubIntercom();
+    window._unsubIntercom = onSnapshot(q, (snapshot) => {
     feed.innerHTML = "";  
     const badge = document.getElementById("parent-inbox-badge");  
   

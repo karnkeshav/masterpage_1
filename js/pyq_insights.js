@@ -1,3 +1,13 @@
+
+// Sanitization helper
+function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+}
 import { getInitializedClients } from './config.js';  
 import { ensureUserInFirestore } from "./auth-paywall.js"; // Added to fetch profile data
 import {  
@@ -71,15 +81,39 @@ async function runDeepAnalysis() {
     const container = document.getElementById('compendium-container');  
   
     try {  
-        const q = query(  
-            collectionGroup(state.db, 'questions'),  
-            where('subject', '==', state.subject),  
-            where('chapter', '==', chapterName)  
-        );  
-  
-        const snap = await getDocs(q);  
-        const questions = snap.docs.map(d => ({ id: d.id, ...d.data() }));  
-        state.rawQuestions = questions; 
+
+        // Step 1: Get papers matching the subject from question_vault
+        const papersQuery = query(
+            collection(state.db, 'question_vault'),
+            where('subject', '==', state.subject)
+        );
+        const papersSnap = await getDocs(papersQuery);
+
+        // Step 2: For each paper, query its questions subcollection
+        let questions = [];
+        for (const paperDoc of papersSnap.docs) {
+            const qQuery = query(
+                collection(state.db, `question_vault/${paperDoc.id}/questions`),
+                where('chapter', '==', chapterName)
+            );
+            const qSnap = await getDocs(qQuery);
+            qSnap.forEach(d => {
+                questions.push({ id: d.id, paper_id: paperDoc.id, ...d.data() });
+            });
+        }
+
+        // Step 3: Also fetch Historical_Questions from Chapter_Analysis
+        const histQuery = collection(state.db, `Chapter_Analysis/${state.grade}_${state.subject}_${state.chapterID}/Historical_Questions`);
+        const histSnap = await getDocs(histQuery);
+        histSnap.forEach(d => {
+            // merge with questions, or add them if not duplicate
+            if (!questions.find(q => q.id === d.id)) {
+                questions.push({ id: d.id, ...d.data() });
+            }
+        });
+
+        state.rawQuestions = questions;
+
   
         const blueprint = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };  
         const topicMap = {};  
