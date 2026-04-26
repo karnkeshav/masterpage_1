@@ -2,8 +2,7 @@
 
 import { getInitializedClients } from "./config.js";
 import { routeUser } from "./auth-paywall.js";
-import { recordFinancialEvent } from "./api.js";
-import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const form = document.getElementById('registration-form');
@@ -33,7 +32,7 @@ const upiEl = document.getElementById('manual-upi-vpa');
 if (upiEl) upiEl.textContent = BUSINESS_UPI_VPA;
 
 // --- Razorpay Payment Helper ---
-function openRazorpayCheckout({ amount, planLabel, prefill }) {
+function openRazorpayCheckout({ order_id, amount, planLabel, prefill }) {
     return new Promise((resolve, reject) => {
         const cfg = window.__firebase_config || {};
         const keyId = cfg.razorpayKeyId;
@@ -54,7 +53,8 @@ function openRazorpayCheckout({ amount, planLabel, prefill }) {
             currency: "INR",
             name: "Ready4Exam Academy",
             description: planLabel + " Subscription",
-            handler: (res) => resolve(res.razorpay_payment_id),
+            order_id: order_id,
+            handler: (res) => resolve(res),
             prefill: { name: prefill.name, email: prefill.email },
             notes: { plan: selectedTier, tier: planLabel },
             theme: { color: "#1e40af" },
@@ -95,76 +95,75 @@ form.addEventListener('submit', async (e) => {
     }
 
     const username = email.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '').substring(0, 30);
+    const parentEmail = document.getElementById('reg-parent-email')?.value.trim() || '';
+
+    // Plus Addressing / Salted Email for siblings sharing a parent email
+    let computedEmail = email;
+    if (parentEmail) {
+        const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const suffix = `+${safeName}_${grade}`;
+        const parts = parentEmail.split('@');
+        if (parts.length === 2) {
+            computedEmail = `${parts[0]}${suffix}@${parts[1]}`;
+        }
+    }
 
     try {
-        const paymentId = await openRazorpayCheckout({
+        // Step 1: Create Order Server-Side
+        const orderRes = await fetch('/api/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                planID: selectedTier,
+                email: computedEmail,
+                parentEmail,
+                name,
+                username,
+                grade: parseInt(grade),
+                board,
+                stream,
+                subjects
+            })
+        });
+
+        if (!orderRes.ok) {
+            const errData = await orderRes.json();
+            throw new Error(errData.error || 'Failed to create order');
+        }
+
+        const { orderId } = await orderRes.json();
+
+        // Step 2: Open Razorpay Checkout
+        const rzpResponse = await openRazorpayCheckout({
+            order_id: orderId,
             amount: meta.amountPaise,
             planLabel: meta.label,
-            prefill: { name, email }
+            prefill: { name, email: computedEmail }
         });
 
         submitBtn.textContent = "Payment Successful — Finalizing...";
 
-        const { auth, db } = await getInitializedClients();
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        const parentEmail = document.getElementById('reg-parent-email')?.value.trim() || '';
+        // Step 3: Verify Payment Server-Side
+        const verifyRes = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                razorpay_order_id: rzpResponse.razorpay_order_id,
+                razorpay_payment_id: rzpResponse.razorpay_payment_id,
+                razorpay_signature: rzpResponse.razorpay_signature,
+                password: password // Sent securely over HTTPS so server can create user
+            })
+        });
 
-        const now = new Date();
-        const expiry = new Date();
-        if (selectedTier === 'legacy') expiry.setFullYear(now.getFullYear() + 3);
-        else expiry.setDate(now.getDate() + 30);
-
-        const graceDate = new Date(expiry);
-        graceDate.setDate(expiry.getDate() + 5);
-
-        let activeModules = ["SimpleQuizzes"];
-        if (selectedTier === 'practitioner') activeModules.push("MediumQuizzes", "AdvancedQuizzes");
-        if (['strategist', 'sync', 'legacy'].includes(selectedTier)) activeModules.push("MediumQuizzes", "AdvancedQuizzes", "MistakeNotebook", "KnowledgeHub");
-        if (['sync', 'legacy'].includes(selectedTier)) activeModules.push("ParentConsole");
-        if (['board_ready', 'legacy'].includes(selectedTier)) activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
-
-        const revenueAmt = (meta.amountPaise / 100);
-
-        const profileData = {
-            uid: user.uid,
-            displayName: name,
-            username: username,
-            email: email,
-            parentEmail: parentEmail, // ADD THIS: Captures the linked parent ID
-            role: "student",
-            tenantType: "individual",
-            isB2C: true,
-            subscriptionTier: selectedTier,
-            class: parseInt(grade),
-            revenue: revenueAmt,
-            board: board,
-            status: "active",
-            activationDate: serverTimestamp(),
-            accessExpiryDate: expiry,
-            gracePeriodEndDate: graceDate,
-            activeModules: activeModules,
-            razorpayPaymentId: paymentId,
-            createdAt: serverTimestamp()
-        };
-
-        if (stream) {
-            profileData.stream = stream;
-            if (subjects.length > 0) profileData.subjects = subjects;
+        if (!verifyRes.ok) {
+            const errData = await verifyRes.json();
+            throw new Error(errData.error || 'Payment verification failed. Contact Support.');
         }
 
-        // Save User Profile
-        await setDoc(doc(db, "users", user.uid), profileData);
-
-        // SYNC WITH FINANCIAL LEDGER
-        await recordFinancialEvent(
-            "B2C_REVENUE",
-            "PAYMENT",
-            revenueAmt,
-            `B2C Registration: ${meta.label} for ${email} (ID: ${paymentId})`
-        );
-
-        await routeUser(user);
+        // Step 4: Login User Locally and Route
+        const { auth } = await getInitializedClients();
+        const userCredential = await signInWithEmailAndPassword(auth, computedEmail, password);
+        await routeUser(userCredential.user);
 
     } catch (err) {
         console.error(err);

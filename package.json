@@ -30,6 +30,9 @@
   "homepage": "https://github.com/karnkeshav/masterpage_1#readme",
   "dependencies": {
     "cheerio": "^1.2.0",
-    "jsdom": "^29.0.2"
+    "crypto": "^1.0.1",
+    "firebase-admin": "^13.8.0",
+    "jsdom": "^29.0.2",
+    "razorpay": "^2.9.6"
   }
 }
