@@ -72,6 +72,7 @@ module.exports = async (req, res) => {
         } catch (authError) {
             if (authError.code === 'auth/email-already-exists') {
                 userRecord = await admin.auth().getUserByEmail(data.email);
+                await admin.auth().updateUser(userRecord.uid, { password: password });
             } else {
                 throw authError;
             }
