@@ -26,6 +26,13 @@
         R4E.renderHeader({ title: 'Ready4<span class="text-white">Exam</span>', glass: true });
     </script>
 
+    <!-- Loading Overlay -->
+    <div id="payment-loading-overlay" class="hidden fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[100] flex flex-col items-center justify-center text-white">
+        <i class="fas fa-circle-notch fa-spin text-4xl text-success-green mb-4"></i>
+        <h2 class="text-xl font-bold mb-2">Processing Secure Payment</h2>
+        <p class="text-sm text-slate-400">Please do not close or refresh this tab.</p>
+    </div>
+
     <main class="flex-grow flex items-center justify-center px-6 py-24">
         <div class="w-full max-w-2xl bg-glass border-glass p-8 md:p-12 rounded-3xl shadow-2xl">
             
@@ -45,8 +52,8 @@
                         <input type="text" id="reg-name" required class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Email Address</label>
-                        <input type="email" id="reg-email" required class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Parent Email Address</label>
+                        <input type="email" id="reg-parent-email" required class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
                     </div>
                 </div>
 

@@ -29,7 +29,13 @@
   },
   "homepage": "https://github.com/karnkeshav/masterpage_1#readme",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
-    "jsdom": "^29.0.2"
+    "cors": "^2.8.6",
+    "crypto": "^1.0.1",
+    "firebase-admin": "^13.8.0",
+    "jsdom": "^29.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "razorpay": "^2.9.6"
   }
 }
