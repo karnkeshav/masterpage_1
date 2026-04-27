@@ -6,6 +6,11 @@ service cloud.firestore {
     function isLoggedIn() {
       return request.auth != null;
     }
+    function isPasswordValid() {
+      // Allow if no passwordExpiresAt exists OR if the expiry is in the future
+      return !('passwordExpiresAt' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data)
+             || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.passwordExpiresAt > request.time;
+    }
     function isSelf(userId) {
       return isLoggedIn() && request.auth.uid == userId;
     }
@@ -29,16 +34,16 @@ service cloud.firestore {
 
     // Quiz Scores Collection
     match /quiz_scores/{scoreId} {
-      allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
+      allow create: if isLoggedIn() && isPasswordValid() && request.resource.data.user_id == request.auth.uid;
       allow read: if isLoggedIn();
-      allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
+      allow update: if isLoggedIn() && isPasswordValid() && resource.data.user_id == request.auth.uid;
     }
 
     // Mistake Notebook Collection
     match /mistake_notebook/{docId} {
-      allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
+      allow create: if isLoggedIn() && isPasswordValid() && request.resource.data.user_id == request.auth.uid;
       allow read: if isLoggedIn();
-      allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
+      allow update: if isLoggedIn() && isPasswordValid() && resource.data.user_id == request.auth.uid;
     }
 
     // Chapter Control Collection
@@ -86,7 +91,7 @@ service cloud.firestore {
     // Activity Logs Collection
     match /activity_logs/{logId} {
       allow read: if isAdmin() || isOwner();
-      allow create: if isLoggedIn();
+      allow create: if isLoggedIn() && isPasswordValid();
     }
 
     // Chapter Analysis Collection (Intelligence Engine)

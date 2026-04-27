@@ -44,24 +44,46 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Invalid payment signature' });
         }
 
-        // 2. Fetch Pending Registration
+        // 2. Fetch & Lock Pending Registration
         const orderDocRef = db.collection('pending_registrations').doc(razorpay_order_id);
-        const orderSnap = await orderDocRef.get();
 
-        if (!orderSnap.exists) {
-            return res.status(404).json({ error: 'Pending registration not found' });
-        }
+        let data;
+        await db.runTransaction(async (transaction) => {
+            const orderSnap = await transaction.get(orderDocRef);
+            if (!orderSnap.exists) {
+                throw new Error('Pending registration not found');
+            }
+            data = orderSnap.data();
 
-        const data = orderSnap.data();
+            if (data.verificationToken !== verificationToken) {
+                throw new Error('Invalid verification token');
+            }
 
-        if (data.verificationToken !== verificationToken) {
-            return res.status(403).json({ error: 'Invalid verification token' });
-        }
+            if (data.status === 'completed') {
+                throw new Error('Already processed');
+            }
 
-        // Prevent double processing
-        if (data.status === 'completed') {
-             return res.status(200).json({ success: true, message: 'Already processed' });
-        }
+            if (data.status === 'processing') {
+                throw new Error('Currently processing');
+            }
+
+            transaction.update(orderDocRef, { status: 'processing' });
+        }).catch(err => {
+            if (err.message === 'Already processed') {
+                res.status(200).json({ success: true, message: 'Already processed' });
+                return Promise.reject('handled');
+            }
+            if (err.message === 'Currently processing') {
+                res.status(409).json({ error: 'Currently processing' });
+                return Promise.reject('handled');
+            }
+            if (err.message === 'Invalid verification token') {
+                res.status(403).json({ error: err.message });
+                return Promise.reject('handled');
+            }
+            res.status(404).json({ error: err.message });
+            return Promise.reject('handled');
+        });
 
         // 3. Create Firebase Auth User
         let userRecord;
@@ -72,6 +94,8 @@ module.exports = async (req, res) => {
                 displayName: data.name
             });
         } catch (authError) {
+            // Revert status to pending on user creation failure
+            await orderDocRef.update({ status: 'pending' });
             if (authError.code === 'auth/email-already-exists') {
                 return res.status(409).json({ error: 'An account with this email already exists. Please log in instead.' });
             } else {
@@ -96,12 +120,15 @@ module.exports = async (req, res) => {
 
         const revenueAmt = (data.amountPaise / 100);
 
+        const passwordExpiresAt = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
         // 5. Write Active Profile to Firestore
         const profileData = {
             uid: userRecord.uid,
             displayName: data.name,
             username: data.username,
             email: data.email,
+            contactEmail: data.contactEmail || data.email,
             parentEmail: data.parentEmail || '',
             role: "student",
             tenantType: "individual",
@@ -116,6 +143,8 @@ module.exports = async (req, res) => {
             gracePeriodEndDate: admin.firestore.Timestamp.fromDate(graceDate),
             activeModules: activeModules,
             razorpayPaymentId: razorpay_payment_id,
+            passwordSetAt: admin.firestore.FieldValue.serverTimestamp(),
+            passwordExpiresAt: admin.firestore.Timestamp.fromDate(passwordExpiresAt),
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         };
 
@@ -149,11 +178,31 @@ module.exports = async (req, res) => {
              completedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        await batch.commit();
+        // 8. Welcome Email
+        const resetLink = await admin.auth().generatePasswordResetLink(data.email);
+        const mailRef = db.collection('mail').doc();
+        const tierLabel = data.planID; // Could import TIER_META, but simple fallback
+        batch.set(mailRef, {
+            to: data.contactEmail || data.email,
+            message: {
+                subject: `Welcome to Ready4Exam — ${tierLabel} active`,
+                html: `Hi ${data.name},<br>Your account is active until ${expiry.toDateString()}.<br>
+                       If you didn't set this account, reset your password here: <a href="${resetLink}">Reset</a>.`
+            }
+        });
+
+        try {
+            await batch.commit();
+        } catch (commitError) {
+            await admin.auth().deleteUser(userRecord.uid);
+            await orderDocRef.update({ status: 'pending' });
+            throw commitError;
+        }
 
         return res.status(200).json({ success: true });
 
     } catch (error) {
+        if (error === 'handled') return;
         console.error("Payment verification failed:", error);
         return res.status(500).json({ error: "Failed to verify payment and create account" });
     }

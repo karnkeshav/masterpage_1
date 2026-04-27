@@ -8,6 +8,70 @@ import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs
 const form = document.getElementById('registration-form');
 const errorBox = document.getElementById('error-box');
 
+// Auto-Resume Payment
+window.addEventListener('DOMContentLoaded', async () => {
+    const pendingRaw = sessionStorage.getItem('pendingPayment');
+    if (pendingRaw) {
+        try {
+            const pending = JSON.parse(pendingRaw);
+            if (Date.now() - pending.ts < 30 * 60 * 1000) {
+                // Check status from webhook
+                const statusRes = await fetch(`/api/registration-status?orderId=${pending.orderId}`);
+                if (statusRes.ok) {
+                    const statusData = await statusRes.json();
+                    if (statusData.status === 'completed') {
+                        // Webhook handled it or previous try succeeded
+                        sessionStorage.removeItem('pendingPayment');
+                        const { auth } = await getInitializedClients();
+                        const userCredential = await signInWithEmailAndPassword(auth, pending.computedEmail, pending.password);
+                        await routeUser(userCredential.user);
+                        return;
+                    }
+                }
+
+                // Show resume button instead of form
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.textContent = "Resume Payment Verification";
+                submitBtn.onclick = async (e) => {
+                    e.preventDefault();
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "Verifying...";
+                    try {
+                        const verifyRes = await fetch('/api/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: pending.razorpay_order_id,
+                                razorpay_payment_id: pending.razorpay_payment_id,
+                                razorpay_signature: pending.razorpay_signature,
+                                verificationToken: pending.verificationToken,
+                                password: pending.password
+                            })
+                        });
+                        if (!verifyRes.ok && verifyRes.status !== 409) {
+                            const errData = await verifyRes.json();
+                            throw new Error(errData.error || 'Verification failed.');
+                        }
+                        sessionStorage.removeItem('pendingPayment');
+                        const { auth } = await getInitializedClients();
+                        const userCredential = await signInWithEmailAndPassword(auth, pending.computedEmail, pending.password);
+                        await routeUser(userCredential.user);
+                    } catch (err) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "Resume Payment Verification";
+                        errorBox.textContent = err.message;
+                        errorBox.classList.remove('hidden');
+                    }
+                };
+            } else {
+                sessionStorage.removeItem('pendingPayment');
+            }
+        } catch (e) {
+            sessionStorage.removeItem('pendingPayment');
+        }
+    }
+});
+
 // --- Business UPI fallback (single source of truth from config) ---
 const BUSINESS_UPI_VPA = (window.__firebase_config && window.__firebase_config.businessUpiVpa) || '918520977573@paytm';
 
@@ -97,17 +161,6 @@ form.addEventListener('submit', async (e) => {
     const username = email.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '').substring(0, 30);
     const parentEmail = document.getElementById('reg-parent-email')?.value.trim() || '';
 
-    // Plus Addressing / Salted Email for siblings sharing a parent email
-    let computedEmail = email;
-    if (parentEmail) {
-        const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const suffix = `+${safeName}_${grade}`;
-        const parts = parentEmail.split('@');
-        if (parts.length === 2) {
-            computedEmail = `${parts[0]}${suffix}@${parts[1]}`;
-        }
-    }
-
     try {
         // Step 1: Create Order Server-Side
         const orderRes = await fetch('/api/create-order', {
@@ -115,14 +168,15 @@ form.addEventListener('submit', async (e) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 planID: selectedTier,
-                email: computedEmail,
+                email, // raw input
                 parentEmail,
                 name,
                 username,
                 grade: parseInt(grade),
                 board,
                 stream,
-                subjects
+                subjects,
+                password // Add password for server hashing
             })
         });
 
@@ -131,7 +185,7 @@ form.addEventListener('submit', async (e) => {
             throw new Error(errData.error || 'Failed to create order');
         }
 
-        const { orderId, verificationToken } = await orderRes.json();
+        const { orderId, verificationToken, computedEmail } = await orderRes.json();
 
         // Step 2: Open Razorpay Checkout
         const rzpResponse = await openRazorpayCheckout({
@@ -143,6 +197,18 @@ form.addEventListener('submit', async (e) => {
 
         submitBtn.textContent = "Payment Successful — Finalizing...";
 
+        // Persist payment details in case of disconnect during verification
+        sessionStorage.setItem('pendingPayment', JSON.stringify({
+            orderId,
+            verificationToken,
+            computedEmail,
+            password,
+            razorpay_order_id: rzpResponse.razorpay_order_id,
+            razorpay_payment_id: rzpResponse.razorpay_payment_id,
+            razorpay_signature: rzpResponse.razorpay_signature,
+            ts: Date.now()
+        }));
+
         // Step 3: Verify Payment Server-Side
         const verifyRes = await fetch('/api/verify-payment', {
             method: 'POST',
@@ -152,7 +218,7 @@ form.addEventListener('submit', async (e) => {
                 razorpay_payment_id: rzpResponse.razorpay_payment_id,
                 razorpay_signature: rzpResponse.razorpay_signature,
                 verificationToken: verificationToken,
-                password: password // Sent securely over HTTPS so server can create user
+                password: password
             })
         });
 
@@ -160,6 +226,9 @@ form.addEventListener('submit', async (e) => {
             const errData = await verifyRes.json();
             throw new Error(errData.error || 'Payment verification failed. Contact Support.');
         }
+
+        // Clear resume state on success
+        sessionStorage.removeItem('pendingPayment');
 
         // Step 4: Login User Locally and Route
         const { auth } = await getInitializedClients();

@@ -24,8 +24,28 @@ loginForm.addEventListener("submit", async (e) => {
 
     try {
         await authenticateWithCredentials(u, p);
-        const { auth } = await getInitializedClients();
+        const { auth, db } = await getInitializedClients();
         if (auth.currentUser) {
+            const { doc, getDoc, updateDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data.passwordSetAt && data.passwordExpiresAt) {
+                    const setTime = data.passwordSetAt.toMillis();
+                    // If the difference between now and when the password was theoretically set is greater than 90 days,
+                    // it means the user just reset their password via Firebase Auth's native "Forgot Password" link
+                    // which bypassed our backend expiration clock. We must reset the clock forward.
+                    if (Date.now() - setTime > 90 * 24 * 60 * 60 * 1000) {
+                        const newExpiry = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+                        const { Timestamp, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                            passwordSetAt: serverTimestamp(),
+                            passwordExpiresAt: Timestamp.fromDate(newExpiry),
+                            passwordResetRequired: null // Delete behavior not easily available here, so null it
+                        });
+                    }
+                }
+            }
             await routeUser(auth.currentUser);
         }
     } catch (err) {

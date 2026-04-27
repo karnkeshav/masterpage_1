@@ -152,6 +152,24 @@ export async function routeUser(user) {
 
     const data = snap.data();
 
+    if (data.passwordResetRequired) {
+        window.location.href = 'change-password.html?forced=1';
+        return;
+    }
+
+    if (data.passwordExpiresAt) {
+        const msToExpiry = data.passwordExpiresAt.toMillis() - Date.now();
+        if (msToExpiry < 0) {
+            window.location.href = 'change-password.html?forced=1';
+            return;
+        }
+        if (msToExpiry < 14 * 24 * 60 * 60 * 1000) {
+            sessionStorage.setItem('passwordExpiryDays', Math.ceil(msToExpiry / 86400000).toString());
+        } else {
+            sessionStorage.removeItem('passwordExpiryDays');
+        }
+    }
+
     // 1. Owner Routing
     if (data.role === "owner" || data.tenantType === "owner") {
         window.location.href = "app/consoles/owner.html";
