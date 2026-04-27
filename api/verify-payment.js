@@ -12,8 +12,10 @@ const db = admin.firestore();
 
 module.exports = async (req, res) => {
     // Handle CORS
-    const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    const allowedOrigin = process.env.ALLOWED_ORIGIN;
+    if (allowedOrigin) {
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -61,7 +63,7 @@ module.exports = async (req, res) => {
              return res.status(200).json({ success: true, message: 'Already processed' });
         }
 
-        // 3. Create Firebase Auth User (Idempotent)
+        // 3. Create Firebase Auth User
         let userRecord;
         try {
             userRecord = await admin.auth().createUser({
@@ -71,8 +73,7 @@ module.exports = async (req, res) => {
             });
         } catch (authError) {
             if (authError.code === 'auth/email-already-exists') {
-                userRecord = await admin.auth().getUserByEmail(data.email);
-                await admin.auth().updateUser(userRecord.uid, { password: password });
+                return res.status(409).json({ error: 'An account with this email already exists. Please log in instead.' });
             } else {
                 throw authError;
             }
