@@ -141,8 +141,24 @@ module.exports = async (req, res) => {
 
         const userProfileRef = db.collection('users').doc(userRecord.uid);
 
+        // Allow-list profileData fields to prevent privilege escalation
+        const safeProfile = {
+            displayName: pendingData.profileData.displayName,
+            username: pendingData.profileData.username,
+            email: pendingData.profileData.email,
+            parentEmail: pendingData.profileData.parentEmail,
+            class: pendingData.profileData.class,
+            board: pendingData.profileData.board,
+        };
+        if (pendingData.profileData.stream) safeProfile.stream = pendingData.profileData.stream;
+        if (pendingData.profileData.subjects) safeProfile.subjects = pendingData.profileData.subjects;
+
         const profilePayload = {
-            ...pendingData.profileData,
+            ...safeProfile,
+            role: "student",
+            tenantType: "individual",
+            isB2C: true,
+            subscriptionTier: pendingData.planID,
             uid: userRecord.uid,
             status: "active",
             activationDate: admin.firestore.FieldValue.serverTimestamp(),
