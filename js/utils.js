@@ -38,3 +38,18 @@ export function capitalizeFirstLetter(s) {
     if (typeof s !== 'string' || s.length === 0) return s;
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+/**
+ * Synchronous i18n bootstrap to prevent flash of untranslated content.
+ */
+export function applyLanguageBootstrap() {
+    try {
+        const lang = localStorage.getItem('r4e_language') || 'en';
+        document.documentElement.setAttribute('lang', lang);
+        document.documentElement.dataset.lang = lang;
+        return lang;
+    } catch (_) {
+        document.documentElement.setAttribute('lang', 'en');
+        return 'en';
+    }
+}

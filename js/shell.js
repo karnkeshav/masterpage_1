@@ -5,6 +5,35 @@
 
 var R4E = R4E || {};
 
+R4E.ensureI18nLoaded = function() {
+    if (window.R4E && window.R4E.i18n) return Promise.resolve();
+    function load(src) {
+        return new Promise(function(resolve) {
+            var ex = document.querySelector('script[src="' + src + '"]');
+            if (ex) { resolve(); return; }
+            var tag = document.createElement('script');
+            tag.src = src;
+            tag.onload = function(){ resolve(); };
+            tag.onerror = function(){ resolve(); };
+            document.head.appendChild(tag);
+        });
+    }
+    var depthPath = location.pathname.includes('/app/') ? '../../js/' : './js/';
+    return load(depthPath + 'i18n-config.js')
+        .then(function(){ return load(depthPath + 'i18n-dictionary.js'); })
+        .then(function(){ return load(depthPath + 'translator.js'); });
+};
+
+R4E.renderLanguageToggle = function() {
+    return ''
+        + '<div class="flex items-center rounded-xl border border-white/20 overflow-hidden" title="Language">'
+        +   '<button type="button" class="px-2 py-1 text-[10px] font-black bg-white/10 hover:bg-white/20" data-lang-switch="en">EN</button>'
+        +   '<button type="button" class="px-2 py-1 text-[10px] font-black bg-white/5 hover:bg-white/20" data-lang-switch="te">తె</button>'
+        +   '<button type="button" class="px-2 py-1 text-[10px] font-black bg-white/5 hover:bg-white/20" data-lang-switch="hi">हि</button>'
+        + '</div>';
+};
+
+
 /**
  * Render the standard Ready4Exam header.
  *
@@ -47,6 +76,7 @@ R4E.renderHeader = function(config) {
     var layout = c.layout || "flex";
     var centerHtml = c.centerHtml || "";
     var extraRightHtml = c.extraRightHtml || "";
+    var showLanguageToggle = c.showLanguageToggle !== false;
 
     // Layout class
     var layoutClass = layout === "grid-3"
@@ -74,6 +104,10 @@ R4E.renderHeader = function(config) {
 
     // Extra right HTML (e.g. parent notification dropdown)
     rightHtml += extraRightHtml;
+
+    if (showLanguageToggle) {
+        rightHtml += R4E.renderLanguageToggle();
+    }
 
     // User welcome + role badge
     if (showUser) {
@@ -107,6 +141,19 @@ R4E.renderHeader = function(config) {
         + '</header>';
 
     target.outerHTML = headerHtml;
+
+    R4E.ensureI18nLoaded().then(function(){
+        document.querySelectorAll('[data-lang-switch]').forEach(function(btn){
+            btn.onclick = function(){
+                if (window.R4E && window.R4E.i18n) {
+                    window.R4E.i18n.setLanguage(btn.getAttribute('data-lang-switch'));
+                }
+            };
+        });
+        if (window.R4E && window.R4E.i18n) {
+            window.R4E.i18n.applyTranslations();
+        }
+    });
 };
 
 /**

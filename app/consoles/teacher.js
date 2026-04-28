@@ -8,6 +8,10 @@ import * as UI from "../../js/ui-renderer.js";
 
 const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
+function txSubject(subject) {
+    return (window.R4E && window.R4E.i18n && window.R4E.i18n.translateSubject(subject)) || subject;
+}
+
 // === GLOBAL STATE DECLARATIONS ===
 let db;
 let studentScores = [];

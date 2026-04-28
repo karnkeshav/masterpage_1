@@ -20,6 +20,9 @@
 <script src="./js/tailwind-config.js"></script>
 <link href="./css/global.css" rel="stylesheet">
 <script src="js/firebase-master-config.js"></script>
+<script src="./js/i18n-config.js"></script>
+<script src="./js/i18n-dictionary.js"></script>
+<script src="./js/translator.js"></script>
 
 
 
@@ -74,33 +77,33 @@
   <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10">
     <div class="flex-1 text-center lg:text-left">
       <h1 class="text-4xl lg:text-6xl font-black mb-4 leading-tight fade-in">
-        Master Your Exams <br><span class="text-gold">With Precision</span>
+        <span data-i18n="index.hero_title">Master Your Exams</span> <br><span class="text-gold" data-i18n="index.hero_subtitle">With Precision</span>
       </h1>
       <p class="text-white/80 text-lg mb-8 max-w-xl mx-auto lg:mx-0 fade-in" style="animation-delay: 0.2s;">
-        Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.
+        <span data-i18n="index.hero_desc">Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.</span>
       </p>
     </div>
 
     <div class="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl fade-in" style="animation-delay: 0.3s;">
       <div class="flex items-center justify-center gap-3 mb-6">
         <i class="fas fa-fingerprint text-gold text-2xl"></i>
-        <h2 class="text-white font-bold text-xl">Login</h2>
+        <h2 class="text-white font-bold text-xl" data-i18n="index.login">Login</h2>
       </div>
 
       <form id="sovereign-login-form" class="space-y-4">
           <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Username / Email</label>
-              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required="">
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1"><span data-i18n="index.username">Username / Email</span></label>
+              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" data-i18n-placeholder="index.username" required="">
           </div>
           <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Password</label>
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1" data-i18n="index.password">Password</label>
               <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" required="">
           </div>
           <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
-          <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2">
+          <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2" data-i18n="index.login_btn">
               Log In
           </button>
-          <button type="button" id="forgot-password-btn" class="text-xs text-white/60 hover:text-gold underline mt-2 block mx-auto">
+          <button type="button" id="forgot-password-btn" class="text-xs text-white/60 hover:text-gold underline mt-2 block mx-auto" data-i18n="index.forgot_password">
               Forgot Password?
           </button>
       </form>
@@ -145,7 +148,7 @@
       <!-- LEFT: Try a Quiz Now (60%) -->
       <div class="lg:col-span-3">
         <div class="text-center mb-10">
-          <h2 class="text-3xl font-black text-cbse-blue mb-2">Try a Quiz Now</h2>
+          <h2 class="text-3xl font-black text-cbse-blue mb-2" data-i18n="index.quiz_title">Try a Quiz Now</h2>
           <p class="text-slate-500">Select your curriculum to start practicing instantly.</p>
         </div>
 
@@ -199,7 +202,7 @@
             </div>
             <div class="flex-1 w-full">
               <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" onclick="startQuiz()">
-                <i class="fas fa-play-circle"></i> Start Quiz
+                <i class="fas fa-play-circle"></i> <span data-i18n="index.start_quiz">Start Quiz</span>
               </button>
               <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
             </div>

@@ -4,6 +4,29 @@ import { cleanKatexMarkers } from './utils.js';
 let els = {};
 let isInit = false;
 
+
+function activeLang() {
+    return (window.R4E && window.R4E.i18n && window.R4E.i18n.getLanguage()) || document.documentElement.lang || 'en';
+}
+
+function i18nText(key, fallback) {
+    if (window.R4E && window.R4E.i18n) return window.R4E.i18n.t(key) || fallback;
+    return fallback;
+}
+
+function fieldForLang(q, baseField) {
+    const lang = activeLang();
+    const specific = q[baseField + '_' + lang];
+    if (specific !== undefined && specific !== null && specific !== '') return specific;
+    return q[baseField + '_en'] || q[baseField] || '';
+}
+
+function optionForLang(q, opt) {
+    const lang = activeLang();
+    const bag = q['options_' + lang] || q.options || q.options_en || {};
+    return bag[opt] || (q.options && q.options[opt]) || '';
+}
+
 const AR_LABELS = {
     A: "Both A and R are true and R is the correct explanation of A.",
     B: "Both A and R are true but R is not the correct explanation of A.",
@@ -106,17 +129,17 @@ export function initializeElements() {
 ----------------------------------- */
 function getMotivationalFeedback(score, total) {
     const p = (score / total) * 100;
-    if (p === 100) return "Perfect Score! You are thinking like a subject expert.";
-    if (p >= 80) return "Excellent work! You are very close to mastery.";
-    if (p >= 50) return "Good Progress! A little more practice and you'll reach the top.";
-    return "Every attempt builds understanding. Keep practicing with focus.";
+    if (p === 100) return i18nText("ui.perfect", "Perfect Score! You are thinking like a subject expert.");
+    if (p >= 80) return i18nText("ui.excellent", "Excellent work! You are very close to mastery.");
+    if (p >= 50) return i18nText("ui.good_progress", "Good Progress! A little more practice and you'll reach the top.");
+    return i18nText("ui.keep_practice", "Every attempt builds understanding. Keep practicing with focus.");
 }
 
 /* -----------------------------------
    OPTION HTML
 ----------------------------------- */
 function generateOptionHtml(q, opt, selected, submitted, labelText) {
-    const text = labelText || (q.options ? q.options[opt] : "") || "";
+    const text = labelText || optionForLang(q, opt) || "";
     const isSel = selected === opt;
     const isCorrect = submitted && q.correct_answer === opt;
     const isWrong = submitted && isSel && !isCorrect;
@@ -147,10 +170,10 @@ export function renderQuestion(q, idx, selected, submitted) {
     if (type.includes("ar") || type.includes("assertion")) {
         els.list.innerHTML = `
             <div class="space-y-6">
-                <div class="text-xl font-extrabold text-slate-900">Q${idx}. Assertion (A): ${cleanKatexMarkers(q.text)}</div>
+                <div class="text-xl font-extrabold text-slate-900">Q${idx}. Assertion (A): ${cleanKatexMarkers(fieldForLang(q, "text"))}</div>
                 <div class="bg-blue-50 p-6 rounded-2xl border-l-4 border-blue-600">
                     <span class="text-xs font-black uppercase tracking-widest text-blue-600">Reason (R)</span>
-                    <div class="text-lg font-bold text-slate-800">${cleanKatexMarkers(q.scenario_reason)}</div>
+                    <div class="text-lg font-bold text-slate-800">${cleanKatexMarkers(fieldForLang(q, "scenario_reason"))}</div>
                 </div>
                 <div class="italic font-bold text-slate-500 text-sm">Choose the correct option:</div>
                 <div class="grid gap-3">
@@ -164,13 +187,13 @@ export function renderQuestion(q, idx, selected, submitted) {
         els.list.innerHTML = `
             <div class="grid md:grid-cols-2 gap-8">
                 <div class="order-2 md:order-1">
-                    <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(q.text)}</div>
+                    <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(fieldForLang(q, "text"))}</div>
                     <div class="grid gap-3 mt-4">
                         ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted)).join("")}
                     </div>
                 </div>
                 <div class="order-1 md:order-2 bg-yellow-50 p-6 rounded-2xl italic border border-yellow-100 shadow-sm text-sm">
-                    ${cleanKatexMarkers(q.scenario_reason)}
+                    ${cleanKatexMarkers(fieldForLang(q, "scenario_reason"))}
                 </div>
             </div>`;
         return;
@@ -178,7 +201,7 @@ export function renderQuestion(q, idx, selected, submitted) {
 
     els.list.innerHTML = `
         <div class="space-y-6">
-            <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(q.text)}</div>
+            <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(fieldForLang(q, "text"))}</div>
             <div class="grid gap-3">
                 ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted)).join("")}
             </div>
@@ -264,18 +287,18 @@ export function renderAllQuestionsForReview(qs, ua) {
         const correctAns = q.correct_answer;
         const isCorrect = userAns === correctAns;
         const isAR = q.question_type.toLowerCase().includes("ar");
-        const getText = k => isAR ? AR_LABELS[k] : (q.options ? q.options[k] : "N/A");
+        const getText = k => isAR ? AR_LABELS[k] : (optionForLang(q, k) || "N/A");
 
         return `
             <div class="p-6 bg-white rounded-2xl border mb-6 relative shadow-sm">
                 <div class="absolute top-0 right-0 px-3 py-1 text-[10px] font-black text-white uppercase tracking-tighter ${isCorrect ? "bg-green-500" : "bg-amber-400"}">
                     ${isCorrect ? "Mastered" : "Growing"}
                 </div>
-                <p class="font-bold mb-4 text-sm md:text-base">Q${i + 1}. ${cleanKatexMarkers(q.text)}</p>
+                <p class="font-bold mb-4 text-sm md:text-base">Q${i + 1}. ${cleanKatexMarkers(fieldForLang(q, "text"))}</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                         <span class="text-[10px] font-black uppercase text-slate-400">Your Thought</span>
-                        <p class="text-xs md:text-sm font-medium">${userAns ? cleanKatexMarkers(getText(userAns)) : "Skipped"}</p>
+                        <p class="text-xs md:text-sm font-medium">${userAns ? cleanKatexMarkers(getText(userAns)) : i18nText("ui.skipped","Skipped")}</p>
                     </div>
                     <div class="p-3 bg-indigo-50 rounded-xl border border-indigo-100">
                         <span class="text-[10px] font-black uppercase text-indigo-400">The Golden Key</span>
@@ -293,7 +316,7 @@ export function renderAllQuestionsForReview(qs, ua) {
    UI HELPERS
 ----------------------------------- */
 export function hideStatus() { els.status?.classList.add("hidden"); }
-export function updateHeader(t, d) { if(els.header) els.header.textContent = t; if(els.diff) els.diff.textContent = `Difficulty: ${d}`; }
+export function updateHeader(t, d) { if(els.header) els.header.textContent = t; if(els.diff) els.diff.textContent = `${i18nText("ui.difficulty","Difficulty")}: ${d}`; }
 export function showView(v) {
     [els.quiz, els.results, els.paywall].forEach(x => x?.classList.add("hidden"));
     const target = v === "quiz-content" ? els.quiz : v === "results-screen" ? els.results : els.paywall;
