@@ -144,12 +144,18 @@ module.exports = async (req, res) => {
             completedAt: admin.firestore.FieldValue.serverTimestamp() 
         });
 
-        batch.set(db.collection('ledger_events').doc(), {
+        const financialPayload = {
             type: "B2C_REVENUE",
             amount: revenueAmt,
             uid: userRecord.uid,
+            entityType: "b2c",
+            school_id: "B2C_REVENUE",
+            details: `Plan ${pendingData.planID} payment`,
             timestamp: admin.firestore.FieldValue.serverTimestamp()
-        });
+        };
+
+        batch.set(db.collection('ledger_events').doc(), financialPayload);
+        batch.set(db.collection('financial_events').doc(), financialPayload);
 
         await batch.commit();
 
