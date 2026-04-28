@@ -112,6 +112,7 @@ function classifyAsB2C(data, path) {
     if ((data.school_id || "") === "B2C_REVENUE") return true;
     if ((data.entityType || "").toLowerCase() === "b2c") return true;
     if ((data.type || "").toUpperCase().includes("B2C")) return true;
+    if (path.includes("B2C_REVENUE")) return true;
     return !path.includes("schools/");
 }
 
