@@ -3,7 +3,7 @@ import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 import { getInitializedClients } from "../../js/config.js";
 import { recordFinancialEvent } from "../../js/api.js";
 import {
-    collection, query, where, orderBy, onSnapshot, getDocs, writeBatch,
+    collection, query, where, orderBy, onSnapshot,
     doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -45,7 +45,7 @@ async function initRealtimeStreams() {
             snap.forEach((userDoc) => b2cCache.push({ id: userDoc.id, ...userDoc.data() }));
             b2cCache.sort((a, b) => safeTs(b.createdAt || b.activationDate) - safeTs(a.createdAt || a.activationDate));
 
-            const paidCount = b2cCache.filter((u) => isRevenueUser(u)).length;
+            const paidCount = b2cCache.filter((u) => isUserPaid(u)).length;
             const parentLinkedCount = b2cCache.filter((u) => (u.parentEmail || "").trim()).length;
             const paidEl = document.getElementById("count-b2c-paid");
             if (paidEl) paidEl.textContent = `${paidCount} paid • ${parentLinkedCount} linked parents`;
@@ -74,45 +74,39 @@ async function initRealtimeStreams() {
         query(collectionGroup(db, "financial_events"), orderBy("timestamp", "desc")),
         (snap) => {
             financialCache = [];
+            let b2bTotal = 0;
+            let b2cTotal = 0;
+
             snap.forEach((eventDoc) => {
                 const data = eventDoc.data();
                 const amount = parseFloat(data.amount || 0) || 0;
                 const isB2C = classifyAsB2C(data, eventDoc.ref.path);
 
+                if (isB2C) b2cTotal += amount;
+                else b2bTotal += amount;
+
                 financialCache.push({
                     id: eventDoc.id,
-                    ...data,
                     entity: isB2C ? (data.uid || "Individual B2C") : (data.school_id || "B2B"),
-                    source: isB2C ? "B2C" : "B2B"
+                    source: isB2C ? "B2C" : "B2B",
+                    ...data
                 });
             });
 
+            document.getElementById("count-revenue-b2b").textContent = `₹${b2bTotal.toLocaleString("en-IN")}`;
+            document.getElementById("count-revenue-b2c").textContent = `₹${b2cTotal.toLocaleString("en-IN")}`;
+            document.getElementById("count-revenue-total").textContent = `₹${(b2bTotal + b2cTotal).toLocaleString("en-IN")}`;
+
             renderLedgerTable(financialCache);
-            renderRevenueKPIs();
-            updateSegmentedCharts(financialCache, b2cCache);
+            updateSegmentedCharts(financialCache);
         }
     );
-}
-
-
-function renderRevenueKPIs() {
-    const b2bTotal = financialCache.filter((e) => e.source === "B2B").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-    const b2cEventTotal = financialCache.filter((e) => e.source === "B2C").reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-    // Backward compatibility: if older users have revenue but no financial_events entry, fall back to user profile revenue.
-    const b2cProfileTotal = b2cCache.reduce((sum, u) => sum + (isRevenueUser(u) ? Number(u.revenue || 0) : 0), 0);
-    const b2cTotal = b2cEventTotal > 0 ? b2cEventTotal : b2cProfileTotal;
-
-    document.getElementById("count-revenue-b2b").textContent = `₹${b2bTotal.toLocaleString("en-IN")}`;
-    document.getElementById("count-revenue-b2c").textContent = `₹${b2cTotal.toLocaleString("en-IN")}`;
-    document.getElementById("count-revenue-total").textContent = `₹${(b2bTotal + b2cTotal).toLocaleString("en-IN")}`;
 }
 
 function classifyAsB2C(data, path) {
     if ((data.school_id || "") === "B2C_REVENUE") return true;
     if ((data.entityType || "").toLowerCase() === "b2c") return true;
     if ((data.type || "").toUpperCase().includes("B2C")) return true;
-    if (path.includes("B2C_REVENUE")) return true;
     return !path.includes("schools/");
 }
 
@@ -262,28 +256,12 @@ window.openEditUserModal = (uid) => {
 window.deleteB2CUser = async (uid) => {
     const user = b2cCache.find((u) => u.id === uid);
     if (!user) return;
-    if (!confirm(`Delete user ${user.displayName || user.email}? This removes the user profile and related Firestore records.`)) return;
+    if (!confirm(`Delete user ${user.displayName || user.email}? This only removes Firestore profile.`)) return;
 
     try {
         const { db } = await getInitializedClients();
-
-        const batch = writeBatch(db);
-        batch.delete(doc(db, "users", uid));
-
-        const relatedQueries = [
-            query(collection(db, "quiz_scores"), where("user_id", "==", uid)),
-            query(collection(db, "mistake_notebook"), where("user_id", "==", uid)),
-            query(collection(db, "financial_events"), where("uid", "==", uid)),
-            query(collection(db, "ledger_events"), where("uid", "==", uid))
-        ];
-
-        for (const q of relatedQueries) {
-            const snap = await getDocs(q);
-            snap.forEach((d) => batch.delete(d.ref));
-        }
-
-        await batch.commit();
-        alert("User and related Firestore records deleted successfully.");
+        await deleteDoc(doc(db, "users", uid));
+        alert("User profile deleted. (Auth record remains; use backend admin for hard delete.)");
     } catch (err) {
         alert("Delete failed: " + err.message);
     }
@@ -333,7 +311,7 @@ function renderB2CTable(users) {
     tbody.innerHTML = users.map((u) => {
         const initial = (u.displayName || "U").charAt(0).toUpperCase();
         const expiryDisp = formatExpiry(u.accessExpiryDate);
-        const isActive = isRevenueUser(u);
+        const isActive = isUserPaid(u);
         const statusBadge = isActive
             ? '<span class="bg-emerald-900/30 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Active</span>'
             : '<span class="bg-red-900/30 text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Expired</span>';
@@ -425,7 +403,7 @@ function initSegmentedCharts() {
     });
 }
 
-function updateSegmentedCharts(events, users) {
+function updateSegmentedCharts(events) {
     if (!b2bChart || !b2cChart) return;
 
     const labels = lastSevenDayLabels();
@@ -443,17 +421,6 @@ function updateSegmentedCharts(events, users) {
         if ((e.source || "") === "B2C") b2cSeries[idx] += amount;
         else b2bSeries[idx] += amount;
     });
-
-    // Fallback for legacy data with no event records yet.
-    if (b2cSeries.every((n) => n === 0) && Array.isArray(users)) {
-        users.filter((u) => isRevenueUser(u)).forEach((u) => {
-            const dt = toDateSafe(u.activationDate || u.createdAt || u.created_at);
-            if (!dt) return;
-            const idx = labels.indexOf(dayKey(dt));
-            if (idx < 0) return;
-            b2cSeries[idx] += Number(u.revenue || 0);
-        });
-    }
 
     b2bChart.data.labels = labels;
     b2bChart.data.datasets[0].data = b2bSeries;
@@ -500,11 +467,12 @@ function safeTs(value) {
     return Number.isFinite(ms) ? ms : 0;
 }
 
-function isRevenueUser(user) {
-    const revenue = Number(user?.revenue || 0);
-    const hasPaymentRef = Boolean(user?.razorpayPaymentId);
-    if (revenue > 0 || hasPaymentRef) return true;
-    return false;
+function isUserPaid(user) {
+    if ((user.status || "").toLowerCase() === "active" && Number(user.revenue || 0) > 0) return true;
+    const exp = user.accessExpiryDate;
+    if (!exp) return false;
+    const dt = exp.toDate ? exp.toDate() : new Date(exp);
+    return !Number.isNaN(dt.getTime()) && dt > new Date();
 }
 
 function formatExpiry(exp) {
@@ -512,12 +480,6 @@ function formatExpiry(exp) {
     const dt = exp.toDate ? exp.toDate() : new Date(exp);
     if (Number.isNaN(dt.getTime())) return "N/A";
     return dt.toLocaleDateString();
-}
-
-function toDateSafe(value) {
-    if (!value) return null;
-    const dt = value.toDate ? value.toDate() : new Date(value);
-    return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
 function dayKey(d) {

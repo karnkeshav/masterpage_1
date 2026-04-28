@@ -5,6 +5,37 @@
 
 var R4E = R4E || {};
 
+function getLanguageSwitcherHtml() {
+    var current = (window.R4ETranslator && window.R4ETranslator.getLanguage()) || localStorage.getItem('r4e_lang') || 'en';
+    var mk = function(code, label, icon) {
+        var active = current === code ? 'bg-white text-cbse-blue' : 'bg-cbse-blue/40 text-white';
+        return '<button type="button" class="r4e-lang-btn px-2 py-1 rounded-md text-[11px] font-black transition ' + active + '" data-lang="' + code + '" title="' + label + '">' + icon + ' ' + label + '</button>';
+    };
+    return '<div class="flex items-center gap-1 p-1 rounded-lg bg-cbse-blue/60 border border-white/20" aria-label="Language switcher">'
+        + mk('en', 'EN', '🇬🇧')
+        + mk('te', 'తె', '🇮🇳')
+        + mk('hi', 'हि', '🇮🇳')
+        + '</div>';
+}
+
+function wireLanguageSwitcher() {
+    var buttons = document.querySelectorAll('.r4e-lang-btn');
+    if (!buttons.length) return;
+    buttons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var nextLang = btn.getAttribute('data-lang');
+            if (window.R4ETranslator) {
+                window.R4ETranslator.setLanguage(nextLang).then(function() {
+                    window.R4ETranslator.applyTranslations(document);
+                });
+            } else {
+                localStorage.setItem('r4e_lang', nextLang);
+            }
+        });
+    });
+}
+
+
 /**
  * Render the standard Ready4Exam header.
  *
@@ -47,6 +78,7 @@ R4E.renderHeader = function(config) {
     var layout = c.layout || "flex";
     var centerHtml = c.centerHtml || "";
     var extraRightHtml = c.extraRightHtml || "";
+    var showLanguageToggle = c.showLanguageToggle !== false;
 
     // Layout class
     var layoutClass = layout === "grid-3"
@@ -74,6 +106,10 @@ R4E.renderHeader = function(config) {
 
     // Extra right HTML (e.g. parent notification dropdown)
     rightHtml += extraRightHtml;
+
+    if (showLanguageToggle) {
+        rightHtml += getLanguageSwitcherHtml();
+    }
 
     // User welcome + role badge
     if (showUser) {
@@ -107,6 +143,7 @@ R4E.renderHeader = function(config) {
         + '</header>';
 
     target.outerHTML = headerHtml;
+    wireLanguageSwitcher();
 };
 
 /**
