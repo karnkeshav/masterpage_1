@@ -54,28 +54,26 @@ module.exports = async (req, res) => {
         const userData = userDoc.data();
 
         // Verify the student name (case-insensitive)
-        if (userData.displayName.toLowerCase().trim() !== studentName.toLowerCase().trim()) {
+        if (!userData.displayName || userData.displayName.toLowerCase().trim() !== studentName.toLowerCase().trim()) {
             console.warn(`Identity verification failed for ${email}. Expected: ${userData.displayName}, Got: ${studentName}`);
             // Return same generic message
             return res.status(200).json({ message: 'If the details match, a reset link will be sent shortly.' });
         }
 
         // Generate Password Reset Link
-        // Generate the reset link using the actual user email from Firestore, even if they searched by parentEmail
+        // The reset link uses the actual user email from Firestore, even if they searched by parentEmail.
+        // Firebase's generatePasswordResetLink only creates the URL; it does not send an email.
+        // We return the link to the verified client so it can redirect the user to complete the reset.
         const resetLink = await auth.generatePasswordResetLink(userData.email);
 
-        // In a real application, you would send this link via email (e.g., using SendGrid, Nodemailer, etc.)
-        // For this demo, we'll return it in the response if development, but typically we shouldn't.
-        // Let's assume we return it for the sake of the assignment, or just a success message if it's sent.
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`Password reset link for ${email}: ${resetLink}`);
+        }
 
-        // Simulating email sending...
-        console.log(`Password reset link for ${email}: ${resetLink}`);
-
-        // Return the link directly just to make it testable if needed, or stick to secure response
         return res.status(200).json({
             success: true,
-            message: 'Identity verified. Please check your email for the reset link.',
-            resetLink: process.env.NODE_ENV === 'development' ? resetLink : undefined
+            message: 'Identity verified. Use the reset link to set a new password.',
+            resetLink: resetLink
         });
 
     } catch (error) {

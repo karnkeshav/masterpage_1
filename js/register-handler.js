@@ -12,23 +12,23 @@ const errorBox = document.getElementById('error-box');
 // --- Business UPI fallback (single source of truth from config) ---
 const BUSINESS_UPI_VPA = (window.__firebase_config && window.__firebase_config.businessUpiVpa) || '918520977573@paytm';
 
-// --- UI Tier Labels ---
-const TIER_LABELS = {
-    practitioner: "The Practitioner",
-    strategist: "Self-Strategist",
-    sync: "The Sync Bundle",
-    board_ready: "Board-Ready",
-    legacy: "The Legacy Plan"
+// --- UI Tier Labels & Display Prices (read-only; server controls actual charge) ---
+const TIER_META = {
+    practitioner: { label: "The Practitioner",  price: "₹10/mo"    },
+    strategist:   { label: "Self-Strategist",   price: "₹999/mo"   },
+    sync:         { label: "The Sync Bundle",   price: "₹1,499/mo" },
+    board_ready:  { label: "Board-Ready",       price: "₹1,299/mo" },
+    legacy:       { label: "The Legacy Plan",   price: "₹32,000"   }
 };
 
 // 1. Detect Plan from URL
 const urlParams = new URLSearchParams(window.location.search);
 const selectedTier = urlParams.get('plan') || 'practitioner';
-const planLabel = TIER_LABELS[selectedTier] || TIER_LABELS.practitioner;
+const meta = TIER_META[selectedTier] || TIER_META.practitioner;
+const planLabel = meta.label;
 
 document.getElementById('selected-plan-text').textContent = planLabel;
-// Price is no longer displayed here to prevent frontend reliance. The server handles it.
-// Consider fetching price from a separate read-only endpoint if UI requires it.
+document.getElementById('price-display').textContent = meta.price;
 
 const upiEl = document.getElementById('manual-upi-vpa');
 if (upiEl) upiEl.textContent = BUSINESS_UPI_VPA;

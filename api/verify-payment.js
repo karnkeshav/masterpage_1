@@ -56,124 +56,129 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Invalid payment signature.' });
         }
 
-        // 2. Fetch Pending Registration
+        // 2. Fetch and validate Pending Registration
         const pendingRef = db.collection('pending_registrations').doc(pendingRegistrationId);
 
-        const result = await db.runTransaction(async (t) => {
+        // Phase 1: Validate and lock the pending registration inside a transaction.
+        // Auth operations are kept outside to avoid retry/orphan issues.
+        const pendingData = await db.runTransaction(async (t) => {
             const pendingDoc = await t.get(pendingRef);
 
             if (!pendingDoc.exists) {
                 throw new Error("Pending registration not found.");
             }
 
-            const pendingData = pendingDoc.data();
+            const data = pendingDoc.data();
 
-            if (pendingData.status === 'completed') {
+            if (data.status === 'completed') {
                 throw new Error("Payment already processed for this order.");
             }
 
-            if (pendingData.verificationToken !== verificationToken) {
+            if (data.verificationToken !== verificationToken) {
                 throw new Error("Verification token mismatch. Invalid session.");
             }
 
-            if (pendingData.orderId !== razorpay_order_id) {
+            if (data.orderId !== razorpay_order_id) {
                 throw new Error("Order ID mismatch.");
             }
 
-            // 3. Create Firebase User
-            let userRecord;
-            try {
-                // Since we need to import a bcrypt hashed password
-                const importUserRecord = {
-                    uid: crypto.randomUUID(),
-                    email: pendingData.profileData.email,
-                    displayName: pendingData.profileData.displayName,
-                    passwordHash: Buffer.from(pendingData.hashedPassword)
-                };
+            // Mark as processing to prevent concurrent retries
+            t.update(pendingRef, { status: 'processing' });
 
-                // using auth.importUsers
-                const userImportResult = await auth.importUsers([importUserRecord], {
-                    hash: { algorithm: 'BCRYPT' }
-                });
-
-                if (userImportResult.errors.length > 0) {
-                     // Check if email already exists
-                     if (userImportResult.errors[0].error.code === 'auth/email-already-exists') {
-                          userRecord = await auth.getUserByEmail(pendingData.profileData.email);
-                     } else {
-                         throw new Error(`Failed to import user: ${userImportResult.errors[0].error.message}`);
-                     }
-                } else {
-                     userRecord = await auth.getUser(importUserRecord.uid);
-                }
-            } catch (err) {
-                 if (err.code === 'auth/email-already-exists') {
-                      userRecord = await auth.getUserByEmail(pendingData.profileData.email);
-                 } else {
-                      throw err;
-                 }
-            }
-
-            // Calculate Expiry Dates
-            const now = new Date();
-            const expiry = new Date();
-            if (pendingData.planID === 'legacy') expiry.setFullYear(now.getFullYear() + 3);
-            else expiry.setDate(now.getDate() + 30);
-
-            const graceDate = new Date(expiry);
-            graceDate.setDate(expiry.getDate() + 5);
-
-            let activeModules = ["SimpleQuizzes"];
-            if (pendingData.planID === 'practitioner') activeModules.push("MediumQuizzes", "AdvancedQuizzes");
-            if (['strategist', 'sync', 'legacy'].includes(pendingData.planID)) activeModules.push("MediumQuizzes", "AdvancedQuizzes", "MistakeNotebook", "KnowledgeHub");
-            if (['sync', 'legacy'].includes(pendingData.planID)) activeModules.push("ParentConsole");
-            if (['board_ready', 'legacy'].includes(pendingData.planID)) activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
-
-            const revenueAmt = (pendingData.amountPaise / 100);
-
-            // 4. Update Firestore Profile
-            const userProfileRef = db.collection('users').doc(userRecord.uid);
-
-            const profilePayload = {
-                ...pendingData.profileData,
-                uid: userRecord.uid,
-                status: "active",
-                activationDate: admin.firestore.FieldValue.serverTimestamp(),
-                accessExpiryDate: admin.firestore.Timestamp.fromDate(expiry),
-                gracePeriodEndDate: admin.firestore.Timestamp.fromDate(graceDate),
-                lastPasswordChangeDate: admin.firestore.FieldValue.serverTimestamp(),
-                activeModules: activeModules,
-                razorpayPaymentId: razorpay_payment_id,
-                revenue: revenueAmt,
-                createdAt: admin.firestore.FieldValue.serverTimestamp()
-            };
-
-            t.set(userProfileRef, profilePayload);
-
-            // Mark Pending Registration as Complete
-            t.update(pendingRef, {
-                status: 'completed',
-                completedAt: admin.firestore.FieldValue.serverTimestamp(),
-                uid: userRecord.uid,
-                razorpay_payment_id: razorpay_payment_id
-            });
-
-            // 5. Ledger Integration
-            const ledgerRef = db.collection('ledger_events').doc();
-            t.set(ledgerRef, {
-                type: "B2C_REVENUE",
-                action: "PAYMENT",
-                amount: revenueAmt,
-                description: `B2C Registration: ${pendingData.planLabel} for ${pendingData.profileData.email} (ID: ${razorpay_payment_id})`,
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                uid: userRecord.uid
-            });
-
-            return { uid: userRecord.uid, planLabel: pendingData.planLabel, amountPaise: pendingData.amountPaise };
+            return data;
         });
 
+        // Phase 2: Create Firebase Auth user outside the transaction
+        const stableUid = crypto.randomUUID();
+        let userRecord;
+        try {
+            const importUserRecord = {
+                uid: stableUid,
+                email: pendingData.profileData.email,
+                displayName: pendingData.profileData.displayName,
+                passwordHash: Buffer.from(pendingData.hashedPassword)
+            };
+
+            const userImportResult = await auth.importUsers([importUserRecord], {
+                hash: { algorithm: 'BCRYPT' }
+            });
+
+            if (userImportResult.errors.length > 0) {
+                if (userImportResult.errors[0].error.code === 'auth/email-already-exists') {
+                    userRecord = await auth.getUserByEmail(pendingData.profileData.email);
+                } else {
+                    throw new Error(`Failed to import user: ${userImportResult.errors[0].error.message}`);
+                }
+            } else {
+                userRecord = await auth.getUser(importUserRecord.uid);
+            }
+        } catch (err) {
+            if (err.code === 'auth/email-already-exists') {
+                userRecord = await auth.getUserByEmail(pendingData.profileData.email);
+            } else {
+                // Roll back pending status so it can be retried
+                await pendingRef.update({ status: 'pending' });
+                throw err;
+            }
+        }
+
+        // Phase 3: Write Firestore profile, complete pending registration, and ledger
+        const now = new Date();
+        const expiry = new Date();
+        if (pendingData.planID === 'legacy') expiry.setFullYear(now.getFullYear() + 3);
+        else expiry.setDate(now.getDate() + 30);
+
+        const graceDate = new Date(expiry);
+        graceDate.setDate(expiry.getDate() + 5);
+
+        let activeModules = ["SimpleQuizzes"];
+        if (pendingData.planID === 'practitioner') activeModules.push("MediumQuizzes", "AdvancedQuizzes");
+        if (['strategist', 'sync', 'legacy'].includes(pendingData.planID)) activeModules.push("MediumQuizzes", "AdvancedQuizzes", "MistakeNotebook", "KnowledgeHub");
+        if (['sync', 'legacy'].includes(pendingData.planID)) activeModules.push("ParentConsole");
+        if (['board_ready', 'legacy'].includes(pendingData.planID)) activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
+
+        const revenueAmt = (pendingData.amountPaise / 100);
+
+        const userProfileRef = db.collection('users').doc(userRecord.uid);
+
+        const profilePayload = {
+            ...pendingData.profileData,
+            uid: userRecord.uid,
+            status: "active",
+            activationDate: admin.firestore.FieldValue.serverTimestamp(),
+            accessExpiryDate: admin.firestore.Timestamp.fromDate(expiry),
+            gracePeriodEndDate: admin.firestore.Timestamp.fromDate(graceDate),
+            lastPasswordChangeDate: admin.firestore.FieldValue.serverTimestamp(),
+            activeModules: activeModules,
+            razorpayPaymentId: razorpay_payment_id,
+            revenue: revenueAmt,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        const batch = db.batch();
+        batch.set(userProfileRef, profilePayload);
+
+        batch.update(pendingRef, {
+            status: 'completed',
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            uid: userRecord.uid,
+            razorpay_payment_id: razorpay_payment_id
+        });
+
+        const ledgerRef = db.collection('ledger_events').doc();
+        batch.set(ledgerRef, {
+            type: "B2C_REVENUE",
+            action: "PAYMENT",
+            amount: revenueAmt,
+            description: `B2C Registration: ${pendingData.planLabel} for ${pendingData.profileData.email} (ID: ${razorpay_payment_id})`,
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            uid: userRecord.uid
+        });
+
+        await batch.commit();
+
         // Generate Custom Token for client sign-in
-        const customToken = await auth.createCustomToken(result.uid);
+        const customToken = await auth.createCustomToken(userRecord.uid);
 
         // 6. Generate Automated PDF Invoice
         try {
@@ -182,29 +187,27 @@ module.exports = async (req, res) => {
                 key_secret: process.env.RAZORPAY_KEY_SECRET
             });
 
-            // Note: Invoices require customer details, or can use standard format
             await rzp.invoices.create({
                 type: 'invoice',
-                description: `Invoice for ${result.planLabel} Subscription`,
+                description: `Invoice for ${pendingData.planLabel} Subscription`,
                 customer: {
-                    name: req.body.profileData?.displayName || 'Student',
-                    email: req.body.profileData?.email || 'student@example.com'
+                    name: pendingData.profileData.displayName || 'Student',
+                    email: pendingData.profileData.email || 'student@example.com'
                 },
                 line_items: [
                     {
-                        name: `${result.planLabel} Plan`,
-                        description: `Access to ${result.planLabel} features`,
-                        amount: result.amountPaise,
+                        name: `${pendingData.planLabel} Plan`,
+                        description: `Access to ${pendingData.planLabel} features`,
+                        amount: pendingData.amountPaise,
                         currency: 'INR',
                         quantity: 1
                     }
                 ],
-                email_notify: 1, // Auto-email invoice
+                email_notify: 1,
                 currency: 'INR'
             });
         } catch (invoiceErr) {
             console.error("Invoice creation failed, but payment succeeded:", invoiceErr);
-            // Non-fatal, continue returning success
         }
 
         return res.status(200).json({ success: true, customToken: customToken });
