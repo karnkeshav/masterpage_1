@@ -89,7 +89,7 @@
 
       <form id="sovereign-login-form" class="space-y-4">
           <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Username</label>
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Username / Email</label>
               <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required="">
           </div>
           <div>
@@ -104,6 +104,32 @@
               Forgot Password?
           </button>
       </form>
+
+      <!-- Forgot Password Modal -->
+      <div id="forgot-password-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-slate-900 border border-white/10 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
+              <button id="close-forgot-modal" class="absolute top-4 right-4 text-white/50 hover:text-white transition">
+                  <i class="fas fa-times"></i>
+              </button>
+              <h3 class="text-xl font-bold text-white mb-4">Secure Password Reset</h3>
+              <p class="text-xs text-white/60 mb-6">Enter your registered email and student name to verify your identity.</p>
+
+              <div class="space-y-4">
+                  <div>
+                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Registered Email</label>
+                      <input type="email" id="reset-email" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="student@example.com">
+                  </div>
+                  <div>
+                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Registered Student Name</label>
+                      <input type="text" id="reset-student-name" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. John Doe">
+                  </div>
+                  <div id="reset-msg" class="hidden text-[11px] font-bold text-center p-2 rounded"></div>
+                  <button type="button" id="submit-reset-btn" class="w-full bg-gold text-cbse-blue font-black py-3 rounded-xl hover:bg-white transition mt-2">
+                      Send Reset Link
+                  </button>
+              </div>
+          </div>
+      </div>
       <div class="mt-6 text-center border-t border-white/10 pt-4">
           <p class="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Owner • School Admin • Students &amp; Parents</p>
       </div>
