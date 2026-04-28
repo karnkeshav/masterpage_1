@@ -1,37 +1,30 @@
-// app/consoles/owner.js — Modular Production Architecture for Owner Command Center
+// app/consoles/owner.js — Owner Command Center
 import { guardConsole, bindConsoleLogout } from "../../js/guard.js";
 import { getInitializedClients } from "../../js/config.js";
 import { recordFinancialEvent } from "../../js/api.js";
 import {
-    collection, query, where, orderBy, onSnapshot, getDocs,
-    doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup
+    collection, query, where, orderBy, onSnapshot,
+    doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup,
+    getDocs, writeBatch
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import {
-    getApps, initializeApp
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import {
     getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut as signOutSecondary
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-// ═══════════════════════════════════════════════════════
-// GLOBAL STATE & CONSTANTS
-// ═══════════════════════════════════════════════════════
 const SESSION_START = Date.now();
 const PULSE_UPDATE_INTERVAL_MS = 30000;
 let b2bChart = null;
 let b2cChart = null;
-let schoolsCache = [];   
-let b2cCache = [];       
-let financialCache = []; 
+let schoolsCache = [];
+let b2cCache = [];
+let financialCache = [];
 let currentTab = "b2b";
+let isCreateUserMode = false;
 
-// Initializing Guards
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 guardConsole("owner");
 
-/**
- * Data Entry Point (Called by guard.js)
- */
 window.loadConsoleData = async (profile) => {
     const welcomeEl = document.getElementById("user-welcome");
     if (welcomeEl) welcomeEl.textContent = profile.displayName || "Root Owner";
@@ -43,35 +36,33 @@ window.loadConsoleData = async (profile) => {
     startSystemPulse();
 };
 
-// ═══════════════════════════════════════════════════════
-// REAL-TIME STREAMS (B2B & B2C Isolation)
-// ═══════════════════════════════════════════════════════
 async function initRealtimeStreams() {
     const { db } = await getInitializedClients();
 
-    // STREAM 1: B2C Individual Users (Capturing Parent Linkage)
     onSnapshot(
         query(collection(db, "users"), where("tenantType", "==", "individual")),
         (snap) => {
             b2cCache = [];
-            snap.forEach(userDoc => b2cCache.push({ id: userDoc.id, ...userDoc.data() }));
+            snap.forEach((userDoc) => b2cCache.push({ id: userDoc.id, ...userDoc.data() }));
+            b2cCache.sort((a, b) => safeTs(b.createdAt || b.activationDate) - safeTs(a.createdAt || a.activationDate));
 
-            const paidCount = b2cCache.filter(u => u.status === 'active').length;
+            const paidCount = b2cCache.filter((u) => isUserPaid(u)).length;
+            const parentLinkedCount = b2cCache.filter((u) => (u.parentEmail || "").trim()).length;
             const paidEl = document.getElementById("count-b2c-paid");
-            if (paidEl) paidEl.textContent = `${paidCount} paid users`;
+            if (paidEl) paidEl.textContent = `${paidCount} paid • ${parentLinkedCount} linked parents`;
 
             if (currentTab === "b2c") renderB2CTable(b2cCache);
+            updateSegmentedCharts(financialCache);
         }
     );
 
-    // STREAM 2: B2B Schools (Restored Detailed Mapping)
     onSnapshot(
         query(collection(db, "schools"), orderBy("created_at", "desc")),
         (snap) => {
             schoolsCache = [];
-            snap.forEach(schoolDoc => schoolsCache.push({ id: schoolDoc.id, ...schoolDoc.data() }));
-            
-            const activeCount = schoolsCache.filter(s => s.status === "active").length;
+            snap.forEach((schoolDoc) => schoolsCache.push({ id: schoolDoc.id, ...schoolDoc.data() }));
+
+            const activeCount = schoolsCache.filter((s) => s.status === "active").length;
             const activeEl = document.getElementById("count-schools-active");
             if (activeEl) activeEl.textContent = `${activeCount} manual schools`;
 
@@ -79,46 +70,63 @@ async function initRealtimeStreams() {
         }
     );
 
-    // STREAM 3: Consolidated Financial Ledger (High Integrity Split)
     onSnapshot(
         query(collectionGroup(db, "financial_events"), orderBy("timestamp", "desc")),
         (snap) => {
             financialCache = [];
-            let b2bTotal = 0;
-            let b2cTotal = 0;
-
-            snap.forEach(eventDoc => {
+            snap.forEach((eventDoc) => {
                 const data = eventDoc.data();
-                const path = eventDoc.ref.path;
-                
-                // Identify source: standalones or specifically tagged are B2C, else B2B
-                const isB2C = data.school_id === "B2C_REVENUE" || !path.includes("schools/");
-                const amount = parseFloat(data.amount || 0);
+                const isB2C = classifyAsB2C(data, eventDoc.ref.path);
 
-                if (isB2C) b2cTotal += amount;
-                else b2bTotal += amount;
-
-                financialCache.push({ 
-                    id: eventDoc.id, 
-                    entity: isB2C ? "Individual B2C" : (data.school_id || "B2B"), 
-                    ...data 
+                financialCache.push({
+                    id: eventDoc.id,
+                    ...data,
+                    entity: isB2C ? (data.uid || "Individual B2C") : (data.school_id || "B2B"),
+                    source: isB2C ? "B2C" : "B2B"
                 });
             });
 
-            // Update KPI Strip
-            document.getElementById("count-revenue-b2b").textContent = `₹${b2bTotal.toLocaleString("en-IN")}`;
-            document.getElementById("count-revenue-b2c").textContent = `₹${b2cTotal.toLocaleString("en-IN")}`;
-            document.getElementById("count-revenue-total").textContent = `₹${(b2bTotal + b2cTotal).toLocaleString("en-IN")}`;
-            
             renderLedgerTable(financialCache);
-            updateSegmentedCharts(b2bTotal, b2cTotal);
+            renderRevenueKPIs();
+            updateSegmentedCharts(financialCache);
         }
     );
 }
 
-// ═══════════════════════════════════════════════════════
-// B2B PROVISIONING (Restored Fields + Manual Revenue)
-// ═══════════════════════════════════════════════════════
+function renderRevenueKPIs() {
+    const b2bTotal = financialCache
+        .filter((e) => e.source === "B2B")
+        .reduce((sum, e) => sum + (parseFloat(e.amount || 0) || 0), 0);
+
+    const b2cEventTotal = financialCache
+        .filter((e) => e.source === "B2C")
+        .reduce((sum, e) => sum + (parseFloat(e.amount || 0) || 0), 0);
+
+    const eventUids = new Set(
+        financialCache.filter((e) => e.source === "B2C" && e.uid).map((e) => e.uid)
+    );
+    const b2cProfileFallback = b2cCache
+        .filter((u) => isUserPaid(u) && !eventUids.has(u.id))
+        .reduce((sum, u) => sum + (parseFloat(u.revenue || 0) || 0), 0);
+
+    const b2cTotal = b2cEventTotal + b2cProfileFallback;
+
+    const b2bEl = document.getElementById("count-revenue-b2b");
+    const b2cEl = document.getElementById("count-revenue-b2c");
+    const totalEl = document.getElementById("count-revenue-total");
+    if (b2bEl) b2bEl.textContent = `₹${b2bTotal.toLocaleString("en-IN")}`;
+    if (b2cEl) b2cEl.textContent = `₹${b2cTotal.toLocaleString("en-IN")}`;
+    if (totalEl) totalEl.textContent = `₹${(b2bTotal + b2cTotal).toLocaleString("en-IN")}`;
+}
+
+function classifyAsB2C(data, path) {
+    if ((data.school_id || "") === "B2C_REVENUE") return true;
+    if ((data.entityType || "").toLowerCase() === "b2c") return true;
+    if ((data.type || "").toUpperCase().includes("B2C")) return true;
+    if (path.includes("B2C_REVENUE")) return true;
+    return !path.includes("schools/");
+}
+
 function wireProvisionForm() {
     const form = document.getElementById("provision-form");
     if (!form) return;
@@ -126,7 +134,8 @@ function wireProvisionForm() {
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector("button[type='submit']");
-        btn.disabled = true; btn.textContent = "ORCHESTRATING TENANT...";
+        btn.disabled = true;
+        btn.textContent = "ORCHESTRATING TENANT...";
 
         try {
             const { db } = await getInitializedClients();
@@ -134,33 +143,29 @@ function wireProvisionForm() {
             const district = document.getElementById("prov-district").value;
             const manualAmount = parseFloat(document.getElementById("prov-amount-paid").value) || 0;
             const principalEmail = document.getElementById("prov-email").value;
-            
-            const schoolId = (schoolName.split(' ')[0] + "-" + district + "-" + Math.floor(1000 + Math.random() * 9000)).toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
-            // 1. Auth Creation (Using Secondary Onboarding pattern)
-            let secApp = getApps().find(a => a.name === "Onboard") || initializeApp(window.__firebase_config, "Onboard");
+            const schoolId = (schoolName.split(" ")[0] + "-" + district + "-" + Math.floor(1000 + Math.random() * 9000)).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+            const secApp = getApps().find((a) => a.name === "Onboard") || initializeApp(window.__firebase_config, "Onboard");
             const secAuth = getAuth(secApp);
             const cred = await createUserWithEmailAndPassword(secAuth, principalEmail, "Ready4Exam@2026");
 
-            // 2. School Document (Capturing ALL restored fields)
-            const schoolData = {
+            await setDoc(doc(db, "schools", schoolId), {
                 name: schoolName,
                 logo_url: document.getElementById("prov-logo").value || "",
                 board: document.getElementById("prov-board").value,
-                max_licenses: parseInt(document.getElementById("prov-licenses").value) || 100,
-                total_strength: parseInt(document.getElementById("prov-strength").value) || 0,
+                max_licenses: parseInt(document.getElementById("prov-licenses").value, 10) || 100,
+                total_strength: parseInt(document.getElementById("prov-strength").value, 10) || 0,
                 area_type: document.getElementById("prov-area").value,
                 state: document.getElementById("prov-state").value,
-                district: district,
+                district,
                 principal_email: principalEmail,
                 principal_phone: document.getElementById("prov-phone").value,
                 created_at: serverTimestamp(),
                 status: "active",
                 school_id: schoolId
-            };
-            await setDoc(doc(db, "schools", schoolId), schoolData);
+            });
 
-            // 3. School Master User
             await setDoc(doc(db, "users", cred.user.uid), {
                 displayName: "School Master",
                 email: principalEmail,
@@ -170,42 +175,93 @@ function wireProvisionForm() {
                 created_at: serverTimestamp()
             });
 
-            // 4. Record the MANUAL B2B Revenue Receipt
             await recordFinancialEvent(schoolId, "LICENSE_ACTIVATION", manualAmount, `Full Provisioning Manual Pay: ${schoolName}`);
+            await signOutSecondary(secAuth);
 
             alert(`Deployment Successful! ID: ${schoolId}`);
             toggleModal("provision-modal", false);
             form.reset();
-        } catch (err) { alert("Deployment Error: " + err.message); }
-        finally { btn.disabled = false; btn.textContent = "Deploy Tenant & Sync Financials"; }
+        } catch (err) {
+            alert("Deployment Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Deploy & Record Revenue";
+        }
     });
 }
 
-// ═══════════════════════════════════════════════════════
-// USER MANAGEMENT — Sovereign B2C CRUD
-// ═══════════════════════════════════════════════════════
 async function handleUserFormSubmit(e) {
     e.preventDefault();
     const uid = document.getElementById("edit-user-id").value;
     const { db } = await getInitializedClients();
 
-    const updateData = {
-        displayName: document.getElementById("u-name").value.trim(),
-        subscriptionTier: document.getElementById("u-plan").value,
-        revenue: parseFloat(document.getElementById("u-revenue").value) || 0,
-        parentEmail: document.getElementById("u-parent-email").value.trim() // CAPTURES LINKAGE
-    };
+    const displayName = document.getElementById("u-name").value.trim();
+    const subscriptionTier = document.getElementById("u-plan").value;
+    const revenue = parseFloat(document.getElementById("u-revenue").value) || 0;
+    const parentEmail = document.getElementById("u-parent-email").value.trim();
 
     try {
-        await updateDoc(doc(db, "users", uid), updateData);
-        alert("Sovereign Profile Synchronized.");
+        if (isCreateUserMode) {
+            const email = prompt("Enter student login email (e.g. student@example.com)");
+            const password = prompt("Enter temporary password (min 6 chars)");
+            if (!email || !password || password.length < 6) {
+                throw new Error("Valid email and password are required for new user.");
+            }
+
+            const secApp = getApps().find((a) => a.name === "OwnerOps") || initializeApp(window.__firebase_config, "OwnerOps");
+            const secAuth = getAuth(secApp);
+            const cred = await createUserWithEmailAndPassword(secAuth, email.trim(), password);
+
+            await setDoc(doc(db, "users", cred.user.uid), {
+                uid: cred.user.uid,
+                displayName,
+                email: email.trim(),
+                role: "student",
+                tenantType: "individual",
+                isB2C: true,
+                status: "active",
+                subscriptionTier,
+                revenue,
+                parentEmail,
+                createdAt: serverTimestamp(),
+                activationDate: serverTimestamp()
+            });
+
+            await recordFinancialEvent("B2C_REVENUE", "OWNER_CREATED_USER", revenue, `Owner created B2C user: ${displayName}`);
+            await signOutSecondary(secAuth);
+            alert("B2C user created successfully.");
+        } else {
+            await updateDoc(doc(db, "users", uid), {
+                displayName,
+                subscriptionTier,
+                revenue,
+                parentEmail,
+                updatedAt: serverTimestamp()
+            });
+            alert("Sovereign Profile Synchronized.");
+        }
         toggleModal("user-modal", false);
-    } catch (err) { alert("Sync Error: " + err.message); }
+    } catch (err) {
+        alert("Sync Error: " + err.message);
+    }
 }
 
+window.openAddUserModal = () => {
+    isCreateUserMode = true;
+    document.getElementById("user-modal-title").textContent = "Add B2C User";
+    document.getElementById("edit-user-id").value = "";
+    document.getElementById("u-name").value = "";
+    document.getElementById("u-plan").value = "practitioner";
+    document.getElementById("u-revenue").value = "";
+    document.getElementById("u-parent-email").value = "";
+    toggleModal("user-modal", true);
+};
+
 window.openEditUserModal = (uid) => {
-    const user = b2cCache.find(u => u.id === uid);
+    const user = b2cCache.find((u) => u.id === uid);
     if (!user) return;
+    isCreateUserMode = false;
+    document.getElementById("user-modal-title").textContent = "Edit B2C User";
     document.getElementById("edit-user-id").value = uid;
     document.getElementById("u-name").value = user.displayName || "";
     document.getElementById("u-plan").value = user.subscriptionTier || "practitioner";
@@ -214,9 +270,61 @@ window.openEditUserModal = (uid) => {
     toggleModal("user-modal", true);
 };
 
-// ═══════════════════════════════════════════════════════
-// SYSTEM HEALTH PULSE (Restored Heartbeat)
-// ═══════════════════════════════════════════════════════
+window.deleteB2CUser = async (uid) => {
+    const user = b2cCache.find((u) => u.id === uid);
+    if (!user) return;
+    if (!confirm(`Delete user ${user.displayName || user.email}? This removes the user profile and related Firestore records.`)) return;
+
+    try {
+        const { db } = await getInitializedClients();
+
+        const refs = [];
+        const relatedQueries = [
+            query(collection(db, "quiz_scores"), where("user_id", "==", uid)),
+            query(collection(db, "mistake_notebook"), where("user_id", "==", uid)),
+            query(collection(db, "financial_events"), where("uid", "==", uid)),
+            query(collection(db, "ledger_events"), where("uid", "==", uid))
+        ];
+
+        for (const q of relatedQueries) {
+            const snap = await getDocs(q);
+            snap.forEach((d) => refs.push(d.ref));
+        }
+
+        const BATCH_LIMIT = 499;
+        for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+            const batch = writeBatch(db);
+            refs.slice(i, i + BATCH_LIMIT).forEach((ref) => batch.delete(ref));
+            await batch.commit();
+        }
+
+        const finalBatch = writeBatch(db);
+        finalBatch.delete(doc(db, "users", uid));
+        await finalBatch.commit();
+
+        alert("User and related records deleted. (Auth record remains; use backend admin for hard delete.)");
+    } catch (err) {
+        alert("Delete failed: " + err.message);
+    }
+};
+
+window.resetB2CPassword = async (uid) => {
+    const user = b2cCache.find((u) => u.id === uid);
+    const email = user?.email;
+    if (!email) {
+        alert("No login email found for this user.");
+        return;
+    }
+
+    try {
+        const { auth } = await getInitializedClients();
+        await sendPasswordResetEmail(auth, email);
+        alert(`Reset email sent to ${email}`);
+    } catch (err) {
+        alert("Password reset failed: " + err.message);
+    }
+};
+
 function startSystemPulse() {
     updatePulse();
     setInterval(updatePulse, PULSE_UPDATE_INTERVAL_MS);
@@ -229,43 +337,23 @@ function updatePulse() {
     const uptimeMs = Date.now() - SESSION_START;
     const uptimeMin = Math.floor(uptimeMs / 60000);
     const uptimeEl = document.getElementById("pulse-uptime");
-    if (uptimeEl) uptimeEl.textContent = uptimeMin < 60 ? `${uptimeMin}m` : `${Math.floor(uptimeMin/60)}h ${uptimeMin%60}m`;
+    if (uptimeEl) uptimeEl.textContent = uptimeMin < 60 ? `${uptimeMin}m` : `${Math.floor(uptimeMin / 60)}h ${uptimeMin % 60}m`;
 }
 
-// ═══════════════════════════════════════════════════════
-// UI RENDERING ENGINES (High Complexity Rows)
-// ═══════════════════════════════════════════════════════
 function renderB2CTable(users) {
     const tbody = document.getElementById("b2c-ledger-rows");
     if (!tbody) return;
 
-    if (users.length === 0) {
+    if (!users.length) {
         tbody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-slate-500 italic">No B2C users found in the registry.</td></tr>';
         return;
     }
 
-    tbody.innerHTML = users.map(u => {
-        // 1. Identity Logic
+    tbody.innerHTML = users.map((u) => {
         const initial = (u.displayName || "U").charAt(0).toUpperCase();
-        
-        // 2. Crash-Proof Expiry & Status Logic
-        const expiryRaw = u.accessExpiryDate;
-        let expiryDisp = "N/A";
-        let isActive = false;
-
-        if (expiryRaw) {
-            // Convert Firestore Timestamp or String to JS Date Object
-            const dateObj = expiryRaw.toDate ? expiryRaw.toDate() : new Date(expiryRaw);
-            
-            if (!isNaN(dateObj.getTime())) {
-                expiryDisp = dateObj.toLocaleDateString();
-                // Compare with current time to determine actual status
-                isActive = dateObj > new Date();
-            }
-        }
-
-        // 3. Status Badge Logic (Uses time comparison instead of just a string)
-        const statusBadge = isActive 
+        const expiryDisp = formatExpiry(u.accessExpiryDate);
+        const isActive = isUserPaid(u);
+        const statusBadge = isActive
             ? '<span class="bg-emerald-900/30 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Active</span>'
             : '<span class="bg-red-900/30 text-red-400 px-2 py-0.5 rounded text-[10px] font-black uppercase">Expired</span>';
 
@@ -276,31 +364,33 @@ function renderB2CTable(users) {
                     <div class="w-10 h-10 rounded-full bg-indigo-600/20 flex items-center justify-center font-bold text-indigo-400">${initial}</div>
                     <div class="min-w-0">
                         <div class="font-bold text-white text-sm truncate">${escapeHtml(u.displayName || "Scholar")}</div>
-                        <div class="text-[10px] text-slate-500 font-mono">S: ${escapeHtml(u.email)}</div>
-                        ${u.parentEmail ? `<div class="text-[10px] text-amber-500 font-mono">P: ${escapeHtml(u.parentEmail)}</div>` : ''}
+                        <div class="text-[10px] text-slate-500 font-mono">S: ${escapeHtml(u.email || "—")}</div>
+                        ${u.parentEmail ? `<div class="text-[10px] text-amber-500 font-mono">P: ${escapeHtml(u.parentEmail)}</div>` : ""}
                     </div>
                 </div>
             </td>
-            <td class="p-6 text-[10px] font-black uppercase text-slate-400">${escapeHtml(u.subscriptionTier || 'trial')}</td>
-            <td class="p-6 font-bold text-emerald-400">₹${u.revenue || 0}</td>
+            <td class="p-6 text-[10px] font-black uppercase text-slate-400">${escapeHtml(u.subscriptionTier || "trial")}</td>
+            <td class="p-6 font-bold text-emerald-400">₹${Number(u.revenue || 0).toLocaleString("en-IN")}</td>
             <td class="p-6 text-xs text-slate-500">${expiryDisp}</td>
             <td class="p-6">${statusBadge}</td>
             <td class="p-6 text-right">
-                <button onclick="openEditUserModal('${u.id}')" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-indigo-400 hover:bg-indigo-600 hover:text-white transition">
-                    <i class="fas fa-user-edit text-xs"></i>
-                </button>
+                <div class="inline-flex gap-2">
+                    <button onclick="openEditUserModal('${u.id}')" title="Edit" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-indigo-400 hover:bg-indigo-600 hover:text-white transition"><i class="fas fa-user-edit text-xs"></i></button>
+                    <button onclick="resetB2CPassword('${u.id}')" title="Reset Password" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-amber-400 hover:bg-amber-600 hover:text-white transition"><i class="fas fa-key text-xs"></i></button>
+                    <button onclick="deleteB2CUser('${u.id}')" title="Delete" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-rose-400 hover:bg-rose-600 hover:text-white transition"><i class="fas fa-trash text-xs"></i></button>
+                </div>
             </td>
         </tr>`;
-    }).join('');
+    }).join("");
 }
 
 function renderSchoolGrid(schools) {
     const grid = document.getElementById("school-ledger");
     if (!grid) return;
-    grid.innerHTML = schools.map(s => `
+    grid.innerHTML = schools.map((s) => `
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-[32px] hover:border-indigo-500/50 transition duration-500 group">
             <div class="flex items-center gap-5 mb-6">
-                <div class="w-16 h-16 rounded-full bg-white p-2 shadow-2xl flex-shrink-0"><img src="${s.logo_url || '../../images/default-school.png'}" class="w-full h-full object-contain"></div>
+                <div class="w-16 h-16 rounded-full bg-white p-2 shadow-2xl flex-shrink-0"><img src="${s.logo_url || "../../images/default-school.png"}" class="w-full h-full object-contain"></div>
                 <div>
                     <h4 class="text-lg font-black text-white group-hover:text-indigo-400 transition">${escapeHtml(s.name)}</h4>
                     <p class="text-[10px] uppercase font-black text-slate-500 tracking-widest">${s.board} • ${s.district}</p>
@@ -312,63 +402,141 @@ function renderSchoolGrid(schools) {
             </div>
             <a href="../../school-landing.html?schoolId=${s.id}" target="_blank" class="block w-full py-4 bg-white text-black text-center rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-400 hover:text-white transition shadow-lg">Launch Portal</a>
         </div>
-    `).join('');
+    `).join("");
 }
 
 function renderLedgerTable(events) {
     const tbody = document.getElementById("ledger-rows");
     if (!tbody) return;
-    tbody.innerHTML = events.map(e => `
+    tbody.innerHTML = events.map((e) => `
         <tr class="hover:bg-slate-900/40 text-xs border-b border-white/5">
-            <td class="p-6 text-slate-500 font-medium">${e.timestamp?.toDate ? e.timestamp.toDate().toLocaleDateString() : '—'}</td>
+            <td class="p-6 text-slate-500 font-medium">${e.timestamp?.toDate ? e.timestamp.toDate().toLocaleDateString() : "—"}</td>
             <td class="p-6 font-bold text-white">${escapeHtml(e.entity)}</td>
-            <td class="p-6"><span class="px-3 py-1 rounded-full bg-slate-800 text-[9px] font-black uppercase text-slate-400 border border-white/5">${e.type}</span></td>
-            <td class="p-6 font-black text-emerald-400 text-sm">₹${e.amount?.toLocaleString()}</td>
-            <td class="p-6 text-slate-500 italic">"${escapeHtml(e.details || '—')}"</td>
-            <td class="p-6 text-[10px] font-mono text-slate-700">${e.id.substring(0,10)}</td>
+            <td class="p-6"><span class="px-3 py-1 rounded-full bg-slate-800 text-[9px] font-black uppercase text-slate-400 border border-white/5">${escapeHtml(e.type || "NA")}</span></td>
+            <td class="p-6 font-black text-emerald-400 text-sm">₹${Number(e.amount || 0).toLocaleString("en-IN")}</td>
+            <td class="p-6 text-slate-500 italic">"${escapeHtml(e.details || "—")}"</td>
+            <td class="p-6 text-[10px] font-mono text-slate-700">${e.id.substring(0, 10)}</td>
         </tr>
-    `).join('');
+    `).join("");
 }
 
-// ═══════════════════════════════════════════════════════
-// PERFORMANCE CHARTS (Segmented Revenue)
-// ═══════════════════════════════════════════════════════
 function initSegmentedCharts() {
-    const cfg = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } };
-    b2bChart = new Chart(document.getElementById("b2bRevenueChart"), { type: 'line', data: { labels: ['','','','',''], datasets: [{ data: [0,0,0,0,0], borderColor: '#6366f1', fill: true, backgroundColor: 'rgba(99, 102, 241, 0.05)', tension: 0.5 }] }, options: cfg });
-    b2cChart = new Chart(document.getElementById("b2cRevenueChart"), { type: 'bar', data: { labels: ['','','','',''], datasets: [{ data: [0,0,0,0,0], backgroundColor: '#34d399', borderRadius: 6 }] }, options: cfg });
+    const cfg = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: "#64748b" }, grid: { color: "rgba(148,163,184,0.12)" } },
+            y: { ticks: { color: "#64748b" }, grid: { color: "rgba(148,163,184,0.12)" } }
+        }
+    };
+
+    b2bChart = new Chart(document.getElementById("b2bRevenueChart"), {
+        type: "line",
+        data: { labels: [], datasets: [{ data: [], borderColor: "#6366f1", fill: true, backgroundColor: "rgba(99, 102, 241, 0.05)", tension: 0.3 }] },
+        options: cfg
+    });
+
+    b2cChart = new Chart(document.getElementById("b2cRevenueChart"), {
+        type: "bar",
+        data: { labels: [], datasets: [{ data: [], backgroundColor: "#34d399", borderRadius: 6 }] },
+        options: cfg
+    });
 }
 
-function updateSegmentedCharts(b2b, b2c) {
+function updateSegmentedCharts(events) {
     if (!b2bChart || !b2cChart) return;
-    b2bChart.data.datasets[0].data = [b2b * 0.5, b2b * 0.8, b2b * 0.7, b2b * 0.9, b2b];
-    b2cChart.data.datasets[0].data = [b2c * 0.3, b2c * 0.6, b2c * 0.4, b2c * 0.8, b2c];
-    b2bChart.update(); b2cChart.update();
+
+    const labels = lastSevenDayLabels();
+    const b2bSeries = new Array(labels.length).fill(0);
+    const b2cSeries = new Array(labels.length).fill(0);
+
+    events.forEach((e) => {
+        const dt = e.timestamp?.toDate ? e.timestamp.toDate() : null;
+        if (!dt) return;
+        const key = dayKey(dt);
+        const idx = labels.indexOf(key);
+        if (idx < 0) return;
+
+        const amount = Number(e.amount || 0);
+        if ((e.source || "") === "B2C") b2cSeries[idx] += amount;
+        else b2bSeries[idx] += amount;
+    });
+
+    b2bChart.data.labels = labels;
+    b2bChart.data.datasets[0].data = b2bSeries;
+    b2cChart.data.labels = labels;
+    b2cChart.data.datasets[0].data = b2cSeries;
+    b2bChart.update();
+    b2cChart.update();
 }
 
-// ═══════════════════════════════════════════════════════
-// UI ORCHESTRATION
-// ═══════════════════════════════════════════════════════
 function wireEventListeners() {
-    document.querySelectorAll(".nav-link").forEach(btn => {
+    document.querySelectorAll(".nav-link").forEach((btn) => {
         btn.addEventListener("click", () => {
             const tab = btn.dataset.tab;
             currentTab = tab;
-            document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+            document.querySelectorAll(".tab-content").forEach((c) => c.classList.add("hidden"));
             document.getElementById(`tab-${tab}`).classList.remove("hidden");
-            document.querySelectorAll(".nav-link").forEach(l => l.classList.replace("bg-indigo-600", "text-slate-400"));
-            btn.classList.replace("text-slate-400", "bg-indigo-600");
-            btn.classList.add("text-white");
+            document.querySelectorAll(".nav-link").forEach((l) => {
+                l.classList.remove("bg-indigo-600", "text-white");
+                l.classList.add("text-slate-400");
+            });
+            btn.classList.remove("text-slate-400");
+            btn.classList.add("bg-indigo-600", "text-white");
+
+            if (tab === "b2c") renderB2CTable(b2cCache);
+            if (tab === "b2b") renderSchoolGrid(schoolsCache);
         });
     });
 
     document.getElementById("user-management-form")?.addEventListener("submit", handleUserFormSubmit);
+    document.getElementById("add-b2c-user-btn")?.addEventListener("click", () => window.openAddUserModal());
     document.querySelector(".js-provision-btn")?.addEventListener("click", () => toggleModal("provision-modal", true));
     document.querySelector(".js-close-provision")?.addEventListener("click", () => toggleModal("provision-modal", false));
     document.querySelector(".js-close-user-modal")?.addEventListener("click", () => toggleModal("user-modal", false));
 }
 
-function toggleModal(id, show) { document.getElementById(id).classList.toggle("hidden", !show); }
+function toggleModal(id, show) {
+    document.getElementById(id).classList.toggle("hidden", !show);
+}
+
+function safeTs(value) {
+    if (!value) return 0;
+    const dt = value.toDate ? value.toDate() : new Date(value);
+    const ms = dt?.getTime?.();
+    return Number.isFinite(ms) ? ms : 0;
+}
+
+function isUserPaid(user) {
+    if ((user.status || "").toLowerCase() === "active" && Number(user.revenue || 0) > 0) return true;
+    const exp = user.accessExpiryDate;
+    if (!exp) return false;
+    const dt = exp.toDate ? exp.toDate() : new Date(exp);
+    return !Number.isNaN(dt.getTime()) && dt > new Date();
+}
+
+function formatExpiry(exp) {
+    if (!exp) return "N/A";
+    const dt = exp.toDate ? exp.toDate() : new Date(exp);
+    if (Number.isNaN(dt.getTime())) return "N/A";
+    return dt.toLocaleDateString();
+}
+
+function dayKey(d) {
+    return d.toISOString().slice(5, 10);
+}
+
+function lastSevenDayLabels() {
+    const out = [];
+    const base = new Date();
+    for (let i = 6; i >= 0; i -= 1) {
+        const d = new Date(base);
+        d.setDate(base.getDate() - i);
+        out.push(dayKey(d));
+    }
+    return out;
+}
 
 function escapeHtml(str) {
     if (!str) return "";

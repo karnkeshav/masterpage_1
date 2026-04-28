@@ -13,14 +13,22 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 module.exports = async (req, res) => {
-    // CORS Handling
-    const allowedOrigin = process.env.ALLOWED_ORIGIN;
-    if (allowedOrigin) {
-        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    // 1. ROBUST CORS HANDLING
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+        'https://karnkeshav.github.io',
+        'https://masterpage-1.vercel.app',
+        process.env.ALLOWED_ORIGIN
+    ].filter(Boolean);
+
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
 
+    // 2. Handle Preflight (OPTIONS)
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
@@ -36,16 +44,13 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Email and Registered Student Name are required.' });
         }
 
-        // Query Firestore to verify identity
-        // We need to check both the actual student email and the parent email
         const usersRef = db.collection('users');
         let querySnapshot = await usersRef.where('email', '==', email).limit(1).get();
 
         if (querySnapshot.empty) {
-            // Try parentEmail
+            // Check by parent email since students use internal login IDs
             querySnapshot = await usersRef.where('parentEmail', '==', email).limit(1).get();
             if (querySnapshot.empty) {
-                // Return generic message to prevent enumeration
                 return res.status(200).json({ message: 'If the details match, a reset link will be sent shortly.' });
             }
         }
@@ -53,22 +58,13 @@ module.exports = async (req, res) => {
         const userDoc = querySnapshot.docs[0];
         const userData = userDoc.data();
 
-        // Verify the student name (case-insensitive)
+        // Identity verification (case-insensitive)
         if (!userData.displayName || userData.displayName.toLowerCase().trim() !== studentName.toLowerCase().trim()) {
-            console.warn(`Identity verification failed for ${email}. Expected: ${userData.displayName}, Got: ${studentName}`);
-            // Return same generic message
             return res.status(200).json({ message: 'If the details match, a reset link will be sent shortly.' });
         }
 
-        // Generate Password Reset Link
-        // The reset link uses the actual user email from Firestore, even if they searched by parentEmail.
-        // Firebase's generatePasswordResetLink only creates the URL; it does not send an email.
-        // We return the link to the verified client so it can redirect the user to complete the reset.
+        // Generate the reset link using the internal student email
         const resetLink = await auth.generatePasswordResetLink(userData.email);
-
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`Password reset link for ${email}: ${resetLink}`);
-        }
 
         return res.status(200).json({
             success: true,

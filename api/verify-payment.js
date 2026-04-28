@@ -15,21 +15,23 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 module.exports = async (req, res) => {
-    // CORS Handling
-    const allowedOrigin = process.env.ALLOWED_ORIGIN;
-    if (allowedOrigin) {
-        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    // 1. ROBUST CORS HANDLING
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+        'https://karnkeshav.github.io',
+        'https://masterpage-1.vercel.app',
+        process.env.ALLOWED_ORIGIN
+    ].filter(Boolean);
+
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     try {
         const {
@@ -44,7 +46,7 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Missing payment verification data.' });
         }
 
-        // 1. Verify Razorpay Signature (The Golden Rule)
+        // 2. VERIFY SIGNATURE
         const secret = process.env.RAZORPAY_KEY_SECRET;
         const generatedSignature = crypto
             .createHmac('sha256', secret)
@@ -52,45 +54,28 @@ module.exports = async (req, res) => {
             .digest('hex');
 
         if (generatedSignature !== razorpay_signature) {
-            console.error("Signature mismatch. Possible tampering.");
+            console.error("Signature mismatch.");
             return res.status(400).json({ error: 'Invalid payment signature.' });
         }
 
-        // 2. Fetch and validate Pending Registration
+        // 3. FETCH & LOCK REGISTRATION
         const pendingRef = db.collection('pending_registrations').doc(pendingRegistrationId);
-
-        // Phase 1: Validate and lock the pending registration inside a transaction.
-        // Auth operations are kept outside to avoid retry/orphan issues.
+        
         const pendingData = await db.runTransaction(async (t) => {
             const pendingDoc = await t.get(pendingRef);
-
-            if (!pendingDoc.exists) {
-                throw new Error("Pending registration not found.");
-            }
-
+            if (!pendingDoc.exists) throw new Error("Registration record not found.");
+            
             const data = pendingDoc.data();
+            if (data.status === 'completed') throw new Error("Order already processed.");
+            if (data.verificationToken !== verificationToken) throw new Error("Invalid session token.");
 
-            if (data.status === 'completed') {
-                throw new Error("Payment already processed for this order.");
-            }
-
-            if (data.verificationToken !== verificationToken) {
-                throw new Error("Verification token mismatch. Invalid session.");
-            }
-
-            if (data.orderId !== razorpay_order_id) {
-                throw new Error("Order ID mismatch.");
-            }
-
-            // Mark as processing to prevent concurrent retries
             t.update(pendingRef, { status: 'processing' });
-
             return data;
         });
 
-        // Phase 2: Create Firebase Auth user outside the transaction
-        const stableUid = crypto.randomUUID();
+        // 4. CREATE AUTH ACCOUNT
         let userRecord;
+        const stableUid = crypto.randomUUID();
         try {
             const importUserRecord = {
                 uid: stableUid,
@@ -107,129 +92,78 @@ module.exports = async (req, res) => {
                 if (userImportResult.errors[0].error.code === 'auth/email-already-exists') {
                     userRecord = await auth.getUserByEmail(pendingData.profileData.email);
                 } else {
-                    throw new Error(`Failed to import user: ${userImportResult.errors[0].error.message}`);
+                    throw new Error(userImportResult.errors[0].error.message);
                 }
             } else {
-                userRecord = await auth.getUser(importUserRecord.uid);
+                userRecord = await auth.getUser(stableUid);
             }
         } catch (err) {
-            if (err.code === 'auth/email-already-exists') {
-                userRecord = await auth.getUserByEmail(pendingData.profileData.email);
-            } else {
-                // Roll back pending status so it can be retried
-                await pendingRef.update({ status: 'pending' });
-                throw err;
-            }
+            await pendingRef.update({ status: 'pending' }); // Allow retry on failure
+            throw err;
         }
 
-        // Phase 3: Write Firestore profile, complete pending registration, and ledger
-        const now = new Date();
+        // 5. CALCULATE PLAN DETAILS
         const expiry = new Date();
-        if (pendingData.planID === 'legacy') expiry.setFullYear(now.getFullYear() + 3);
-        else expiry.setDate(now.getDate() + 30);
+        if (pendingData.planID === 'legacy') expiry.setFullYear(expiry.getFullYear() + 3);
+        else expiry.setDate(expiry.getDate() + 30);
 
-        const graceDate = new Date(expiry);
-        graceDate.setDate(expiry.getDate() + 5);
-
+        // Define Module Access
         let activeModules = ["SimpleQuizzes"];
-        if (pendingData.planID === 'practitioner') activeModules.push("MediumQuizzes", "AdvancedQuizzes");
-        if (['strategist', 'sync', 'legacy'].includes(pendingData.planID)) activeModules.push("MediumQuizzes", "AdvancedQuizzes", "MistakeNotebook", "KnowledgeHub");
-        if (['sync', 'legacy'].includes(pendingData.planID)) activeModules.push("ParentConsole");
-        if (['board_ready', 'legacy'].includes(pendingData.planID)) activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
+        const pID = pendingData.planID;
+        
+        if (pID === 'practitioner' || ['strategist', 'sync', 'legacy', 'board_ready'].includes(pID)) {
+            activeModules.push("MediumQuizzes", "AdvancedQuizzes");
+        }
+        if (['strategist', 'sync', 'legacy'].includes(pID)) {
+            activeModules.push("MistakeNotebook", "KnowledgeHub");
+        }
+        if (['sync', 'legacy'].includes(pID)) activeModules.push("ParentConsole");
+        if (['board_ready', 'legacy'].includes(pID)) {
+            activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
+        }
 
+        // 6. FINALIZE PROFILE & LEDGER
         const revenueAmt = (pendingData.amountPaise / 100);
-
         const userProfileRef = db.collection('users').doc(userRecord.uid);
+        const batch = db.batch();
 
-        // Allow-list profileData fields to prevent privilege escalation
-        const safeProfile = {
-            displayName: pendingData.profileData.displayName,
-            username: pendingData.profileData.username,
-            email: pendingData.profileData.email,
-            parentEmail: pendingData.profileData.parentEmail,
-            class: pendingData.profileData.class,
-            board: pendingData.profileData.board,
-        };
-        if (pendingData.profileData.stream) safeProfile.stream = pendingData.profileData.stream;
-        if (pendingData.profileData.subjects) safeProfile.subjects = pendingData.profileData.subjects;
-
-        const profilePayload = {
-            ...safeProfile,
-            role: "student",
-            tenantType: "individual",
-            isB2C: true,
-            subscriptionTier: pendingData.planID,
+        batch.set(userProfileRef, {
+            ...pendingData.profileData,
             uid: userRecord.uid,
             status: "active",
-            activationDate: admin.firestore.FieldValue.serverTimestamp(),
-            accessExpiryDate: admin.firestore.Timestamp.fromDate(expiry),
-            gracePeriodEndDate: admin.firestore.Timestamp.fromDate(graceDate),
-            lastPasswordChangeDate: admin.firestore.FieldValue.serverTimestamp(),
-            activeModules: activeModules,
+            activeModules,
             razorpayPaymentId: razorpay_payment_id,
             revenue: revenueAmt,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+            accessExpiryDate: admin.firestore.Timestamp.fromDate(expiry),
+            activationDate: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        batch.update(pendingRef, { 
+            status: 'completed', 
+            uid: userRecord.uid, 
+            completedAt: admin.firestore.FieldValue.serverTimestamp() 
+        });
+
+        const financialPayload = {
+            type: "B2C_REVENUE",
+            amount: revenueAmt,
+            uid: userRecord.uid,
+            entityType: "b2c",
+            school_id: "B2C_REVENUE",
+            details: `Plan ${pendingData.planID} payment`,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
         };
 
-        const batch = db.batch();
-        batch.set(userProfileRef, profilePayload);
-
-        batch.update(pendingRef, {
-            status: 'completed',
-            completedAt: admin.firestore.FieldValue.serverTimestamp(),
-            uid: userRecord.uid,
-            razorpay_payment_id: razorpay_payment_id
-        });
-
-        const ledgerRef = db.collection('ledger_events').doc();
-        batch.set(ledgerRef, {
-            type: "B2C_REVENUE",
-            action: "PAYMENT",
-            amount: revenueAmt,
-            description: `B2C Registration: ${pendingData.planLabel} for ${pendingData.profileData.email} (ID: ${razorpay_payment_id})`,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            uid: userRecord.uid
-        });
+        batch.set(db.collection('ledger_events').doc(), financialPayload);
+        batch.set(db.collection('financial_events').doc(), financialPayload);
 
         await batch.commit();
 
-        // Generate Custom Token for client sign-in
         const customToken = await auth.createCustomToken(userRecord.uid);
-
-        // 6. Generate Automated PDF Invoice
-        try {
-            const rzp = new Razorpay({
-                key_id: process.env.RAZORPAY_KEY_ID,
-                key_secret: process.env.RAZORPAY_KEY_SECRET
-            });
-
-            await rzp.invoices.create({
-                type: 'invoice',
-                description: `Invoice for ${pendingData.planLabel} Subscription`,
-                customer: {
-                    name: pendingData.profileData.displayName || 'Student',
-                    email: pendingData.profileData.email || 'student@example.com'
-                },
-                line_items: [
-                    {
-                        name: `${pendingData.planLabel} Plan`,
-                        description: `Access to ${pendingData.planLabel} features`,
-                        amount: pendingData.amountPaise,
-                        currency: 'INR',
-                        quantity: 1
-                    }
-                ],
-                email_notify: 1,
-                currency: 'INR'
-            });
-        } catch (invoiceErr) {
-            console.error("Invoice creation failed, but payment succeeded:", invoiceErr);
-        }
-
-        return res.status(200).json({ success: true, customToken: customToken });
+        return res.status(200).json({ success: true, customToken });
 
     } catch (error) {
-        console.error("Payment Verification Error:", error);
-        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+        console.error("Verification Error:", error);
+        return res.status(500).json({ error: error.message });
     }
 };
