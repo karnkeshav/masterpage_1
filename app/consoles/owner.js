@@ -52,8 +52,7 @@ async function initRealtimeStreams() {
             if (paidEl) paidEl.textContent = `${paidCount} paid • ${parentLinkedCount} linked parents`;
 
             if (currentTab === "b2c") renderB2CTable(b2cCache);
-            renderRevenueKPIs();
-            updateSegmentedCharts(financialCache, b2cCache);
+            updateSegmentedCharts(financialCache);
         }
     );
 
