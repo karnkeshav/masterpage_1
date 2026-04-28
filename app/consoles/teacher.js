@@ -7,6 +7,7 @@ import { collection, query, where, onSnapshot, getDoc, getDocs, setDoc, addDoc, 
 import * as UI from "../../js/ui-renderer.js";
 
 const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const trSubject = (s) => window.R4ETranslator ? window.R4ETranslator.translateSubject(s) : s;
 
 // === GLOBAL STATE DECLARATIONS ===
 let db;
@@ -129,7 +130,7 @@ async function init(user) {
     sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('');
 
     const discSelect = document.getElementById('discipline-select');
-    discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${d}</option>`).join('');
+    discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${trSubject(d)}</option>`).join('');
 
     // Derive grades from sections (e.g., "9A" -> "9")
     const grades = [...new Set(sections.map(s => s.replace(/[A-Z]/g, '')))];
@@ -142,7 +143,7 @@ async function init(user) {
     currentContext.discipline = document.getElementById('discipline-select').value || disciplines[0] || 'Unassigned';
 
     document.getElementById('header-class').innerText = `${currentContext.grade}-${currentContext.section}`;
-    document.getElementById('header-discipline').innerText = currentContext.discipline;
+    document.getElementById('header-discipline').innerText = trSubject(currentContext.discipline);
 
 
     const viewport = document.getElementById('tab-viewport');
@@ -888,7 +889,7 @@ document.getElementById('section-select').addEventListener('change', async (e) =
 
 document.getElementById('discipline-select').addEventListener('change', async (e) => {
     currentContext.discipline = e.target.value;
-    document.getElementById('header-discipline').innerText = currentContext.discipline;
+    document.getElementById('header-discipline').innerText = trSubject(currentContext.discipline);
     const curr = await loadCurriculum(currentContext.grade);
     updateActiveChapters(curr);
     attachFirebaseListeners();

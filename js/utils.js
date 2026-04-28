@@ -38,3 +38,25 @@ export function capitalizeFirstLetter(s) {
     if (typeof s !== 'string' || s.length === 0) return s;
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+
+/**
+ * Reads language from localStorage synchronously so initial paint uses the correct locale.
+ * Helps avoid Flash of Un-translated Text (FOUT).
+ */
+export function getPreferredLanguageSync() {
+    try {
+        const lang = localStorage.getItem('r4e_lang') || 'en';
+        return ['en', 'te', 'hi'].includes(lang) ? lang : 'en';
+    } catch (_e) {
+        return 'en';
+    }
+}
+
+export function applyLanguageBootState() {
+    if (typeof document === 'undefined') return 'en';
+    const lang = getPreferredLanguageSync();
+    document.documentElement.setAttribute('lang', lang);
+    if (document.body) document.body.setAttribute('data-lang', lang);
+    return lang;
+}

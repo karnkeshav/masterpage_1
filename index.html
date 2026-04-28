@@ -18,6 +18,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="./js/tailwind-config.js"></script>
+<script src="./js/i18n-config.js"></script>
+<script src="./js/translator.js"></script>
 <link href="./css/global.css" rel="stylesheet">
 <script src="js/firebase-master-config.js"></script>
 
@@ -74,34 +76,34 @@
   <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10">
     <div class="flex-1 text-center lg:text-left">
       <h1 class="text-4xl lg:text-6xl font-black mb-4 leading-tight fade-in">
-        Master Your Exams <br><span class="text-gold">With Precision</span>
+        <span data-i18n="hero.master_exams">Master Your Exams</span> <br><span class="text-gold" data-i18n="hero.with_precision">With Precision</span>
       </h1>
       <p class="text-white/80 text-lg mb-8 max-w-xl mx-auto lg:mx-0 fade-in" style="animation-delay: 0.2s;">
-        Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.
+        <span data-i18n="hero.subtext">Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.</span>
       </p>
     </div>
 
     <div class="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl fade-in" style="animation-delay: 0.3s;">
       <div class="flex items-center justify-center gap-3 mb-6">
         <i class="fas fa-fingerprint text-gold text-2xl"></i>
-        <h2 class="text-white font-bold text-xl">Login</h2>
+        <h2 class="text-white font-bold text-xl" data-i18n="auth.login">Login</h2>
       </div>
 
       <form id="sovereign-login-form" class="space-y-4">
           <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Username / Email</label>
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.username_email">Username / Email</span></label>
               <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required="">
           </div>
           <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Password</label>
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.password">Password</span></label>
               <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" required="">
           </div>
           <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
           <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2">
-              Log In
+              <span data-i18n="auth.log_in">Log In</span>
           </button>
           <button type="button" id="forgot-password-btn" class="text-xs text-white/60 hover:text-gold underline mt-2 block mx-auto">
-              Forgot Password?
+              <span data-i18n="auth.forgot_password">Forgot Password?</span>
           </button>
       </form>
 
@@ -142,10 +144,10 @@
   <div class="max-w-7xl mx-auto">
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
 
-      <!-- LEFT: Try a Quiz Now (60%) -->
+      <!-- LEFT: <span data-i18n="quiz.try_now">Try a Quiz Now</span> (60%) -->
       <div class="lg:col-span-3">
         <div class="text-center mb-10">
-          <h2 class="text-3xl font-black text-cbse-blue mb-2">Try a Quiz Now</h2>
+          <h2 class="text-3xl font-black text-cbse-blue mb-2"><span data-i18n="quiz.try_now">Try a Quiz Now</span></h2>
           <p class="text-slate-500">Select your curriculum to start practicing instantly.</p>
         </div>
 
@@ -154,7 +156,7 @@
 
             <!-- Board -->
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. <span data-i18n="quiz.select_board">Select Board</span></label>
               <div class="flex gap-2">
                 <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="CBSE" onclick="selectBoard('CBSE', this)">CBSE</button>
                 <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="SCERT" onclick="selectBoard('SCERT', this)">SCERT (TS)</button>
@@ -163,7 +165,7 @@
 
             <!-- Class -->
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. <span data-i18n="quiz.select_class">Select Class</span></label>
               <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadSubjects()">
                 <option value="">Select Board first...</option>
               </select>
@@ -171,7 +173,7 @@
 
             <!-- Subject -->
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. <span data-i18n="quiz.select_subject">Select Subject</span></label>
               <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadChapters()">
                 <option value="">Select Class first...</option>
               </select>
@@ -179,7 +181,7 @@
 
             <!-- Chapter -->
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. <span data-i18n="quiz.select_chapter">Select Chapter</span></label>
               <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="checkChapter()">
                 <option value="">Select Subject first...</option>
               </select>
@@ -190,7 +192,7 @@
           <!-- Difficulty & Start -->
           <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
             <div class="flex-1 w-full">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. <span data-i18n="quiz.select_difficulty">Select Difficulty</span></label>
               <div class="flex gap-2">
                 <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">Simple</button>
                 <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Medium" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Medium</button>
@@ -199,7 +201,7 @@
             </div>
             <div class="flex-1 w-full">
               <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" onclick="startQuiz()">
-                <i class="fas fa-play-circle"></i> Start Quiz
+                <i class="fas fa-play-circle"></i> <span data-i18n="quiz.start">Start Quiz</span>
               </button>
               <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
             </div>
