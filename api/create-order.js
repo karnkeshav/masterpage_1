@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 
+// Initialize Firebase Admin once
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -23,18 +24,28 @@ const TIER_META = {
 };
 
 module.exports = async (req, res) => {
-    // CORS Handling
-    const allowedOrigin = process.env.ALLOWED_ORIGIN;
-    if (allowedOrigin) {
-        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    // 1. IMPROVED CORS HANDLING
+    const origin = req.headers.origin;
+    // Whitelist: Add your domains here
+    const allowedOrigins = [
+        'https://karnkeshav.github.io',
+        'https://masterpage-1.vercel.app',
+        process.env.ALLOWED_ORIGIN
+    ].filter(Boolean);
+
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
 
+    // 2. Handle Preflight (OPTIONS)
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
 
+    // 3. Strict Method Check
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -70,10 +81,10 @@ module.exports = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Generate Verification Token to prevent hijack
+        // Generate Verification Token
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
-        // Prepare Pending Registration record
+        // Prepare Pending Registration record in Firestore
         const pendingRef = db.collection('pending_registrations').doc(order.id);
         await pendingRef.set({
             orderId: order.id,
@@ -87,6 +98,7 @@ module.exports = async (req, res) => {
             status: 'pending'
         });
 
+        // Success Response
         return res.status(200).json({
             orderId: order.id,
             amount: meta.amountPaise,
@@ -96,6 +108,6 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         console.error("Error creating order:", error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json({ error: 'Internal Server Error. Check server logs.' });
     }
 };
