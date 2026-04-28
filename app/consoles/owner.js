@@ -4,7 +4,8 @@ import { getInitializedClients } from "../../js/config.js";
 import { recordFinancialEvent } from "../../js/api.js";
 import {
     collection, query, where, orderBy, onSnapshot,
-    doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup
+    doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup,
+    getDocs, writeBatch
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import {
@@ -51,6 +52,7 @@ async function initRealtimeStreams() {
             if (paidEl) paidEl.textContent = `${paidCount} paid • ${parentLinkedCount} linked parents`;
 
             if (currentTab === "b2c") renderB2CTable(b2cCache);
+            updateSegmentedCharts(financialCache);
         }
     );
 
@@ -72,39 +74,56 @@ async function initRealtimeStreams() {
         query(collectionGroup(db, "financial_events"), orderBy("timestamp", "desc")),
         (snap) => {
             financialCache = [];
-            let b2bTotal = 0;
-            let b2cTotal = 0;
-
             snap.forEach((eventDoc) => {
                 const data = eventDoc.data();
-                const amount = parseFloat(data.amount || 0) || 0;
                 const isB2C = classifyAsB2C(data, eventDoc.ref.path);
-
-                if (isB2C) b2cTotal += amount;
-                else b2bTotal += amount;
 
                 financialCache.push({
                     id: eventDoc.id,
+                    ...data,
                     entity: isB2C ? (data.uid || "Individual B2C") : (data.school_id || "B2B"),
-                    source: isB2C ? "B2C" : "B2B",
-                    ...data
+                    source: isB2C ? "B2C" : "B2B"
                 });
             });
 
-            document.getElementById("count-revenue-b2b").textContent = `₹${b2bTotal.toLocaleString("en-IN")}`;
-            document.getElementById("count-revenue-b2c").textContent = `₹${b2cTotal.toLocaleString("en-IN")}`;
-            document.getElementById("count-revenue-total").textContent = `₹${(b2bTotal + b2cTotal).toLocaleString("en-IN")}`;
-
             renderLedgerTable(financialCache);
+            renderRevenueKPIs();
             updateSegmentedCharts(financialCache);
         }
     );
+}
+
+function renderRevenueKPIs() {
+    const b2bTotal = financialCache
+        .filter((e) => e.source === "B2B")
+        .reduce((sum, e) => sum + (parseFloat(e.amount || 0) || 0), 0);
+
+    const b2cEventTotal = financialCache
+        .filter((e) => e.source === "B2C")
+        .reduce((sum, e) => sum + (parseFloat(e.amount || 0) || 0), 0);
+
+    const eventUids = new Set(
+        financialCache.filter((e) => e.source === "B2C" && e.uid).map((e) => e.uid)
+    );
+    const b2cProfileFallback = b2cCache
+        .filter((u) => isUserPaid(u) && !eventUids.has(u.id))
+        .reduce((sum, u) => sum + (parseFloat(u.revenue || 0) || 0), 0);
+
+    const b2cTotal = b2cEventTotal + b2cProfileFallback;
+
+    const b2bEl = document.getElementById("count-revenue-b2b");
+    const b2cEl = document.getElementById("count-revenue-b2c");
+    const totalEl = document.getElementById("count-revenue-total");
+    if (b2bEl) b2bEl.textContent = `₹${b2bTotal.toLocaleString("en-IN")}`;
+    if (b2cEl) b2cEl.textContent = `₹${b2cTotal.toLocaleString("en-IN")}`;
+    if (totalEl) totalEl.textContent = `₹${(b2bTotal + b2cTotal).toLocaleString("en-IN")}`;
 }
 
 function classifyAsB2C(data, path) {
     if ((data.school_id || "") === "B2C_REVENUE") return true;
     if ((data.entityType || "").toLowerCase() === "b2c") return true;
     if ((data.type || "").toUpperCase().includes("B2C")) return true;
+    if (path.includes("B2C_REVENUE")) return true;
     return !path.includes("schools/");
 }
 
@@ -254,12 +273,36 @@ window.openEditUserModal = (uid) => {
 window.deleteB2CUser = async (uid) => {
     const user = b2cCache.find((u) => u.id === uid);
     if (!user) return;
-    if (!confirm(`Delete user ${user.displayName || user.email}? This only removes Firestore profile.`)) return;
+    if (!confirm(`Delete user ${user.displayName || user.email}? This removes the user profile and related Firestore records.`)) return;
 
     try {
         const { db } = await getInitializedClients();
-        await deleteDoc(doc(db, "users", uid));
-        alert("User profile deleted. (Auth record remains; use backend admin for hard delete.)");
+
+        const refs = [];
+        const relatedQueries = [
+            query(collection(db, "quiz_scores"), where("user_id", "==", uid)),
+            query(collection(db, "mistake_notebook"), where("user_id", "==", uid)),
+            query(collection(db, "financial_events"), where("uid", "==", uid)),
+            query(collection(db, "ledger_events"), where("uid", "==", uid))
+        ];
+
+        for (const q of relatedQueries) {
+            const snap = await getDocs(q);
+            snap.forEach((d) => refs.push(d.ref));
+        }
+
+        const BATCH_LIMIT = 499;
+        for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+            const batch = writeBatch(db);
+            refs.slice(i, i + BATCH_LIMIT).forEach((ref) => batch.delete(ref));
+            await batch.commit();
+        }
+
+        const finalBatch = writeBatch(db);
+        finalBatch.delete(doc(db, "users", uid));
+        await finalBatch.commit();
+
+        alert("User and related records deleted. (Auth record remains; use backend admin for hard delete.)");
     } catch (err) {
         alert("Delete failed: " + err.message);
     }
