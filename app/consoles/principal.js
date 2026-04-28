@@ -128,7 +128,7 @@ function renderSubjectDashboard(subjectPerf) {
         <thead class="bg-slate-50 text-left">
             <tr>
                 <th class="px-4 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest sticky left-0 bg-slate-50 z-10">Grade</th>
-                ${subjects.map(s => `<th class="px-4 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center">${esc(txSubject(s))}</th>`).join("")}
+                ${subjects.map(s => `<th class="px-4 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center">${esc(s)}</th>`).join("")}
             </tr>
         </thead>
         <tbody>`;
@@ -227,7 +227,7 @@ async function drillDownSubject(grade, subject) {
     const sectionsEl = document.getElementById("drilldown-sections");
     const studentsEl = document.getElementById("drilldown-students");
 
-    titleEl.innerHTML = `<i class="fas fa-search-plus mr-2 text-blue-600"></i>Grade ${esc(grade)} — ${esc(txSubject(subject))}`;
+    titleEl.innerHTML = `<i class="fas fa-search-plus mr-2 text-blue-600"></i>Grade ${esc(grade)} — ${esc(subject)}`;
     sectionsEl.innerHTML = '<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">Loading sections &amp; students...</div>';
     studentsEl.innerHTML = '';
     panel.classList.remove("hidden");

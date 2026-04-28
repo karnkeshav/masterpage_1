@@ -14,14 +14,6 @@ const sanitize = s => String(s ?? '').replace(/&/g,'&amp;')
     .replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-function tx(key, fallback) {
-    return (window.R4E && window.R4E.i18n && window.R4E.i18n.t(key)) || fallback;
-}
-
-function txSubject(subject) {
-    return (window.R4E && window.R4E.i18n && window.R4E.i18n.translateSubject(subject)) || subject;
-}
-
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 guardConsole("student");
 
@@ -59,7 +51,7 @@ window.loadConsoleData = async (profile) => {
     document.getElementById("class-title").textContent = `Class ${grade} Hub`;
     document.getElementById("context-badge").textContent = `Grade ${grade}`;
     const hubTitleEl = document.getElementById("knowledge-hub-title");
-    if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} ${tx("ui.knowledge_hub","Knowledge Hub")}`;
+    if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
 
     setupRoomNavigation(grade);
     
@@ -79,12 +71,12 @@ async function generateKnowledgeHub(profile, grade) {
         curriculum = await loadCurriculum(grade);
     } catch(e) {
         console.error("Curriculum load failed for knowledge hub:", e);
-        container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">${tx("ui.curriculum_soon","Curriculum Coming Soon")}</div>`;
+        container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">Curriculum Coming Soon</div>`;
         return;
     }
 
     if (!curriculum || Object.keys(curriculum).length === 0) {
-        container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">${tx("ui.curriculum_soon","Curriculum Coming Soon")}</div>`;
+        container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">Curriculum Coming Soon</div>`;
         return;
     }
 
@@ -104,7 +96,7 @@ async function generateKnowledgeHub(profile, grade) {
     }
 
     if (subjectsToRender.length === 0) {
-        container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">${tx("ui.no_subjects","No assigned subjects available.")}</div>`;
+        container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">No assigned subjects available.</div>`;
         return;
     }
 
@@ -118,7 +110,7 @@ async function generateKnowledgeHub(profile, grade) {
                         <i class="${theme.icon}"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold text-slate-800">${txSubject(subject)}</h4>
+                        <h4 class="font-bold text-slate-800">${subject}</h4>
                         <p class="text-[10px] text-slate-500 font-medium">${theme.tagline}</p>
                     </div>
                     <i class="fas fa-chevron-right ml-auto text-slate-300 group-hover:${theme.hoverColor} transition"></i>
@@ -198,7 +190,7 @@ function renderKnowledgeHub(profile) {
                     <i class="fas ${getSubjectIcon(subject)}"></i>
                 </div>
                 <div>
-                    <h4 class="font-bold text-slate-800">${txSubject(subject)}</h4>
+                    <h4 class="font-bold text-slate-800">${subject}</h4>
                     <p class="text-[10px] text-slate-500 font-medium">Explore curriculum.</p>
                 </div>
                 <i class="fas fa-chevron-right ml-auto text-slate-300 group-hover:text-${color.replace("500", "500")} transition"></i>
@@ -250,7 +242,7 @@ window.loadStudentStats = async (uid, grade) => {
 
         if (!curriculum || Object.keys(curriculum).length === 0) {
             const hubTitleEl = document.getElementById("knowledge-hub-title");
-            if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} ${tx("ui.knowledge_hub","Knowledge Hub")}`;
+            if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
             document.getElementById("knowledge-hub-links").innerHTML = `
                 <div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">
                     Curriculum Coming Soon
