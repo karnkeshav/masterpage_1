@@ -13,6 +13,7 @@ UI.injectStyles();
 const sanitize = s => String(s ?? '').replace(/&/g,'&amp;')
     .replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const translateSubject = (subject) => window.R4ETranslator ? window.R4ETranslator.translateSubject(subject) : subject;
 
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 guardConsole("student");
@@ -110,7 +111,7 @@ async function generateKnowledgeHub(profile, grade) {
                         <i class="${theme.icon}"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold text-slate-800">${subject}</h4>
+                        <h4 class="font-bold text-slate-800">${translateSubject(subject)}</h4>
                         <p class="text-[10px] text-slate-500 font-medium">${theme.tagline}</p>
                     </div>
                     <i class="fas fa-chevron-right ml-auto text-slate-300 group-hover:${theme.hoverColor} transition"></i>
@@ -190,7 +191,7 @@ function renderKnowledgeHub(profile) {
                     <i class="fas ${getSubjectIcon(subject)}"></i>
                 </div>
                 <div>
-                    <h4 class="font-bold text-slate-800">${subject}</h4>
+                    <h4 class="font-bold text-slate-800">${translateSubject(subject)}</h4>
                     <p class="text-[10px] text-slate-500 font-medium">Explore curriculum.</p>
                 </div>
                 <i class="fas fa-chevron-right ml-auto text-slate-300 group-hover:text-${color.replace("500", "500")} transition"></i>

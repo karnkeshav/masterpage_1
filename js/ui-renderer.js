@@ -4,6 +4,18 @@ import { cleanKatexMarkers } from './utils.js';
 let els = {};
 let isInit = false;
 
+
+function getActiveLanguage() {
+    return (window.R4ETranslator && window.R4ETranslator.getLanguage()) || localStorage.getItem('r4e_lang') || 'en';
+}
+
+function localizedValue(obj, baseKey) {
+    const lang = getActiveLanguage();
+    if (lang === 'te' && obj[`${baseKey}_te`]) return obj[`${baseKey}_te`];
+    if (lang === 'hi' && obj[`${baseKey}_hi`]) return obj[`${baseKey}_hi`];
+    return obj[baseKey] || '';
+}
+
 const AR_LABELS = {
     A: "Both A and R are true and R is the correct explanation of A.",
     B: "Both A and R are true but R is not the correct explanation of A.",
@@ -116,7 +128,8 @@ function getMotivationalFeedback(score, total) {
    OPTION HTML
 ----------------------------------- */
 function generateOptionHtml(q, opt, selected, submitted, labelText) {
-    const text = labelText || (q.options ? q.options[opt] : "") || "";
+    const localizedOption = q.options ? localizedValue(q.options, opt) : "";
+    const text = labelText || localizedOption || "";
     const isSel = selected === opt;
     const isCorrect = submitted && q.correct_answer === opt;
     const isWrong = submitted && isSel && !isCorrect;
@@ -147,10 +160,10 @@ export function renderQuestion(q, idx, selected, submitted) {
     if (type.includes("ar") || type.includes("assertion")) {
         els.list.innerHTML = `
             <div class="space-y-6">
-                <div class="text-xl font-extrabold text-slate-900">Q${idx}. Assertion (A): ${cleanKatexMarkers(q.text)}</div>
+                <div class="text-xl font-extrabold text-slate-900">Q${idx}. Assertion (A): ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
                 <div class="bg-blue-50 p-6 rounded-2xl border-l-4 border-blue-600">
                     <span class="text-xs font-black uppercase tracking-widest text-blue-600">Reason (R)</span>
-                    <div class="text-lg font-bold text-slate-800">${cleanKatexMarkers(q.scenario_reason)}</div>
+                    <div class="text-lg font-bold text-slate-800">${cleanKatexMarkers(localizedValue(q, "scenario_reason"))}</div>
                 </div>
                 <div class="italic font-bold text-slate-500 text-sm">Choose the correct option:</div>
                 <div class="grid gap-3">
@@ -164,13 +177,13 @@ export function renderQuestion(q, idx, selected, submitted) {
         els.list.innerHTML = `
             <div class="grid md:grid-cols-2 gap-8">
                 <div class="order-2 md:order-1">
-                    <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(q.text)}</div>
+                    <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
                     <div class="grid gap-3 mt-4">
                         ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted)).join("")}
                     </div>
                 </div>
                 <div class="order-1 md:order-2 bg-yellow-50 p-6 rounded-2xl italic border border-yellow-100 shadow-sm text-sm">
-                    ${cleanKatexMarkers(q.scenario_reason)}
+                    ${cleanKatexMarkers(localizedValue(q, "scenario_reason"))}
                 </div>
             </div>`;
         return;
@@ -178,7 +191,7 @@ export function renderQuestion(q, idx, selected, submitted) {
 
     els.list.innerHTML = `
         <div class="space-y-6">
-            <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(q.text)}</div>
+            <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
             <div class="grid gap-3">
                 ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted)).join("")}
             </div>

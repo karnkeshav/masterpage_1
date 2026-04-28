@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script src="./js/tailwind-config.js"></script>
+    <script src="./js/i18n-config.js"></script>
+    <script src="./js/translator.js"></script>
     <link href="./css/global.css" rel="stylesheet">
     <script src="./js/firebase-master-config.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -40,26 +42,26 @@
                 <i class="fas fa-crown"></i> <span id="selected-plan-text">Loading Plan...</span>
             </div>
 
-            <h1 class="text-3xl md:text-4xl font-black mb-2 tracking-tight">Create Your Account</h1>
-            <p class="text-slate-400 text-sm mb-10">Join the league of modern scholars. Complete your profile to activate your dashboard.</p>
+            <h1 class="text-3xl md:text-4xl font-black mb-2 tracking-tight"><span data-i18n="register.create_account">Create Your Account</span></h1>
+            <p class="text-slate-400 text-sm mb-10"><span data-i18n="register.subtitle">Join the league of modern scholars. Complete your profile to activate your dashboard.</span></p>
 
             <div id="error-box" class="hidden bg-red-900/20 text-red-400 text-sm font-medium rounded-xl px-4 py-3 mb-6"></div>
 
             <form id="registration-form" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Full Name</label>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2"><span data-i18n="register.full_name">Full Name</span></label>
                         <input type="text" id="reg-name" required class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Parent Email Address</label>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2"><span data-i18n="register.parent_email">Parent Email Address</span></label>
                         <input type="email" id="reg-parent-email" required class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Current Class</label>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2"><span data-i18n="register.current_class">Current Class</span></label>
                         <select id="reg-class" required class="w-full bg-slate-800 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green">
                             <option value="">Select Class</option>
                             <option value="6">Class 6</option>
@@ -72,7 +74,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Academic Board</label>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2"><span data-i18n="register.academic_board">Academic Board</span></label>
                         <select id="reg-board" required class="w-full bg-slate-800 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green">
                             <option value="CBSE">CBSE</option>
                             <option value="SCERT">SCERT (TS)</option>
@@ -174,7 +176,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Secure Password</label>
+                    <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2"><span data-i18n="register.secure_password">Secure Password</span></label>
                     <input type="password" id="reg-password" required minlength="8" class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
                 </div>
 
@@ -186,7 +188,7 @@
                 </div>
 
                 <button type="submit" id="submit-btn" class="w-full py-4 rounded-xl bg-success-green text-white font-black hover:scale-[1.02] transition-transform shadow-lg shadow-success-green/20">
-                    Complete Secure Payment
+                    <span data-i18n="register.pay">Complete Secure Payment</span>
                 </button>
 
                 <div class="flex items-center justify-center gap-4 mt-4 text-slate-500">
