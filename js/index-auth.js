@@ -82,7 +82,16 @@ submitResetBtn.addEventListener("click", async () => {
             throw new Error(data.error || "An error occurred.");
         }
 
-        resetMsgBox.textContent = data.message || "If the details match, a reset link will be sent shortly.";
+        if (data.resetLink && data.resetLink.startsWith('https://')) {
+            const link = document.createElement('a');
+            link.href = data.resetLink;
+            link.textContent = 'Reset Password';
+            link.className = 'underline font-black';
+            resetMsgBox.textContent = data.message + ' ';
+            resetMsgBox.appendChild(link);
+        } else {
+            resetMsgBox.textContent = data.message || "If the details match, a reset link will be sent shortly.";
+        }
         resetMsgBox.className = "text-[11px] font-bold text-center p-2 rounded bg-green-900/20 text-green-400 block mt-3";
 
     } catch (err) {
