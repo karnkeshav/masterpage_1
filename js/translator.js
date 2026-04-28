@@ -1,111 +1,105 @@
 // js/translator.js
 (function (global) {
-  var R4E = global.R4E = global.R4E || {};
-  var cache = { dictionary: null, loading: null };
+  const cfg = global.R4E_I18N_CONFIG || {
+    storageKey: 'r4e_lang',
+    defaultLanguage: 'en',
+    fallbackLanguage: 'en',
+    supportedLanguages: ['en', 'te', 'hi'],
+    dictionaryPath: './js/i18n-dictionary.json'
+  };
 
-  function config() {
-    return R4E.i18nConfig || {
-      storageKey: 'r4e_language',
-      defaultLanguage: 'en',
-      supportedLanguages: ['en', 'te', 'hi'],
-      dictionaryPath: './js/i18n-dictionary.json',
-      fallbackLanguage: 'en'
-    };
-  }
+  let dictionary = null;
+  let loadingPromise = null;
 
   function normalizeLang(lang) {
-    var cfg = config();
-    return cfg.supportedLanguages.indexOf(lang) >= 0 ? lang : cfg.defaultLanguage;
+    if (!lang) return cfg.defaultLanguage;
+    const code = String(lang).toLowerCase();
+    return cfg.supportedLanguages.includes(code) ? code : cfg.defaultLanguage;
   }
 
   function getLanguage() {
-    var cfg = config();
-    var raw = localStorage.getItem(cfg.storageKey) || cfg.defaultLanguage;
-    return normalizeLang(raw);
+    const fromStorage = localStorage.getItem(cfg.storageKey);
+    return normalizeLang(fromStorage || document.documentElement.getAttribute('lang') || cfg.defaultLanguage);
   }
 
   function setLanguage(lang) {
-    var cfg = config();
-    var next = normalizeLang(lang);
-    localStorage.setItem(cfg.storageKey, next);
-    global.document.documentElement.setAttribute('lang', next);
-    console.info('[i18n] language switched to', next);
-    return applyTranslations();
+    const code = normalizeLang(lang);
+    localStorage.setItem(cfg.storageKey, code);
+    document.documentElement.setAttribute('lang', code);
+    document.body?.setAttribute('data-lang', code);
+    return applyTranslations(document);
   }
 
-  function getByPath(obj, path) {
-    return (path || '').split('.').reduce(function (acc, key) {
-      return acc && acc[key] !== undefined ? acc[key] : null;
-    }, obj);
+  function getPathValue(obj, key) {
+    return key.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), obj);
   }
 
-  function translateKey(key, lang) {
-    var dict = cache.dictionary;
-    if (!dict) return key;
-    var cfg = config();
-    var targetLang = normalizeLang(lang || getLanguage());
-    var node = getByPath(dict, key);
-    if (!node) return key;
-    if (typeof node === 'string') return node;
-    return node[targetLang] || node[cfg.fallbackLanguage] || Object.values(node)[0] || key;
+  async function loadDictionary() {
+    if (dictionary) return dictionary;
+    if (loadingPromise) return loadingPromise;
+
+    loadingPromise = fetch(cfg.dictionaryPath)
+      .then(r => {
+        if (!r.ok) throw new Error(`i18n dictionary load failed: ${r.status}`);
+        return r.json();
+      })
+      .then(json => {
+        dictionary = json;
+        return dictionary;
+      })
+      .catch(err => {
+        console.error(err);
+        dictionary = {};
+        return dictionary;
+      });
+
+    return loadingPromise;
   }
 
-  function loadDictionary() {
-    if (cache.dictionary) return Promise.resolve(cache.dictionary);
-    if (global.R4E_I18N_DICTIONARY) {
-      cache.dictionary = global.R4E_I18N_DICTIONARY;
-      return Promise.resolve(cache.dictionary);
-    }
-    if (cache.loading) return cache.loading;
-    cache.loading = fetch(config().dictionaryPath)
-      .then(function (r) { return r.json(); })
-      .then(function (d) { cache.dictionary = d; return d; })
-      .catch(function () {
-        cache.dictionary = global.R4E_I18N_DICTIONARY || {};
-        return cache.dictionary;
-      });
-    return cache.loading;
+  function t(key, fallback = '') {
+    const lang = getLanguage();
+    const langPack = dictionary?.[lang] || {};
+    const fallbackPack = dictionary?.[cfg.fallbackLanguage] || {};
+    return getPathValue(langPack, key)
+      || getPathValue(fallbackPack, key)
+      || fallback
+      || key;
   }
 
-  function applyTranslations(root) {
-    var ctx = root || global.document;
-    return loadDictionary().then(function () {
-      var lang = getLanguage();
-      global.document.documentElement.setAttribute('lang', lang);
-      ctx.querySelectorAll('[data-i18n]').forEach(function (el) {
-        var key = el.getAttribute('data-i18n');
-        el.textContent = translateKey(key, lang);
-      });
-      ctx.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
-        var key = el.getAttribute('data-i18n-placeholder');
-        el.setAttribute('placeholder', translateKey(key, lang));
-      });
-      ctx.querySelectorAll('[data-i18n-title]').forEach(function (el) {
-        var key = el.getAttribute('data-i18n-title');
-        el.setAttribute('title', translateKey(key, lang));
-      });
-      global.document.querySelectorAll('[data-lang-switch]').forEach(function (btn) {
-        var isActive = btn.getAttribute('data-lang-switch') === lang;
-        btn.classList.toggle('ring-2', isActive);
-        btn.classList.toggle('ring-white', isActive);
-      });
+  function translateSubject(subject) {
+    if (!subject) return '';
+    const slug = String(subject).trim().toLowerCase().replace(/\s+/g, '_');
+    return t(`subject.${slug}`, subject);
+  }
+
+  async function applyTranslations(root = document) {
+    await loadDictionary();
+    const targets = root.querySelectorAll('[data-i18n]');
+    targets.forEach((el) => {
+      const key = el.getAttribute('data-i18n');
+      if (!key) return;
+      const localized = t(key, el.getAttribute('data-i18n-fallback') || el.textContent || '');
+      if (el.hasAttribute('data-i18n-placeholder')) {
+        el.setAttribute('placeholder', localized);
+      } else {
+        el.innerHTML = localized;
+      }
     });
   }
 
-  function translateSubject(subject, lang) {
-    return translateKey('subjects.' + subject, lang);
-  }
-
-  R4E.i18n = {
-    loadDictionary: loadDictionary,
-    applyTranslations: applyTranslations,
-    getLanguage: getLanguage,
-    setLanguage: setLanguage,
-    t: translateKey,
-    translateSubject: translateSubject
+  global.R4ETranslator = {
+    init: () => applyTranslations(document),
+    t,
+    setLanguage,
+    getLanguage,
+    applyTranslations,
+    translateSubject,
+    loadDictionary
   };
 
-  document.addEventListener('DOMContentLoaded', function () {
-    applyTranslations();
+  document.addEventListener('DOMContentLoaded', () => {
+    document.documentElement.setAttribute('lang', getLanguage());
+    document.body?.setAttribute('data-lang', getLanguage());
+    applyTranslations(document);
   });
 })(window);

@@ -5,33 +5,35 @@
 
 var R4E = R4E || {};
 
-R4E.ensureI18nLoaded = function() {
-    if (window.R4E && window.R4E.i18n) return Promise.resolve();
-    function load(src) {
-        return new Promise(function(resolve) {
-            var ex = document.querySelector('script[src="' + src + '"]');
-            if (ex) { resolve(); return; }
-            var tag = document.createElement('script');
-            tag.src = src;
-            tag.onload = function(){ resolve(); };
-            tag.onerror = function(){ resolve(); };
-            document.head.appendChild(tag);
-        });
-    }
-    var depthPath = location.pathname.includes('/app/') ? '../../js/' : './js/';
-    return load(depthPath + 'i18n-config.js')
-        .then(function(){ return load(depthPath + 'i18n-dictionary.js'); })
-        .then(function(){ return load(depthPath + 'translator.js'); });
-};
-
-R4E.renderLanguageToggle = function() {
-    return ''
-        + '<div class="flex items-center rounded-xl border border-white/20 overflow-hidden" title="Language">'
-        +   '<button type="button" class="px-2 py-1 text-[10px] font-black bg-white/10 hover:bg-white/20" data-lang-switch="en">EN</button>'
-        +   '<button type="button" class="px-2 py-1 text-[10px] font-black bg-white/5 hover:bg-white/20" data-lang-switch="te">తె</button>'
-        +   '<button type="button" class="px-2 py-1 text-[10px] font-black bg-white/5 hover:bg-white/20" data-lang-switch="hi">हि</button>'
+function getLanguageSwitcherHtml() {
+    var current = (window.R4ETranslator && window.R4ETranslator.getLanguage()) || localStorage.getItem('r4e_lang') || 'en';
+    var mk = function(code, label, icon) {
+        var active = current === code ? 'bg-white text-cbse-blue' : 'bg-cbse-blue/40 text-white';
+        return '<button type="button" class="r4e-lang-btn px-2 py-1 rounded-md text-[11px] font-black transition ' + active + '" data-lang="' + code + '" title="' + label + '">' + icon + ' ' + label + '</button>';
+    };
+    return '<div class="flex items-center gap-1 p-1 rounded-lg bg-cbse-blue/60 border border-white/20" aria-label="Language switcher">'
+        + mk('en', 'EN', '🇬🇧')
+        + mk('te', 'తె', '🇮🇳')
+        + mk('hi', 'हि', '🇮🇳')
         + '</div>';
-};
+}
+
+function wireLanguageSwitcher() {
+    var buttons = document.querySelectorAll('.r4e-lang-btn');
+    if (!buttons.length) return;
+    buttons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var nextLang = btn.getAttribute('data-lang');
+            if (window.R4ETranslator) {
+                window.R4ETranslator.setLanguage(nextLang).then(function() {
+                    window.R4ETranslator.applyTranslations(document);
+                });
+            } else {
+                localStorage.setItem('r4e_lang', nextLang);
+            }
+        });
+    });
+}
 
 
 /**
@@ -106,7 +108,7 @@ R4E.renderHeader = function(config) {
     rightHtml += extraRightHtml;
 
     if (showLanguageToggle) {
-        rightHtml += R4E.renderLanguageToggle();
+        rightHtml += getLanguageSwitcherHtml();
     }
 
     // User welcome + role badge
@@ -141,19 +143,7 @@ R4E.renderHeader = function(config) {
         + '</header>';
 
     target.outerHTML = headerHtml;
-
-    R4E.ensureI18nLoaded().then(function(){
-        document.querySelectorAll('[data-lang-switch]').forEach(function(btn){
-            btn.onclick = function(){
-                if (window.R4E && window.R4E.i18n) {
-                    window.R4E.i18n.setLanguage(btn.getAttribute('data-lang-switch'));
-                }
-            };
-        });
-        if (window.R4E && window.R4E.i18n) {
-            window.R4E.i18n.applyTranslations();
-        }
-    });
+    wireLanguageSwitcher();
 };
 
 /**
