@@ -174,20 +174,29 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Strength</label>
-                        <input type="number" id="prov-strength" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Licenses</label>
-                        <input type="number" id="prov-licenses" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" value="100" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-amber-500 uppercase mb-1">Paid (₹)</label>
-                        <input type="number" id="prov-amount-paid" class="w-full bg-slate-800 border-2 border-amber-500/30 rounded-xl p-3 text-sm outline-none text-white font-bold" required>
-                    </div>
-                </div>
+               <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
+    <div>
+        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Student Strength</label>
+        <input type="number" id="prov-strength" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" required placeholder="0">
+    </div>
+    <div>
+        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Teaching Staff</label>
+        <input type="number" id="prov-teachers" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" required placeholder="0">
+    </div>
+    <div>
+        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Admins & VIPs</label>
+        <input type="number" id="prov-others" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none" required placeholder="0">
+    </div>
+    <div>
+        <label class="block text-[10px] font-black text-amber-500 uppercase mb-1">Calculated Licenses</label>
+        <input type="number" id="prov-licenses" class="w-full bg-slate-900 border-2 border-amber-500/30 rounded-xl p-3 text-sm outline-none text-white font-bold" readonly>
+    </div>
+</div>
+
+<div class="mt-4">
+    <label class="block text-[10px] font-black text-amber-500 uppercase mb-1">Paid (₹)</label>
+    <input type="number" id="prov-amount-paid" class="w-full bg-slate-800 border-2 border-amber-500/30 rounded-xl p-3 text-sm outline-none text-white font-bold" required>
+</div>
 
                 <div class="grid grid-cols-3 gap-4">
                     <div>
