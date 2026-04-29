@@ -35,7 +35,7 @@ document.addEventListener('r4e_i18n_update', () => {
             renderTeacherInventory(teacherInv);
             renderCharts(gradePerf, studentInv);
         };
-        reloadData();
+        reloadData().catch(err => console.error('i18n reload failed:', err));
     }
 });
 
