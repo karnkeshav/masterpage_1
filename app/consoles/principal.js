@@ -11,33 +11,6 @@ import {
 } from "../../js/api.js";
 
 const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const trSubject = (s) => window.R4ETranslator ? window.R4ETranslator.translateSubject(s) : s;
-
-document.addEventListener('r4e_i18n_update', () => {
-    if (window.R4ETranslator) {
-        window.R4ETranslator.applyTranslations(document);
-    }
-    // Attempt to re-render global state
-    if (typeof _schoolId !== 'undefined' && _schoolId) {
-        // Just reload standard charts instead of dashboard as loadSchoolDashboard isn't global
-        const reloadData = async () => {
-             const [analytics, studentInv, teacherInv, gradePerf, subjectPerf] = await Promise.all([
-                fetchSchoolAnalytics(_schoolId),
-                fetchStudentInventory(_schoolId),
-                fetchTeacherInventory(_schoolId),
-                fetchGradeWisePerformance(_schoolId),
-                fetchSubjectWisePerformance(_schoolId)
-            ]);
-            renderKPIs(analytics, studentInv, teacherInv);
-            renderGradeInventory(studentInv);
-            renderSubjectDashboard(subjectPerf);
-            renderGradeHeatmap(gradePerf);
-            renderTeacherInventory(teacherInv);
-            renderCharts(gradePerf, studentInv);
-        };
-        reloadData();
-    }
-});
 
 // Module-level state for drill-down
 let _schoolId = null;
@@ -155,7 +128,7 @@ function renderSubjectDashboard(subjectPerf) {
         <thead class="bg-slate-50 text-left">
             <tr>
                 <th class="px-4 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest sticky left-0 bg-slate-50 z-10">Grade</th>
-                ${subjects.map(s => `<th class="px-4 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center">${esc(trSubject(s))}</th>`).join("")}
+                ${subjects.map(s => `<th class="px-4 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center">${esc(s)}</th>`).join("")}
             </tr>
         </thead>
         <tbody>`;
@@ -233,7 +206,7 @@ async function drillDownGrade(grade) {
     const studentsEl = document.getElementById("drilldown-students");
 
     titleEl.innerHTML = `<i class="fas fa-search-plus mr-2 text-blue-600"></i>Grade ${esc(grade)} — All Subjects`;
-    sectionsEl.innerHTML = `<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">${window.R4ETranslator ? window.R4ETranslator.t('ui.loading_sections', 'Loading sections &amp; students...') : 'Loading sections &amp; students...'}</div>`;
+    sectionsEl.innerHTML = '<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">Loading sections &amp; students...</div>';
     studentsEl.innerHTML = '';
     panel.classList.remove("hidden");
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -254,8 +227,8 @@ async function drillDownSubject(grade, subject) {
     const sectionsEl = document.getElementById("drilldown-sections");
     const studentsEl = document.getElementById("drilldown-students");
 
-    titleEl.innerHTML = `<i class="fas fa-search-plus mr-2 text-blue-600"></i>Grade ${esc(grade)} — ${esc(trSubject(subject))}`;
-    sectionsEl.innerHTML = `<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">${window.R4ETranslator ? window.R4ETranslator.t('ui.loading_sections', 'Loading sections &amp; students...') : 'Loading sections &amp; students...'}</div>`;
+    titleEl.innerHTML = `<i class="fas fa-search-plus mr-2 text-blue-600"></i>Grade ${esc(grade)} — ${esc(subject)}`;
+    sectionsEl.innerHTML = '<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">Loading sections &amp; students...</div>';
     studentsEl.innerHTML = '';
     panel.classList.remove("hidden");
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
