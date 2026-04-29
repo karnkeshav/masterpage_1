@@ -15,13 +15,13 @@ export function cleanKatexMarkers(text) {
     if (typeof text !== 'string') return '';
 
     // 1. Remove block math: $$...$$ (Non-greedy match)
-    let cleanedText = text.replace(/\$\$[\s\S]*?\$\$/g, '');
+    let cleanedText = text.replace(/\$\$([\s\S]*?)\$\$/g, '$1');
 
     // 2. Remove $latex ... $ and other $...$ that are not escaped or are common math markers
     // This is an aggressive removal. It will remove simple dollar signs if they enclose content.
     // For general quiz text, this is a safe simplification.
-    cleanedText = cleanedText.replace(/\$latex\s*[^$]*?\s*\$/gi, ''); // $latex ... $
-    cleanedText = cleanedText.replace(/\$[^$]*?\$/g, ''); // $...$ (Inline math)
+    cleanedText = cleanedText.replace(/\$latex\s*([^$]*?)\s*\$/gi, '$1'); // $latex ... $
+    cleanedText = cleanedText.replace(/\$([^$]*?)\$/g, '$1'); // $...$ (Inline math)
 
     // Optional: Clean up excessive whitespace created by removal
     cleanedText = cleanedText.trim().replace(/\s+/g, ' ');

@@ -32,8 +32,10 @@ function getCleanText(item) {
 
 function getFormulaContent(item) {
     if (typeof item === 'string') return { label: 'Formula', content: item };
+    let label = item.label || item.name || item.title || 'Formula';
+    // If a specific name isn't provided, 'Formula' will be used, but we try harder.
     return {
-        label: item.label || item.name || 'Formula',
+        label: label,
         content: item.tex || item.content || item.formula || item.value || ''
     };
 }
@@ -185,10 +187,12 @@ function renderDynamicContent(container, data, subject) {
                 <div class="grid md:grid-cols-2 gap-4 relative z-10">
                     ${formulaData.map(item => {
             const f = getFormulaContent(item);
+            const displayLabel = (f.label && f.label.toLowerCase() !== 'formula') ? sanitize(f.label) : (isChemistry ? 'Equation' : 'Formula');
+            const wrappedContent = isChemistry ? `\\(\\ce{${f.content}}\\)` : `\\(${f.content}\\)`;
             return `
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">${sanitize(f.label)}</div>
-                            <div class="font-mono text-lg font-bold text-slate-900">${f.content}</div>
+                            <div class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">${displayLabel}</div>
+                            <div class="font-mono text-lg font-bold text-slate-900">${wrappedContent}</div>
                         </div>
                     `}).join("")}
                 </div>
