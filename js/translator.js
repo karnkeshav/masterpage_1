@@ -36,6 +36,7 @@
   }
 
   function getPathValue(obj, key) {
+    if (obj[key] !== undefined) return obj[key];
     return key.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), obj);
   }
 
@@ -57,11 +58,13 @@
         console.error('CRITICAL: Failed to load i18n dictionary. Injecting hardcoded fallback.');
         dictionary = {
             'en': {
-                'auth.login': 'Login',
-                'common.sign_out': 'Sign Out',
-                'hero.master_exams': 'Master Your Exams',
-                'hero.with_precision': 'With Precision',
-                'hero.subtext': 'Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools & students.'
+                'auth': { 'login': 'Login' },
+                'common': { 'sign_out': 'Sign Out' },
+                'hero': {
+                    'master_exams': 'Master Your Exams',
+                    'with_precision': 'With Precision',
+                    'subtext': 'Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools & students.'
+                }
             }
         };
         return dictionary;

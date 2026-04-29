@@ -24,12 +24,16 @@ document.addEventListener('r4e_i18n_update', () => {
         window.R4ETranslator.applyTranslations(document);
     }
     // Attempt to re-render dynamic tiles by re-fetching/re-displaying active content if applicable
-    if (currentUserProfile && window.loadConsoleData) {
-        window.loadConsoleData(currentUserProfile);
+    if (_currentProfile && window.loadConsoleData) {
+        window.loadConsoleData(_currentProfile);
     }
 });
 
+
+let _currentProfile = null;
 window.loadConsoleData = async (profile) => {
+    _currentProfile = profile;
+
     console.log("Loading Class Hub for:", profile.displayName);
     document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
 
