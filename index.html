@@ -18,8 +18,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="./js/tailwind-config.js"></script>
-<script src="./js/i18n-config.js"></script>
-<script src="./js/translator.js"></script>
 <link href="./css/global.css" rel="stylesheet">
 <script src="js/firebase-master-config.js"></script>
 
@@ -65,7 +63,7 @@
 <!-- Header -->
 <div id="app-header"></div>
 <script>R4E.renderHeader({
-    title: 'Ready4<span class="text-white">Exam</span>', titleKey: 'common.brand',
+    title: 'Ready4<span class="text-white">Exam</span>',
     showUserWelcome: false,
     showLogout: false,
     showInbox: false
@@ -76,34 +74,34 @@
   <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10">
     <div class="flex-1 text-center lg:text-left">
       <h1 class="text-4xl lg:text-6xl font-black mb-4 leading-tight fade-in">
-        <span data-i18n="hero.master_exams">Master Your Exams</span> <br><span class="text-gold" data-i18n="hero.with_precision">With Precision</span>
+        Master Your Exams <br><span class="text-gold">With Precision</span>
       </h1>
       <p class="text-white/80 text-lg mb-8 max-w-xl mx-auto lg:mx-0 fade-in" style="animation-delay: 0.2s;">
-        <span data-i18n="hero.subtext">Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.</span>
+        Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.
       </p>
     </div>
 
     <div class="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl fade-in" style="animation-delay: 0.3s;">
       <div class="flex items-center justify-center gap-3 mb-6">
         <i class="fas fa-fingerprint text-gold text-2xl"></i>
-        <h2 class="text-white font-bold text-xl" data-i18n="auth.login">Login</h2>
+        <h2 class="text-white font-bold text-xl">Login</h2>
       </div>
 
       <form id="sovereign-login-form" class="space-y-4">
           <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.username_email">Username / Email</span></label>
-              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" data-i18n-placeholder="auth.username_email_ph" required="">
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Username / Email</label>
+              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required="">
           </div>
           <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.password">Password</span></label>
-              <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" data-i18n-placeholder="auth.password_ph" required="">
+              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Password</label>
+              <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" required="">
           </div>
           <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
           <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2">
-              <span data-i18n="auth.log_in">Log In</span>
+              Log In
           </button>
           <button type="button" id="forgot-password-btn" class="text-xs text-white/60 hover:text-gold underline mt-2 block mx-auto">
-              <span data-i18n="auth.forgot_password">Forgot Password?</span>
+              Forgot Password?
           </button>
       </form>
 
@@ -118,12 +116,12 @@
 
               <div class="space-y-4">
                   <div>
-                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.registered_email">Registered Email</span></label>
-                      <input type="email" id="reset-email" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="student@example.com" data-i18n-placeholder="auth.reset_email_ph">
+                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Registered Email</label>
+                      <input type="email" id="reset-email" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="student@example.com">
                   </div>
                   <div>
-                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.registered_student_name">Registered Student Name</span></label>
-                      <input type="text" id="reset-student-name" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. John Doe" data-i18n-placeholder="auth.reset_name_ph">
+                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Registered Student Name</label>
+                      <input type="text" id="reset-student-name" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. John Doe">
                   </div>
                   <div id="reset-msg" class="hidden text-[11px] font-bold text-center p-2 rounded"></div>
                   <button type="button" id="submit-reset-btn" class="w-full bg-gold text-cbse-blue font-black py-3 rounded-xl hover:bg-white transition mt-2">
@@ -144,10 +142,10 @@
   <div class="max-w-7xl mx-auto">
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
 
-      <!-- LEFT: <span data-i18n="quiz.try_now">Try a Quiz Now</span> (60%) -->
+      <!-- LEFT: Try a Quiz Now (60%) -->
       <div class="lg:col-span-3">
         <div class="text-center mb-10">
-          <h2 class="text-3xl font-black text-cbse-blue mb-2"><span data-i18n="quiz.try_now">Try a Quiz Now</span></h2>
+          <h2 class="text-3xl font-black text-cbse-blue mb-2">Try a Quiz Now</h2>
           <p class="text-slate-500">Select your curriculum to start practicing instantly.</p>
         </div>
 
@@ -156,7 +154,7 @@
 
             <!-- Board -->
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. <span data-i18n="quiz.select_board">Select Board</span></label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
               <div class="flex gap-2">
                 <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="CBSE" onclick="selectBoard('CBSE', this)">CBSE</button>
                 <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="SCERT" onclick="selectBoard('SCERT', this)">SCERT (TS)</button>
@@ -165,7 +163,7 @@
 
             <!-- Class -->
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. <span data-i18n="quiz.select_class">Select Class</span></label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
               <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadSubjects()">
                 <option value="">Select Board first...</option>
               </select>
@@ -173,7 +171,7 @@
 
             <!-- Subject -->
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. <span data-i18n="quiz.select_subject">Select Subject</span></label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
               <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadChapters()">
                 <option value="">Select Class first...</option>
               </select>
@@ -181,7 +179,7 @@
 
             <!-- Chapter -->
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. <span data-i18n="quiz.select_chapter">Select Chapter</span></label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
               <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="checkChapter()">
                 <option value="">Select Subject first...</option>
               </select>
@@ -192,7 +190,7 @@
           <!-- Difficulty & Start -->
           <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
             <div class="flex-1 w-full">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. <span data-i18n="quiz.select_difficulty">Select Difficulty</span></label>
+              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
               <div class="flex gap-2">
                 <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">Simple</button>
                 <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Medium" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Medium</button>
@@ -201,7 +199,7 @@
             </div>
             <div class="flex-1 w-full">
               <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" onclick="startQuiz()">
-                <i class="fas fa-play-circle"></i> <span data-i18n="quiz.start">Start Quiz</span>
+                <i class="fas fa-play-circle"></i> Start Quiz
               </button>
               <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
             </div>
@@ -210,7 +208,7 @@
           <!-- Other Board Fallback -->
           <div id="other-board-msg" class="hidden mt-6 text-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
             <p class="text-sm text-cbse-blue font-medium mb-2">We are actively building for more boards!</p>
-            <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block"><span data-i18n="index.request.title">Request Institutional Onboarding ↓</span></a>
+            <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding ↓</a>
           </div>
 
         </div>
@@ -232,25 +230,25 @@
           <!-- Form -->
           <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
             <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider"><span data-i18n="index.request.board">Board</span></label>
-              <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" data-i18n-placeholder="index.request.board_ph" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Board</label>
+              <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider"><span data-i18n="index.request.class">Class</span></label>
-              <input type="text" id="reqClass" placeholder="e.g. Class 8" data-i18n-placeholder="index.request.class_ph" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Class</label>
+              <input type="text" id="reqClass" placeholder="e.g. Class 8" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider"><span data-i18n="index.request.contact">WhatsApp / Email</span></label>
-              <input type="text" id="reqContact" placeholder="e.g. 9876543210" data-i18n-placeholder="index.request.contact_ph" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">WhatsApp / Email</label>
+              <input type="text" id="reqContact" placeholder="e.g. 9876543210" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
             </div>
             <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition text-sm flex items-center justify-center gap-2">
-              <i class="fas fa-paper-plane"></i> <span data-i18n="index.request.submit">Request Onboarding</span>
+              <i class="fas fa-paper-plane"></i> Request Onboarding
             </button>
           </form>
 
           <!-- WhatsApp fallback -->
           <p class="text-center mt-4 text-[11px] text-slate-400">
-            <span data-i18n="index.request.or">or</span> <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20want%20to%20request%20a%20new%20board." class="text-green-600 font-bold hover:underline"><i class="fab fa-whatsapp"></i> <span data-i18n="index.request.whatsapp">message us on WhatsApp</span></a>
+            or <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20want%20to%20request%20a%20new%20board." class="text-green-600 font-bold hover:underline"><i class="fab fa-whatsapp"></i> message us on WhatsApp</a>
           </p>
 
         </div>
@@ -264,8 +262,8 @@
 <section id="get-started" class="py-16 px-4 bg-slate-50 border-b border-slate-200">
   <div class="max-w-6xl mx-auto">
     <div class="text-center mb-12">
-      <h2 class="text-3xl font-black text-cbse-blue mb-2"><span data-i18n="index.platform.unlock">Unlock Your Full Dashboard</span></h2>
-      <p class="text-slate-500"><span data-i18n="index.platform.subtitle">What Awaits After Registration &amp; Subscription.</span></p>
+      <h2 class="text-3xl font-black text-cbse-blue mb-2">Unlock Your Full Dashboard</h2>
+      <p class="text-slate-500">What Awaits After Registration &amp; Subscription.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -274,9 +272,9 @@
       <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-center gap-3 mb-4 text-cbse-blue">
           <div class="bg-blue-50 p-2 rounded-lg"><i class="fas fa-chart-pie text-xl"></i></div>
-          <h3 class="text-lg font-bold"><span data-i18n="index.platform.hub">Knowledge Hub</span></h3>
+          <h3 class="text-lg font-bold">Knowledge Hub</h3>
         </div>
-        <p class="text-sm text-slate-600 mb-6"><span data-i18n="index.platform.hub_desc">Track average mastery, view subject progress, and monitor your professional journey line.</span></p>
+        <p class="text-sm text-slate-600 mb-6">Track average mastery, view subject progress, and monitor your professional journey line.</p>
         <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
           <img src="images/dashboard-subject-navigator.png" alt="Subject Navigator Dashboard" class="w-full h-auto rounded-xl">
         </div>
@@ -346,15 +344,15 @@
 <section class="py-16 px-4 bg-white border-b border-slate-200 overflow-hidden">
   <div class="max-w-6xl mx-auto overflow-hidden relative">
     <div class="text-center mb-10">
-      <span class="text-xs font-bold text-slate-400 uppercase tracking-widest"><span data-i18n="index.testimonial.community">Community Love</span></span>
-      <h2 class="text-3xl font-black text-heading mt-1"><span data-i18n="index.testimonial.trusted">Trusted by Ecosystem</span></h2>
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Community Love</span>
+      <h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2>
     </div>
 
     <!-- Horizontal scroll container -->
     <div class="flex gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 animate-marquee hover:[animation-play-state:paused]">
       <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
         <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4"><span data-i18n="index.testimonial.t1">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</span></p>
+        <p class="text-slate-600 text-sm italic mb-4">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</p>
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
           <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 10</p></div>
