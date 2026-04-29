@@ -18,6 +18,16 @@ const translateSubject = (subject) => window.R4ETranslator ? window.R4ETranslato
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 guardConsole("student");
 
+document.addEventListener('r4e_i18n_update', () => {
+    // Avoid full page reload
+    if (window.R4ETranslator) {
+        window.R4ETranslator.applyTranslations(document);
+    }
+    // Attempt to re-render dynamic tiles by re-fetching/re-displaying active content if applicable
+    if (currentUserProfile && window.loadConsoleData) {
+        window.loadConsoleData(currentUserProfile);
+    }
+});
 
 window.loadConsoleData = async (profile) => {
     console.log("Loading Class Hub for:", profile.displayName);
