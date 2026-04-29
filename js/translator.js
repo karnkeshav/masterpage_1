@@ -58,11 +58,13 @@
         console.error('CRITICAL: Failed to load i18n dictionary. Injecting hardcoded fallback.');
         dictionary = {
             'en': {
-                'auth.login': 'Login',
-                'common.sign_out': 'Sign Out',
-                'hero.master_exams': 'Master Your Exams',
-                'hero.with_precision': 'With Precision',
-                'hero.subtext': 'Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools & students.'
+                'auth': { 'login': 'Login' },
+                'common': { 'sign_out': 'Sign Out' },
+                'hero': {
+                    'master_exams': 'Master Your Exams',
+                    'with_precision': 'With Precision',
+                    'subtext': 'Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools & students.'
+                }
             }
         };
         return dictionary;
@@ -95,10 +97,27 @@
       if (!key) return;
       const localized = t(key, el.getAttribute('data-i18n-fallback') || el.textContent || '');
       if (el.hasAttribute('data-i18n-placeholder')) {
-        el.setAttribute('placeholder', localized);
+        const phKey = el.getAttribute('data-i18n-placeholder');
+        const phLocalized = t(phKey, el.getAttribute('placeholder') || '');
+        el.setAttribute('placeholder', phLocalized);
       } else {
         el.innerHTML = localized;
       }
+    });
+    const phTargets = root.querySelectorAll('[data-i18n-placeholder]:not([data-i18n])');
+    phTargets.forEach((el) => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (!key) return;
+      const localized = t(key, el.getAttribute('placeholder') || '');
+      el.setAttribute('placeholder', localized);
+    });
+
+    const titleTargets = root.querySelectorAll('[data-i18n-title]');
+    titleTargets.forEach((el) => {
+      const key = el.getAttribute('data-i18n-title');
+      if (!key) return;
+      const localized = t(key, el.getAttribute('title') || '');
+      el.setAttribute('title', localized);
     });
   }
 

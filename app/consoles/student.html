@@ -61,15 +61,15 @@
 
     <!-- Glass Header -->
     <div id="app-header"></div>
-<script>R4E.renderHeader({
-    title: "Class Hub",
-    titleId: "class-title",
-    userWelcomeDefault: "Student",
-    roleBadge: "Grade --",
-    roleBadgeId: "context-badge",
-    showInbox: true,
-    showLogout: true
-});</script>
+<script>
+  if (window.R4ETranslator && window.R4ETranslator.loadDictionary) {
+    window.R4ETranslator.loadDictionary().then(() => {
+
+    });
+  } else {
+
+  }
+</script>
 
     <div id="loading" class="flex items-center justify-center flex-grow">
         <div class="animate-pulse font-bold text-slate-400">Verifying Student Access...</div>

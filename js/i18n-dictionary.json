@@ -15,7 +15,13 @@
       "username_email": "Username / Email",
       "password": "Password",
       "log_in": "Log In",
-      "forgot_password": "Forgot Password?"
+      "forgot_password": "Forgot Password?",
+      "registered_email": "Registered Email",
+      "registered_student_name": "Registered Student Name",
+      "username_email_ph": "e.g. keshav, student, dps.ready4exam",
+      "password_ph": "••••••••",
+      "reset_email_ph": "student@example.com",
+      "reset_name_ph": "e.g. John Doe"
     },
     "quiz": {
       "try_now": "Try a Quiz Now",
@@ -53,6 +59,57 @@
       "biology": "Biology",
       "english": "English",
       "hindi": "Hindi"
+    },
+    "index": {
+      "platform": {
+        "unlock": "Unlock Your Full Dashboard",
+        "subtitle": "What Awaits After Registration & Subscription.",
+        "hub": "Knowledge Hub",
+        "hub_desc": "Track average mastery, view subject progress, and monitor your professional journey line.",
+        "parent": "Detailed Parent Console",
+        "parent_desc": "Keep track of your child's assignments, completed tests, and comprehensive grade-wide performance metrics.",
+        "study": "Targeted Study Guide",
+        "study_desc": "Access board-aligned curriculum, subjective questions, and topic-wise MCQ drills.",
+        "performance": "Macro Performance",
+        "performance_desc": "Analyze chapter health and grit across all subjects to identify focus areas."
+      },
+      "testimonial": {
+        "community": "Community Love",
+        "trusted": "Trusted by Ecosystem",
+        "t1": "\"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!\"",
+        "t2": "\"The detailed Parent Console makes it incredibly easy to see exactly where my son is struggling without nagging him.\"",
+        "t3": "\"I can assign remedial quizzes directly to failing students based on their Chapter Health metrics. A massive time-saver.\""
+      },
+      "request": {
+        "title": "Request Institutional Onboarding ↓",
+        "board": "Board",
+        "class": "Class",
+        "contact": "WhatsApp / Email",
+        "board_ph": "e.g. Karnataka State, IB",
+        "class_ph": "e.g. Class 8",
+        "contact_ph": "e.g. 9876543210",
+        "submit": "Request Onboarding",
+        "or": "or",
+        "whatsapp": "message us on WhatsApp"
+      }
+    },
+    "ui": {
+      "class_hub_title": "Class {grade} Hub",
+      "grade_badge": "Grade {grade}",
+      "knowledge_hub_title": "Grade {grade} Knowledge Hub",
+      "chapters_touched": "{count} Chapters Touched",
+      "latest_achievement": "Latest Achievement:",
+      "none": "None",
+      "grade_all_subjects": "Grade {grade} — All Subjects",
+      "grade_subject": "Grade {grade} — {subject}",
+      "loading_sections": "Loading sections & students...",
+      "no_students": "No students found in this grade.",
+      "no_students_display": "No students to display."
+    },
+    "console": {
+      "teacher_nav": "Sovereignty Navigation",
+      "student_hub": "Class Hub",
+      "principal_dash": "School Dashboard"
     }
   },
   "te": {
@@ -71,7 +128,13 @@
       "username_email": "యూజర్ నేమ్ / ఇమెయిల్",
       "password": "పాస్వర్డ్",
       "log_in": "లాగ్ ఇన్",
-      "forgot_password": "పాస్వర్డ్ మర్చిపోయారా?"
+      "forgot_password": "పాస్వర్డ్ మర్చిపోయారా?",
+      "registered_email": "నమోదిత ఇమెయిల్",
+      "registered_student_name": "నమోదిత విద్యార్థి పేరు",
+      "username_email_ph": "ఉదా: keshav, student, dps.ready4exam",
+      "password_ph": "••••••••",
+      "reset_email_ph": "student@example.com",
+      "reset_name_ph": "ఉదా: John Doe"
     },
     "quiz": {
       "try_now": "ఇప్పుడే క్విజ్ ప్రయత్నించండి",
@@ -109,6 +172,57 @@
       "biology": "జీవశాస్త్రం",
       "english": "ఇంగ్లీష్",
       "hindi": "హిందీ"
+    },
+    "index": {
+      "platform": {
+        "unlock": "మీ పూర్తి డాష్‌బోర్డ్‌ను అన్‌లాక్ చేయండి",
+        "subtitle": "నమోదు & చందా తర్వాత ఏమి వేచి ఉంది.",
+        "hub": "నాలెడ్జ్ హబ్",
+        "hub_desc": "సగటు నైపుణ్యాన్ని ట్రాక్ చేయండి, సబ్జెక్ట్ పురోగతిని చూడండి మరియు మీ వృత్తిపరమైన ప్రయాణాన్ని పర్యవేక్షించండి.",
+        "parent": "వివరణాత్మక మాతృ కన్సోల్",
+        "parent_desc": "మీ పిల్లల అసైన్‌మెంట్‌లు, పూర్తయిన పరీక్షలు మరియు సమగ్ర గ్రేడ్-వైడ్ పనితీరు కొలమానాలను ట్రాక్ చేయండి.",
+        "study": "లక్ష్య అధ్యయన మార్గదర్శి",
+        "study_desc": "బోర్డ్-అలైన్డ్ పాఠ్యాంశాలు, సబ్జెక్టివ్ ప్రశ్నలు మరియు టాపిక్ వారీగా MCQ డ్రిల్స్‌ను యాక్సెస్ చేయండి.",
+        "performance": "స్థూల పనితీరు",
+        "performance_desc": "దృష్టి సారించాల్సిన రంగాలను గుర్తించడానికి అన్ని సబ్జెక్టులలో అధ్యాయం ఆరోగ్యం మరియు పట్టుదలను విశ్లేషించండి."
+      },
+      "testimonial": {
+        "community": "కమ్యూనిటీ ప్రేమ",
+        "trusted": "ఎకోసిస్టమ్ ద్వారా విశ్వసించబడింది",
+        "t1": "\"సింపుల్/మీడియం/అడ్వాన్స్‌డ్ టైరింగ్ నా బలహీనమైన సబ్జెక్టులను దశలవారీగా జయించడంలో నాకు సహాయపడింది. నేను చివరకు రసాయన ప్రతిచర్యలను అర్థం చేసుకున్నాను!\"",
+        "t2": "\"వివరణాత్మక పేరెంట్ కన్సోల్ నా కొడుకు ఎక్కడ కష్టపడుతున్నాడో చూడటం చాలా సులభం చేస్తుంది.\"",
+        "t3": "\"నేను నేరుగా విఫలమైన విద్యార్థులకు వారి అధ్యాయం ఆరోగ్య మెట్రిక్స్ ఆధారంగా నివారణ క్విజ్‌లను కేటాయించగలను. ఇది చాలా సమయం ఆదా చేస్తుంది.\""
+      },
+      "request": {
+        "title": "సంస్థాగత ఆన్‌బోర్డింగ్ అభ్యర్థించండి ↓",
+        "board": "బోర్డు",
+        "class": "తరగతి",
+        "contact": "వాట్సాప్ / ఇమెయిల్",
+        "board_ph": "ఉదా: కర్ణాటక రాష్ట్రం, IB",
+        "class_ph": "ఉదా: క్లాస్ 8",
+        "contact_ph": "ఉదా: 9876543210",
+        "submit": "ఆన్‌బోర్డింగ్ అభ్యర్థించండి",
+        "or": "లేదా",
+        "whatsapp": "వాట్సాప్‌లో మాకు సందేశం పంపండి"
+      }
+    },
+    "ui": {
+      "class_hub_title": "క్లాస్ {grade} హబ్",
+      "grade_badge": "గ్రేడ్ {grade}",
+      "knowledge_hub_title": "గ్రేడ్ {grade} నాలెడ్జ్ హబ్",
+      "chapters_touched": "{count} అధ్యాయాలు టచ్ చేయబడ్డాయి",
+      "latest_achievement": "తాజా సాధన:",
+      "none": "ఏదీ లేదు",
+      "grade_all_subjects": "గ్రేడ్ {grade} — అన్ని సబ్జెక్టులు",
+      "grade_subject": "గ్రేడ్ {grade} — {subject}",
+      "loading_sections": "సెక్షన్లు & విద్యార్థులు లోడ్ అవుతున్నారు...",
+      "no_students": "ఈ గ్రేడ్‌లో విద్యార్థులు కనుగొనబడలేదు.",
+      "no_students_display": "ప్రదర్శించడానికి విద్యార్థులు లేరు."
+    },
+    "console": {
+      "teacher_nav": "సార్వభౌమత్వ నావిగేషన్",
+      "student_hub": "క్లాస్ హబ్",
+      "principal_dash": "స్కూల్ డాష్‌బోర్డ్"
     }
   },
   "hi": {
@@ -127,7 +241,13 @@
       "username_email": "यूज़रनेम / ईमेल",
       "password": "पासवर्ड",
       "log_in": "लॉग इन",
-      "forgot_password": "पासवर्ड भूल गए?"
+      "forgot_password": "पासवर्ड भूल गए?",
+      "registered_email": "पंजीकृत ईमेल",
+      "registered_student_name": "पंजीकृत छात्र का नाम",
+      "username_email_ph": "जैसे: keshav, student, dps.ready4exam",
+      "password_ph": "••••••••",
+      "reset_email_ph": "student@example.com",
+      "reset_name_ph": "जैसे: John Doe"
     },
     "quiz": {
       "try_now": "अभी क्विज़ आज़माएं",
@@ -165,6 +285,57 @@
       "biology": "जीव विज्ञान",
       "english": "अंग्रेज़ी",
       "hindi": "हिंदी"
+    },
+    "index": {
+      "platform": {
+        "unlock": "अपना पूरा डैशबोर्ड अनलॉक करें",
+        "subtitle": "पंजीकरण और सदस्यता के बाद क्या इंतजार कर रहा है।",
+        "hub": "नॉलेज हब",
+        "hub_desc": "औसत महारत को ट्रैक करें, विषय की प्रगति देखें, और अपनी पेशेवर यात्रा लाइन की निगरानी करें।",
+        "parent": "विस्तृत अभिभावक कंसोल",
+        "parent_desc": "अपने बच्चे के असाइनमेंट, पूरे किए गए टेस्ट और व्यापक ग्रेड-वाइड प्रदर्शन मेट्रिक्स का ट्रैक रखें।",
+        "study": "लक्षित अध्ययन मार्गदर्शिका",
+        "study_desc": "बोर्ड-संरेखित पाठ्यक्रम, व्यक्तिपरक प्रश्न और विषय-वार MCQ अभ्यास तक पहुंचें।",
+        "performance": "मैक्रो प्रदर्शन",
+        "performance_desc": "फोकस क्षेत्रों की पहचान करने के लिए सभी विषयों में अध्याय स्वास्थ्य और धैर्य का विश्लेषण करें।"
+      },
+      "testimonial": {
+        "community": "सामुदायिक प्यार",
+        "trusted": "इकोसिस्टम द्वारा विश्वसनीय",
+        "t1": "\"सरल/मध्यम/उन्नत टियरिंग ने मुझे अपने कमजोर विषयों को चरण-दर-चरण जीतने में मदद की। मैं आखिरकार रासायनिक प्रतिक्रियाओं को समझ गया!\"",
+        "t2": "\"विस्तृत अभिभावक कंसोल यह देखना अविश्वसनीय रूप से आसान बनाता है कि मेरा बेटा वास्तव में कहां संघर्ष कर रहा है।\"",
+        "t3": "\"मैं सीधे असफल छात्रों को उनके अध्याय स्वास्थ्य मेट्रिक्स के आधार पर उपचारात्मक प्रश्नोत्तरी सौंप सकता हूं। एक बड़े समय की बचत।\""
+      },
+      "request": {
+        "title": "संस्थागत ऑनबोर्डिंग का अनुरोध करें ↓",
+        "board": "बोर्ड",
+        "class": "कक्षा",
+        "contact": "व्हाट्सएप / ईमेल",
+        "board_ph": "जैसे: कर्नाटक राज्य, आईबी",
+        "class_ph": "जैसे: कक्षा 8",
+        "contact_ph": "जैसे: 9876543210",
+        "submit": "ऑनबोर्डिंग का अनुरोध करें",
+        "or": "या",
+        "whatsapp": "हमें व्हाट्सएप पर संदेश भेजें"
+      }
+    },
+    "ui": {
+      "class_hub_title": "कक्षा {grade} हब",
+      "grade_badge": "ग्रेड {grade}",
+      "knowledge_hub_title": "ग्रेड {grade} नॉलेज हब",
+      "chapters_touched": "{count} अध्याय छुए गए",
+      "latest_achievement": "नवीनतम उपलब्धि:",
+      "none": "कोई नहीं",
+      "grade_all_subjects": "ग्रेड {grade} — सभी विषय",
+      "grade_subject": "ग्रेड {grade} — {subject}",
+      "loading_sections": "अनुभाग और छात्र लोड हो रहे हैं...",
+      "no_students": "इस ग्रेड में कोई छात्र नहीं मिला।",
+      "no_students_display": "प्रदर्शित करने के लिए कोई छात्र नहीं।"
+    },
+    "console": {
+      "teacher_nav": "संप्रभुता नेविगेशन",
+      "student_hub": "क्लास हब",
+      "principal_dash": "स्कूल डैशबोर्ड"
     }
   }
 }

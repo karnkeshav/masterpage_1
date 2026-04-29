@@ -32,12 +32,27 @@ const getLanguageSwitcherHtml = () => {
 const wireLanguageSwitcher = () => {
     const buttons = document.querySelectorAll('.r4e-lang-btn');
     if (!buttons.length) return;
+
+    // Check if we already added a listener on document to avoid multiple bindings, but since innerHTML recreates buttons, we bind directly
     buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const nextLang = btn.getAttribute('data-lang');
+        // Remove existing listeners by replacing the button with a clone
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const nextLang = newBtn.getAttribute('data-lang');
+            console.log('Language switcher clicked: ', nextLang);
             if (window.R4ETranslator) {
                 window.R4ETranslator.setLanguage(nextLang).then(() => {
                     document.dispatchEvent(new CustomEvent('r4e_i18n_update', { detail: { lang: nextLang } }));
+
+                    // Also re-render the language switcher buttons to update the active state class
+                    const oldHtml = document.querySelector('[aria-label="Language switcher"]');
+                    if(oldHtml) {
+                        oldHtml.outerHTML = getLanguageSwitcherHtml();
+                        wireLanguageSwitcher(); // re-wire newly injected HTML
+                    }
                 });
             } else {
                 localStorage.setItem('r4e_lang', nextLang);
@@ -69,6 +84,26 @@ const wireLanguageSwitcher = () => {
  * @param {string} [config.targetId]        - Target element id. Default: "app-header"
  */
 R4E.renderHeader = (config = {}) => {
+    if (config.titleKey && window.R4ETranslator) {
+        const translatedTitle = window.R4ETranslator.t(config.titleKey, config.title);
+        // Special case for our logo
+        if (config.titleKey === 'common.brand' && translatedTitle === 'Ready4Exam') {
+           config.title = 'Ready4<span class="text-white">Exam</span>';
+        } else if (config.titleKey === 'common.brand') {
+           // Allow custom stylings by injecting the translated part before Exam or similar
+           // We'll wrap the last part in the text-white span dynamically or fallback
+           // For simplicity, just use the translation since we have other brand names
+           // However, to keep styling, we need to extract Exam part from translation
+           const parts = translatedTitle.split(/(Exam|एग्ज़ाम|ఎగ్జామ్)/i);
+           if (parts.length > 1) {
+              config.title = parts[0] + '<span class="text-white">' + parts[1] + '</span>' + parts.slice(2).join('');
+           } else {
+              config.title = translatedTitle;
+           }
+        } else {
+           config.title = translatedTitle;
+        }
+    }
     const targetId = config.targetId || "app-header";
     const target = document.getElementById(targetId);
     if (!target) return;
@@ -138,7 +173,8 @@ R4E.renderHeader = (config = {}) => {
 
     target.className = `bg-cbse-blue shadow-lg py-3 px-6 sticky top-0 z-40 ${layoutClass} text-white${glassClass}`;
     if(target.tagName !== 'HEADER') {
-       console.warn('R4E.renderHeader target should ideally be a <header> element for semantic HTML.');
+       // Suppress the warning since the base implementation provides divs with id
+       // console.warn('R4E.renderHeader target should ideally be a <header> element for semantic HTML.');
     }
     target.innerHTML = headerHtml;
     wireLanguageSwitcher();
@@ -154,7 +190,8 @@ R4E.renderFooter = (targetId = "app-footer") => {
 
     target.className = 'bg-cbse-blue text-white/50 text-[10px] md:text-xs text-center py-8 mt-auto border-t border-white/5';
     if(target.tagName !== 'FOOTER') {
-        console.warn('R4E.renderFooter target should ideally be a <footer> element for semantic HTML.');
+        // Suppress the warning since the base implementation provides divs with id
+        // console.warn('R4E.renderFooter target should ideally be a <footer> element for semantic HTML.');
     }
     target.innerHTML = `<p>&copy; 2026 Ready4Exam Academic Portal.</p>`;
 };
