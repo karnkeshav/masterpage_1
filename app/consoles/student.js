@@ -24,8 +24,8 @@ document.addEventListener('r4e_i18n_update', () => {
         window.R4ETranslator.applyTranslations(document);
     }
     // Attempt to re-render dynamic tiles by re-fetching/re-displaying active content if applicable
-    if (_currentProfile && window.loadConsoleData) {
-        window.loadConsoleData(_currentProfile);
+    if (currentUserProfile && window.loadConsoleData) {
+        window.loadConsoleData(currentUserProfile);
     }
 });
 

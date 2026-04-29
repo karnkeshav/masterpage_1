@@ -52,13 +52,27 @@
 
 <!-- Header -->
 <div id="app-header"></div>
-<script>R4E.renderHeader({
+<script>
+  if (window.R4ETranslator && window.R4ETranslator.loadDictionary) {
+    window.R4ETranslator.loadDictionary().then(() => {
+      R4E.renderHeader({
     title: 'Ready4<span class="text-white">Exam</span>',
     showUserWelcome: false,
     showLogout: false,
     showInbox: false,
     glass: true
-});</script>
+});
+    });
+  } else {
+    R4E.renderHeader({
+    title: 'Ready4<span class="text-white">Exam</span>',
+    showUserWelcome: false,
+    showLogout: false,
+    showInbox: false,
+    glass: true
+});
+  }
+</script>
 
 <main class="pt-32 pb-24 px-6 md:px-12 lg:px-24 max-w-7xl mx-auto flex-grow">
     <!-- Hero Section -->
