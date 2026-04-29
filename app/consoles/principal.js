@@ -35,7 +35,7 @@ document.addEventListener('r4e_i18n_update', () => {
             renderTeacherInventory(teacherInv);
             renderCharts(gradePerf, studentInv);
         };
-        reloadData().catch(err => console.error('i18n reload failed:', err));
+        reloadData();
     }
 });
 
@@ -233,7 +233,7 @@ async function drillDownGrade(grade) {
     const studentsEl = document.getElementById("drilldown-students");
 
     titleEl.innerHTML = `<i class="fas fa-search-plus mr-2 text-blue-600"></i>Grade ${esc(grade)} — All Subjects`;
-    sectionsEl.innerHTML = '<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">Loading sections &amp; students...</div>';
+    sectionsEl.innerHTML = `<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">${window.R4ETranslator ? window.R4ETranslator.t('ui.loading_sections', 'Loading sections &amp; students...') : 'Loading sections &amp; students...'}</div>`;
     studentsEl.innerHTML = '';
     panel.classList.remove("hidden");
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -255,7 +255,7 @@ async function drillDownSubject(grade, subject) {
     const studentsEl = document.getElementById("drilldown-students");
 
     titleEl.innerHTML = `<i class="fas fa-search-plus mr-2 text-blue-600"></i>Grade ${esc(grade)} — ${esc(trSubject(subject))}`;
-    sectionsEl.innerHTML = '<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">Loading sections &amp; students...</div>';
+    sectionsEl.innerHTML = `<div class="col-span-full text-center text-slate-400 text-sm p-4 animate-pulse">${window.R4ETranslator ? window.R4ETranslator.t('ui.loading_sections', 'Loading sections &amp; students...') : 'Loading sections &amp; students...'}</div>`;
     studentsEl.innerHTML = '';
     panel.classList.remove("hidden");
     panel.scrollIntoView({ behavior: "smooth", block: "start" });

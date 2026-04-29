@@ -24,8 +24,8 @@ document.addEventListener('r4e_i18n_update', () => {
         window.R4ETranslator.applyTranslations(document);
     }
     // Attempt to re-render dynamic tiles by re-fetching/re-displaying active content if applicable
-    if (currentUserProfile && window.loadConsoleData) {
-        window.loadConsoleData(currentUserProfile);
+    if (_currentProfile && window.loadConsoleData) {
+        window.loadConsoleData(_currentProfile);
     }
 });
 
@@ -442,7 +442,7 @@ window.loadStudentStats = async (uid, grade) => {
         // 2. Latest Achievement
         if (latestQuiz && document.getElementById("stat-subject")) {
             document.getElementById("stat-subject").innerHTML = `${sanitize(latestQuiz.chapter)} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
-            document.getElementById("stat-subject-label").textContent = "Latest Achievement:";
+            document.getElementById("stat-subject-label").textContent = window.R4ETranslator ? window.R4ETranslator.t('ui.latest_achievement', 'Latest Achievement:') : "Latest Achievement:";
         }
 
         // 3. Average Mastery
@@ -736,7 +736,7 @@ window.loadStudentStats = async (uid, grade) => {
 function renderZeroState(curriculumCounts, totalChapters) {
     // Update Volume Dashboard for Zero State
     if (curriculumCounts && totalChapters) {
-        if (document.getElementById("stat-coverage")) document.getElementById("stat-coverage").textContent = `0 Chapters Touched`;
+        if (document.getElementById("stat-coverage")) document.getElementById("stat-coverage").textContent = window.R4ETranslator ? window.R4ETranslator.t('ui.chapters_touched', '{count} Chapters Touched').replace('{count}', '0') : `0 Chapters Touched`;
 
         const radialBar = document.getElementById("stat-radial-bar");
         if (radialBar) radialBar.setAttribute("stroke-dasharray", "0, 100");
@@ -751,7 +751,7 @@ function renderZeroState(curriculumCounts, totalChapters) {
     }
 
     if (document.getElementById("stat-avg")) document.getElementById("stat-avg").textContent = "0%";
-    if (document.getElementById("stat-subject")) document.getElementById("stat-subject").textContent = "None";
+    if (document.getElementById("stat-subject")) document.getElementById("stat-subject").textContent = window.R4ETranslator ? window.R4ETranslator.t('ui.none', 'None') : "None";
     if (document.getElementById("subject-mastery-container")) document.getElementById("subject-mastery-container").innerHTML = `
         <div class="text-center py-4">
             <p class="text-xs text-slate-400 mb-2">No data yet.</p>

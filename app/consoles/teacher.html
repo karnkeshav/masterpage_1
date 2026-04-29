@@ -26,17 +26,15 @@
 
     <!-- Sovereignty Navigation -->
     <div id="app-header"></div>
-<script>R4E.renderHeader({
-    title: "Sovereignty Navigation",
-    subtitle: "Ready4Exam &bull; Multi-Discipline",
-    userWelcomeDefault: "Authenticating...",
-    roleBadge: "Teacher",
-    showLogout: true,
-    logoutId: "logout-nav-btn",
-    glass: true,
-    layout: "grid-3",
-    centerHtml: '<div class="flex flex-wrap gap-2 lg:gap-4 items-center bg-cbse-blue/50 border border-white/10 rounded-xl px-4 py-2 justify-self-center"><div class="flex items-center gap-2"><span class="text-xs text-slate-300 font-bold uppercase">Grade:</span><select id="grade-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"><option value="" disabled selected class="text-slate-800">Loading...</option></select></div><div class="h-4 w-px bg-white/20 hidden lg:block"></div><div class="flex items-center gap-2"><span class="text-xs text-slate-300 font-bold uppercase">Section:</span><select id="section-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"><option value="" disabled selected class="text-slate-800">Loading...</option></select></div><div class="h-4 w-px bg-white/20 hidden lg:block"></div><div class="flex items-center gap-2"><span class="text-xs text-slate-300 font-bold uppercase">Discipline:</span><select id="discipline-select" class="bg-white/10 border-none rounded text-white text-sm font-bold focus:ring-0 cursor-pointer"><option value="" disabled selected class="text-slate-800">Loading...</option></select></div></div>'
-});</script>
+<script>
+  if (window.R4ETranslator && window.R4ETranslator.loadDictionary) {
+    window.R4ETranslator.loadDictionary().then(() => {
+
+    });
+  } else {
+
+  }
+</script>
 
 
     <div id="loading" class="flex items-center justify-center min-h-[50vh]">

@@ -64,25 +64,12 @@
 
 <!-- Header -->
 <div id="app-header"></div>
-<script>
-  if (window.R4ETranslator && window.R4ETranslator.loadDictionary) {
-    window.R4ETranslator.loadDictionary().then(() => {
-      R4E.renderHeader({
-    title: 'Ready4<span class="text-white">Exam</span>',
+<script>R4E.renderHeader({
+    title: 'Ready4<span class="text-white">Exam</span>', titleKey: 'common.brand',
     showUserWelcome: false,
     showLogout: false,
     showInbox: false
-});
-    });
-  } else {
-    R4E.renderHeader({
-    title: 'Ready4<span class="text-white">Exam</span>',
-    showUserWelcome: false,
-    showLogout: false,
-    showInbox: false
-});
-  }
-</script>
+});</script>
 
 <!-- Section 1: Hero & Login -->
 <section class="bg-hero-grad text-white py-12 lg:py-20 px-4 relative overflow-hidden">
@@ -105,11 +92,11 @@
       <form id="sovereign-login-form" class="space-y-4">
           <div>
               <label class="block text-xs font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.username_email">Username / Email</span></label>
-              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required="">
+              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" data-i18n-placeholder="auth.username_email_ph" required="">
           </div>
           <div>
               <label class="block text-xs font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.password">Password</span></label>
-              <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" required="">
+              <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" data-i18n-placeholder="auth.password_ph" required="">
           </div>
           <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
           <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2">
@@ -131,12 +118,12 @@
 
               <div class="space-y-4">
                   <div>
-                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Registered Email</label>
-                      <input type="email" id="reset-email" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="student@example.com">
+                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.registered_email">Registered Email</span></label>
+                      <input type="email" id="reset-email" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="student@example.com" data-i18n-placeholder="auth.reset_email_ph">
                   </div>
                   <div>
-                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Registered Student Name</label>
-                      <input type="text" id="reset-student-name" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. John Doe">
+                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1"><span data-i18n="auth.registered_student_name">Registered Student Name</span></label>
+                      <input type="text" id="reset-student-name" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. John Doe" data-i18n-placeholder="auth.reset_name_ph">
                   </div>
                   <div id="reset-msg" class="hidden text-[11px] font-bold text-center p-2 rounded"></div>
                   <button type="button" id="submit-reset-btn" class="w-full bg-gold text-cbse-blue font-black py-3 rounded-xl hover:bg-white transition mt-2">
@@ -223,7 +210,7 @@
           <!-- Other Board Fallback -->
           <div id="other-board-msg" class="hidden mt-6 text-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
             <p class="text-sm text-cbse-blue font-medium mb-2">We are actively building for more boards!</p>
-            <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding ↓</a>
+            <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block"><span data-i18n="index.request.title">Request Institutional Onboarding ↓</span></a>
           </div>
 
         </div>
@@ -245,25 +232,25 @@
           <!-- Form -->
           <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
             <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Board</label>
-              <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider"><span data-i18n="index.request.board">Board</span></label>
+              <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" data-i18n-placeholder="index.request.board_ph" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Class</label>
-              <input type="text" id="reqClass" placeholder="e.g. Class 8" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider"><span data-i18n="index.request.class">Class</span></label>
+              <input type="text" id="reqClass" placeholder="e.g. Class 8" data-i18n-placeholder="index.request.class_ph" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">WhatsApp / Email</label>
-              <input type="text" id="reqContact" placeholder="e.g. 9876543210" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
+              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider"><span data-i18n="index.request.contact">WhatsApp / Email</span></label>
+              <input type="text" id="reqContact" placeholder="e.g. 9876543210" data-i18n-placeholder="index.request.contact_ph" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
             </div>
             <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition text-sm flex items-center justify-center gap-2">
-              <i class="fas fa-paper-plane"></i> Request Onboarding
+              <i class="fas fa-paper-plane"></i> <span data-i18n="index.request.submit">Request Onboarding</span>
             </button>
           </form>
 
           <!-- WhatsApp fallback -->
           <p class="text-center mt-4 text-[11px] text-slate-400">
-            or <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20want%20to%20request%20a%20new%20board." class="text-green-600 font-bold hover:underline"><i class="fab fa-whatsapp"></i> message us on WhatsApp</a>
+            <span data-i18n="index.request.or">or</span> <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20want%20to%20request%20a%20new%20board." class="text-green-600 font-bold hover:underline"><i class="fab fa-whatsapp"></i> <span data-i18n="index.request.whatsapp">message us on WhatsApp</span></a>
           </p>
 
         </div>
@@ -277,8 +264,8 @@
 <section id="get-started" class="py-16 px-4 bg-slate-50 border-b border-slate-200">
   <div class="max-w-6xl mx-auto">
     <div class="text-center mb-12">
-      <h2 class="text-3xl font-black text-cbse-blue mb-2">Unlock Your Full Dashboard</h2>
-      <p class="text-slate-500">What Awaits After Registration &amp; Subscription.</p>
+      <h2 class="text-3xl font-black text-cbse-blue mb-2"><span data-i18n="index.platform.unlock">Unlock Your Full Dashboard</span></h2>
+      <p class="text-slate-500"><span data-i18n="index.platform.subtitle">What Awaits After Registration &amp; Subscription.</span></p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -287,9 +274,9 @@
       <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-center gap-3 mb-4 text-cbse-blue">
           <div class="bg-blue-50 p-2 rounded-lg"><i class="fas fa-chart-pie text-xl"></i></div>
-          <h3 class="text-lg font-bold">Knowledge Hub</h3>
+          <h3 class="text-lg font-bold"><span data-i18n="index.platform.hub">Knowledge Hub</span></h3>
         </div>
-        <p class="text-sm text-slate-600 mb-6">Track average mastery, view subject progress, and monitor your professional journey line.</p>
+        <p class="text-sm text-slate-600 mb-6"><span data-i18n="index.platform.hub_desc">Track average mastery, view subject progress, and monitor your professional journey line.</span></p>
         <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
           <img src="images/dashboard-subject-navigator.png" alt="Subject Navigator Dashboard" class="w-full h-auto rounded-xl">
         </div>
@@ -359,15 +346,15 @@
 <section class="py-16 px-4 bg-white border-b border-slate-200 overflow-hidden">
   <div class="max-w-6xl mx-auto overflow-hidden relative">
     <div class="text-center mb-10">
-      <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Community Love</span>
-      <h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2>
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-widest"><span data-i18n="index.testimonial.community">Community Love</span></span>
+      <h2 class="text-3xl font-black text-heading mt-1"><span data-i18n="index.testimonial.trusted">Trusted by Ecosystem</span></h2>
     </div>
 
     <!-- Horizontal scroll container -->
     <div class="flex gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 animate-marquee hover:[animation-play-state:paused]">
       <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
         <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</p>
+        <p class="text-slate-600 text-sm italic mb-4"><span data-i18n="index.testimonial.t1">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</span></p>
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
           <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 10</p></div>

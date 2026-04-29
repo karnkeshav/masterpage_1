@@ -22,13 +22,15 @@
 
     <!-- Full-width header -->
     <div id="app-header"></div>
-    <script>R4E.renderHeader({
-        title: "Institutional Health",
-        userWelcomeDefault: "Principal",
-        roleBadge: "Principal",
-        showLogout: true,
-        logoutId: "logout-nav-btn"
-    });</script>
+    <script>
+  if (window.R4ETranslator && window.R4ETranslator.loadDictionary) {
+    window.R4ETranslator.loadDictionary().then(() => {
+
+    });
+  } else {
+
+  }
+</script>
 
     <div id="loading" class="flex items-center justify-center flex-grow">
         <div class="animate-pulse font-bold text-slate-400">Verifying Principal Access...</div>
