@@ -9,6 +9,21 @@ import * as UI from "../../js/ui-renderer.js";
 const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const trSubject = (s) => window.R4ETranslator ? window.R4ETranslator.translateSubject(s) : s;
 
+document.addEventListener('r4e_i18n_update', () => {
+    if (window.R4ETranslator) {
+        window.R4ETranslator.applyTranslations(document);
+    }
+    // Trigger re-render of currently active tab to translate dynamic subjects
+    if (typeof renderTab === 'function') {
+        renderTab();
+    }
+    // Update headers if variables exist
+    if (typeof currentContext !== 'undefined' && currentContext.discipline) {
+        let el = document.getElementById('header-discipline');
+        if (el) el.innerText = window.R4ETranslator ? window.R4ETranslator.translateSubject(currentContext.discipline) : currentContext.discipline;
+    }
+});
+
 // === GLOBAL STATE DECLARATIONS ===
 let db;
 let studentScores = [];

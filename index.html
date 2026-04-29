@@ -22,9 +22,6 @@
 <script src="./js/translator.js"></script>
 <link href="./css/global.css" rel="stylesheet">
 <script src="js/firebase-master-config.js"></script>
-<script src="./js/i18n-config.js"></script>
-<script src="./js/i18n-dictionary.js"></script>
-<script src="./js/translator.js"></script>
 
 
 
@@ -67,12 +64,25 @@
 
 <!-- Header -->
 <div id="app-header"></div>
-<script>R4E.renderHeader({
+<script>
+  if (window.R4ETranslator && window.R4ETranslator.loadDictionary) {
+    window.R4ETranslator.loadDictionary().then(() => {
+      R4E.renderHeader({
     title: 'Ready4<span class="text-white">Exam</span>',
     showUserWelcome: false,
     showLogout: false,
     showInbox: false
-});</script>
+});
+    });
+  } else {
+    R4E.renderHeader({
+    title: 'Ready4<span class="text-white">Exam</span>',
+    showUserWelcome: false,
+    showLogout: false,
+    showInbox: false
+});
+  }
+</script>
 
 <!-- Section 1: Hero & Login -->
 <section class="bg-hero-grad text-white py-12 lg:py-20 px-4 relative overflow-hidden">

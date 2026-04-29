@@ -13,6 +13,32 @@ import {
 const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const trSubject = (s) => window.R4ETranslator ? window.R4ETranslator.translateSubject(s) : s;
 
+document.addEventListener('r4e_i18n_update', () => {
+    if (window.R4ETranslator) {
+        window.R4ETranslator.applyTranslations(document);
+    }
+    // Attempt to re-render global state
+    if (typeof _schoolId !== 'undefined' && _schoolId) {
+        // Just reload standard charts instead of dashboard as loadSchoolDashboard isn't global
+        const reloadData = async () => {
+             const [analytics, studentInv, teacherInv, gradePerf, subjectPerf] = await Promise.all([
+                fetchSchoolAnalytics(_schoolId),
+                fetchStudentInventory(_schoolId),
+                fetchTeacherInventory(_schoolId),
+                fetchGradeWisePerformance(_schoolId),
+                fetchSubjectWisePerformance(_schoolId)
+            ]);
+            renderKPIs(analytics, studentInv, teacherInv);
+            renderGradeInventory(studentInv);
+            renderSubjectDashboard(subjectPerf);
+            renderGradeHeatmap(gradePerf);
+            renderTeacherInventory(teacherInv);
+            renderCharts(gradePerf, studentInv);
+        };
+        reloadData();
+    }
+});
+
 // Module-level state for drill-down
 let _schoolId = null;
 

@@ -8,25 +8,30 @@
     dictionaryPath: './js/i18n-dictionary.json'
   };
 
-  let dictionary = null;
-  let loadingPromise = null;
-
   function normalizeLang(lang) {
     if (!lang) return cfg.defaultLanguage;
     const code = String(lang).toLowerCase();
     return cfg.supportedLanguages.includes(code) ? code : cfg.defaultLanguage;
   }
 
+  // Synchronous Bootstrap
+  const initialLang = normalizeLang(localStorage.getItem(cfg.storageKey) || cfg.defaultLanguage);
+  document.documentElement.setAttribute('lang', initialLang);
+
+  let dictionary = null;
+  let loadingPromise = null;
+
   function getLanguage() {
     const fromStorage = localStorage.getItem(cfg.storageKey);
     return normalizeLang(fromStorage || document.documentElement.getAttribute('lang') || cfg.defaultLanguage);
   }
 
-  function setLanguage(lang) {
+  async function setLanguage(lang) {
     const code = normalizeLang(lang);
     localStorage.setItem(cfg.storageKey, code);
     document.documentElement.setAttribute('lang', code);
     document.body?.setAttribute('data-lang', code);
+    await loadDictionary();
     return applyTranslations(document);
   }
 
@@ -49,7 +54,16 @@
       })
       .catch(err => {
         console.error(err);
-        dictionary = {};
+        console.error('CRITICAL: Failed to load i18n dictionary. Injecting hardcoded fallback.');
+        dictionary = {
+            'en': {
+                'auth.login': 'Login',
+                'common.sign_out': 'Sign Out',
+                'hero.master_exams': 'Master Your Exams',
+                'hero.with_precision': 'With Precision',
+                'hero.subtext': 'Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools & students.'
+            }
+        };
         return dictionary;
       });
 
