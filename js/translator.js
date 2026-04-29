@@ -36,6 +36,7 @@
   }
 
   function getPathValue(obj, key) {
+    if (obj[key] !== undefined) return obj[key];
     return key.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), obj);
   }
 

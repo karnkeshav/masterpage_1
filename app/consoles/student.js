@@ -29,7 +29,11 @@ document.addEventListener('r4e_i18n_update', () => {
     }
 });
 
+
+let _currentProfile = null;
 window.loadConsoleData = async (profile) => {
+    _currentProfile = profile;
+
     console.log("Loading Class Hub for:", profile.displayName);
     document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
 

@@ -44,6 +44,8 @@ export function injectStyles() {
         }
         body.focus-mode header,
         body.focus-mode footer,
+        body.focus-mode #app-header,
+        body.focus-mode #app-footer,
         body.focus-mode .glass-nav {
             display: none !important;
         }
