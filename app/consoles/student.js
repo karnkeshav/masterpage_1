@@ -13,27 +13,12 @@ UI.injectStyles();
 const sanitize = s => String(s ?? '').replace(/&/g,'&amp;')
     .replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const translateSubject = (subject) => window.R4ETranslator ? window.R4ETranslator.translateSubject(subject) : subject;
 
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 guardConsole("student");
 
-document.addEventListener('r4e_i18n_update', () => {
-    // Avoid full page reload
-    if (window.R4ETranslator) {
-        window.R4ETranslator.applyTranslations(document);
-    }
-    // Attempt to re-render dynamic tiles by re-fetching/re-displaying active content if applicable
-    if (_currentProfile && window.loadConsoleData) {
-        window.loadConsoleData(_currentProfile);
-    }
-});
 
-
-let _currentProfile = null;
 window.loadConsoleData = async (profile) => {
-    _currentProfile = profile;
-
     console.log("Loading Class Hub for:", profile.displayName);
     document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
 
@@ -125,7 +110,7 @@ async function generateKnowledgeHub(profile, grade) {
                         <i class="${theme.icon}"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold text-slate-800">${translateSubject(subject)}</h4>
+                        <h4 class="font-bold text-slate-800">${subject}</h4>
                         <p class="text-[10px] text-slate-500 font-medium">${theme.tagline}</p>
                     </div>
                     <i class="fas fa-chevron-right ml-auto text-slate-300 group-hover:${theme.hoverColor} transition"></i>
@@ -205,7 +190,7 @@ function renderKnowledgeHub(profile) {
                     <i class="fas ${getSubjectIcon(subject)}"></i>
                 </div>
                 <div>
-                    <h4 class="font-bold text-slate-800">${translateSubject(subject)}</h4>
+                    <h4 class="font-bold text-slate-800">${subject}</h4>
                     <p class="text-[10px] text-slate-500 font-medium">Explore curriculum.</p>
                 </div>
                 <i class="fas fa-chevron-right ml-auto text-slate-300 group-hover:text-${color.replace("500", "500")} transition"></i>
@@ -442,7 +427,7 @@ window.loadStudentStats = async (uid, grade) => {
         // 2. Latest Achievement
         if (latestQuiz && document.getElementById("stat-subject")) {
             document.getElementById("stat-subject").innerHTML = `${sanitize(latestQuiz.chapter)} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
-            document.getElementById("stat-subject-label").textContent = window.R4ETranslator ? window.R4ETranslator.t('ui.latest_achievement', 'Latest Achievement:') : "Latest Achievement:";
+            document.getElementById("stat-subject-label").textContent = "Latest Achievement:";
         }
 
         // 3. Average Mastery
@@ -736,7 +721,7 @@ window.loadStudentStats = async (uid, grade) => {
 function renderZeroState(curriculumCounts, totalChapters) {
     // Update Volume Dashboard for Zero State
     if (curriculumCounts && totalChapters) {
-        if (document.getElementById("stat-coverage")) document.getElementById("stat-coverage").textContent = window.R4ETranslator ? window.R4ETranslator.t('ui.chapters_touched', '{count} Chapters Touched').replace('{count}', '0') : `0 Chapters Touched`;
+        if (document.getElementById("stat-coverage")) document.getElementById("stat-coverage").textContent = `0 Chapters Touched`;
 
         const radialBar = document.getElementById("stat-radial-bar");
         if (radialBar) radialBar.setAttribute("stroke-dasharray", "0, 100");
@@ -751,7 +736,7 @@ function renderZeroState(curriculumCounts, totalChapters) {
     }
 
     if (document.getElementById("stat-avg")) document.getElementById("stat-avg").textContent = "0%";
-    if (document.getElementById("stat-subject")) document.getElementById("stat-subject").textContent = window.R4ETranslator ? window.R4ETranslator.t('ui.none', 'None') : "None";
+    if (document.getElementById("stat-subject")) document.getElementById("stat-subject").textContent = "None";
     if (document.getElementById("subject-mastery-container")) document.getElementById("subject-mastery-container").innerHTML = `
         <div class="text-center py-4">
             <p class="text-xs text-slate-400 mb-2">No data yet.</p>
