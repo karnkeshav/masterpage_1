@@ -36,6 +36,7 @@ window.loadConsoleData = async (profile) => {
     initSegmentedCharts();
     initRealtimeStreams();
     wireProvisionForm();
+    initLicenseCalculator();
     startSystemPulse();
 };
 
@@ -470,9 +471,14 @@ async function archiveSchoolInstance(schoolId) {
         const usersSnap = await getDocs(
             query(collection(db, "users"), where("school_id", "==", schoolId))
         );
-        const batch = writeBatch(db);
-        usersSnap.forEach(u => batch.update(u.ref, { status: "suspended" }));
-        await batch.commit();
+        const userRefs = [];
+        usersSnap.forEach(u => userRefs.push(u.ref));
+        const BATCH_LIMIT = 499;
+        for (let i = 0; i < userRefs.length; i += BATCH_LIMIT) {
+            const batch = writeBatch(db);
+            userRefs.slice(i, i + BATCH_LIMIT).forEach(ref => batch.update(ref, { status: "suspended" }));
+            await batch.commit();
+        }
         showToast(`School ${schoolId} archived successfully.`, "success");
     } catch (err) {
         showToast("Archive failed: " + err.message, "error");
