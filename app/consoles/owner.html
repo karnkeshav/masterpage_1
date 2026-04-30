@@ -149,6 +149,17 @@
 
     </div>
 
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-[24px] w-full max-w-md p-8 space-y-4 shadow-2xl">
+            <h3 id="confirm-title" class="text-lg font-black text-white">Confirm Action</h3>
+            <p id="confirm-message" class="text-sm text-slate-400"></p>
+            <div class="flex gap-3">
+                <button id="confirm-cancel" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest transition">Cancel</button>
+                <button id="confirm-ok"     class="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <div id="provision-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-[40px] w-full max-w-2xl p-8 lg:p-10 space-y-5 relative overflow-y-auto max-h-[90vh]">
             <button class="js-close-provision absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-500 transition">✕</button>
@@ -243,6 +254,17 @@
                     <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Student Display Name</label>
                     <input type="text" id="u-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none focus:border-indigo-500" required>
                 </div>
+
+                <div id="new-user-credentials" class="hidden space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-black text-indigo-400 uppercase mb-1">Student Login Email</label>
+                        <input type="email" id="u-email" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none focus:border-indigo-500" placeholder="student@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Temporary Password (min 8 chars)</label>
+                        <input type="password" id="u-password" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none focus:border-indigo-500" placeholder="Min 8 characters" minlength="8">
+                    </div>
+                </div>
                 
                 <div>
                     <label class="block text-[10px] font-black text-amber-500 uppercase mb-1">Linked Parent Email (Sync Bundle)</label>
@@ -270,6 +292,10 @@
         </div>
     </div>
 
+    <div class="text-center py-4 text-[10px] text-slate-600 font-mono space-x-4">
+        <span>Last sync: <span id="pulse-timestamp">—</span></span>
+        <span>Session uptime: <span id="pulse-uptime">0m</span></span>
+    </div>
     <div id="app-footer"></div>
     <script>R4E.renderFooter();</script>
 </body>

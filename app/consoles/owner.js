@@ -25,7 +25,10 @@ let isCreateUserMode = false;
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 guardConsole("owner");
 
+let ownerUid = null;
+
 window.loadConsoleData = async (profile) => {
+    ownerUid = profile.uid;
     const welcomeEl = document.getElementById("user-welcome");
     if (welcomeEl) welcomeEl.textContent = profile.displayName || "Root Owner";
 
@@ -36,12 +39,28 @@ window.loadConsoleData = async (profile) => {
     startSystemPulse();
 };
 
+function showSyncError(stream, err) {
+    console.error(`[onSnapshot:${stream}]`, err);
+    const banner = document.getElementById("sync-error-banner");
+    if (banner) {
+        banner.textContent = `⚠ ${stream} sync failed: ${err.message}. Data may be stale.`;
+        banner.classList.remove("hidden");
+    }
+}
+
+const streamStatus = { b2c: false, b2b: false, ledger: false };
+
+function markLoaded(stream) {
+    streamStatus[stream] = true;
+}
+
 async function initRealtimeStreams() {
     const { db } = await getInitializedClients();
 
     onSnapshot(
         query(collection(db, "users"), where("tenantType", "==", "individual")),
         (snap) => {
+            markLoaded("b2c");
             b2cCache = [];
             snap.forEach((userDoc) => b2cCache.push({ id: userDoc.id, ...userDoc.data() }));
             b2cCache.sort((a, b) => safeTs(b.createdAt || b.activationDate) - safeTs(a.createdAt || a.activationDate));
@@ -53,12 +72,14 @@ async function initRealtimeStreams() {
 
             if (currentTab === "b2c") renderB2CTable(b2cCache);
             updateSegmentedCharts(financialCache);
-        }
+        },
+        (err) => showSyncError("B2C Users", err)
     );
 
     onSnapshot(
         query(collection(db, "schools"), orderBy("created_at", "desc")),
         (snap) => {
+            markLoaded("b2b");
             schoolsCache = [];
             snap.forEach((schoolDoc) => schoolsCache.push({ id: schoolDoc.id, ...schoolDoc.data() }));
 
@@ -67,16 +88,18 @@ async function initRealtimeStreams() {
             if (activeEl) activeEl.textContent = `${activeCount} manual schools`;
 
             if (currentTab === "b2b") renderSchoolGrid(schoolsCache);
-        }
+        },
+        (err) => showSyncError("Schools", err)
     );
 
     onSnapshot(
-        query(collectionGroup(db, "financial_events"), orderBy("timestamp", "desc")),
+        query(collectionGroup(db, "financial_events"), orderBy("timestamp", "desc"), limit(LEDGER_PAGE_SIZE)),
         (snap) => {
+            markLoaded("ledger");
             financialCache = [];
             snap.forEach((eventDoc) => {
                 const data = eventDoc.data();
-                const isB2C = classifyAsB2C(data, eventDoc.ref.path);
+                const isB2C = classifyAsB2C(data);
 
                 financialCache.push({
                     id: eventDoc.id,
@@ -86,10 +109,20 @@ async function initRealtimeStreams() {
                 });
             });
 
+            if (!snap.empty) {
+                ledgerLastDoc = snap.docs[snap.docs.length - 1];
+            }
+
             renderLedgerTable(financialCache);
             renderRevenueKPIs();
             updateSegmentedCharts(financialCache);
-        }
+
+            const loadBtn = document.getElementById("ledger-load-more");
+            if (loadBtn) {
+                loadBtn.classList.toggle("hidden", snap.docs.length < LEDGER_PAGE_SIZE);
+            }
+        },
+        (err) => showSyncError("Financial Events", err)
     );
 }
 
@@ -98,18 +131,9 @@ function renderRevenueKPIs() {
         .filter((e) => e.source === "B2B")
         .reduce((sum, e) => sum + (parseFloat(e.amount || 0) || 0), 0);
 
-    const b2cEventTotal = financialCache
+    const b2cTotal = financialCache
         .filter((e) => e.source === "B2C")
         .reduce((sum, e) => sum + (parseFloat(e.amount || 0) || 0), 0);
-
-    const eventUids = new Set(
-        financialCache.filter((e) => e.source === "B2C" && e.uid).map((e) => e.uid)
-    );
-    const b2cProfileFallback = b2cCache
-        .filter((u) => isUserPaid(u) && !eventUids.has(u.id))
-        .reduce((sum, u) => sum + (parseFloat(u.revenue || 0) || 0), 0);
-
-    const b2cTotal = b2cEventTotal + b2cProfileFallback;
 
     const b2bEl = document.getElementById("count-revenue-b2b");
     const b2cEl = document.getElementById("count-revenue-b2c");
@@ -119,12 +143,31 @@ function renderRevenueKPIs() {
     if (totalEl) totalEl.textContent = `₹${(b2bTotal + b2cTotal).toLocaleString("en-IN")}`;
 }
 
-function classifyAsB2C(data, path) {
-    if ((data.school_id || "") === "B2C_REVENUE") return true;
-    if ((data.entityType || "").toLowerCase() === "b2c") return true;
-    if ((data.type || "").toUpperCase().includes("B2C")) return true;
-    if (path.includes("B2C_REVENUE")) return true;
-    return !path.includes("schools/");
+function classifyAsB2C(data) {
+    const et = (data.entityType || "").toLowerCase();
+    if (et === "b2c") return true;
+    if (et === "b2b") return false;
+    console.warn("[classifyAsB2C] Event missing entityType — excluded from totals:", data);
+    return false;
+}
+
+function initLicenseCalculator() {
+    const strength = document.getElementById("prov-strength");
+    const teachers = document.getElementById("prov-teachers");
+    const others   = document.getElementById("prov-others");
+    const licenses = document.getElementById("prov-licenses");
+
+    function recalculate() {
+        const s = parseInt(strength?.value) || 0;
+        const t = parseInt(teachers?.value) || 0;
+        const o = parseInt(others?.value)   || 0;
+        licenses.value = Math.ceil(((s * 2) + t + o) * 1.05) || 0;
+    }
+
+    strength?.addEventListener("input", recalculate);
+    teachers?.addEventListener("input", recalculate);
+    others?.addEventListener("input", recalculate);
+    recalculate();
 }
 
 function wireProvisionForm() {
@@ -134,9 +177,19 @@ function wireProvisionForm() {
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector("button[type='submit']");
+
+        const licenses = parseInt(document.getElementById("prov-licenses").value, 10);
+        if (!licenses || licenses <= 0) {
+            showToast("License count is 0 — check student/staff numbers.", "error");
+            btn.disabled = false;
+            btn.textContent = "Deploy & Record Revenue";
+            return;
+        }
+
         btn.disabled = true;
         btn.textContent = "ORCHESTRATING TENANT...";
 
+        let success = false;
         try {
             const { db } = await getInitializedClients();
             const schoolName = document.getElementById("prov-name").value;
@@ -144,48 +197,89 @@ function wireProvisionForm() {
             const manualAmount = parseFloat(document.getElementById("prov-amount-paid").value) || 0;
             const principalEmail = document.getElementById("prov-email").value;
 
-            const schoolId = (schoolName.split(" ")[0] + "-" + district + "-" + Math.floor(1000 + Math.random() * 9000)).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+            const prefix = (schoolName.split(" ")[0] + "-" + district)
+                .toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 24);
+            const nonce = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+            const schoolId = `${prefix}-${nonce}`;
+
+            const existing = await getDoc(doc(db, "schools", schoolId));
+            if (existing.exists()) {
+                throw new Error(`School ID collision: ${schoolId} already exists. Please retry.`);
+            }
 
             const secApp = getApps().find((a) => a.name === "Onboard") || initializeApp(window.__firebase_config, "Onboard");
             const secAuth = getAuth(secApp);
-            const cred = await createUserWithEmailAndPassword(secAuth, principalEmail, "Ready4Exam@2026");
+            let adminCred, principalCred;
 
-            await setDoc(doc(db, "schools", schoolId), {
-                name: schoolName,
-                logo_url: document.getElementById("prov-logo").value || "",
-                board: document.getElementById("prov-board").value,
-                max_licenses: parseInt(document.getElementById("prov-licenses").value, 10) || 100,
-                total_strength: parseInt(document.getElementById("prov-strength").value, 10) || 0,
-                area_type: document.getElementById("prov-area").value,
-                state: document.getElementById("prov-state").value,
-                district,
-                principal_email: principalEmail,
-                principal_phone: document.getElementById("prov-phone").value,
-                created_at: serverTimestamp(),
-                status: "active",
-                school_id: schoolId
-            });
+            try {
+                // 1. Create Technical Admin Persona
+                const adminEmail = `admin@${schoolId}.ready4exam.com`;
+                adminCred = await createUserWithEmailAndPassword(secAuth, adminEmail, "Ready4Exam@2026");
 
-            await setDoc(doc(db, "users", cred.user.uid), {
-                displayName: "School Master",
-                email: principalEmail,
-                role: "school_master",
-                tenantType: "school",
-                school_id: schoolId,
-                created_at: serverTimestamp()
-            });
+                await setDoc(doc(db, "users", adminCred.user.uid), {
+                    displayName: "System Administrator",
+                    email: adminEmail,
+                    role: "admin",
+                    tenantType: "school",
+                    school_id: schoolId,
+                    created_at: serverTimestamp()
+                });
 
-            await recordFinancialEvent(schoolId, "LICENSE_ACTIVATION", manualAmount, `Full Provisioning Manual Pay: ${schoolName}`);
-            await signOutSecondary(secAuth);
+                await signOutSecondary(secAuth).catch(() => {});
 
-            alert(`Deployment Successful! ID: ${schoolId}`);
-            toggleModal("provision-modal", false);
-            form.reset();
+                // 2. Create Sovereign Principal Persona
+                principalCred = await createUserWithEmailAndPassword(secAuth, principalEmail, generateSecurePassword());
+
+                const { auth } = await getInitializedClients();
+                await sendPasswordResetEmail(auth, principalEmail);
+
+                await setDoc(doc(db, "users", principalCred.user.uid), {
+                    displayName: "School Principal",
+                    email: principalEmail,
+                    role: "principal",
+                    tenantType: "school",
+                    school_id: schoolId,
+                    created_at: serverTimestamp()
+                });
+
+                await setDoc(doc(db, "schools", schoolId), {
+                    name: schoolName,
+                    logo_url: document.getElementById("prov-logo").value || "",
+                    board: document.getElementById("prov-board").value,
+                    max_licenses: licenses,
+                    total_strength: parseInt(document.getElementById("prov-strength").value, 10) || 0,
+                    area_type: document.getElementById("prov-area").value,
+                    state: document.getElementById("prov-state").value,
+                    district,
+                    principal_email: principalEmail,
+                    principal_phone: document.getElementById("prov-phone").value,
+                    created_at: serverTimestamp(),
+                    status: "active",
+                    school_id: schoolId
+                });
+
+                await recordFinancialEvent(schoolId, "LICENSE_ACTIVATION", manualAmount, `Full Provisioning Manual Pay: ${schoolName}`);
+
+                showToast(`Deployment Successful! ID: ${schoolId}. Admin: ${adminEmail}`, "success");
+                success = true;
+            } finally {
+                await signOutSecondary(secAuth).catch(() => {});
+            }
+
+            const { auth } = await getInitializedClients();
+            if (auth.currentUser?.uid !== ownerUid) {
+                window.location.href = "../../index.html";
+            }
         } catch (err) {
-            alert("Deployment Error: " + err.message);
+            showToast("Deployment Error: " + err.message, "error");
         } finally {
             btn.disabled = false;
             btn.textContent = "Deploy & Record Revenue";
+            if (success) {
+                form.reset();
+                initLicenseCalculator();
+                toggleModal("provision-modal", false);
+            }
         }
     });
 }
@@ -202,34 +296,47 @@ async function handleUserFormSubmit(e) {
 
     try {
         if (isCreateUserMode) {
-            const email = prompt("Enter student login email (e.g. student@example.com)");
-            const password = prompt("Enter temporary password (min 6 chars)");
-            if (!email || !password || password.length < 6) {
-                throw new Error("Valid email and password are required for new user.");
+            const email    = document.getElementById("u-email").value.trim();
+            const password = document.getElementById("u-password").value;
+            if (!email || password.length < 8) {
+                showToast("Valid email and password (min 8 chars) are required.", "error");
+                return;
             }
 
             const secApp = getApps().find((a) => a.name === "OwnerOps") || initializeApp(window.__firebase_config, "OwnerOps");
             const secAuth = getAuth(secApp);
-            const cred = await createUserWithEmailAndPassword(secAuth, email.trim(), password);
+            let cred;
+            try {
+                cred = await createUserWithEmailAndPassword(secAuth, email, password);
 
-            await setDoc(doc(db, "users", cred.user.uid), {
-                uid: cred.user.uid,
-                displayName,
-                email: email.trim(),
-                role: "student",
-                tenantType: "individual",
-                isB2C: true,
-                status: "active",
-                subscriptionTier,
-                revenue,
-                parentEmail,
-                createdAt: serverTimestamp(),
-                activationDate: serverTimestamp()
-            });
+                const { auth } = await getInitializedClients();
+                await sendPasswordResetEmail(auth, email);
 
-            await recordFinancialEvent("B2C_REVENUE", "OWNER_CREATED_USER", revenue, `Owner created B2C user: ${displayName}`);
-            await signOutSecondary(secAuth);
-            alert("B2C user created successfully.");
+                await setDoc(doc(db, "users", cred.user.uid), {
+                    uid: cred.user.uid,
+                    displayName,
+                    email,
+                    role: "student",
+                    tenantType: "individual",
+                    isB2C: true,
+                    status: "active",
+                    subscriptionTier,
+                    revenue,
+                    parentEmail,
+                    createdAt: serverTimestamp(),
+                    activationDate: serverTimestamp()
+                });
+
+                await recordFinancialEvent("B2C_REVENUE", "OWNER_CREATED_USER", revenue, `Owner created B2C user: ${displayName}`);
+                showToast("B2C user created successfully.", "success");
+            } finally {
+                await signOutSecondary(secAuth).catch(() => {});
+            }
+
+            const { auth } = await getInitializedClients();
+            if (auth.currentUser?.uid !== ownerUid) {
+                window.location.href = "../../index.html";
+            }
         } else {
             await updateDoc(doc(db, "users", uid), {
                 displayName,
@@ -238,15 +345,15 @@ async function handleUserFormSubmit(e) {
                 parentEmail,
                 updatedAt: serverTimestamp()
             });
-            alert("Sovereign Profile Synchronized.");
+            showToast("Sovereign Profile Synchronized.", "success");
         }
         toggleModal("user-modal", false);
     } catch (err) {
-        alert("Sync Error: " + err.message);
+        showToast("Sync Error: " + err.message, "error");
     }
 }
 
-window.openAddUserModal = () => {
+const openAddUserModal = () => {
     isCreateUserMode = true;
     document.getElementById("user-modal-title").textContent = "Add B2C User";
     document.getElementById("edit-user-id").value = "";
@@ -254,10 +361,15 @@ window.openAddUserModal = () => {
     document.getElementById("u-plan").value = "practitioner";
     document.getElementById("u-revenue").value = "";
     document.getElementById("u-parent-email").value = "";
+
+    document.getElementById("new-user-credentials").classList.remove("hidden");
+    document.getElementById("u-email").required = true;
+    document.getElementById("u-password").required = true;
+
     toggleModal("user-modal", true);
 };
 
-window.openEditUserModal = (uid) => {
+const openEditUserModal = (uid) => {
     const user = b2cCache.find((u) => u.id === uid);
     if (!user) return;
     isCreateUserMode = false;
@@ -267,28 +379,34 @@ window.openEditUserModal = (uid) => {
     document.getElementById("u-plan").value = user.subscriptionTier || "practitioner";
     document.getElementById("u-revenue").value = user.revenue || 0;
     document.getElementById("u-parent-email").value = user.parentEmail || "";
+
+    document.getElementById("new-user-credentials").classList.add("hidden");
+    document.getElementById("u-email").required = false;
+    document.getElementById("u-password").required = false;
+
     toggleModal("user-modal", true);
 };
 
-window.deleteB2CUser = async (uid) => {
+const deleteB2CUser = async (uid) => {
     const user = b2cCache.find((u) => u.id === uid);
     if (!user) return;
-    if (!confirm(`Delete user ${user.displayName || user.email}? This removes the user profile and related Firestore records.`)) return;
+    const confirmed = await showConfirm("Delete User", `Delete ${user.displayName || user.email}? This cannot be undone.`);
+    if (!confirmed) return;
 
     try {
         const { db } = await getInitializedClients();
 
         const refs = [];
-        const relatedQueries = [
-            query(collection(db, "quiz_scores"), where("user_id", "==", uid)),
-            query(collection(db, "mistake_notebook"), where("user_id", "==", uid)),
-            query(collection(db, "financial_events"), where("uid", "==", uid)),
-            query(collection(db, "ledger_events"), where("uid", "==", uid))
-        ];
+        const subCollections = ["quiz_scores", "mistake_notebook", "financial_events", "ledger_events"];
 
-        for (const q of relatedQueries) {
-            const snap = await getDocs(q);
-            snap.forEach((d) => refs.push(d.ref));
+        for (const colName of subCollections) {
+            const subSnap = await getDocs(collection(db, "users", uid, colName));
+            subSnap.forEach((d) => refs.push(d.ref));
+
+            const rootSnap = await getDocs(
+                query(collection(db, colName), where("user_id", "==", uid))
+            );
+            rootSnap.forEach((d) => refs.push(d.ref));
         }
 
         const BATCH_LIMIT = 499;
@@ -302,28 +420,68 @@ window.deleteB2CUser = async (uid) => {
         finalBatch.delete(doc(db, "users", uid));
         await finalBatch.commit();
 
-        alert("User and related records deleted. (Auth record remains; use backend admin for hard delete.)");
+        showToast("User and related records deleted.", "success");
     } catch (err) {
-        alert("Delete failed: " + err.message);
+        showToast("Delete failed: " + err.message, "error");
     }
 };
 
-window.resetB2CPassword = async (uid) => {
+const resetB2CPassword = async (uid) => {
     const user = b2cCache.find((u) => u.id === uid);
     const email = user?.email;
     if (!email) {
-        alert("No login email found for this user.");
+        showToast("No login email found for this user.", "error");
         return;
     }
 
     try {
         const { auth } = await getInitializedClients();
         await sendPasswordResetEmail(auth, email);
-        alert(`Reset email sent to ${email}`);
+        showToast(`Reset email sent to ${email}`, "success");
     } catch (err) {
-        alert("Password reset failed: " + err.message);
+        showToast("Password reset failed: " + err.message, "error");
     }
 };
+
+async function resetPrincipalPassword(schoolId, email) {
+    if (!email) {
+        showToast("No principal email on record for this school.", "error");
+        return;
+    }
+    try {
+        const { auth } = await getInitializedClients();
+        await sendPasswordResetEmail(auth, email);
+        showToast(`Reset email sent to ${email}`, "success");
+    } catch (err) {
+        showToast("Reset failed: " + err.message, "error");
+    }
+}
+
+async function archiveSchoolInstance(schoolId) {
+    const confirmed = await showConfirm("Archive School", `Archive school ${schoolId}? This disables access but preserves all data.`);
+    if (!confirmed) return;
+
+    try {
+        const { db } = await getInitializedClients();
+        await updateDoc(doc(db, "schools", schoolId), {
+            status: "archived",
+            archivedAt: serverTimestamp()
+        });
+        const usersSnap = await getDocs(
+            query(collection(db, "users"), where("school_id", "==", schoolId))
+        );
+        const batch = writeBatch(db);
+        usersSnap.forEach(u => batch.update(u.ref, { status: "suspended" }));
+        await batch.commit();
+        showToast(`School ${schoolId} archived successfully.`, "success");
+    } catch (err) {
+        showToast("Archive failed: " + err.message, "error");
+    }
+}
+
+function openEditSchoolModal(schoolId) {
+    showToast(`Edit modal for ${schoolId} not yet implemented.`, "info");
+}
 
 function startSystemPulse() {
     updatePulse();
@@ -375,9 +533,9 @@ function renderB2CTable(users) {
             <td class="p-6">${statusBadge}</td>
             <td class="p-6 text-right">
                 <div class="inline-flex gap-2">
-                    <button onclick="openEditUserModal('${u.id}')" title="Edit" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-indigo-400 hover:bg-indigo-600 hover:text-white transition"><i class="fas fa-user-edit text-xs"></i></button>
-                    <button onclick="resetB2CPassword('${u.id}')" title="Reset Password" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-amber-400 hover:bg-amber-600 hover:text-white transition"><i class="fas fa-key text-xs"></i></button>
-                    <button onclick="deleteB2CUser('${u.id}')" title="Delete" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-rose-400 hover:bg-rose-600 hover:text-white transition"><i class="fas fa-trash text-xs"></i></button>
+                    <button data-action="edit-user" data-uid="${u.id}" title="Edit" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-indigo-400 hover:bg-indigo-600 hover:text-white transition"><i class="fas fa-user-edit text-xs"></i></button>
+                    <button data-action="reset-password" data-uid="${u.id}" title="Reset Password" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-amber-400 hover:bg-amber-600 hover:text-white transition"><i class="fas fa-key text-xs"></i></button>
+                    <button data-action="delete-user" data-uid="${u.id}" title="Delete" class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-rose-400 hover:bg-rose-600 hover:text-white transition"><i class="fas fa-trash text-xs"></i></button>
                 </div>
             </td>
         </tr>`;
@@ -485,16 +643,41 @@ function wireEventListeners() {
             btn.classList.remove("text-slate-400");
             btn.classList.add("bg-indigo-600", "text-white");
 
-            if (tab === "b2c") renderB2CTable(b2cCache);
+            if (tab === "b2c" && !streamStatus.b2c) {
+                const tbody = document.getElementById("b2c-ledger-rows");
+                if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-slate-500 italic animate-pulse">Loading B2C users…</td></tr>';
+            } else if (tab === "b2c") {
+                renderB2CTable(b2cCache);
+            }
             if (tab === "b2b") renderSchoolGrid(schoolsCache);
         });
     });
 
     document.getElementById("user-management-form")?.addEventListener("submit", handleUserFormSubmit);
-    document.getElementById("add-b2c-user-btn")?.addEventListener("click", () => window.openAddUserModal());
+    document.getElementById("add-b2c-user-btn")?.addEventListener("click", () => openAddUserModal());
     document.querySelector(".js-provision-btn")?.addEventListener("click", () => toggleModal("provision-modal", true));
     document.querySelector(".js-close-provision")?.addEventListener("click", () => toggleModal("provision-modal", false));
     document.querySelector(".js-close-user-modal")?.addEventListener("click", () => toggleModal("user-modal", false));
+
+    document.getElementById("b2c-ledger-rows")?.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        const { action, uid } = btn.dataset;
+        if (action === "edit-user") openEditUserModal(uid);
+        if (action === "reset-password") resetB2CPassword(uid);
+        if (action === "delete-user") deleteB2CUser(uid);
+    });
+
+    document.getElementById("school-ledger")?.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        const { action, schoolId, email } = btn.dataset;
+        if (action === "reset-principal") await resetPrincipalPassword(schoolId, email);
+        if (action === "archive-school") await archiveSchoolInstance(schoolId);
+        if (action === "edit-school") openEditSchoolModal(schoolId);
+    });
+
+    document.getElementById("ledger-load-more")?.addEventListener("click", loadMoreLedger);
 }
 
 function toggleModal(id, show) {
@@ -521,6 +704,13 @@ function formatExpiry(exp) {
     const dt = exp.toDate ? exp.toDate() : new Date(exp);
     if (Number.isNaN(dt.getTime())) return "N/A";
     return dt.toLocaleDateString();
+}
+
+function generateSecurePassword() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => chars[b % chars.length])
+        .join("");
 }
 
 function dayKey(d) {
