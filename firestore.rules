@@ -29,7 +29,7 @@ service cloud.firestore {
     // Users Collection
     match /users/{userId} {
       allow read: if isOwner() || isSelf(userId);
-      allow write: if isOwner() || isSelf(userId);
+      allow write: if isOwner() || isSelf(userId) || isAdmin();
     }
 
     // Root financial_events (B2C)
