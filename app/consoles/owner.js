@@ -203,7 +203,9 @@ function wireProvisionForm() {
             const nonce = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
             const schoolId = `${prefix}-${nonce}`;
 
-            const existing = await getDoc(doc(db, "schools", schoolId));
+    collection, query, where, orderBy, onSnapshot,
+    doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup,
+    getDocs, writeBatch, getDoc, limit
             if (existing.exists()) {
                 throw new Error(`School ID collision: ${schoolId} already exists. Please retry.`);
             }
