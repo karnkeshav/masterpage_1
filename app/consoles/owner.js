@@ -148,9 +148,12 @@ function classifyAsB2C(data) {
     const et = (data.entityType || "").toLowerCase();
     if (et === "b2c") return true;
     if (et === "b2b") return false;
-    console.warn("[classifyAsB2C] Event missing entityType — excluded from totals:", data);
+    // Backward compatibility: legacy events lack entityType
+    if ((data.school_id || "") === "B2C_REVENUE") return true;
+    if ((data.type || "").toUpperCase().includes("B2C")) return true;
     return false;
 }
+
 
 function initLicenseCalculator() {
     const strength = document.getElementById("prov-strength");
