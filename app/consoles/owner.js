@@ -5,7 +5,7 @@ import { recordFinancialEvent } from "../../js/api.js";
 import {
     collection, query, where, orderBy, onSnapshot,
     doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup,
-    getDocs, writeBatch
+    getDocs, writeBatch, limit, startAfter
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import {
@@ -22,6 +22,10 @@ let financialCache = [];
 let currentTab = "b2b";
 let isCreateUserMode = false;
 
+const LEDGER_PAGE_SIZE = 100;
+let ledgerLastDoc = null;
+let ledgerFullyLoaded = false;
+
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 guardConsole("owner");
 
@@ -36,7 +40,6 @@ window.loadConsoleData = async (profile) => {
     initSegmentedCharts();
     initRealtimeStreams();
     wireProvisionForm();
-    initLicenseCalculator();
     startSystemPulse();
 };
 
@@ -148,12 +151,9 @@ function classifyAsB2C(data) {
     const et = (data.entityType || "").toLowerCase();
     if (et === "b2c") return true;
     if (et === "b2b") return false;
-    // Backward compatibility: legacy events lack entityType
-    if ((data.school_id || "") === "B2C_REVENUE") return true;
-    if ((data.type || "").toUpperCase().includes("B2C")) return true;
+    console.warn("[classifyAsB2C] Event missing entityType — excluded from totals:", data);
     return false;
 }
-
 
 function initLicenseCalculator() {
     const strength = document.getElementById("prov-strength");
@@ -206,9 +206,7 @@ function wireProvisionForm() {
             const nonce = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
             const schoolId = `${prefix}-${nonce}`;
 
-    collection, query, where, orderBy, onSnapshot,
-    doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup,
-    getDocs, writeBatch, getDoc, limit
+            const existing = await getDoc(doc(db, "schools", schoolId));
             if (existing.exists()) {
                 throw new Error(`School ID collision: ${schoolId} already exists. Please retry.`);
             }
@@ -476,14 +474,9 @@ async function archiveSchoolInstance(schoolId) {
         const usersSnap = await getDocs(
             query(collection(db, "users"), where("school_id", "==", schoolId))
         );
-        const userRefs = [];
-        usersSnap.forEach(u => userRefs.push(u.ref));
-        const BATCH_LIMIT = 499;
-        for (let i = 0; i < userRefs.length; i += BATCH_LIMIT) {
-            const batch = writeBatch(db);
-            userRefs.slice(i, i + BATCH_LIMIT).forEach(ref => batch.update(ref, { status: "suspended" }));
-            await batch.commit();
-        }
+        const batch = writeBatch(db);
+        usersSnap.forEach(u => batch.update(u.ref, { status: "suspended" }));
+        await batch.commit();
         showToast(`School ${schoolId} archived successfully.`, "success");
     } catch (err) {
         showToast("Archive failed: " + err.message, "error");
@@ -556,7 +549,12 @@ function renderB2CTable(users) {
 function renderSchoolGrid(schools) {
     const grid = document.getElementById("school-ledger");
     if (!grid) return;
-    grid.innerHTML = schools.map((s) => `
+    grid.innerHTML = schools.map((s) => {
+        const schoolRevenue = financialCache
+            .filter(e => e.source === "B2B" && (e.school_id === s.id || e.entity === s.id))
+            .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+        return `
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-[32px] hover:border-indigo-500/50 transition duration-500 group">
             <div class="flex items-center gap-5 mb-6">
                 <div class="w-16 h-16 rounded-full bg-white p-2 shadow-2xl flex-shrink-0"><img src="${s.logo_url || "../../images/default-school.png"}" class="w-full h-full object-contain"></div>
@@ -569,9 +567,28 @@ function renderSchoolGrid(schools) {
                 <div class="bg-slate-950/50 p-4 rounded-2xl border border-white/5"><p class="text-[9px] text-slate-500 font-black mb-1">STRENGTH</p><p class="text-xl font-black text-white">${s.total_strength || 0}</p></div>
                 <div class="bg-slate-950/50 p-4 rounded-2xl border border-white/5"><p class="text-[9px] text-slate-500 font-black mb-1">LICENSES</p><p class="text-xl font-black text-indigo-400">${s.max_licenses || 0}</p></div>
             </div>
+            <div class="bg-slate-950/50 p-4 rounded-2xl border border-white/5 mb-6">
+                <p class="text-[9px] text-slate-500 font-black mb-1">REVENUE</p>
+                <p class="text-xl font-black text-emerald-400">₹${schoolRevenue.toLocaleString("en-IN")}</p>
+            </div>
             <a href="../../school-landing.html?schoolId=${s.id}" target="_blank" class="block w-full py-4 bg-white text-black text-center rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-400 hover:text-white transition shadow-lg">Launch Portal</a>
+            <div class="flex gap-2 mt-3">
+                <button data-action="edit-school" data-school-id="${s.id}"
+                    class="flex-1 py-3 bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition">
+                    <i class="fas fa-edit mr-1"></i>Edit
+                </button>
+                <button data-action="reset-principal" data-school-id="${s.id}" data-email="${escapeHtml(s.principal_email || '')}"
+                    class="flex-1 py-3 bg-slate-800 hover:bg-amber-600 text-slate-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition">
+                    <i class="fas fa-key mr-1"></i>Reset
+                </button>
+                <button data-action="archive-school" data-school-id="${s.id}"
+                    class="flex-1 py-3 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition">
+                    <i class="fas fa-archive mr-1"></i>Archive
+                </button>
+            </div>
         </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 function renderLedgerTable(events) {
@@ -590,6 +607,9 @@ function renderLedgerTable(events) {
 }
 
 function initSegmentedCharts() {
+    if (b2bChart) { b2bChart.destroy(); b2bChart = null; }
+    if (b2cChart) { b2cChart.destroy(); b2cChart = null; }
+
     const cfg = {
         responsive: true,
         maintainAspectRatio: false,
@@ -616,28 +636,46 @@ function initSegmentedCharts() {
 function updateSegmentedCharts(events) {
     if (!b2bChart || !b2cChart) return;
 
-    const labels = lastSevenDayLabels();
-    const b2bSeries = new Array(labels.length).fill(0);
-    const b2cSeries = new Array(labels.length).fill(0);
+    const b2bLabels = lastTwelveMonthLabels();
+    const b2cLabels = lastSevenDayLabels();
+    const b2bSeries = new Array(b2bLabels.length).fill(0);
+    const b2cSeries = new Array(b2cLabels.length).fill(0);
 
     events.forEach((e) => {
         const dt = e.timestamp?.toDate ? e.timestamp.toDate() : null;
         if (!dt) return;
-        const key = dayKey(dt);
-        const idx = labels.indexOf(key);
-        if (idx < 0) return;
 
         const amount = Number(e.amount || 0);
-        if ((e.source || "") === "B2C") b2cSeries[idx] += amount;
-        else b2bSeries[idx] += amount;
+
+        if ((e.source || "") === "B2C") {
+            const idx = b2cLabels.indexOf(dayKey(dt));
+            if (idx >= 0) b2cSeries[idx] += amount;
+        } else {
+            const idx = b2bLabels.indexOf(monthKey(dt));
+            if (idx >= 0) b2bSeries[idx] += amount;
+        }
     });
 
-    b2bChart.data.labels = labels;
+    b2bChart.data.labels = b2bLabels;
     b2bChart.data.datasets[0].data = b2bSeries;
-    b2cChart.data.labels = labels;
+    b2cChart.data.labels = b2cLabels;
     b2cChart.data.datasets[0].data = b2cSeries;
     b2bChart.update();
     b2cChart.update();
+}
+
+function lastTwelveMonthLabels() {
+    const out = [];
+    const base = new Date();
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(base.getFullYear(), base.getMonth() - i, 1);
+        out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }
+    return out;
+}
+
+function monthKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function wireEventListeners() {
@@ -689,10 +727,82 @@ function wireEventListeners() {
     });
 
     document.getElementById("ledger-load-more")?.addEventListener("click", loadMoreLedger);
+    initLicenseCalculator();
+}
+
+async function loadMoreLedger() {
+    if (ledgerFullyLoaded || !ledgerLastDoc) return;
+
+    const { db } = await getInitializedClients();
+    const btn = document.getElementById("ledger-load-more");
+    if (btn) btn.textContent = "Loading...";
+
+    try {
+        const snap = await getDocs(
+            query(collectionGroup(db, "financial_events"), orderBy("timestamp", "desc"), limit(LEDGER_PAGE_SIZE), startAfter(ledgerLastDoc))
+        );
+
+        if (snap.empty) {
+            ledgerFullyLoaded = true;
+            if (btn) btn.classList.add("hidden");
+            return;
+        }
+
+        ledgerLastDoc = snap.docs[snap.docs.length - 1];
+
+        snap.forEach((eventDoc) => {
+            const data = eventDoc.data();
+            const source = classifyAsB2C(data) ? "B2C" : "B2B";
+            financialCache.push({ id: eventDoc.id, source, ...data });
+        });
+
+        renderLedgerTable(financialCache);
+        renderRevenueKPIs();
+        updateSegmentedCharts(financialCache);
+
+        if (btn) {
+            btn.classList.toggle("hidden", snap.docs.length < LEDGER_PAGE_SIZE);
+            btn.textContent = "Load more transactions";
+        }
+    } catch (err) {
+        showSyncError("Financial Events Pagination", err);
+        if (btn) btn.textContent = "Load more transactions";
+    }
 }
 
 function toggleModal(id, show) {
     document.getElementById(id).classList.toggle("hidden", !show);
+}
+
+function showToast(message, type = "info") {
+    const colors = {
+        success: "bg-emerald-900/60 border-emerald-500/30 text-emerald-300",
+        error:   "bg-red-900/60 border-red-500/30 text-red-300",
+        info:    "bg-indigo-900/60 border-indigo-500/30 text-indigo-300"
+    };
+    const toast = document.createElement("div");
+    toast.className = `fixed bottom-6 right-6 z-[100] px-5 py-3 rounded-xl border text-xs font-bold shadow-2xl transition-all ${colors[type] || colors.info}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+}
+
+function showConfirm(title, message) {
+    return new Promise(resolve => {
+        document.getElementById("confirm-title").textContent   = title;
+        document.getElementById("confirm-message").textContent = message;
+        toggleModal("confirm-modal", true);
+        const ok  = document.getElementById("confirm-ok");
+        const can = document.getElementById("confirm-cancel");
+        const cleanup = (result) => {
+            toggleModal("confirm-modal", false);
+            ok.replaceWith(ok.cloneNode(true));    // remove one-time listeners
+            can.replaceWith(can.cloneNode(true));
+            resolve(result);
+        };
+        document.getElementById("confirm-ok").addEventListener("click",     () => cleanup(true),  { once: true });
+        document.getElementById("confirm-cancel").addEventListener("click", () => cleanup(false), { once: true });
+    });
 }
 
 function safeTs(value) {
