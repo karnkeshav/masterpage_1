@@ -1,5 +1,5 @@
 import { getInitializedClients } from './config.js';  
-import { ensureUserInFirestore } from "./auth-paywall.js"; // Added to fetch profile data
+import { ensureUserInFirestore } from "./auth-paywall.js"; 
 import {  
     doc,  
     getDoc,  
@@ -18,6 +18,7 @@ let state = {
     db: null  
 };  
   
+// Normalize "Real_Numbers" to "Real Numbers" for matching
 const normalizeChapter = (slug) => slug.replace(/_/g, ' ').trim();  
   
 export async function initInsights() {  
@@ -28,9 +29,8 @@ export async function initInsights() {
   
         clients.auth.onAuthStateChanged(async (user) => {  
             if (user) {  
-                // Fetch user profile to get the display name
                 const profile = await ensureUserInFirestore(user); 
-                updateHeaderUI(profile); // Pass profile to update name
+                updateHeaderUI(profile); 
                 updatePageTitles();  
                 await runDeepAnalysis();  
             } else {  
@@ -42,14 +42,10 @@ export async function initInsights() {
     }  
 }  
 
-/** UI UPDATING FUNCTIONS **/
-
 function updateHeaderUI(profile) {  
-    // 1. Update Grade Badge
     const badge = document.getElementById('context-badge');  
     if (badge) badge.textContent = `Grade ${state.grade}`;  
     
-    // 2. Update User Name (Fix for "Student" showing instead of actual name)
     const nameEl = document.getElementById('user-welcome');
     if (nameEl) {
         nameEl.textContent = profile?.displayName || "Student";
@@ -67,18 +63,33 @@ function updatePageTitles() {
 }
 
 async function runDeepAnalysis() {  
-    const chapterName = normalizeChapter(state.chapterID);  
+    const chapterSearchTerm = normalizeChapter(state.chapterID).toLowerCase();  
     const container = document.getElementById('compendium-container');  
   
     try {  
+        // Handle Subject logic: If Mathematics, query both Basic and Standard
+        let subjectFilter;
+        if (state.subject.toLowerCase().includes("math")) {
+            subjectFilter = where('subject', 'in', ['Maths Standard', 'Maths Basic']);
+        } else {
+            subjectFilter = where('subject', '==', state.subject);
+        }
+
         const q = query(  
             collectionGroup(state.db, 'questions'),  
-            where('subject', '==', state.subject),  
-            where('chapter', '==', chapterName)  
+            subjectFilter
         );  
   
         const snap = await getDocs(q);  
-        const questions = snap.docs.map(d => ({ id: d.id, ...d.data() }));  
+        
+        // Filter by chapter in JS to handle inconsistent prefixes like "Chapter 4:"
+        const questions = snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter(q => {
+                const dbChapter = (q.chapter || "").toLowerCase();
+                return dbChapter.includes(chapterSearchTerm);
+            });
+
         state.rawQuestions = questions; 
   
         const blueprint = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };  
@@ -89,11 +100,12 @@ async function runDeepAnalysis() {
             const m = String(q.marks);  
             if (blueprint.hasOwnProperty(m)) blueprint[m]++;  
   
-            const t = q.topic || q.concept || q.sub_topic || q.subtopic || 'General';  
+            // Use 'topic' for Maths, fall back to 'branch' or 'subtopic'
+            const t = q.topic || q.concept || q.sub_topic || q.branch || 'General';  
             topicMap[t] = (topicMap[t] || 0) + 1;  
   
             const qType = (q.question_type || q.type || '').toLowerCase();  
-            if (qType.includes('subjective') || qType.includes('long') || qType.includes('short')) {  
+            if (!qType.includes('mcq')) {  
                 subjectiveCount++;  
             }  
         });  
@@ -140,10 +152,12 @@ function renderCompendium(questions) {
     }  
   
     container.innerHTML = questions.map(q => {  
-        const text = q.question_text || q.text_en || q.text || 'Question text unavailable.';  
-        const topic = q.topic || q.concept || q.sub_topic || q.subtopic || 'General';  
+        // Priority for text: use 'content' for Maths
+        const text = q.content || q.question_text || q.text_en || q.text || 'Question text unavailable.';  
+        const topic = q.topic || q.concept || q.sub_topic || q.branch || 'General';  
         const marks = q.marks || '?';  
-  
+        const year = q.year || 'PYQ';
+
         return `  
             <div class="group p-5 border border-slate-100 rounded-2xl hover:border-blue-200 hover:bg-blue-50/20 transition-all">  
                 <div class="flex items-start justify-between gap-4">  
@@ -151,11 +165,12 @@ function renderCompendium(questions) {
                         <div class="flex items-center gap-2">  
                             <span class="text-[10px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded">${marks}M</span>  
                             <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase">${topic}</span>  
+                            <span class="text-[9px] font-bold text-slate-400 italic ml-2">${q.subject || ''}</span>
                         </div>  
                         <p class="text-slate-700 font-medium leading-relaxed">${text}</p>  
                     </div>  
                     <div class="text-right whitespace-nowrap">  
-                        <span class="text-[10px] font-black text-slate-300 group-hover:text-blue-500">PYQ 2022-25</span>  
+                        <span class="text-[10px] font-black text-slate-300 group-hover:text-blue-500">YEAR ${year}</span>  
                     </div>  
                 </div>  
             </div>  
@@ -185,7 +200,6 @@ function setupFilterListeners() {
     });
 }
 
-// Stats & Metadata remains same
 function renderHeatmap(topicMap, total) {
     const container = document.getElementById('heatmap-container');
     if (!container || total === 0) return;
