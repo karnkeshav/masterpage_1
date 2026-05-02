@@ -16,7 +16,7 @@
                         "",
                         ""
                     ],
-                    "answer": "1. a)"
+                    "answer": "1. b)"
                 },
                 {
                     "text": "Find the probability of getting a face card.",
@@ -26,7 +26,7 @@
                         "",
                         ""
                     ],
-                    "answer": "2. d)"
+                    "answer": "2. d) 0"
                 },
                 {
                     "text": "Find the probability of getting a jack of hearts.",
@@ -36,7 +36,7 @@
                         "",
                         ""
                     ],
-                    "answer": "3. b)"
+                    "answer": "3. a) 1"
                 },
                 {
                     "text": "Find the probability of getting a red  face card.",
@@ -46,7 +46,7 @@
                         "",
                         ""
                     ],
-                    "answer": "4. a)"
+                    "answer": "4. c)"
                 },
                 {
                     "text": "Find the probability of getting a spade.",
@@ -54,7 +54,57 @@
                         "",
                         "",
                         "",
-                        ""
+                        "ANSWERS"
+                    ],
+                    "answer": "5. d)"
+                },
+                {
+                    "text": "Ravi got first chance to roll the dice. What is the probability that he got the \nsum of the two numbers appearing on the top face of the dice is 8?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "0"
+                    ],
+                    "answer": "1. b)"
+                },
+                {
+                    "text": "Rahul got next chance. What is the probability that he got the sum of the two \nnumbers appearing on the top face of the dice is 13?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "0"
+                    ],
+                    "answer": "2. d) 0"
+                },
+                {
+                    "text": "Now it was Ravi\u2019s turn. He rolled the dice. What is the probability that he got \nthe sum of the two numbers appearing on the top face of the dice is less than \nor equal to 12 ?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "0"
+                    ],
+                    "answer": "3. a) 1"
+                },
+                {
+                    "text": "Rahul got next chance. What is the probability that he got the sum of the two \nnumbers appearing on the top face of the dice is equal to 7 ?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "0"
+                    ],
+                    "answer": "4. c)"
+                },
+                {
+                    "text": "Now it was Ravi\u2019s turn. He rolled the dice. What is the probability that he got \nthe sum of the two numbers appearing on the top face of the dice is greater \nthan 8 ?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "ANSWERS"
                     ],
                     "answer": "5. d)"
                 }

@@ -11,37 +11,12 @@
                 {
                     "text": "The average age for which maximum cases occurred is",
                     "options": [
-                        ""
+                        "32.24",
+                        "34.36",
+                        "36.82",
+                        "42.24"
                     ],
                     "answer": "1. c)"
-                },
-                {
-                    "text": "24",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "82",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "24",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The upper limit of modal class is",
@@ -51,112 +26,37 @@
                         "35",
                         "45"
                     ],
-                    "answer": "2. d)"
+                    "answer": "2. d) 45"
                 },
                 {
                     "text": "The mean of the given data is",
                     "options": [
-                        ""
+                        "26.2",
+                        "32.4",
+                        "33.5",
+                        "35.4 \nRefer to table 2"
                     ],
                     "answer": "3. d)"
                 },
                 {
-                    "text": "2",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "4",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "4 \nRefer to table 2",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The mode of the given data is",
                     "options": [
-                        ""
+                        "41.4",
+                        "48.2",
+                        "55.3",
+                        "64.6"
                     ],
                     "answer": "4. a)"
                 },
                 {
-                    "text": "4",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "2",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "6",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The median of the given data is",
                     "options": [
-                        ""
+                        "32.7",
+                        "40.2",
+                        "42.3",
+                        "48.6 \nANSWERS"
                     ],
                     "answer": "5. b)"
-                },
-                {
-                    "text": "7",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "2",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "6",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 }
             ]
         },
@@ -172,29 +72,17 @@
                         "20 units",
                         "None of these"
                     ],
-                    "answer": "1. c)"
+                    "answer": "1. c) 20 units"
                 },
                 {
                     "text": "The mean weekly consumption is",
                     "options": [
-                        ""
-                    ],
-                    "answer": "2. a)"
-                },
-                {
-                    "text": "64 units",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5 units",
-                    "options": [
+                        "19.64 units",
+                        "22.5 units",
                         "26 units",
                         "None of these"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "2. a)"
                 },
                 {
                     "text": "The modal class of the above data is  I",
@@ -204,57 +92,27 @@
                         "20-30",
                         "30-40 \nRefer to data received from Colony B"
                     ],
-                    "answer": "3. c)"
+                    "answer": "3. c) 20-30 units"
                 },
                 {
                     "text": "The modal weekly consumption is",
                     "options": [
-                        ""
+                        "38.2 units",
+                        "43.6 units",
+                        "26 units",
+                        "32 units"
                     ],
                     "answer": "4. b)"
                 },
                 {
-                    "text": "2 units",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "6 units",
-                    "options": [
-                        "26 units",
-                        "32 units"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The mean weekly consumption is",
                     "options": [
-                        ""
+                        "15.65 units",
+                        "32.8 units",
+                        "38.75 units",
+                        "48 units \nANSWERS"
                     ],
                     "answer": "5. c)"
-                },
-                {
-                    "text": "65 units",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "8 units",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "75 units",
-                    "options": [
-                        "48 units"
-                    ],
-                    "answer": "See PDF Visual"
                 }
             ]
         }

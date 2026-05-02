@@ -10,73 +10,55 @@
             "questions": [
                 {
                     "text": "Find the production during first year.",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Find the production during 8th year.",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Find the production during first 3 years.",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
-                    "text": "In which year, the production is Rs 29,",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "text": "In which year, the production is Rs 29,200.",
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Find the difference of the production during 7th year and 4th year. \nANSWER:",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Rs 5000",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Production during 8th year is (a+7",
                     "options": [
                         "= 5000 + 2(2200) =20400"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Production during first 3 year= 5000 + 7200 + 9400=21600",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "N=12",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Difference= 18200-11600=6600",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 }
             ]
         },
@@ -92,7 +74,7 @@
                         "-51, -53, -55\u2026.",
                         "51, 55, 59\u2026"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "What is the minimum number of days he needs to practice till his goal is \nachieved",
@@ -102,7 +84,7 @@
                         "11",
                         "9"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Which of the following term is not in the AP of the above given situation",
@@ -112,7 +94,7 @@
                         "37",
                         "39"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "If nth term of an AP is given by  \nan = 2n + 3 then common difference of an AP is",
@@ -122,7 +104,7 @@
                         "5",
                         "1"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The value of x, for which 2x, x+ 10, 3x + 2 are three consecutive terms of an \nAP",
@@ -132,42 +114,32 @@
                         "18",
                         "-18 \n \nANSWER:"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "b",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "c",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "b",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "a",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "a",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "options": [],
+                    "answer": "Consult Solutions"
                 }
             ]
         },
@@ -176,13 +148,6 @@
             "image_path": "arithmetic_progressions/arithmetic_progressions_cs3.png",
             "questions": [
                 {
-                    "text": "If he increases the instalment by Rs 100 \nevery month , answer the following:",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The amount paid by him in 30th installment is",
                     "options": [
                         "3900",
@@ -190,7 +155,7 @@
                         "3700",
                         "3600"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The amount paid by him in the 30 installments is",
@@ -200,7 +165,7 @@
                         "75300",
                         "75000"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "What amount does he still have to pay offer 30th installment?",
@@ -210,7 +175,7 @@
                         "44500",
                         "54000"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "If total installments are 40 then amount paid in the last installment?",
@@ -220,7 +185,7 @@
                         "5900",
                         "9400"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The ratio of the 1st installment to the last installment is",
@@ -230,7 +195,7 @@
                         "10:39",
                         "39:10 \nAnswer:"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 }
             ]
         }

@@ -16,7 +16,7 @@
                         "48cm",
                         "64cm"
                     ],
-                    "answer": "1. b)"
+                    "answer": "1. b) 32\u221a  cm"
                 },
                 {
                     "text": "The altitude of the equilateral triangle is",
@@ -26,7 +26,7 @@
                         "48cm",
                         "52cm \nRefer Design II:"
                     ],
-                    "answer": "2. c)"
+                    "answer": "2. c) 48cm"
                 },
                 {
                     "text": "The area of square is",
@@ -36,7 +36,7 @@
                         "1830 cm2",
                         "1944 cm2"
                     ],
-                    "answer": "3. b)"
+                    "answer": "3. b) 1764 cm2"
                 },
                 {
                     "text": "Area of each circular design is",
@@ -46,7 +46,7 @@
                         "144 cm2",
                         "154 cm2"
                     ],
-                    "answer": "4. d)"
+                    "answer": "4. d) 154 cm2"
                 },
                 {
                     "text": "Area of the remaining portion of the square ABCD is",
@@ -54,9 +54,9 @@
                         "378 cm2",
                         "260 cm2",
                         "340 cm2",
-                        "278 cm2"
+                        "278 cm2         \nANSWERS:"
                     ],
-                    "answer": "5. a)"
+                    "answer": "5. a) 378 cm2 \nA Brooch"
                 }
             ]
         },
@@ -72,7 +72,7 @@
                         "250 mm",
                         "280 mm"
                     ],
-                    "answer": "1. b)"
+                    "answer": "1. b) 200mm"
                 },
                 {
                     "text": "The area of each sector of the brooch is",
@@ -82,42 +82,17 @@
                         "77 mm2",
                         "68 mm2 \nRefer to Design B"
                     ],
-                    "answer": "2. c)"
+                    "answer": "2. c) 77m m2"
                 },
                 {
                     "text": "The circumference of outer part (golden) is",
                     "options": [
-                        ""
+                        "48.49 mm",
+                        "82.2 mm",
+                        "72.50 mm",
+                        "62.86 mm"
                     ],
                     "answer": "3. d)"
-                },
-                {
-                    "text": "49 mm",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "2 mm",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "50 mm",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "86 mm",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The difference of areas of golden and silver parts is",
@@ -127,7 +102,7 @@
                         "51",
                         "64"
                     ],
-                    "answer": "4. c)"
+                    "answer": "4. c) 51"
                 },
                 {
                     "text": "A boy is playing with brooch B. He makes revolution with it along its edge. \nHow many complete revolutions must it take to cover 80    mm ?",
@@ -135,9 +110,9 @@
                         "2",
                         "3",
                         "4",
-                        "5"
+                        "5     \nANSWERS:"
                     ],
-                    "answer": "5. c)"
+                    "answer": "5. c) 4"
                 }
             ]
         }

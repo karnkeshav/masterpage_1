@@ -9,13 +9,6 @@
             "image_path": "some_applications_of_trigonometry/some_applications_of_trigonometry_cs1.png",
             "questions": [
                 {
-                    "text": "The teacher also said that  India Gate, which is \nlocated at the eastern end of the Rajpath (formerly called the Kingsway), is about \n138 feet (42 metres) in height.",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "What is the angle of elevation if they are standing at a distance of 42m away \nfrom the monument?",
                     "options": [
                         "30",
@@ -23,36 +16,17 @@
                         "60",
                         "0"
                     ],
-                    "answer": "1. b)"
+                    "answer": "1. b) 45"
                 },
                 {
                     "text": "They want to see the tower at an angle of 60 . So, they want to know the \ndistance where they should stand and hence find the distance.",
                     "options": [
-                        ""
+                        "25.24 m",
+                        "20.12 m",
+                        "42 m",
+                        "24.64 m"
                     ],
                     "answer": "2. a)"
-                },
-                {
-                    "text": "24 m",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "12 m",
-                    "options": [
-                        "42 m",
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "64 m",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "If the altitude of the Sun is at 60 , then the height of the vertical tower that will \ncast a shadow of length 20 m is",
@@ -62,7 +36,7 @@
                         "\u221a  m",
                         "15\u221a  m"
                     ],
-                    "answer": "3. a)"
+                    "answer": "3. a) 20\u221a  m"
                 },
                 {
                     "text": "The ratio of the length of a rod and its shadow is 1:1 . The angle of elevation \nof the Sun is",
@@ -80,9 +54,9 @@
                         "corresponding angle",
                         "angle of elevation",
                         "angle of depression",
-                        "complete angle"
+                        "complete angle        \n  ANSWERS:"
                     ],
-                    "answer": "5. a)"
+                    "answer": "5. a) corresponding angle"
                 }
             ]
         },
@@ -93,89 +67,32 @@
                 {
                     "text": "The distance of the satellite from the top of Nanda Devi is",
                     "options": [
-                        ""
+                        "1139.4 km",
+                        "577.52  km",
+                        "1937 km",
+                        "1025.36 km"
                     ],
                     "answer": "1. a)"
                 },
                 {
-                    "text": "4 km",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "52  km",
-                    "options": [
-                        "1937 km",
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36 km",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The distance of the satellite from the top of Mullayanagiri  is",
                     "options": [
-                        ""
-                    ],
-                    "answer": "2. c)"
-                },
-                {
-                    "text": "4 km",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "52 km",
-                    "options": [
+                        "1139.4 km",
+                        "577.52 km",
                         "1937 km",
-                        ""
+                        "1025.36 km"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36 km",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "2. c) 1937 km"
                 },
                 {
                     "text": "The distance of the satellite from the ground is",
                     "options": [
-                        ""
+                        "1139.4 km",
+                        "577.52  km",
+                        "1937 km",
+                        "1025.36 km"
                     ],
                     "answer": "3. b)"
-                },
-                {
-                    "text": "4 km",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "52  km",
-                    "options": [
-                        "1937 km",
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36 km",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "What is the angle of elevation if a man is standing at a distance of 7816m from \nNanda Devi?",
@@ -185,36 +102,17 @@
                         "60",
                         "0"
                     ],
-                    "answer": "4. b)"
+                    "answer": "4. b) 45"
                 },
                 {
                     "text": "If a mile stone very far away from, makes  45  to the top of Mullanyangiri \nmontain .So,  find the distance of this mile stone form the mountain.",
                     "options": [
-                        ""
-                    ],
-                    "answer": "5. c)"
-                },
-                {
-                    "text": "327 km",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "976  km",
-                    "options": [
+                        "1118.327 km",
+                        "566.976  km",
                         "1937 km",
-                        ""
+                        "1025.36 km \nANSWERS:"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36 km",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "5. c) 1937 km \n \nAREAS RELATED TO"
                 }
             ]
         }
