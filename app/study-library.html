@@ -68,7 +68,7 @@
                 let curriculum;
                 try {
                     // Pass the loaded curriculum to the renderer
-                    curriculum = await loadCurriculum(userGrade);
+                    curriculum = await loadCurriculum(userGrade, profile.stream);
                 } catch (error) {
                     document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">Curriculum coming soon</div>`;
                     return;

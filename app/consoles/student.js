@@ -68,7 +68,7 @@ async function generateKnowledgeHub(profile, grade) {
 
     let curriculum = null;
     try {
-        curriculum = await loadCurriculum(grade);
+        curriculum = await loadCurriculum(grade, profile.stream);
     } catch(e) {
         console.error("Curriculum load failed for knowledge hub:", e);
         container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">Curriculum Coming Soon</div>`;

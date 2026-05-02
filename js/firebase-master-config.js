@@ -11,3 +11,5 @@ window.__firebase_config = {
     razorpayKeyId: "rzp_live_Sgca2xHP1HPbqf",
     businessUpiVpa: "918520977573@paytm"
 };
+
+window.enableIndexedDbPersistenceFlag = true;

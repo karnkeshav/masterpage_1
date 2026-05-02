@@ -323,6 +323,10 @@ export async function saveResult(result) {
             percentage: Math.round((result.score / result.total) * 100), // Keep for backward compatibility
             timestamp: serverTimestamp(),
 
+            // Send raw answers for server-side scoring as required by strict zero-lag architecture guards
+            userAnswers: result.userAnswers || null,
+            questions: result.questions ? result.questions.map(q => ({ id: q.id, correct_answer: q.correct_answer, question_type: q.question_type })) : null,
+
             quiz_mode: result.quiz_mode || "standard",
             latency_vector: result.latency_vector || [],
             term_id: result.term_id || null,
