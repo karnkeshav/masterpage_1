@@ -5,10 +5,11 @@
     "subject": "Mathematics",
     "insights": [
         {
-            "context": "COVID-19 Pandemic \nThe COVID-19 pandemic, also known as coronavirus pandemic, is an ongoing \npandemic of coronavirus disease caused by the transmission of severe acute \nrespiratory syndrome coronavirus 2 (SARS-CoV-2)  among humans. \n \n \n \n \nThe following tables shows the age distribution of case admitted during a day in two \ndifferent hospitals \nTable 1 \nAge (in years) \n5-15 \n15-25 \n25-35 \n35-45 \n45-55 \n55-65 \nNo. of cases \n6 \n11 \n21 \n23 \n14 \n5 \n \nTable 2 \nAge (in years) \n5-15 \n15-25 \n25-35 \n35-45 \n45-55 \n55-65 \nNo. of cases \n8 \n16 \n10 \n42 \n24 \n12 \n \nRefer to table 1",
+            "context": "COVID-19 Pandemic The COVID-19 pandemic, also known as coronavirus pandemic, is an ongoing pandemic of coronavirus disease caused by the transmission of severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) among humans. The following tables shows the age distribution of case admitted during a day in two different hospitals Table 1 Age (in years) 5-15 15-25 25-35 35-45 45-55 55-65 No. of cases 6 11 21 23 14 5 Table 2 Age (in years) 5-15 15-25 25-35 35-45 45-55 55-65 No. of cases 8 16 10 42 24 12 Refer to table 1",
             "image_path": "statistics/statistics_cs1.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "The average age for which maximum cases occurred is",
                     "options": [
                         "32.24",
@@ -16,9 +17,10 @@
                         "36.82",
                         "42.24"
                     ],
-                    "answer": "1. c) 20 units"
+                    "answer": "c) 36.82"
                 },
                 {
+                    "question_number": 2,
                     "text": "The upper limit of modal class is",
                     "options": [
                         "15",
@@ -26,19 +28,21 @@
                         "35",
                         "45"
                     ],
-                    "answer": "2. a)"
+                    "answer": "d) 45"
                 },
                 {
+                    "question_number": 3,
                     "text": "The mean of the given data is",
                     "options": [
                         "26.2",
                         "32.4",
                         "33.5",
-                        "35.4 \nRefer to table 2"
+                        "35.4"
                     ],
-                    "answer": "3. c) 20-30 units"
+                    "answer": "d) 35.4"
                 },
                 {
+                    "question_number": 4,
                     "text": "The mode of the given data is",
                     "options": [
                         "41.4",
@@ -46,25 +50,27 @@
                         "55.3",
                         "64.6"
                     ],
-                    "answer": "4. b)"
+                    "answer": "a) 41.4"
                 },
                 {
+                    "question_number": 5,
                     "text": "The median of the given data is",
                     "options": [
                         "32.7",
                         "40.2",
                         "42.3",
-                        "48.6 \nANSWERS"
+                        "48.6"
                     ],
-                    "answer": "5. c)"
+                    "answer": "b) 40.2"
                 }
             ]
         },
         {
-            "context": "Electricity energy consumption is the form of energy consumption that uses electric \nenergy. Global electricity consumption continues to increase faster than world \npopulation, leading to an increase in the average amount of electricity consumed per \nperson (per capita electricity consumption). \n \nA survey is conducted for 56 families of a Colony A. The following tables gives the \nweekly consumption of electricity of these families. \nWeekly consumption (in \nunits) \n0-10 \n10-20 \n20-30 \n30-40 \n40-50 \n50-60 \nNo. of families \n16 \n12 \n18 \n6 \n4 \n0 \n \nThe similar survey is conducted for 80 families of Colony B and the data is recorded \nas below: \nWeekly consumption (in \nunits) \n0-10 \n10-20 \n20-30 \n30-40 \n40-50 \n50-60 \nNo. of families \n0 \n5 \n10 \n20 \n40 \n5 \n \nRefer to data received from Colony A",
+            "context": "Electricity energy consumption is the form of energy consumption that uses electric energy. Global electricity consumption continues to increase faster than world population, leading to an increase in the average amount of electricity consumed per person (per capita electricity consumption). A survey is conducted for 56 families of a Colony A. The following tables gives the weekly consumption of electricity of these families. Weekly consumption (in units) 0-10 10-20 20-30 30-40 40-50 50-60 No. of families 16 12 18 6 4 0 The similar survey is conducted for 80 families of Colony B and the data is recorded as below: Weekly consumption (in units) 0-10 10-20 20-30 30-40 40-50 50-60 No. of families 0 5 10 20 40 5 Refer to data received from Colony A",
             "image_path": "statistics/statistics_cs2.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "The median weekly consumption is",
                     "options": [
                         "12 units",
@@ -72,9 +78,10 @@
                         "20 units",
                         "None of these"
                     ],
-                    "answer": "1. c) 20 units"
+                    "answer": "c) 20 units"
                 },
                 {
+                    "question_number": 2,
                     "text": "The mean weekly consumption is",
                     "options": [
                         "19.64 units",
@@ -82,19 +89,21 @@
                         "26 units",
                         "None of these"
                     ],
-                    "answer": "2. a)"
+                    "answer": "a) 19.64 units"
                 },
                 {
+                    "question_number": 3,
                     "text": "The modal class of the above data is  I",
                     "options": [
                         "0-10",
                         "10-20",
                         "20-30",
-                        "30-40 \nRefer to data received from Colony B"
+                        "30-40"
                     ],
-                    "answer": "3. c) 20-30 units"
+                    "answer": "c) 20-30 units"
                 },
                 {
+                    "question_number": 4,
                     "text": "The modal weekly consumption is",
                     "options": [
                         "38.2 units",
@@ -102,17 +111,18 @@
                         "26 units",
                         "32 units"
                     ],
-                    "answer": "4. b)"
+                    "answer": "b) 43.6 units"
                 },
                 {
+                    "question_number": 5,
                     "text": "The mean weekly consumption is",
                     "options": [
                         "15.65 units",
                         "32.8 units",
                         "38.75 units",
-                        "48 units \nANSWERS"
+                        "48 units"
                     ],
-                    "answer": "5. c)"
+                    "answer": "c) 38.75 units"
                 }
             ]
         }

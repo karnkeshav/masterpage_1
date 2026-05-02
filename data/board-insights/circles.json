@@ -5,10 +5,11 @@
     "subject": "Mathematics",
     "insights": [
         {
-            "context": "A Ferris wheel (or a big wheel in the United Kingdom) is an amusement ride \nconsisting of a rotating upright wheel with multiple passenger-carrying components \n(commonly referred to as passenger cars, cabins, tubs, capsules, gondolas, or pods) \nattached to the rim in such a way that as the wheel turns, they are kept upright, \nusually by gravity. \nAfter taking a ride in Ferris wheel, Aarti came out from the crowd and was observing \nher friends who were enjoying the ride . She was curious about the different angles \nand measures that the wheel will form. She forms the figure as given below. \n \n\u221f",
+            "context": "A Ferris wheel (or a big wheel in the United Kingdom) is an amusement ride consisting of a rotating upright wheel with multiple passenger-carrying components (commonly referred to as passenger cars, cabins, tubs, capsules, gondolas, or pods) attached to the rim in such a way that as the wheel turns, they are kept upright, usually by gravity. After taking a ride in Ferris wheel, Aarti came out from the crowd and was observing her friends who were enjoying the ride . She was curious about the different angles and measures that the wheel will form. She forms the figure as given below. ∟",
             "image_path": "circles/circles_cs1.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "In the given figure find  ROQ",
                     "options": [
                         "60",
@@ -16,9 +17,10 @@
                         "150",
                         "90"
                     ],
-                    "answer": "1. a)"
+                    "answer": "c) 150"
                 },
                 {
+                    "question_number": 2,
                     "text": "Find  RQP",
                     "options": [
                         "75",
@@ -26,9 +28,10 @@
                         "30",
                         "90"
                     ],
-                    "answer": "2. c) 1937 km"
+                    "answer": "a) 75"
                 },
                 {
+                    "question_number": 3,
                     "text": "Find  RSQ",
                     "options": [
                         "60",
@@ -36,25 +39,27 @@
                         "100",
                         "30"
                     ],
-                    "answer": "3. b)"
+                    "answer": "b) 75"
                 },
                 {
+                    "question_number": 4,
                     "text": "Find  ORP",
                     "options": [
                         "90",
                         "70",
                         "100",
-                        "60 \nANSWERS:"
+                        "60"
                     ],
-                    "answer": "4. b) 45"
+                    "answer": "a) 90"
                 }
             ]
         },
         {
-            "context": "Varun has been selected by his School to design logo for Sports Day T-shirts for \nstudents and staff . The logo design is as given in the figure and he is working on the \nfonts and different colours according to the \ntheme. In given figure, a circle with centre O is \n\ninscribed in a \u0394ABC, such that it touches the sides AB, BC and CA at points D, E \nand F respectively. The lengths of sides AB, BC and CA are 12 cm, 8 cm and 10 cm \nrespectively.",
+            "context": "Varun has been selected by his School to design logo for Sports Day T-shirts for students and staff . The logo design is as given in the figure and he is working on the fonts and different colours according to the theme. In given figure, a circle with centre O is inscribed in a ΔABC, such that it touches the sides AB, BC and CA at points D, E and F respectively. The lengths of sides AB, BC and CA are 12 cm, 8 cm and 10 cm respectively.",
             "image_path": "circles/circles_cs2.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "Find the length of AD",
                     "options": [
                         "7",
@@ -62,9 +67,10 @@
                         "5",
                         "9"
                     ],
-                    "answer": "1. a)"
+                    "answer": "a) 7"
                 },
                 {
+                    "question_number": 2,
                     "text": "Find the Length of BE",
                     "options": [
                         "8",
@@ -72,9 +78,10 @@
                         "2",
                         "9"
                     ],
-                    "answer": "2. c) 1937 km"
+                    "answer": "b) 5"
                 },
                 {
+                    "question_number": 3,
                     "text": "Find the length of CF",
                     "options": [
                         "9",
@@ -82,139 +89,29 @@
                         "2",
                         "3"
                     ],
-                    "answer": "3. b)"
+                    "answer": "d) 3"
                 },
                 {
-                    "text": "If radius of the circle is 4cm, Find the area of \u2206OAB",
+                    "question_number": 4,
+                    "text": "If radius of the circle is 4cm, Find the area of ∆OAB",
                     "options": [
                         "20",
                         "36",
                         "24",
                         "48"
                     ],
-                    "answer": "4. b) 45"
+                    "answer": "c) 24"
                 },
                 {
-                    "text": "Find area of \u2206ABC",
+                    "question_number": 5,
+                    "text": "Find area of ∆ABC",
                     "options": [
                         "50",
                         "60",
                         "100",
-                        "90  \n\nANSWERS:"
-                    ],
-                    "answer": "5. c) 1937 km"
-                }
-            ]
-        },
-        {
-            "context": "A group of students of class  X visited India Gate on an education trip. The teacher \nand students had interest in history as well.  The teacher narrated that  India Gate, \nofficial name Delhi Memorial, originally called All-India War Memorial, monumental \nsandstone arch in New Delhi, dedicated to the troops of British India who died in \nwars fought between 1914 and 1919.The teacher also said that  India Gate, which is \nlocated at the eastern end of the Rajpath (formerly called the Kingsway), is about \n138 feet (42 metres) in height.",
-            "image_path": "circles/circles_cs3.png",
-            "questions": [
-                {
-                    "text": "What is the angle of elevation if they are standing at a distance of 42m away \nfrom the monument?",
-                    "options": [
-                        "30",
-                        "45",
-                        "60",
-                        "0"
-                    ],
-                    "answer": "1. a)"
-                },
-                {
-                    "text": "They want to see the tower at an angle of 60 . So, they want to know the \ndistance where they should stand and hence find the distance.",
-                    "options": [
-                        "25.24 m",
-                        "20.12 m",
-                        "42 m",
-                        "24.64 m"
-                    ],
-                    "answer": "2. c) 1937 km"
-                },
-                {
-                    "text": "If the altitude of the Sun is at 60 , then the height of the vertical tower that will \ncast a shadow of length 20 m is",
-                    "options": [
-                        "20\u221a  m",
-                        "\u221a   m",
-                        "\u221a  m",
-                        "15\u221a  m"
-                    ],
-                    "answer": "3. b)"
-                },
-                {
-                    "text": "The ratio of the length of a rod and its shadow is 1:1 . The angle of elevation \nof the Sun is",
-                    "options": [
-                        "30",
-                        "",
-                        "60",
                         "90"
                     ],
-                    "answer": "4. b) 45"
-                },
-                {
-                    "text": "The angle formed by the line of sight with the horizontal when the object viewd \nis below the horizontal level is",
-                    "options": [
-                        "corresponding angle",
-                        "angle of elevation",
-                        "angle of depression",
-                        "complete angle        \n  ANSWERS:"
-                    ],
-                    "answer": "5. c) 1937 km"
-                }
-            ]
-        },
-        {
-            "context": "A Satellite flying at height h is watching the top of the two tallest mountains in \nUttarakhand and Karnataka ,them being Nanda Devi(height 7,816m) and \nMullayanagiri (height 1,930 m). The angles of depression  from the satellite , to the \ntop of Nanda Devi and Mullayanagiri are 30\u00b0 and 60\u00b0 respectively. If the distance \nbetween the peaks of two mountains is 1937 km , and the satellite is vertically above \nthe midpoint of the distance between the two mountains.",
-            "image_path": "circles/circles_cs4.png",
-            "questions": [
-                {
-                    "text": "The distance of the satellite from the top of Nanda Devi is",
-                    "options": [
-                        "1139.4 km",
-                        "577.52  km",
-                        "1937 km",
-                        "1025.36 km"
-                    ],
-                    "answer": "1. a)"
-                },
-                {
-                    "text": "The distance of the satellite from the top of Mullayanagiri  is",
-                    "options": [
-                        "1139.4 km",
-                        "577.52 km",
-                        "1937 km",
-                        "1025.36 km"
-                    ],
-                    "answer": "2. c) 1937 km"
-                },
-                {
-                    "text": "The distance of the satellite from the ground is",
-                    "options": [
-                        "1139.4 km",
-                        "577.52  km",
-                        "1937 km",
-                        "1025.36 km"
-                    ],
-                    "answer": "3. b)"
-                },
-                {
-                    "text": "What is the angle of elevation if a man is standing at a distance of 7816m from \nNanda Devi?",
-                    "options": [
-                        "30",
-                        "45",
-                        "60",
-                        "0"
-                    ],
-                    "answer": "4. b) 45"
-                },
-                {
-                    "text": "If a mile stone very far away from, makes  45  to the top of Mullanyangiri \nmontain .So,  find the distance of this mile stone form the mountain.",
-                    "options": [
-                        "1118.327 km",
-                        "566.976  km",
-                        "1937 km",
-                        "1025.36 km \nANSWERS:"
-                    ],
-                    "answer": "5. c) 1937 km"
+                    "answer": "b) 60"
                 }
             ]
         }
