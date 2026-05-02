@@ -16,7 +16,7 @@
                         "2( x + 10)km",
                         "(2x + 5)km"
                     ],
-                    "answer": "1. a)"
+                    "answer": "1. a) 2(x + 5)km"
                 },
                 {
                     "text": "Which of the following quadratic equation describe the speed of Raj\u2019s car?",
@@ -26,7 +26,7 @@
                         "x2 + 5x - 500 = 0",
                         "x2 - 4x + 400 = 0"
                     ],
-                    "answer": "2. c)"
+                    "answer": "2. c) 25km/ hour"
                 },
                 {
                     "text": "What is the speed of Raj\u2019s car?",
@@ -36,7 +36,7 @@
                         "25 km/hour",
                         "10 km/hour"
                     ],
-                    "answer": "3. a)"
+                    "answer": "3. a) 20km/ hour"
                 },
                 {
                     "text": "How much time took Ajay to travel 400 km?",
@@ -44,9 +44,9 @@
                         "20 hour",
                         "40 hour",
                         "25 hour",
-                        "16 hour"
+                        "16 hour \n\nANSWERS:"
                     ],
-                    "answer": "4. d)"
+                    "answer": "4. d) 16 hour"
                 }
             ]
         },
@@ -62,7 +62,7 @@
                         "(20 - x) km/hr",
                         "2 km/hr"
                     ],
-                    "answer": "1. c)"
+                    "answer": "1. c) (20 \u2013 x)km/hr"
                 },
                 {
                     "text": "What is the relation between speed ,distance and time?",
@@ -72,7 +72,7 @@
                         "time = speed x distance",
                         "speed = distance x time"
                     ],
-                    "answer": "2. b)"
+                    "answer": "2. b) distance=(speed)/ time"
                 },
                 {
                     "text": "Which is the correct quadratic equation for the speed of the current ?",
@@ -82,7 +82,7 @@
                         "x 2+ 30x \u2212 400 = 0",
                         "x2\u2212 20x \u2212 400 = 0"
                     ],
-                    "answer": "3. c)"
+                    "answer": "3. c) x 2+ 30x \u2013 400= 0"
                 },
                 {
                     "text": "What is the speed of current ?",
@@ -92,7 +92,7 @@
                         "15 km/hour",
                         "25 km/hour"
                     ],
-                    "answer": "4. b)"
+                    "answer": "4. b) 10 km/hour"
                 },
                 {
                     "text": "How much time boat took in downstream?",
@@ -100,9 +100,9 @@
                         "90 minute",
                         "15 minute",
                         "30 minute",
-                        "45 minute"
+                        "45 minute \nANSWERS:"
                     ],
-                    "answer": "5. c)"
+                    "answer": "5. c) 45 minute"
                 }
             ]
         }

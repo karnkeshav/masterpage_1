@@ -16,7 +16,7 @@
                         "100m",
                         "200m"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "What will be the length of the shadow of the tower when Vijay\u2019s house casts a \nshadow of 12m?",
@@ -26,7 +26,7 @@
                         "45m",
                         "60m"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "What is the height of Ajay\u2019s house?",
@@ -36,7 +36,7 @@
                         "50m",
                         "20m"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "When the tower casts a shadow of 40m, same time what will be the length of \nthe shadow of Ajay\u2019s house?",
@@ -46,7 +46,7 @@
                         "20m",
                         "8m"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "When the tower casts a shadow of 40m, same time what will be the length of \nthe shadow of Vijay\u2019s house?",
@@ -56,7 +56,7 @@
                         "16m",
                         "8m \nANSWER:"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 }
             ]
         },
@@ -72,7 +72,7 @@
                         "Pythagoras Theorem",
                         "Area of similar triangles"
                     ],
-                    "answer": "1. a)"
+                    "answer": "1. a)22m"
                 },
                 {
                     "text": "What is the distance AC?",
@@ -82,7 +82,7 @@
                         "100m",
                         "70m"
                     ],
-                    "answer": "2. d)"
+                    "answer": "2. d)They are not the mirror image of one another"
                 },
                 {
                     "text": "Which is the following does not form a Pythagoras triplet?",
@@ -102,7 +102,7 @@
                         "50m",
                         "100m"
                     ],
-                    "answer": "4. b)"
+                    "answer": "4. b)Their altitudes have a ratio 25:15"
                 },
                 {
                     "text": "Find the length of the rope used.",
@@ -112,7 +112,7 @@
                         "82m",
                         "22m \nANSWER:"
                     ],
-                    "answer": "5. c)"
+                    "answer": "5. c)4cm"
                 },
                 {
                     "text": "If the length of the model is 11cm, then the overall length of the engine in the \nphotograph above, including the couplings(mechanism used to connect)  is:",
@@ -122,7 +122,7 @@
                         "220m",
                         "22m"
                     ],
-                    "answer": "1. a)"
+                    "answer": "1. a)22m"
                 },
                 {
                     "text": "What will affect the similarity of any two polygons?",
@@ -132,49 +132,22 @@
                         "They are translated down",
                         "They are not the mirror image of one another."
                     ],
-                    "answer": "2. d)"
+                    "answer": "2. d)They are not the mirror image of one another"
                 },
                 {
                     "text": "What is the actual width of the door if the width of the door in photograph is",
-                    "options": [
-                        "Refer to Image"
-                    ],
+                    "options": [],
                     "answer": "3. a)"
                 },
                 {
                     "text": "35cm?",
                     "options": [
-                        ""
+                        "0.7m",
+                        "0.7cm",
+                        "0.07cm",
+                        "0.07m"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "7m",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "7cm",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "07cm",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "07m",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "If two similar triangles have a scale factor 5:3 which statement regarding the \ntwo triangles is true?",
@@ -184,7 +157,7 @@
                         "Their medians have a ratio 10:4",
                         "Their angle bisectors have a ratio 11:5"
                     ],
-                    "answer": "4. b)"
+                    "answer": "4. b)Their altitudes have a ratio 25:15"
                 },
                 {
                     "text": "The length of AB in the given figure:",
@@ -192,9 +165,9 @@
                         "8cm",
                         "6cm",
                         "4cm",
-                        "10cm"
+                        "10cm \nANSWERS:"
                     ],
-                    "answer": "5. c)"
+                    "answer": "5. c)4cm"
                 }
             ]
         }

@@ -12,17 +12,11 @@
                     "text": "Find the position of green flag",
                     "options": [
                         "(2,25)",
-                        "(2,"
-                    ],
-                    "answer": "1. a)"
-                },
-                {
-                    "text": "25)",
-                    "options": [
+                        "(2,0.25)",
                         "(25,2)",
                         "(0, -25)"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "1. a) (2,25)"
                 },
                 {
                     "text": "Find the position of red flag",
@@ -30,23 +24,14 @@
                         "(8,0)",
                         "(20,8)",
                         "(8,20)",
-                        "(8,"
+                        "(8,0.2)"
                     ],
-                    "answer": "2. c)"
-                },
-                {
-                    "text": "2)",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "2. c) (8,20)"
                 },
                 {
                     "text": "What is the distance between both the flags?",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "3. c)"
+                    "options": [],
+                    "answer": "3. c) \u221a61"
                 },
                 {
                     "text": "\u221a41",
@@ -55,78 +40,27 @@
                         "\u221a61",
                         "\u221a51"
                     ],
-                    "answer": "1. a)"
+                    "answer": "1. a) (2,25)"
                 },
                 {
                     "text": "If Rashmi has to post a blue flag exactly halfway between the line segment \njoining the two flags, where should she post her flag?",
                     "options": [
-                        "(5,"
-                    ],
-                    "answer": "4. a)"
-                },
-                {
-                    "text": "5)",
-                    "options": [
+                        "(5, 22.5)",
                         "(10,22)",
-                        "(2,"
+                        "(2,8.5)",
+                        "(2.5,20)"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5)",
-                    "options": [
-                        "("
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5,20)",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "2. c)"
+                    "answer": "4. a) (5,"
                 },
                 {
                     "text": "If Joy has to post a flag at one-fourth distance from green flag ,in the line \nsegment joining the green and red flags, then where should he post his flag?",
                     "options": [
-                        "("
+                        "(3.5,24)",
+                        "(0.5,12.5)",
+                        "(2.25,8.5)",
+                        "(25,20) \nANSWERS:"
                     ],
-                    "answer": "5. a)"
-                },
-                {
-                    "text": "5,24)",
-                    "options": [
-                        "("
-                    ],
-                    "answer": "3. c)"
-                },
-                {
-                    "text": "5,",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5)",
-                    "options": [
-                        "("
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "25,",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "2. c)"
-                },
-                {
-                    "text": "5)",
-                    "options": [
-                        "(25,20)"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "5. a) ("
                 }
             ]
         },
@@ -142,7 +76,7 @@
                         "(0,6)",
                         "(4,0)"
                     ],
-                    "answer": "1. a)"
+                    "answer": "1. a) (4,6)"
                 },
                 {
                     "text": "What will be the coordinates of R, if C is the origin?",
@@ -152,7 +86,7 @@
                         "(10,3)",
                         "(0,6)"
                     ],
-                    "answer": "2. c)"
+                    "answer": "2. c) (10,3)"
                 },
                 {
                     "text": "What will be the coordinates of Q, if C is the origin?",
@@ -163,53 +97,27 @@
                         "(-13,6)",
                         "(13,6)"
                     ],
-                    "answer": "3. d)"
+                    "answer": "3. d) (13,6)"
                 },
                 {
                     "text": "Calculate the area of the triangles if A is the origin",
                     "options": [
-                        ""
-                    ],
-                    "answer": "4. a)"
-                },
-                {
-                    "text": "5",
-                    "options": [
+                        "4.5",
                         "6",
                         "8",
-                        ""
+                        "6.25"
                     ],
                     "answer": "4. a)"
-                },
-                {
-                    "text": "25",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "Calculate the area of the triangles if C is the origin",
                     "options": [
                         "8",
                         "5",
-                        ""
+                        "6.25",
+                        "4.5 \nANSWERS:"
                     ],
                     "answer": "5. d)"
-                },
-                {
-                    "text": "25",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "4. a)"
                 }
             ]
         },
@@ -225,7 +133,7 @@
                         "150",
                         "90"
                     ],
-                    "answer": "1. c)"
+                    "answer": "1. c) 150"
                 },
                 {
                     "text": "Find  RQP",
@@ -235,7 +143,7 @@
                         "30",
                         "90"
                     ],
-                    "answer": "2. a)"
+                    "answer": "2. a) 75"
                 },
                 {
                     "text": "Find  RSQ",
@@ -245,7 +153,7 @@
                         "100",
                         "30"
                     ],
-                    "answer": "3. b)"
+                    "answer": "3. b) 75"
                 },
                 {
                     "text": "Find  ORP",
@@ -253,9 +161,9 @@
                         "90",
                         "70",
                         "100",
-                        "60"
+                        "60 \nANSWERS:"
                     ],
-                    "answer": "4. a)"
+                    "answer": "4. a) 90"
                 }
             ]
         },
@@ -271,7 +179,7 @@
                         "5",
                         "9"
                     ],
-                    "answer": "1. a)"
+                    "answer": "1. a) 7"
                 },
                 {
                     "text": "Find the Length of BE",
@@ -281,7 +189,7 @@
                         "2",
                         "9"
                     ],
-                    "answer": "2. b)"
+                    "answer": "2. b) 5"
                 },
                 {
                     "text": "Find the length of CF",
@@ -291,7 +199,7 @@
                         "2",
                         "3"
                     ],
-                    "answer": "3. d)"
+                    "answer": "3. d) 3"
                 },
                 {
                     "text": "If radius of the circle is 4cm, Find the area of \u2206OAB",
@@ -301,7 +209,7 @@
                         "24",
                         "48"
                     ],
-                    "answer": "4. c)"
+                    "answer": "4. c) 24"
                 },
                 {
                     "text": "Find area of \u2206ABC",
@@ -309,9 +217,9 @@
                         "50",
                         "60",
                         "100",
-                        "90"
+                        "90  \n\nANSWERS:"
                     ],
-                    "answer": "5. b)"
+                    "answer": "5. b) 60 \nSOME APPLICATION OF TRIGONOMETRY"
                 }
             ]
         },
@@ -320,13 +228,6 @@
             "image_path": "coordinate_geometry/coordinate_geometry_cs5.png",
             "questions": [
                 {
-                    "text": "The teacher also said that  India Gate, which is \nlocated at the eastern end of the Rajpath (formerly called the Kingsway), is about \n138 feet (42 metres) in height.",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "What is the angle of elevation if they are standing at a distance of 42m away \nfrom the monument?",
                     "options": [
                         "30",
@@ -334,36 +235,17 @@
                         "60",
                         "0"
                     ],
-                    "answer": "1. b)"
+                    "answer": "1. b) 45"
                 },
                 {
                     "text": "They want to see the tower at an angle of 60 . So, they want to know the \ndistance where they should stand and hence find the distance.",
                     "options": [
-                        ""
+                        "25.24 m",
+                        "20.12 m",
+                        "42 m",
+                        "24.64 m"
                     ],
                     "answer": "2. a)"
-                },
-                {
-                    "text": "24 m",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "12 m",
-                    "options": [
-                        "42 m",
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "64 m",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "If the altitude of the Sun is at 60 , then the height of the vertical tower that will \ncast a shadow of length 20 m is",
@@ -373,7 +255,7 @@
                         "\u221a  m",
                         "15\u221a  m"
                     ],
-                    "answer": "3. a)"
+                    "answer": "3. a) 20\u221a  m"
                 },
                 {
                     "text": "The ratio of the length of a rod and its shadow is 1:1 . The angle of elevation \nof the Sun is",
@@ -391,9 +273,9 @@
                         "corresponding angle",
                         "angle of elevation",
                         "angle of depression",
-                        "complete angle"
+                        "complete angle        \n  ANSWERS:"
                     ],
-                    "answer": "5. a)"
+                    "answer": "5. a) corresponding angle"
                 }
             ]
         },
@@ -404,89 +286,32 @@
                 {
                     "text": "The distance of the satellite from the top of Nanda Devi is",
                     "options": [
-                        ""
+                        "1139.4 km",
+                        "577.52  km",
+                        "1937 km",
+                        "1025.36 km"
                     ],
                     "answer": "1. a)"
                 },
                 {
-                    "text": "4 km",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "52  km",
-                    "options": [
-                        "1937 km",
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36 km",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The distance of the satellite from the top of Mullayanagiri  is",
                     "options": [
-                        ""
-                    ],
-                    "answer": "2. c)"
-                },
-                {
-                    "text": "4 km",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "52 km",
-                    "options": [
+                        "1139.4 km",
+                        "577.52 km",
                         "1937 km",
-                        ""
+                        "1025.36 km"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36 km",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "2. c) 1937 km"
                 },
                 {
                     "text": "The distance of the satellite from the ground is",
                     "options": [
-                        ""
+                        "1139.4 km",
+                        "577.52  km",
+                        "1937 km",
+                        "1025.36 km"
                     ],
                     "answer": "3. b)"
-                },
-                {
-                    "text": "4 km",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "52  km",
-                    "options": [
-                        "1937 km",
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36 km",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "What is the angle of elevation if a man is standing at a distance of 7816m from \nNanda Devi?",
@@ -496,36 +321,17 @@
                         "60",
                         "0"
                     ],
-                    "answer": "4. b)"
+                    "answer": "4. b) 45"
                 },
                 {
                     "text": "If a mile stone very far away from, makes  45  to the top of Mullanyangiri \nmontain .So,  find the distance of this mile stone form the mountain.",
                     "options": [
-                        ""
-                    ],
-                    "answer": "5. c)"
-                },
-                {
-                    "text": "327 km",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "976  km",
-                    "options": [
+                        "1118.327 km",
+                        "566.976  km",
                         "1937 km",
-                        ""
+                        "1025.36 km \nANSWERS:"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36 km",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "5. c) 1937 km \n \nAREAS RELATED TO CIRCLES"
                 }
             ]
         },
@@ -541,7 +347,7 @@
                         "48cm",
                         "64cm"
                     ],
-                    "answer": "1. b)"
+                    "answer": "1. b) 32\u221a  cm"
                 },
                 {
                     "text": "The altitude of the equilateral triangle is",
@@ -551,7 +357,7 @@
                         "48cm",
                         "52cm \nRefer Design II:"
                     ],
-                    "answer": "2. c)"
+                    "answer": "2. c) 48cm"
                 },
                 {
                     "text": "The area of square is",
@@ -561,7 +367,7 @@
                         "1830 cm2",
                         "1944 cm2"
                     ],
-                    "answer": "3. b)"
+                    "answer": "3. b) 1764 cm2"
                 },
                 {
                     "text": "Area of each circular design is",
@@ -571,7 +377,7 @@
                         "144 cm2",
                         "154 cm2"
                     ],
-                    "answer": "4. d)"
+                    "answer": "4. d) 154 cm2"
                 },
                 {
                     "text": "Area of the remaining portion of the square ABCD is",
@@ -579,9 +385,9 @@
                         "378 cm2",
                         "260 cm2",
                         "340 cm2",
-                        "278 cm2"
+                        "278 cm2         \nANSWERS:"
                     ],
-                    "answer": "5. a)"
+                    "answer": "5. a) 378 cm2 \nA Brooch"
                 }
             ]
         },
@@ -597,7 +403,7 @@
                         "250 mm",
                         "280 mm"
                     ],
-                    "answer": "1. b)"
+                    "answer": "1. b) 200mm"
                 },
                 {
                     "text": "The area of each sector of the brooch is",
@@ -607,42 +413,17 @@
                         "77 mm2",
                         "68 mm2 \nRefer to Design B"
                     ],
-                    "answer": "2. c)"
+                    "answer": "2. c) 77m m2"
                 },
                 {
                     "text": "The circumference of outer part (golden) is",
                     "options": [
-                        ""
+                        "48.49 mm",
+                        "82.2 mm",
+                        "72.50 mm",
+                        "62.86 mm"
                     ],
                     "answer": "3. d)"
-                },
-                {
-                    "text": "49 mm",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "2 mm",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "50 mm",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "86 mm",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The difference of areas of golden and silver parts is",
@@ -652,7 +433,7 @@
                         "51",
                         "64"
                     ],
-                    "answer": "4. c)"
+                    "answer": "4. c) 51"
                 },
                 {
                     "text": "A boy is playing with brooch B. He makes revolution with it along its edge. \nHow many complete revolutions must it take to cover 80    mm ?",
@@ -660,9 +441,9 @@
                         "2",
                         "3",
                         "4",
-                        "5"
+                        "5     \nANSWERS:"
                     ],
-                    "answer": "5. c)"
+                    "answer": "5. c) 4 \nSURFACE AREAS AND VOLUMES"
                 }
             ]
         },
@@ -671,104 +452,34 @@
             "image_path": "coordinate_geometry/coordinate_geometry_cs9.png",
             "questions": [
                 {
-                    "text": "Each group \nhad to make a conical tent to accommodate all the four students. Assuming that all \nthe stitching and wasting incurred while cutting, would amount to 1m2, the students \nput the tents. The radius of the tent is 7m.",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The volume of cylindrical cup is",
                     "options": [
-                        ""
+                        "295.75cm3",
+                        "7415.5cm3",
+                        "384.88cm3",
+                        "404.25cm3"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "75cm3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5cm3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "88cm3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "25cm3",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The volume of hemispherical cup is",
                     "options": [
-                        ""
+                        "179.67cm3",
+                        "89.83 cm3",
+                        "172.25 cm3",
+                        "210.60 cm3"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "67cm3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "83 cm3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "25 cm3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "60 cm3",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "Which container had more juice and by how much?",
                     "options": [
                         "Hemispherical cup, 195 cm3",
                         "Cylindrical glass, 207 cm3",
-                        "Hemispherical cup,"
+                        "Hemispherical cup, 280.85 cm3",
+                        "Cylindrical glass, 314.42 cm3"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "85 cm3",
-                    "options": [
-                        "Cylindrical glass,"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "42 cm3",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The height of the conical tent prepared to accommodate four students is",
@@ -778,51 +489,17 @@
                         "24m",
                         "14m"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "How much space on the ground is occupied by each student in the conical \ntent",
                     "options": [
                         "54m2",
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5m2",
-                    "options": [
+                        "38.5m2",
                         "86m2",
                         "24m2 \nAnswers"
                     ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "25cm3",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "83 cm3",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "42 cm3",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5m2",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 }
             ]
         },
@@ -838,7 +515,7 @@
                         "15000 cu. m",
                         "19000 cu. m"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The formula to find the Volume of Sphere is-",
@@ -848,7 +525,7 @@
                         "4",
                         "2"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The cloth require to cover the hemispherical dome if the radius of its base is \n14m is",
@@ -858,7 +535,7 @@
                         "1200 sq.m",
                         "1400 sq.m"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The total surface area of the combined figure i.e. hemispherical dome with \nradius 14m and cuboidal shaped top with dimensions 8m   6m   4m is",
@@ -868,29 +545,17 @@
                         "1392 sq.m",
                         "1932 sq. m"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 },
                 {
                     "text": "The volume of the cuboidal shaped top is with dimensions mentioned in \nquestion 4",
                     "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "45 m3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "45 m3",
-                    "options": [
+                        "182.45 m3",
+                        "282.45 m3",
                         "292m3",
                         "192m3 \nAnswers"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "Consult Solutions"
                 }
             ]
         },
@@ -906,7 +571,7 @@
                         "\u221a",
                         "6\u221a"
                     ],
-                    "answer": "1. d)"
+                    "answer": "1. d) 6\u221a"
                 },
                 {
                     "text": "Volume of the solid figure if the length of the edge is 7cm is-",
@@ -916,7 +581,7 @@
                         "343 cm3",
                         "434 cm3"
                     ],
-                    "answer": "2. c)"
+                    "answer": "2. c) 343 cm3"
                 },
                 {
                     "text": "What is the curved surface area of hemisphere (ice cream) if the base radius \nis 7cm?",
@@ -926,7 +591,7 @@
                         "803 cm2",
                         "903 cm2"
                     ],
-                    "answer": "3. b)"
+                    "answer": "3. b) 308 cm2"
                 },
                 {
                     "text": "Slant height of a cone if the radius is 7cm and the height is 24 cm___",
@@ -936,7 +601,7 @@
                         "52 cm",
                         "62cm"
                     ],
-                    "answer": "4. b)"
+                    "answer": "4. b) 25 cm"
                 },
                 {
                     "text": "The total surface area of cone with hemispherical ice cream is",
@@ -944,9 +609,9 @@
                         "858 cm2",
                         "885 cm2",
                         "588 cm2",
-                        "855 cm2"
+                        "855 cm2 \n \n\nANSWERS"
                     ],
-                    "answer": "5. a)"
+                    "answer": "5. a) 858 cm2 \nSTATISTICS"
                 }
             ]
         },
@@ -957,37 +622,12 @@
                 {
                     "text": "The average age for which maximum cases occurred is",
                     "options": [
-                        ""
+                        "32.24",
+                        "34.36",
+                        "36.82",
+                        "42.24"
                     ],
                     "answer": "1. c)"
-                },
-                {
-                    "text": "24",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "36",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "82",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "24",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The upper limit of modal class is",
@@ -997,112 +637,37 @@
                         "35",
                         "45"
                     ],
-                    "answer": "2. d)"
+                    "answer": "2. d) 45"
                 },
                 {
                     "text": "The mean of the given data is",
                     "options": [
-                        ""
+                        "26.2",
+                        "32.4",
+                        "33.5",
+                        "35.4 \nRefer to table 2"
                     ],
                     "answer": "3. d)"
                 },
                 {
-                    "text": "2",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "4",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "4 \nRefer to table 2",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The mode of the given data is",
                     "options": [
-                        ""
+                        "41.4",
+                        "48.2",
+                        "55.3",
+                        "64.6"
                     ],
                     "answer": "4. a)"
                 },
                 {
-                    "text": "4",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "2",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "6",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The median of the given data is",
                     "options": [
-                        ""
+                        "32.7",
+                        "40.2",
+                        "42.3",
+                        "48.6 \nANSWERS"
                     ],
                     "answer": "5. b)"
-                },
-                {
-                    "text": "7",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "2",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "3",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "6",
-                    "options": [
-                        "Refer to Image"
-                    ],
-                    "answer": "See PDF Visual"
                 }
             ]
         },
@@ -1118,29 +683,17 @@
                         "20 units",
                         "None of these"
                     ],
-                    "answer": "1. c)"
+                    "answer": "1. c) 20 units"
                 },
                 {
                     "text": "The mean weekly consumption is",
                     "options": [
-                        ""
-                    ],
-                    "answer": "2. a)"
-                },
-                {
-                    "text": "64 units",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "5 units",
-                    "options": [
+                        "19.64 units",
+                        "22.5 units",
                         "26 units",
                         "None of these"
                     ],
-                    "answer": "See PDF Visual"
+                    "answer": "2. a)"
                 },
                 {
                     "text": "The modal class of the above data is  I",
@@ -1150,57 +703,27 @@
                         "20-30",
                         "30-40 \nRefer to data received from Colony B"
                     ],
-                    "answer": "3. c)"
+                    "answer": "3. c) 20-30 units"
                 },
                 {
                     "text": "The modal weekly consumption is",
                     "options": [
-                        ""
+                        "38.2 units",
+                        "43.6 units",
+                        "26 units",
+                        "32 units"
                     ],
                     "answer": "4. b)"
                 },
                 {
-                    "text": "2 units",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "6 units",
-                    "options": [
-                        "26 units",
-                        "32 units"
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
                     "text": "The mean weekly consumption is",
                     "options": [
-                        ""
+                        "15.65 units",
+                        "32.8 units",
+                        "38.75 units",
+                        "48 units \nANSWERS"
                     ],
                     "answer": "5. c)"
-                },
-                {
-                    "text": "65 units",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "8 units",
-                    "options": [
-                        ""
-                    ],
-                    "answer": "See PDF Visual"
-                },
-                {
-                    "text": "75 units",
-                    "options": [
-                        "48 units"
-                    ],
-                    "answer": "See PDF Visual"
                 }
             ]
         },
@@ -1216,7 +739,7 @@
                         "",
                         ""
                     ],
-                    "answer": "1. a)"
+                    "answer": "1. b)"
                 },
                 {
                     "text": "Find the probability of getting a face card.",
@@ -1226,7 +749,7 @@
                         "",
                         ""
                     ],
-                    "answer": "2. d)"
+                    "answer": "2. d) 0"
                 },
                 {
                     "text": "Find the probability of getting a jack of hearts.",
@@ -1236,7 +759,7 @@
                         "",
                         ""
                     ],
-                    "answer": "3. b)"
+                    "answer": "3. a) 1"
                 },
                 {
                     "text": "Find the probability of getting a red  face card.",
@@ -1246,7 +769,7 @@
                         "",
                         ""
                     ],
-                    "answer": "4. a)"
+                    "answer": "4. c)"
                 },
                 {
                     "text": "Find the probability of getting a spade.",
@@ -1254,7 +777,57 @@
                         "",
                         "",
                         "",
-                        ""
+                        "ANSWERS"
+                    ],
+                    "answer": "5. d)"
+                },
+                {
+                    "text": "Ravi got first chance to roll the dice. What is the probability that he got the \nsum of the two numbers appearing on the top face of the dice is 8?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "0"
+                    ],
+                    "answer": "1. b)"
+                },
+                {
+                    "text": "Rahul got next chance. What is the probability that he got the sum of the two \nnumbers appearing on the top face of the dice is 13?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "0"
+                    ],
+                    "answer": "2. d) 0"
+                },
+                {
+                    "text": "Now it was Ravi\u2019s turn. He rolled the dice. What is the probability that he got \nthe sum of the two numbers appearing on the top face of the dice is less than \nor equal to 12 ?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "0"
+                    ],
+                    "answer": "3. a) 1"
+                },
+                {
+                    "text": "Rahul got next chance. What is the probability that he got the sum of the two \nnumbers appearing on the top face of the dice is equal to 7 ?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "0"
+                    ],
+                    "answer": "4. c)"
+                },
+                {
+                    "text": "Now it was Ravi\u2019s turn. He rolled the dice. What is the probability that he got \nthe sum of the two numbers appearing on the top face of the dice is greater \nthan 8 ?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        "ANSWERS"
                     ],
                     "answer": "5. d)"
                 }
