@@ -37,8 +37,6 @@ def verify_owner():
             print("[TEST 1] Owner Console...")
             page1.goto(f"{BASE_URL}/app/consoles/owner.html")
 
-            page1.wait_for_timeout(2000)
-
             # Check for Command Center header (rendered by shell.js)
             page1.wait_for_selector("text=Command Center", state="visible")
             print(" -> [PASS] Owner Console Loaded.")
@@ -62,16 +60,22 @@ def verify_owner():
                 print(" -> [FAIL] Financial Ledger tab missing.")
 
             # Check for Revenue chart canvas
-            if page1.is_visible("#b2bRevenueChart") or page1.is_visible("#revenueChart"):
+            if page1.is_visible("#revenueChart"):
                 print(" -> [PASS] Revenue chart present.")
             else:
                 print(" -> [FAIL] Revenue chart missing.")
 
             # Check for System Pulse section
-            if page1.is_visible("text=Session uptime"):
+            if page1.is_visible("text=System Pulse"):
                 print(" -> [PASS] System Pulse section present.")
             else:
                 print(" -> [FAIL] System Pulse section missing.")
+
+            # Check for Search input
+            if page1.is_visible("#search-input"):
+                print(" -> [PASS] Search input present.")
+            else:
+                print(" -> [FAIL] Search input missing.")
 
             # Check for Provision School button
             if page1.is_visible(".js-provision-btn"):

@@ -493,24 +493,16 @@ function inferSubject(chapterSlug) {
 
 // --- GOVERNANCE & LEDGER ---
 
-export async function recordFinancialEvent(entityId, type, amount, details) {
+export async function recordFinancialEvent(schoolId, type, amount, details) {
     const { db } = await getInitializedClients();
-
-    const isB2C = entityId === "B2C_REVENUE" || (type || "").includes("B2C") || (type || "").includes("USER");
-    const entityType = isB2C ? "B2C" : "B2B";
-
-    const collPath = isB2C
-        ? collection(db, "financial_events")
-        : collection(db, "schools", entityId, "financial_events");
+    if (!schoolId) return;
 
     try {
-        await addDoc(collPath, {
-            entityType,
+        const ref = collection(db, "schools", schoolId, "financial_events");
+        await addDoc(ref, {
             type,
-            amount: Number(amount) || 0,
-            details: details || "",
-            school_id: isB2C ? null : entityId,
-            uid: null,
+            amount,
+            details,
             timestamp: serverTimestamp(),
             recorded_by: getAuthUser()?.uid || "system"
         });

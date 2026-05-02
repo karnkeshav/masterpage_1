@@ -303,9 +303,6 @@ async function handleSubmit() {
         userAnswers: quizState.userAnswers,
         questions: quizState.questions, // Include question IDs/metadata for server reference
 
-        // Keep stats for local optimistic UI rendering but backend should recalculate
-        score: stats.correct,
-        total: stats.total,
         topic: quizState.topicSlug,
         latency_vector: quizState.latency,
         quiz_mode: quizState.quizMode,

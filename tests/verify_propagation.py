@@ -97,62 +97,11 @@ def verify_propagation():
 
         try:
             print("[TEST 2] Student Portal & Class 11 Term Prep... Skipping legacy test since Class 11 is now handled by the Master Template logic which is tested via verify_expanded_dikshita.py")
-            return
-
-            page_student.goto(f"{BASE_URL}/index.html")
-
-            # 1. Portal Modal
-            # page_student.wait_for_selector("#portalChoiceModal", state="visible")
-
-            # 2. Click Student Portal
-            # page_student.click(".portal-btn:has-text('Student')")
-
-            # 3. Modal should close
-            # page_student.wait_for_selector("#portalChoiceModal", state="hidden")
-            print(" -> Student Portal Selected, Modal Closed")
-
-            # The mock now immediately redirects to student.html
-            page_student.wait_for_url("**/app/consoles/student.html?grade=11")
-            print(" -> Navigated to Class 11 Hub")
-
-            # Wait for knowledge hub
-            page_student.wait_for_selector("#knowledge-hub-links a", timeout=5000)
-            print(" -> Knowledge hub ready")
-
-            # 7. Select a Subject
-            page_student.click("#knowledge-hub-links a:nth-child(1)")
-            page_student.wait_for_selector("a[href*='study-content.html']", timeout=5000)
-
-            print(" -> Entered Chapter Selection")
-
-            # 8. Check Multi-Select UI (Term Prep)
-            # Wait for buttons
-            page_student.wait_for_selector(".topic-btn")
-            # Select Book
-            page_student.locator(".topic-btn").first.click()
-            time.sleep(0.5)
-
-            # Select Chapters (should allow multi)
-            chapters = page_student.locator(".topic-btn")
-            if chapters.count() > 2:
-                chapters.nth(1).click()
-                chapters.nth(2).click()
-
-                # Check for 'selected' class on multiple items
-                sel = page_student.locator(".topic-btn.selected")
-                if sel.count() >= 2:
-                    print(" -> Multi-Select Working: SUCCESS")
-                else:
-                    print(f" -> Multi-Select FAILED (Count: {sel.count()})")
-            else:
-                 print(" -> Not enough chapters to test multi-select, but UI loaded.")
-
         except Exception as e:
             print(f"[TEST 2] FAILED: {e}")
             import traceback
             traceback.print_exc()
             page_student.screenshot(path="verification_results/error_student.png")
-
         finally:
             context_student.close()
             browser.close()
