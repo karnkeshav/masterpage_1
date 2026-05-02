@@ -3,5 +3,218 @@
     "chapter_name": "Some Applications of Trigonometry",
     "grade": "10",
     "subject": "Mathematics",
-    "insights": []
+    "insights": [
+        {
+            "context": "A group of students of class  X visited India Gate on an education trip. The teacher \nand students had interest in history as well.  The teacher narrated that  India Gate, \nofficial name Delhi Memorial, originally called All-India War Memorial, monumental \nsandstone arch in New Delhi, dedicated to the troops of British India who died in \nwars fought between 1914 and 1919.The teacher also said that  India Gate, which is \nlocated at the eastern end of the Rajpath (formerly called the Kingsway), is about \n138 feet (42 metres) in height.",
+            "questions": [
+                {
+                    "text": "The teacher also said that  India Gate, which is \nlocated at the eastern end of the Rajpath (formerly called the Kingsway), is about \n138 feet (42 metres) in height.",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "What is the angle of elevation if they are standing at a distance of 42m away \nfrom the monument?",
+                    "options": [
+                        "30",
+                        "45",
+                        "60",
+                        "0"
+                    ],
+                    "answer": "1. b)"
+                },
+                {
+                    "text": "They want to see the tower at an angle of 60 . So, they want to know the \ndistance where they should stand and hence find the distance.",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "2. a)"
+                },
+                {
+                    "text": "24 m",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "12 m",
+                    "options": [
+                        "42 m",
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "64 m",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "If the altitude of the Sun is at 60 , then the height of the vertical tower that will \ncast a shadow of length 20 m is",
+                    "options": [
+                        "20\u221a  m",
+                        "\u221a   m",
+                        "\u221a  m",
+                        "15\u221a  m"
+                    ],
+                    "answer": "3. a)"
+                },
+                {
+                    "text": "The ratio of the length of a rod and its shadow is 1:1 . The angle of elevation \nof the Sun is",
+                    "options": [
+                        "30",
+                        "",
+                        "60",
+                        "90"
+                    ],
+                    "answer": "4. b)"
+                },
+                {
+                    "text": "The angle formed by the line of sight with the horizontal when the object viewd \nis below the horizontal level is",
+                    "options": [
+                        "corresponding angle",
+                        "angle of elevation",
+                        "angle of depression",
+                        "complete angle"
+                    ],
+                    "answer": "5. a)"
+                }
+            ]
+        },
+        {
+            "context": "A Satellite flying at height h is watching the top of the two tallest mountains in \nUttarakhand and Karnataka ,them being Nanda Devi(height 7,816m) and \nMullayanagiri (height 1,930 m). The angles of depression  from the satellite , to the \ntop of Nanda Devi and Mullayanagiri are 30\u00b0 and 60\u00b0 respectively. If the distance \nbetween the peaks of two mountains is 1937 km , and the satellite is vertically above \nthe midpoint of the distance between the two mountains.",
+            "questions": [
+                {
+                    "text": "The distance of the satellite from the top of Nanda Devi is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "1. a)"
+                },
+                {
+                    "text": "4 km",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "52  km",
+                    "options": [
+                        "1937 km",
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "36 km",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "The distance of the satellite from the top of Mullayanagiri  is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "2. c)"
+                },
+                {
+                    "text": "4 km",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "52 km",
+                    "options": [
+                        "1937 km",
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "36 km",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "The distance of the satellite from the ground is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "3. b)"
+                },
+                {
+                    "text": "4 km",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "52  km",
+                    "options": [
+                        "1937 km",
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "36 km",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "What is the angle of elevation if a man is standing at a distance of 7816m from \nNanda Devi?",
+                    "options": [
+                        "30",
+                        "45",
+                        "60",
+                        "0"
+                    ],
+                    "answer": "4. b)"
+                },
+                {
+                    "text": "If a mile stone very far away from, makes  45  to the top of Mullanyangiri \nmontain .So,  find the distance of this mile stone form the mountain.",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "5. c)"
+                },
+                {
+                    "text": "327 km",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "976  km",
+                    "options": [
+                        "1937 km",
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "36 km",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                }
+            ]
+        }
+    ]
 }

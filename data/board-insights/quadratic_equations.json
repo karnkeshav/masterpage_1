@@ -3,5 +3,106 @@
     "chapter_name": "Quadratic Equations",
     "grade": "10",
     "subject": "Mathematics",
-    "insights": []
+    "insights": [
+        {
+            "context": "Raj and Ajay are very close friends. Both the families decide to go to Ranikhet by \ntheir own cars.  Raj\u2019s car travels at a speed of x km/h while Ajay\u2019s car travels 5 km/h \nfaster than Raj\u2019s car. Raj took 4 hours more than Ajay to complete the journey of 400 \nkm.",
+            "questions": [
+                {
+                    "text": "What will be the distance covered by Ajay\u2019s car in two hours?",
+                    "options": [
+                        "2(x +5)km",
+                        "(x \u2013 5)km",
+                        "2( x + 10)km",
+                        "(2x + 5)km"
+                    ],
+                    "answer": "1. a)"
+                },
+                {
+                    "text": "Which of the following quadratic equation describe the speed of Raj\u2019s car?",
+                    "options": [
+                        "x2 - 5 x - 500 =  0",
+                        "x2 + 4x - 400 = 0",
+                        "x2 + 5x - 500 = 0",
+                        "x2 - 4x + 400 = 0"
+                    ],
+                    "answer": "2. c)"
+                },
+                {
+                    "text": "What is the speed of Raj\u2019s car?",
+                    "options": [
+                        "20 km/hour",
+                        "15 km/hour",
+                        "25 km/hour",
+                        "10 km/hour"
+                    ],
+                    "answer": "3. a)"
+                },
+                {
+                    "text": "How much time took Ajay to travel 400 km?",
+                    "options": [
+                        "20 hour",
+                        "40 hour",
+                        "25 hour",
+                        "16 hour"
+                    ],
+                    "answer": "4. d)"
+                }
+            ]
+        },
+        {
+            "context": "The speed of a motor boat is 20 km/hr. For covering the distance of 15 km the boat \ntook 1 hour more for upstream than downstream.",
+            "questions": [
+                {
+                    "text": "Let speed of the stream be x km/hr. then speed of the motorboat in upstream \nwill be",
+                    "options": [
+                        "20 km/hr",
+                        "(20 + x) km/hr",
+                        "(20 - x) km/hr",
+                        "2 km/hr"
+                    ],
+                    "answer": "1. c)"
+                },
+                {
+                    "text": "What is the relation between speed ,distance and time?",
+                    "options": [
+                        "speed = (distance )/time",
+                        "distance = (speed )/time",
+                        "time = speed x distance",
+                        "speed = distance x time"
+                    ],
+                    "answer": "2. b)"
+                },
+                {
+                    "text": "Which is the correct quadratic equation for the speed of the current ?",
+                    "options": [
+                        "x2+ 30x \u2212 200 = 0",
+                        "x2+ 20x \u2212 400 = 0",
+                        "x 2+ 30x \u2212 400 = 0",
+                        "x2\u2212 20x \u2212 400 = 0"
+                    ],
+                    "answer": "3. c)"
+                },
+                {
+                    "text": "What is the speed of current ?",
+                    "options": [
+                        "20 km/hour",
+                        "10 km/hour",
+                        "15 km/hour",
+                        "25 km/hour"
+                    ],
+                    "answer": "4. b)"
+                },
+                {
+                    "text": "How much time boat took in downstream?",
+                    "options": [
+                        "90 minute",
+                        "15 minute",
+                        "30 minute",
+                        "45 minute"
+                    ],
+                    "answer": "5. c)"
+                }
+            ]
+        }
+    ]
 }

@@ -3,5 +3,61 @@
     "chapter_name": "Probability",
     "grade": "10",
     "subject": "Mathematics",
-    "insights": []
+    "insights": [
+        {
+            "context": "On a weekend Rani was playing cards with her family .The deck has 52 cards.If her \nbrother drew one card .",
+            "questions": [
+                {
+                    "text": "Find the probability of getting a king of red colour.",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        ""
+                    ],
+                    "answer": "1. a)"
+                },
+                {
+                    "text": "Find the probability of getting a face card.",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        ""
+                    ],
+                    "answer": "2. d)"
+                },
+                {
+                    "text": "Find the probability of getting a jack of hearts.",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        ""
+                    ],
+                    "answer": "3. b)"
+                },
+                {
+                    "text": "Find the probability of getting a red  face card.",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        ""
+                    ],
+                    "answer": "4. a)"
+                },
+                {
+                    "text": "Find the probability of getting a spade.",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        ""
+                    ],
+                    "answer": "5. d)"
+                }
+            ]
+        }
+    ]
 }

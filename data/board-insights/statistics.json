@@ -3,5 +3,258 @@
     "chapter_name": "Statistics",
     "grade": "10",
     "subject": "Mathematics",
-    "insights": []
+    "insights": [
+        {
+            "context": "COVID-19 Pandemic \nThe COVID-19 pandemic, also known as coronavirus pandemic, is an ongoing \npandemic of coronavirus disease caused by the transmission of severe acute \nrespiratory syndrome coronavirus 2 (SARS-CoV-2)  among humans. \n \n \n \n \nThe following tables shows the age distribution of case admitted during a day in two \ndifferent hospitals \nTable 1 \nAge (in years) \n5-15 \n15-25 \n25-35 \n35-45 \n45-55 \n55-65 \nNo. of cases \n6 \n11 \n21 \n23 \n14 \n5 \n \nTable 2 \nAge (in years) \n5-15 \n15-25 \n25-35 \n35-45 \n45-55 \n55-65 \nNo. of cases \n8 \n16 \n10 \n42 \n24 \n12 \n \nRefer to table 1",
+            "questions": [
+                {
+                    "text": "The average age for which maximum cases occurred is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "1. c)"
+                },
+                {
+                    "text": "24",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "36",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "82",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "24",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "The upper limit of modal class is",
+                    "options": [
+                        "15",
+                        "25",
+                        "35",
+                        "45"
+                    ],
+                    "answer": "2. d)"
+                },
+                {
+                    "text": "The mean of the given data is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "3. d)"
+                },
+                {
+                    "text": "2",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "4",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "5",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "4 \nRefer to table 2",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "The mode of the given data is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "4. a)"
+                },
+                {
+                    "text": "4",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "2",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "3",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "6",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "The median of the given data is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "5. b)"
+                },
+                {
+                    "text": "7",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "2",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "3",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "6",
+                    "options": [
+                        "Refer to Image"
+                    ],
+                    "answer": "See PDF"
+                }
+            ]
+        },
+        {
+            "context": "Electricity energy consumption is the form of energy consumption that uses electric \nenergy. Global electricity consumption continues to increase faster than world \npopulation, leading to an increase in the average amount of electricity consumed per \nperson (per capita electricity consumption). \n \nA survey is conducted for 56 families of a Colony A. The following tables gives the \nweekly consumption of electricity of these families. \nWeekly consumption (in \nunits) \n0-10 \n10-20 \n20-30 \n30-40 \n40-50 \n50-60 \nNo. of families \n16 \n12 \n18 \n6 \n4 \n0 \n \nThe similar survey is conducted for 80 families of Colony B and the data is recorded \nas below: \nWeekly consumption (in \nunits) \n0-10 \n10-20 \n20-30 \n30-40 \n40-50 \n50-60 \nNo. of families \n0 \n5 \n10 \n20 \n40 \n5 \n \nRefer to data received from Colony A",
+            "questions": [
+                {
+                    "text": "The median weekly consumption is",
+                    "options": [
+                        "12 units",
+                        "16 units",
+                        "20 units",
+                        "None of these"
+                    ],
+                    "answer": "1. c)"
+                },
+                {
+                    "text": "The mean weekly consumption is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "2. a)"
+                },
+                {
+                    "text": "64 units",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "5 units",
+                    "options": [
+                        "26 units",
+                        "None of these"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "The modal class of the above data is  I",
+                    "options": [
+                        "0-10",
+                        "10-20",
+                        "20-30",
+                        "30-40 \nRefer to data received from Colony B"
+                    ],
+                    "answer": "3. c)"
+                },
+                {
+                    "text": "The modal weekly consumption is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "4. b)"
+                },
+                {
+                    "text": "2 units",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "6 units",
+                    "options": [
+                        "26 units",
+                        "32 units"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "The mean weekly consumption is",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "5. c)"
+                },
+                {
+                    "text": "65 units",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "8 units",
+                    "options": [
+                        ""
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "75 units",
+                    "options": [
+                        "48 units"
+                    ],
+                    "answer": "See PDF"
+                }
+            ]
+        }
+    ]
 }

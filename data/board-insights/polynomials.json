@@ -3,5 +3,170 @@
     "chapter_name": "Polynomials",
     "grade": "10",
     "subject": "Mathematics",
-    "insights": []
+    "insights": [
+        {
+            "context": "The below picture are few natural examples of parabolic shape which is represented \nby a quadratic polynomial. A parabolic arch is an arch in the shape of a parabola. In \nstructures, their curve represents an efficient method of load, and so can be found in \nbridges and in architecture in a variety of forms.",
+            "questions": [
+                {
+                    "text": "In the standard form of quadratic polynomial,         , a, b and c are",
+                    "options": [
+                        "All are real numbers.",
+                        "All are rational numbers.",
+                        "\u2018a\u2019 is a non zero real number and b and c are any real numbers.",
+                        "All are integers."
+                    ],
+                    "answer": "1. c)"
+                },
+                {
+                    "text": "If the roots of the quadratic polynomial are equal, where the discriminant                   \nD =    \u2013 4ac, then",
+                    "options": [
+                        "D > 0",
+                        "D < 0",
+                        "D",
+                        "D = 0"
+                    ],
+                    "answer": "2. d)"
+                },
+                {
+                    "text": "If       \n \n  are the zeroes of the qudratic polynomial 2         then k is",
+                    "options": [
+                        "4",
+                        "",
+                        "",
+                        "2"
+                    ],
+                    "answer": "3. b)"
+                },
+                {
+                    "text": "The graph of x2+1=0",
+                    "options": [
+                        "Intersects x\u2010axis at two distinct points.",
+                        "Touches x\u2010axis at a point.",
+                        "Neither touches nor intersects x\u2010axis.",
+                        "Either touches or intersects x\u2010 axis."
+                    ],
+                    "answer": "4. c)"
+                },
+                {
+                    "text": "If the sum of the roots is \u2013p and product of the roots is - \n \n  , then the quadratic \npolynomial is",
+                    "options": [
+                        "k (     \n \n   )",
+                        "k (    \n \n   )",
+                        "k (      \n \n )",
+                        "k (      \n \n )"
+                    ],
+                    "answer": "5. c)"
+                }
+            ]
+        },
+        {
+            "context": "An asana is a body posture, originally and still a general term for a sitting \nmeditation pose, and later extended in hatha yoga and modern yoga as exercise, \nto any type of pose or position, adding reclining, standing, inverted, twisting, and \nbalancing poses. In the figure, one can observe that poses can be related to \nrepresentation of quadratic polynomial.",
+            "questions": [
+                {
+                    "text": "The  shape of the poses shown is",
+                    "options": [
+                        "Spiral",
+                        "Ellipse",
+                        "Linear",
+                        "Parabola"
+                    ],
+                    "answer": "See PDF"
+                },
+                {
+                    "text": "The graph of parabola opens downwards, if _______",
+                    "options": [
+                        "a   0",
+                        "a = 0",
+                        "a < 0",
+                        "a > 0"
+                    ],
+                    "answer": "2. c)"
+                },
+                {
+                    "text": "In the  graph, how many zeroes are there for the polynomial?",
+                    "options": [
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    "answer": "3. c)"
+                },
+                {
+                    "text": "The two zeroes in the above shown graph are",
+                    "options": [
+                        "2, 4",
+                        "-2, 4",
+                        "-8, 4",
+                        "2,-8"
+                    ],
+                    "answer": "4. b)"
+                },
+                {
+                    "text": "The zeroes of the quadratic polynomial  \u221a        \u221a  are",
+                    "options": [
+                        "\u221a , \u221a",
+                        "\u221a , \u221a",
+                        "\u221a , - \u221a",
+                        "- \n \n\u221a ,  \u221a"
+                    ],
+                    "answer": "5. b)"
+                }
+            ]
+        },
+        {
+            "context": "Basketball and soccer are played with a spherical ball.  Even though an athlete \ndribbles the ball in both sports, a basketball player uses his hands and \na soccer player uses his feet. Usually, soccer is played outdoors on a large field \nand basketball is played indoor on a court made out of wood. The projectile (path \ntraced) of soccer ball and basketball are in the form of parabola representing \nquadratic polynomial.",
+            "questions": [
+                {
+                    "text": "The  shape of the path traced shown is",
+                    "options": [
+                        "Spiral",
+                        "Ellipse",
+                        "Linear",
+                        "Parabola"
+                    ],
+                    "answer": "1. d)"
+                },
+                {
+                    "text": "The graph of parabola opens upwards, if _______",
+                    "options": [
+                        "a = 0",
+                        "a < 0",
+                        "a > 0",
+                        "a   0"
+                    ],
+                    "answer": "2. c)"
+                },
+                {
+                    "text": "Observe the following graph and answer  \n \n \n \n\n \nIn the above graph, how many zeroes are there for the polynomial?",
+                    "options": [
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    "answer": "3. d)"
+                },
+                {
+                    "text": "The three zeroes in the above shown graph are",
+                    "options": [
+                        "2, 3,-1",
+                        "-2, 3, 1",
+                        "-3, -1, 2 \ne) -2, -3, -1"
+                    ],
+                    "answer": "4. c)"
+                },
+                {
+                    "text": "What will be the expression of the polynomial?",
+                    "options": [
+                        "",
+                        "",
+                        "",
+                        ""
+                    ],
+                    "answer": "5. a)"
+                }
+            ]
+        }
+    ]
 }
