@@ -6,6 +6,7 @@
     "insights": [
         {
             "context": "The below picture are few natural examples of parabolic shape which is represented \nby a quadratic polynomial. A parabolic arch is an arch in the shape of a parabola. In \nstructures, their curve represents an efficient method of load, and so can be found in \nbridges and in architecture in a variety of forms.",
+            "image_path": "polynomials/polynomials_cs1.png",
             "questions": [
                 {
                     "text": "In the standard form of quadratic polynomial,         , a, b and c are",
@@ -61,6 +62,7 @@
         },
         {
             "context": "An asana is a body posture, originally and still a general term for a sitting \nmeditation pose, and later extended in hatha yoga and modern yoga as exercise, \nto any type of pose or position, adding reclining, standing, inverted, twisting, and \nbalancing poses. In the figure, one can observe that poses can be related to \nrepresentation of quadratic polynomial.",
+            "image_path": "polynomials/polynomials_cs2.png",
             "questions": [
                 {
                     "text": "The  shape of the poses shown is",
@@ -70,7 +72,7 @@
                         "Linear",
                         "Parabola"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The graph of parabola opens downwards, if _______",
@@ -116,6 +118,7 @@
         },
         {
             "context": "Basketball and soccer are played with a spherical ball.  Even though an athlete \ndribbles the ball in both sports, a basketball player uses his hands and \na soccer player uses his feet. Usually, soccer is played outdoors on a large field \nand basketball is played indoor on a court made out of wood. The projectile (path \ntraced) of soccer ball and basketball are in the form of parabola representing \nquadratic polynomial.",
+            "image_path": "polynomials/polynomials_cs3.png",
             "questions": [
                 {
                     "text": "The  shape of the path traced shown is",

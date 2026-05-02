@@ -6,6 +6,7 @@
     "insights": [
         {
             "context": "Pookalam is the flower bed or flower pattern designed during Onam in Kerala. It is \nsimilar as Rangoli in North India and Kolam in Tamil Nadu. \nDuring the festival of Onam , your school is planning to conduct a Pookalam \ncompetition. Your friend who is a partner in competition , suggests two designs given \nbelow. \nObserve these carefully. \n \n\n \n \nDesign I: This design is made with a circle of radius 32cm leaving equilateral \ntriangle ABC in the middle as shown in the given figure. \nDesign II:  This Pookalam is made with 9 circular design each of radius 7cm. \n \nRefer Design I:",
+            "image_path": "areas_related_to_circles/areas_related_to_circles_cs1.png",
             "questions": [
                 {
                     "text": "The side of equilateral triangle is",
@@ -61,6 +62,7 @@
         },
         {
             "context": "A brooch is a small piece of jewellery which has a pin at the back so it can be \nfastened on a dress, blouse or coat. \nDesigns \nof \nsome \nbrooch \nare \nshown \nbelow. \nObserve \nthem \ncarefully. \n                 \n       \nDesign A: Brooch A is made with silver wire in the form of a circle with diameter \n28mm. The wire used for making 4 diameters which divide the circle into 8 equal \nparts. \nDesign B: Brooch b is made two colours_ Gold and silver. Outer part is made with \nGold. The circumference of silver part is 44mm and the gold part is 3mm wide \neverywhere. \nRefer to Design A",
+            "image_path": "areas_related_to_circles/areas_related_to_circles_cs2.png",
             "questions": [
                 {
                     "text": "The total length of silver wire required is",
@@ -94,28 +96,28 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "2 mm",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "50 mm",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "86 mm",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The difference of areas of golden and silver parts is",
