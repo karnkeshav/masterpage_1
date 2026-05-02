@@ -5,111 +5,47 @@
     "subject": "Mathematics",
     "insights": [
         {
-            "context": "A test consists of \u2018True\u2019 or \u2018False\u2019 questions. One mark is awarded for every correct \nanswer while \u00bc mark is deducted for every wrong answer. A student knew answers \nto some of the questions. Rest of the questions he attempted by guessing. He \nanswered 120 questions and got 90 marks. \n \n\nType of Question \nMarks given for correct \nanswer \nMarks deducted for \nwrong answer \nTrue/False \n1",
-            "image_path": "pair_of_linear_equations_in_two_variables/pair_of_linear_equations_in_two_variables_cs1.png",
+            "context": "Amit is planning to buy a house and the layout is given below. The design and the measurement has been made such that areas of two bedrooms and kitchen together is 95 sq.m. Based on the above information, answer the following questions:",
+            "image_path": "pair_of_linear_equations_in_two_variables/pair_of_linear_equations_in_two_variables_cs2.png",
             "questions": [
                 {
-                    "text": "25",
+                    "question_number": 1,
+                    "text": "Form the pair of linear equations in two variables from this situation.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "Area of two bedrooms= 10x sq.m"
                 },
                 {
-                    "text": "If answer to all questions he attempted by guessing were wrong, then how \nmany questions did he answer correctly?",
+                    "question_number": 2,
+                    "text": "Find the length of the outer boundary of the layout.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "Length of outer boundary= 12 + 15 + 12 + 15= 54m"
                 },
                 {
-                    "text": "How many questions did he guess?",
+                    "question_number": 3,
+                    "text": "Find the area of each bedroom and kitchen in the layout.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "On solving two equation part(i)"
                 },
                 {
-                    "text": "If answer to all questions he attempted by guessing were wrong and \nanswered 80 correctly, then how many marks he got?",
+                    "question_number": 4,
+                    "text": "Find the area of living room in the layout.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "Area of living room = (15x7)-30 = 105-30 = 75 sq.m"
                 },
                 {
-                    "text": "If answer to all questions he attempted by guessing were wrong, then how \nmany questions answered correctly to score 95 marks? \nAnswers: \nLet the no of questions whose answer is known to the student x and questions \nattempted by cheating be y \nx + y =120 \nx-1/4y =90 \nsolving these two \nx=96 and y= 24",
+                    "question_number": 5,
+                    "text": "Find the cost of laying tiles in kitchen at the rate of Rs. 50 per sq.m",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "He answered 96 questions correctly.",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "He attempted 24 questions by guessing.",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Marks = 80- \u00bc 0f 40 =70",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "x \u2013 \u00bc 0f (120-x) =95 \n        5x=500,    x = 100",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "Total cost of laying tiles in the kitchen = Rs 50 x35 = Rs 1750"
                 }
             ]
         },
         {
-            "context": "Amit is planning to buy a house and  the layout is given below. The design and the \nmeasurement has been made such that areas of two bedrooms and kitchen together \nis 95 sq.m. \n\n \nBased on the above information, answer the following questions:",
-            "image_path": "pair_of_linear_equations_in_two_variables/pair_of_linear_equations_in_two_variables_cs2.png",
+            "context": "It is common that Governments revise travel fares from time to time based on various factors such as inflation ( a general increase in prices and fall in the purchasing value of money) on different types of vehicles like auto, Rickshaws, taxis, Radio cab etc. The auto charges in a city comprise of a fixed charge together with the charge for the distance covered. Study the following situations Name of the city Distance travelled (Km) Amount paid (Rs.) City A 10 75 15 110 City B 8 91 14 145 Situation 1: In city A, for a journey of 10 km, the charge paid is Rs 75 and for a journey of 15 km, the charge paid is Rs 110. Situation 2: In a city B, for a journey of 8km, the charge paid is Rs91 and for a journey of 14km, the charge paid is Rs 145. Refer situation 1",
+            "image_path": "pair_of_linear_equations_in_two_variables/pair_of_linear_equations_in_two_variables_cs3.png",
             "questions": [
                 {
-                    "text": "Form the pair of linear equations in two variables from this situation.",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Find the length of the outer boundary of the layout.",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Find the area of each bedroom and kitchen in the layout.",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Find the area of living room in the layout.",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Find the cost of laying tiles in kitchen at the rate of Rs. 50 per sq.m  \n \nANSWER:",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Area of two bedrooms= 10x sq.m \n  Area of kitchen = 5y sq.m \n  10x + 5y = 95 \n  2x + y =19 \n  Also, x + 2+ y = 15 \n  x + y = 13",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Length of outer boundary= 12 + 15 + 12 + 15= 54m",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "On solving two equation part(i)  \nx= 6m and y =7m \narea of bedroom = 5 x 6= 30m \narea of kitchen = 5 x 7= 35m",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Area of living room = (15x7)-30 = 105-30 = 75 sq.m",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Total cost of laying tiles in the kitchen = Rs 50 x35 = Rs 1750 \n \n \n \n\n \nCase study-3 : \nIt is common that Governments revise travel fares from time to time based on \nvarious factors such as inflation ( a general increase in prices and fall in the \npurchasing value of money) on different types of vehicles like auto, Rickshaws, taxis, \nRadio cab etc. The auto charges in a city comprise of a fixed charge together with \nthe \ncharge \nfor \nthe \ndistance \ncovered. \nStudy \nthe \nfollowing \nsituations\n \nName of the city \nDistance travelled (Km) \nAmount paid (Rs.) \nCity A \n10 \n75 \n \n15 \n110 \nCity B  \n8 \n91 \n \n14 \n145 \n \nSituation 1: In city A, for a journey of 10 km, the charge paid is Rs 75 and for a \njourney of 15 km, the charge paid is Rs 110. \nSituation 2: In a city B, for a journey of 8km, the charge paid is Rs91 and for a \njourney of 14km, the charge paid is Rs 145. \nRefer situation 1",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
+                    "question_number": 1,
                     "text": "If the fixed charges of auto rickshaw be Rs x and the running charges be Rs y \nkm/hr, the pair of linear equations representing the situation is",
                     "options": [
                         "x + 10y =110,  x + 15y = 75",
@@ -117,19 +53,21 @@
                         "10x + y =110,   15x + y = 75",
                         "10x + y = 75,   15 x + y =110"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "B"
                 },
                 {
+                    "question_number": 2,
                     "text": "A person travels a distance of 50km. The amount he has to pay is",
                     "options": [
                         "Rs.155",
                         "Rs.255",
                         "Rs.355",
-                        "Rs.455 \nRefer situation 2"
+                        "Rs.455"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "C"
                 },
                 {
+                    "question_number": 3,
                     "text": "What will a person have to pay for travelling a distance of 30km?",
                     "options": [
                         "Rs.185",
@@ -137,32 +75,13 @@
                         "Rs.275",
                         "Rs.305"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "B"
                 },
                 {
-                    "text": "The graph of lines representing the conditions are: (situation 2) \n \nANSWERS:",
+                    "question_number": 4,
+                    "text": "The graph of lines representing the conditions are: (situation 2)",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "B",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "C",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "B",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "(iii)",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "(iii)"
                 }
             ]
         }

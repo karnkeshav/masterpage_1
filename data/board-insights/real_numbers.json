@@ -5,10 +5,11 @@
     "subject": "Mathematics",
     "insights": [
         {
-            "context": "To enhance the reading skills of grade X students, the school nominates you and \ntwo of your friends to set up a class library. There are two sections- section A and \nsection B of grade X. There are 32 students in section A and 36 students in section \nB.",
+            "context": "To enhance the reading skills of grade X students, the school nominates you and two of your friends to set up a class library. There are two sections- section A and section B of grade X. There are 32 students in section A and 36 students in section B.",
             "image_path": "real_numbers/real_numbers_cs1.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "What is the minimum number of books you will acquire for the class library, so \nthat they can be distributed equally among students of Section A or Section \nB?",
                     "options": [
                         "144",
@@ -16,9 +17,10 @@
                         "288",
                         "272"
                     ],
-                    "answer": "1. b) 13915"
+                    "answer": ""
                 },
                 {
+                    "question_number": 2,
                     "text": "If the product of two positive integers is equal to the product of their HCF and \nLCM is true then, the HCF (32 , 36) is",
                     "options": [
                         "2",
@@ -26,19 +28,19 @@
                         "6",
                         "8"
                     ],
-                    "answer": "2. c) 11"
+                    "answer": ""
                 },
                 {
+                    "question_number": 3,
                     "text": "36 can be expressed as a product of its primes as",
                     "options": [
-                        "",
-                        "",
-                        "",
-                        ""
+                        "b)",
+                        "d)"
                     ],
-                    "answer": "3. b) 23"
+                    "answer": ""
                 },
                 {
+                    "question_number": 4,
                     "text": "7             is a",
                     "options": [
                         "Prime number",
@@ -46,25 +48,25 @@
                         "Neither prime nor composite",
                         "None of the above"
                     ],
-                    "answer": "4. a) composite number"
+                    "answer": ""
                 },
                 {
+                    "question_number": 5,
                     "text": "If p and q are positive integers such that p = a   and q=   b, where a , b are \nprime numbers, then the LCM (p, q) is",
                     "options": [
                         "ab",
-                        "",
-                        "",
-                        ""
+                        "c)"
                     ],
-                    "answer": "5. c)"
+                    "answer": ""
                 }
             ]
         },
         {
-            "context": "A seminar is being conducted by an Educational Organisation, where the \nparticipants will be educators of different subjects. The number of participants in \nHindi, English and Mathematics are 60, 84 and 108 respectively.",
+            "context": "A seminar is being conducted by an Educational Organisation, where the participants will be educators of different subjects. The number of participants in Hindi, English and Mathematics are 60, 84 and 108 respectively.",
             "image_path": "real_numbers/real_numbers_cs2.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "In each room the same number of participants are to be seated and all of \nthem being in the same subject, hence maximum number participants that \ncan accommodated in each room are",
                     "options": [
                         "14",
@@ -72,9 +74,10 @@
                         "16",
                         "18"
                     ],
-                    "answer": "1. b) 13915"
+                    "answer": ""
                 },
                 {
+                    "question_number": 2,
                     "text": "What is the minimum number of rooms required during the event?",
                     "options": [
                         "11",
@@ -82,9 +85,10 @@
                         "41",
                         "21"
                     ],
-                    "answer": "2. c) 11"
+                    "answer": ""
                 },
                 {
+                    "question_number": 3,
                     "text": "The LCM of 60, 84 and 108 is",
                     "options": [
                         "3780",
@@ -92,9 +96,10 @@
                         "4780",
                         "4680"
                     ],
-                    "answer": "3. b) 23"
+                    "answer": ""
                 },
                 {
+                    "question_number": 4,
                     "text": "The product of HCF and LCM  of  60,84 and 108 is",
                     "options": [
                         "55360",
@@ -102,25 +107,25 @@
                         "45500",
                         "45360"
                     ],
-                    "answer": "4. a) composite number"
+                    "answer": ""
                 },
                 {
+                    "question_number": 5,
                     "text": "108 can be expressed as a product of its primes as",
                     "options": [
-                        "",
-                        "",
-                        "",
-                        ""
+                        "b)",
+                        "d)"
                     ],
-                    "answer": "5. c)"
+                    "answer": ""
                 }
             ]
         },
         {
-            "context": "A Mathematics Exhibition is being conducted in your School and one of your friends \nis making a model of a factor tree. He has some difficulty and asks for your help in \ncompleting a quiz for the audience. \nObserve the following factor tree and answer the following:",
+            "context": "A Mathematics Exhibition is being conducted in your School and one of your friends is making a model of a factor tree. He has some difficulty and asks for your help in completing a quiz for the audience. Observe the following factor tree and answer the following:",
             "image_path": "real_numbers/real_numbers_cs3.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "What will be the value of x?",
                     "options": [
                         "15005",
@@ -128,9 +133,10 @@
                         "56920",
                         "17429"
                     ],
-                    "answer": "1. b) 13915"
+                    "answer": "b) 13915"
                 },
                 {
+                    "question_number": 2,
                     "text": "What will be the value of y?",
                     "options": [
                         "23",
@@ -138,19 +144,21 @@
                         "11",
                         "19"
                     ],
-                    "answer": "2. c) 11"
+                    "answer": "c) 11"
                 },
                 {
+                    "question_number": 3,
                     "text": "What will be the value of z?",
                     "options": [
                         "22",
                         "23",
                         "17",
-                        "19 \nx \n5 \n2783 \nz \ny \n253 \n11"
+                        "19"
                     ],
-                    "answer": "3. b) 23"
+                    "answer": "b) 23"
                 },
                 {
+                    "question_number": 4,
                     "text": "According to Fundamental Theorem of Arithmetic 13915 is a",
                     "options": [
                         "Composite number",
@@ -158,17 +166,16 @@
                         "Neither prime nor composite",
                         "Even number"
                     ],
-                    "answer": "4. a) composite number"
+                    "answer": "a) composite number"
                 },
                 {
+                    "question_number": 5,
                     "text": "The prime factorisation of 13915 is",
                     "options": [
-                        "",
-                        "",
-                        "",
-                        "ANSWERS"
+                        "b)",
+                        "d)"
                     ],
-                    "answer": "5. c)"
+                    "answer": "c)"
                 }
             ]
         }

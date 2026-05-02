@@ -5,10 +5,11 @@
     "subject": "Mathematics",
     "insights": [
         {
-            "context": "Vijay is trying to find the average height of a tower near his house. He is using the \nproperties of similar triangles.The height of Vijay\u2019s house if 20m when Vijay\u2019s house \ncasts a shadow 10m long on the ground. At the same time, the tower casts a \nshadow 50m long on the ground and the house of Ajay casts 20m shadow on the \nground.",
+            "context": "Vijay is trying to find the average height of a tower near his house. He is using the properties of similar triangles.The height of Vijay’s house if 20m when Vijay’s house casts a shadow 10m long on the ground. At the same time, the tower casts a shadow 50m long on the ground and the house of Ajay casts 20m shadow on the ground.",
             "image_path": "triangles/triangles_cs1.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "What is the height of the tower?",
                     "options": [
                         "20m",
@@ -16,55 +17,60 @@
                         "100m",
                         "200m"
                     ],
-                    "answer": "1. a)22m"
+                    "answer": "c)100m"
                 },
                 {
-                    "text": "What will be the length of the shadow of the tower when Vijay\u2019s house casts a \nshadow of 12m?",
+                    "question_number": 2,
+                    "text": "What will be the length of the shadow of the tower when Vijay’s house casts a \nshadow of 12m?",
                     "options": [
                         "75m",
                         "50m",
                         "45m",
                         "60m"
                     ],
-                    "answer": "2. d)They are not the mirror image of one another"
+                    "answer": "d)60m"
                 },
                 {
-                    "text": "What is the height of Ajay\u2019s house?",
+                    "question_number": 3,
+                    "text": "What is the height of Ajay’s house?",
                     "options": [
                         "30m",
                         "40m",
                         "50m",
                         "20m"
                     ],
-                    "answer": "3. a)"
+                    "answer": "b)40m"
                 },
                 {
-                    "text": "When the tower casts a shadow of 40m, same time what will be the length of \nthe shadow of Ajay\u2019s house?",
+                    "question_number": 4,
+                    "text": "When the tower casts a shadow of 40m, same time what will be the length of \nthe shadow of Ajay’s house?",
                     "options": [
                         "16m",
                         "32m",
                         "20m",
                         "8m"
                     ],
-                    "answer": "4. b)Their altitudes have a ratio 25:15"
+                    "answer": "a)16m"
                 },
                 {
-                    "text": "When the tower casts a shadow of 40m, same time what will be the length of \nthe shadow of Vijay\u2019s house?",
+                    "question_number": 5,
+                    "text": "When the tower casts a shadow of 40m, same time what will be the length of \nthe shadow of Vijay’s house?",
                     "options": [
                         "15m",
                         "32m",
                         "16m",
-                        "8m \nANSWER:"
+                        "8m"
                     ],
-                    "answer": "5. c)4cm"
+                    "answer": "d) 8m"
                 }
             ]
         },
         {
-            "context": "Rohan wants to measure the distance of a pond during the visit to his native. \nHe marks points A and B on the opposite edges of a pond as shown in the \nfigure below. To find the distance between the points, he makes a right-angled \ntriangle using rope connecting B with another point C are a distance of 12m, \nconnecting C to point D at a distance of 40m from point C and the connecting D \nto the point A which is are a distance of 30m from D such the  ADC=900 .",
+            "context": "Rohan wants to measure the distance of a pond during the visit to his native. He marks points A and B on the opposite edges of a pond as shown in the figure below. To find the distance between the points, he makes a right-angled triangle using rope connecting B with another point C are a distance of 12m, connecting C to point D at a distance of 40m from point C and the connecting D to the point A which is are a distance of 30m from D such the ADC=900 .",
             "image_path": "triangles/triangles_cs2.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "Which property of geometry will be used to find the distance AC?",
                     "options": [
                         "Similarity of triangles",
@@ -72,9 +78,10 @@
                         "Pythagoras Theorem",
                         "Area of similar triangles"
                     ],
-                    "answer": "1. a)22m"
+                    "answer": "c)Pythagoras Theorem"
                 },
                 {
+                    "question_number": 2,
                     "text": "What is the distance AC?",
                     "options": [
                         "50m",
@@ -82,9 +89,10 @@
                         "100m",
                         "70m"
                     ],
-                    "answer": "2. d)They are not the mirror image of one another"
+                    "answer": "a)50m"
                 },
                 {
+                    "question_number": 3,
                     "text": "Which is the following does not form a Pythagoras triplet?",
                     "options": [
                         "(7,24,25)",
@@ -92,9 +100,10 @@
                         "(5,12,13)",
                         "(21,20,28)"
                     ],
-                    "answer": "3. a)"
+                    "answer": "d)(21,20,28)"
                 },
                 {
+                    "question_number": 4,
                     "text": "Find the length AB?",
                     "options": [
                         "12m",
@@ -102,19 +111,27 @@
                         "50m",
                         "100m"
                     ],
-                    "answer": "4. b)Their altitudes have a ratio 25:15"
+                    "answer": "b)38m"
                 },
                 {
+                    "question_number": 5,
                     "text": "Find the length of the rope used.",
                     "options": [
                         "120m",
                         "70m",
                         "82m",
-                        "22m \nANSWER:"
+                        "22m"
                     ],
-                    "answer": "5. c)4cm"
-                },
+                    "answer": "c)82m"
+                }
+            ]
+        },
+        {
+            "context": "A scale drawing of an object is the same shape at the object but a different size. The scale of a drawing is a comparison of the length used on a drawing to the length it represents. The scale is written as a ratio. The ratio of two corresponding sides in similar figures is called the scale factor Scale factor= length in image / corresponding length in object If one shape can become another using revising, then the shapes are similar. Hence, two shapes are similar when one can become the other after a resize, flip, slide or turn. In the photograph below showing the side view of a train engine. Scale factor is 1:200 This means that a length of 1 cm on the photograph above corresponds to a length of 200cm or 2 m, of the actual engine. The scale can also be written as the ratio of two lengths.",
+            "image_path": "triangles/triangles_cs3.png",
+            "questions": [
                 {
+                    "question_number": 1,
                     "text": "If the length of the model is 11cm, then the overall length of the engine in the \nphotograph above, including the couplings(mechanism used to connect)  is:",
                     "options": [
                         "22cm",
@@ -122,9 +139,10 @@
                         "220m",
                         "22m"
                     ],
-                    "answer": "1. a)22m"
+                    "answer": "a)22m"
                 },
                 {
+                    "question_number": 2,
                     "text": "What will affect the similarity of any two polygons?",
                     "options": [
                         "They are flipped horizontally",
@@ -132,24 +150,21 @@
                         "They are translated down",
                         "They are not the mirror image of one another."
                     ],
-                    "answer": "2. d)They are not the mirror image of one another"
+                    "answer": "d)They are not the mirror image of one another"
                 },
                 {
-                    "text": "What is the actual width of the door if the width of the door in photograph is",
-                    "options": [],
-                    "answer": "3. a)"
-                },
-                {
-                    "text": "35cm?",
+                    "question_number": 3,
+                    "text": "What is the actual width of the door if the width of the door in photograph is \n0.35cm?",
                     "options": [
                         "0.7m",
                         "0.7cm",
                         "0.07cm",
                         "0.07m"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "a)0.7m"
                 },
                 {
+                    "question_number": 4,
                     "text": "If two similar triangles have a scale factor 5:3 which statement regarding the \ntwo triangles is true?",
                     "options": [
                         "The ratio of their perimeters is 15:1",
@@ -157,17 +172,18 @@
                         "Their medians have a ratio 10:4",
                         "Their angle bisectors have a ratio 11:5"
                     ],
-                    "answer": "4. b)Their altitudes have a ratio 25:15"
+                    "answer": "b)Their altitudes have a ratio 25:15"
                 },
                 {
+                    "question_number": 5,
                     "text": "The length of AB in the given figure:",
                     "options": [
                         "8cm",
                         "6cm",
                         "4cm",
-                        "10cm \nANSWERS:"
+                        "10cm"
                     ],
-                    "answer": "5. c)4cm"
+                    "answer": "c)4cm"
                 }
             ]
         }

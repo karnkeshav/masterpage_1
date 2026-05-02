@@ -5,78 +5,58 @@
     "subject": "Mathematics",
     "insights": [
         {
-            "context": "India is competitive manufacturing location due to  the low cost of manpower and \nstrong \ntechnical \nand \nengineering \ncapabilities \ncontributing \nto \nhigher \nquality production runs.  The   production of TV sets in a factory increases uniformly \nby a fixed number every year. It produced 16000 sets in 6th year and 22600 in 9th \nyear. \n \n\nBased on the above information, answer the following questions:",
+            "context": "India is competitive manufacturing location due to the low cost of manpower and strong technical and engineering capabilities contributing to higher quality production runs. The production of TV sets in a factory increases uniformly by a fixed number every year. It produced 16000 sets in 6th year and 22600 in 9th year. Based on the above information, answer the following questions:",
             "image_path": "arithmetic_progressions/arithmetic_progressions_cs1.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "Find the production during first year.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "Rs 5000"
                 },
                 {
+                    "question_number": 2,
                     "text": "Find the production during 8th year.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "Production during 8th year is (a+7d)= 5000 + 2(2200) =20400"
                 },
                 {
+                    "question_number": 3,
                     "text": "Find the production during first 3 years.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "Production during first 3 year= 5000 + 7200 + 9400=21600"
                 },
                 {
+                    "question_number": 4,
                     "text": "In which year, the production is Rs 29,200.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "N=12"
                 },
                 {
-                    "text": "Find the difference of the production during 7th year and 4th year. \nANSWER:",
+                    "question_number": 5,
+                    "text": "Find the difference of the production during 7th year and 4th year.",
                     "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Rs 5000",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Production during 8th year is (a+7",
-                    "options": [
-                        "= 5000 + 2(2200) =20400"
-                    ],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Production during first 3 year= 5000 + 7200 + 9400=21600",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "N=12",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "Difference= 18200-11600=6600",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "Difference= 18200-11600=6600"
                 }
             ]
         },
         {
-            "context": "Your friend Veer wants to participate in a 200m race. He can currently run that \ndistance in 51 seconds and with each day of practice it takes him 2 seconds less.He \nwants to do in 31 seconds .",
+            "context": "Your friend Veer wants to participate in a 200m race. He can currently run that distance in 51 seconds and with each day of practice it takes him 2 seconds less.He wants to do in 31 seconds .",
             "image_path": "arithmetic_progressions/arithmetic_progressions_cs2.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "Which of the following terms are in AP for the given situation",
                     "options": [
-                        "51,53,55\u2026.",
-                        "51, 49, 47\u2026.",
-                        "-51, -53, -55\u2026.",
-                        "51, 55, 59\u2026"
+                        "51,53,55….",
+                        "51, 49, 47….",
+                        "-51, -53, -55….",
+                        "51, 55, 59…"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "b"
                 },
                 {
+                    "question_number": 2,
                     "text": "What is the minimum number of days he needs to practice till his goal is \nachieved",
                     "options": [
                         "10",
@@ -84,9 +64,10 @@
                         "11",
                         "9"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "c"
                 },
                 {
+                    "question_number": 3,
                     "text": "Which of the following term is not in the AP of the above given situation",
                     "options": [
                         "41",
@@ -94,9 +75,10 @@
                         "37",
                         "39"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "b"
                 },
                 {
+                    "question_number": 4,
                     "text": "If nth term of an AP is given by  \nan = 2n + 3 then common difference of an AP is",
                     "options": [
                         "2",
@@ -104,50 +86,27 @@
                         "5",
                         "1"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "a"
                 },
                 {
+                    "question_number": 5,
                     "text": "The value of x, for which 2x, x+ 10, 3x + 2 are three consecutive terms of an \nAP",
                     "options": [
                         "6",
                         "-6",
                         "18",
-                        "-18 \n \nANSWER:"
+                        "-18"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "b",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "c",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "b",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "a",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
-                },
-                {
-                    "text": "a",
-                    "options": [],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "a"
                 }
             ]
         },
         {
-            "context": "Your elder brother wants to buy a car and plans to take loan from a bank for his \ncar. He repays his total loan of   Rs 1,18,000 by paying every month starting \nwith the first instalment of Rs 1000. If he increases the instalment by Rs 100 \nevery month , answer the following:",
+            "context": "Your elder brother wants to buy a car and plans to take loan from a bank for his car. He repays his total loan of Rs 1,18,000 by paying every month starting with the first instalment of Rs 1000. If he increases the instalment by Rs 100 every month , answer the following:",
             "image_path": "arithmetic_progressions/arithmetic_progressions_cs3.png",
             "questions": [
                 {
+                    "question_number": 1,
                     "text": "The amount paid by him in 30th installment is",
                     "options": [
                         "3900",
@@ -155,9 +114,10 @@
                         "3700",
                         "3600"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "a) 3900"
                 },
                 {
+                    "question_number": 2,
                     "text": "The amount paid by him in the 30 installments is",
                     "options": [
                         "37000",
@@ -165,9 +125,10 @@
                         "75300",
                         "75000"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "b) 73500"
                 },
                 {
+                    "question_number": 3,
                     "text": "What amount does he still have to pay offer 30th installment?",
                     "options": [
                         "45500",
@@ -175,9 +136,10 @@
                         "44500",
                         "54000"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "c) 44500"
                 },
                 {
+                    "question_number": 4,
                     "text": "If total installments are 40 then amount paid in the last installment?",
                     "options": [
                         "4900",
@@ -185,17 +147,18 @@
                         "5900",
                         "9400"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "a) 4900"
                 },
                 {
+                    "question_number": 5,
                     "text": "The ratio of the 1st installment to the last installment is",
                     "options": [
                         "1:49",
                         "10:49",
                         "10:39",
-                        "39:10 \nAnswer:"
+                        "39:10"
                     ],
-                    "answer": "Official Answer: Check PDF Visual"
+                    "answer": "b) 10 : 49"
                 }
             ]
         }
