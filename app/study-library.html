@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Study Library — Ready4Exam</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
     <script src="../js/shell.js"></script>
     <script>
     tailwind.config = {
@@ -23,10 +23,12 @@
       }
     }
     </script>
-    <script src="../js/tailwind-config.js"></script>
-    <link href="../css/global.css" rel="stylesheet">
+<script src="../js/tailwind-config.js"></script>
+<link href="../css/global.css" rel="stylesheet">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 
     <script src="../js/firebase-master-config.js"></script>
     <script src="../js/config.js" type="module"></script>
@@ -41,13 +43,18 @@
         bindConsoleLogout("logout-nav-btn", "../index.html");
 
         const params = new URLSearchParams(window.location.search);
-        const activeGrade = params.get('grade');
+        const activeGrade = params.get('grade'); // Let it be null if not in URL, we will use profile
+        const grade = activeGrade;
         const activeSubject = params.get('subject');
+        const preSelectedSubject = activeSubject;
 
+        // Init
         initializeAuthListener(async (user) => {
             if (user) {
+                // Fetch full profile from Firestore to get the real displayName and classId
                 const profile = await ensureUserInFirestore(user);
-                const userGrade = activeGrade || profile?.classId || profile?.grade;
+                const displayName = profile?.displayName || user.email.split('+')[1]?.split('@')[0] || "Scholar";
+                const userGrade = grade || profile?.classId || profile?.grade;
 
                 document.getElementById("user-welcome").textContent = profile.displayName || "Student";
 
@@ -60,7 +67,8 @@
 
                 let curriculum;
                 try {
-                    curriculum = await loadCurriculum(userGrade);
+                    // Pass the loaded curriculum to the renderer
+                    curriculum = await loadCurriculum(userGrade, profile.stream);
                 } catch (error) {
                     document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">Curriculum coming soon</div>`;
                     return;
@@ -71,20 +79,25 @@
                     return;
                 }
 
-                let matchingSubject = activeSubject;
-                if (activeSubject) {
-                    const normalized = activeSubject.toLowerCase().trim();
-                    matchingSubject = Object.keys(curriculum).find(k => k.toLowerCase().trim() === normalized) || activeSubject;
+                let matchingSubject = preSelectedSubject;
+                if (preSelectedSubject) {
+                    const normalizedPreSelected = preSelectedSubject.toLowerCase().trim();
+                    const curriculumKeys = Object.keys(curriculum);
+                    const exactMatch = curriculumKeys.find(k => k.toLowerCase().trim() === normalizedPreSelected);
+                    if (exactMatch) {
+                        matchingSubject = exactMatch;
+                    }
                 }
 
-                if (activeSubject && !curriculum[matchingSubject]) {
-                    document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">No chapters found for ${activeSubject} in Grade ${userGrade}.</div>`;
+                if (preSelectedSubject && !curriculum[matchingSubject]) {
+                    document.getElementById("library-container").innerHTML = `<div class="p-8 text-center text-slate-400">No chapters found for ${preSelectedSubject} in Grade ${userGrade}.</div>`;
                     return;
                 }
 
                 if (matchingSubject) {
-                    const specific = { [matchingSubject]: curriculum[matchingSubject] };
-                    renderLibrary(specific, userGrade);
+                    const specificCurriculum = {};
+                    specificCurriculum[matchingSubject] = curriculum[matchingSubject];
+                    renderLibrary(specificCurriculum, userGrade);
                 } else {
                     renderLibrary(curriculum, userGrade);
                 }
@@ -98,8 +111,12 @@
             container.innerHTML = "";
 
             Object.entries(curriculum).forEach(([subject, subjectData]) => {
+                // If a subject is pre-selected via URL, skip others
+                // The key has been normalized in the init block, so we can use activeSubject for the initial check or skip since specificCurriculum is passed.
+
                 const section = document.createElement("div");
                 section.className = "mb-12 fade-in";
+
                 const gridId = `grid-${subject.replace(/\s+/g,'-')}`;
 
                 section.innerHTML = `
@@ -111,6 +128,7 @@
                     </div>
                     <div id="${gridId}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 `;
+
                 container.appendChild(section);
 
                 const grid = document.getElementById(gridId);
@@ -119,30 +137,24 @@
                 flatChapters.forEach(chapterItem => {
                     const chapterTitle = typeof chapterItem === 'string' ? chapterItem : (chapterItem.chapter_title || chapterItem);
                     const card = document.createElement("div");
-                    
-                    // --- UI ENHANCEMENT: MODERN CARD DESIGN ---[cite: 1]
-                    card.className = "group bg-white p-6 rounded-2xl border border-slate-100 hover:shadow-xl transition-all duration-300 flex flex-col gap-4";
+                    const urlGrade = resolvedGrade;
+                    card.className = "group block bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col justify-between";
 
-                    let pyqBtn = "";
+                    let pyqHtml = "";
                     if (resolvedGrade === "10" || resolvedGrade === "12") {
                         const chapterSlug = typeof chapterItem === 'string' ? chapterItem : (chapterItem.slug || chapterItem.chapter_title);
-                        // --- UI ENHANCEMENT: ATTRACTIVE PYQ BUTTON ---[cite: 1]
-                        pyqBtn = `
-                            <a href="pyq_insights.html?grade=${resolvedGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterSlug)}" 
-                               class="flex-1 text-center py-2.5 px-3 bg-amber-50 text-amber-600 hover:bg-accent-gold hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border border-amber-100">
-                               <i class="fas fa-chart-line mr-1"></i> PYQ Insights
-                            </a>`;
+                        pyqHtml = `<a href="pyq_insights.html?grade=${resolvedGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterSlug)}" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:text-cbse-blue z-10 relative">CBSE PYQ Insights</a>`;
                     }
 
-                    // --- UI ENHANCEMENT: DUAL ACTION BUTTONS ---[cite: 1]
                     card.innerHTML = `
-                        <h4 class="font-bold text-slate-800 text-lg leading-snug min-h-[3rem] line-clamp-2">${chapterTitle}</h4>
-                        <div class="flex gap-2 mt-auto">
-                            <a href="study-content.html?grade=${resolvedGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterTitle)}" 
-                               class="flex-1 text-center py-2.5 px-3 bg-blue-50 text-cbse-blue hover:bg-cbse-blue hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border border-blue-100">
-                               <i class="fas fa-file-alt mr-1"></i> Summary
-                            </a>
-                            ${pyqBtn}
+                        <a href="study-content.html?grade=${urlGrade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapterTitle)}" class="absolute inset-0 z-0"></a>
+                        <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity text-cbse-blue z-0 pointer-events-none">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-700 group-hover:text-cbse-blue transition-colors pr-6 relative z-0 pointer-events-none">${chapterTitle}</h4>
+                        <div class="flex items-center gap-4 mt-2 relative z-10 pointer-events-none">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pointer-events-auto">Study Summary</p>
+                            <span class="pointer-events-auto">${pyqHtml}</span>
                         </div>
                     `;
                     grid.appendChild(card);
@@ -160,15 +172,16 @@
 </head>
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
+    <!-- Glass Header -->
     <div id="app-header"></div>
-    <script>R4E.renderHeader({
-        title: "Study Library",
-        userWelcomeDefault: "Student",
-        roleBadge: "Grade --",
-        roleBadgeId: "context-badge",
-        showLogout: true,
-        logoutId: "logout-nav-btn"
-    });</script>
+<script>R4E.renderHeader({
+    title: "Study Library",
+    userWelcomeDefault: "Student",
+    roleBadge: "Grade --",
+    roleBadgeId: "context-badge",
+    showLogout: true,
+    logoutId: "logout-nav-btn"
+});</script>
 
     <div class="flex-grow max-w-6xl mx-auto w-full p-4 md:p-8 fade-in">
         <div class="mb-8">
@@ -183,7 +196,7 @@
     </div>
 
     <div id="app-footer"></div>
-    <script>R4E.renderFooter();</script>
+<script>R4E.renderFooter();</script>
 
 </body>
 </html>
