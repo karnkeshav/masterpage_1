@@ -16,7 +16,7 @@
                         "2( x + 10)km",
                         "(2x + 5)km"
                     ],
-                    "answer": "1. a) 2(x + 5)km"
+                    "answer": "1. c) (20 \u2013 x)km/hr"
                 },
                 {
                     "text": "Which of the following quadratic equation describe the speed of Raj\u2019s car?",
@@ -26,7 +26,7 @@
                         "x2 + 5x - 500 = 0",
                         "x2 - 4x + 400 = 0"
                     ],
-                    "answer": "2. c) 25km/ hour"
+                    "answer": "2. b) distance=(speed)/ time"
                 },
                 {
                     "text": "What is the speed of Raj\u2019s car?",
@@ -36,7 +36,7 @@
                         "25 km/hour",
                         "10 km/hour"
                     ],
-                    "answer": "3. a) 20km/ hour"
+                    "answer": "3. c) x 2+ 30x \u2013 400= 0"
                 },
                 {
                     "text": "How much time took Ajay to travel 400 km?",
@@ -46,7 +46,7 @@
                         "25 hour",
                         "16 hour \n\nANSWERS:"
                     ],
-                    "answer": "4. d) 16 hour"
+                    "answer": "4. b) 10 km/hour"
                 }
             ]
         },

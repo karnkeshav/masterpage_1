@@ -16,7 +16,7 @@
                         "\u2018a\u2019 is a non zero real number and b and c are any real numbers.",
                         "All are integers."
                     ],
-                    "answer": "1. c) \u2018a\u2019 is a non zero real number and b and c are any real numbers."
+                    "answer": "1. d) parabola"
                 },
                 {
                     "text": "If the roots of the quadratic polynomial are equal, where the discriminant                   \nD =    \u2013 4ac, then",
@@ -26,7 +26,7 @@
                         "D",
                         "D = 0"
                     ],
-                    "answer": "2. d) D=0"
+                    "answer": "2. c) a > 0"
                 },
                 {
                     "text": "If       \n \n  are the zeroes of the qudratic polynomial 2         then k is",
@@ -36,7 +36,7 @@
                         "",
                         "2"
                     ],
-                    "answer": "3. b)"
+                    "answer": "3. d) 3"
                 },
                 {
                     "text": "The graph of x2+1=0",
@@ -46,7 +46,7 @@
                         "Neither touches nor intersects x\u2010axis.",
                         "Either touches or intersects x\u2010 axis."
                     ],
-                    "answer": "4. c) Neither touches nor intersects x\u2010axis."
+                    "answer": "4. c) -3, -1, 2"
                 },
                 {
                     "text": "If the sum of the roots is \u2013p and product of the roots is - \n \n  , then the quadratic \npolynomial is",
@@ -56,7 +56,7 @@
                         "k (      \n \n )",
                         "k (      \n \n )  \nANSWERS"
                     ],
-                    "answer": "5. c) k (      \n \n )"
+                    "answer": "5. a)"
                 }
             ]
         },
@@ -72,7 +72,7 @@
                         "Linear",
                         "Parabola"
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "1. d) parabola"
                 },
                 {
                     "text": "The graph of parabola opens downwards, if _______",
@@ -82,7 +82,7 @@
                         "a < 0",
                         "a > 0"
                     ],
-                    "answer": "2. c) a < 0"
+                    "answer": "2. c) a > 0"
                 },
                 {
                     "text": "In the  graph, how many zeroes are there for the polynomial?",
@@ -92,7 +92,7 @@
                         "2",
                         "3"
                     ],
-                    "answer": "3. c) 2"
+                    "answer": "3. d) 3"
                 },
                 {
                     "text": "The two zeroes in the above shown graph are",
@@ -102,7 +102,7 @@
                         "-8, 4",
                         "2,-8"
                     ],
-                    "answer": "4. b) -2, 4"
+                    "answer": "4. c) -3, -1, 2"
                 },
                 {
                     "text": "The zeroes of the quadratic polynomial  \u221a        \u221a  are",
@@ -112,12 +112,12 @@
                         "\u221a , - \u221a",
                         "- \n \n\u221a ,  \u221a \n  \nANSWERS"
                     ],
-                    "answer": "5. b)  \n \n\u221a , \u221a"
+                    "answer": "5. a)"
                 },
                 {
                     "text": "Parabola",
                     "options": [],
-                    "answer": "Consult Solutions"
+                    "answer": "1. d) parabola"
                 }
             ]
         },

@@ -16,7 +16,7 @@
                         "288",
                         "272"
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "1. b) 13915"
                 },
                 {
                     "text": "If the product of two positive integers is equal to the product of their HCF and \nLCM is true then, the HCF (32 , 36) is",
@@ -26,7 +26,7 @@
                         "6",
                         "8"
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "2. c) 11"
                 },
                 {
                     "text": "36 can be expressed as a product of its primes as",
@@ -36,7 +36,7 @@
                         "",
                         ""
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "3. b) 23"
                 },
                 {
                     "text": "7             is a",
@@ -46,7 +46,7 @@
                         "Neither prime nor composite",
                         "None of the above"
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "4. a) composite number"
                 },
                 {
                     "text": "If p and q are positive integers such that p = a   and q=   b, where a , b are \nprime numbers, then the LCM (p, q) is",
@@ -56,7 +56,7 @@
                         "",
                         ""
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "5. c)"
                 }
             ]
         },
@@ -72,7 +72,7 @@
                         "16",
                         "18"
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "1. b) 13915"
                 },
                 {
                     "text": "What is the minimum number of rooms required during the event?",
@@ -82,7 +82,7 @@
                         "41",
                         "21"
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "2. c) 11"
                 },
                 {
                     "text": "The LCM of 60, 84 and 108 is",
@@ -92,7 +92,7 @@
                         "4780",
                         "4680"
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "3. b) 23"
                 },
                 {
                     "text": "The product of HCF and LCM  of  60,84 and 108 is",
@@ -102,7 +102,7 @@
                         "45500",
                         "45360"
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "4. a) composite number"
                 },
                 {
                     "text": "108 can be expressed as a product of its primes as",
@@ -112,7 +112,7 @@
                         "",
                         ""
                     ],
-                    "answer": "Consult Solutions"
+                    "answer": "5. c)"
                 }
             ]
         },
