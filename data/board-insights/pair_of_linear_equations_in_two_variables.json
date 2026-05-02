@@ -1,0 +1,89 @@
+{
+    "chapter_id": 3,
+    "chapter_name": "Pair of Linear Equations in Two Variables",
+    "grade": "10",
+    "subject": "Mathematics",
+    "insights": [
+        {
+            "context": "Amit is planning to buy a house and the layout is given below. The design and the measurement has been made such that areas of two bedrooms and kitchen together is 95 sq.m. Based on the above information, answer the following questions:",
+            "image_path": "pair_of_linear_equations_in_two_variables/pair_of_linear_equations_in_two_variables_cs2.png",
+            "questions": [
+                {
+                    "question_number": 1,
+                    "text": "Form the pair of linear equations in two variables from this situation.",
+                    "options": [],
+                    "answer": "Area of two bedrooms= 10x sq.m"
+                },
+                {
+                    "question_number": 2,
+                    "text": "Find the length of the outer boundary of the layout.",
+                    "options": [],
+                    "answer": "Length of outer boundary= 12 + 15 + 12 + 15= 54m"
+                },
+                {
+                    "question_number": 3,
+                    "text": "Find the area of each bedroom and kitchen in the layout.",
+                    "options": [],
+                    "answer": "On solving two equation part(i)"
+                },
+                {
+                    "question_number": 4,
+                    "text": "Find the area of living room in the layout.",
+                    "options": [],
+                    "answer": "Area of living room = (15x7)-30 = 105-30 = 75 sq.m"
+                },
+                {
+                    "question_number": 5,
+                    "text": "Find the cost of laying tiles in kitchen at the rate of Rs. 50 per sq.m",
+                    "options": [],
+                    "answer": "Total cost of laying tiles in the kitchen = Rs 50 x35 = Rs 1750"
+                }
+            ]
+        },
+        {
+            "context": "It is common that Governments revise travel fares from time to time based on various factors such as inflation ( a general increase in prices and fall in the purchasing value of money) on different types of vehicles like auto, Rickshaws, taxis, Radio cab etc. The auto charges in a city comprise of a fixed charge together with the charge for the distance covered. Study the following situations Name of the city Distance travelled (Km) Amount paid (Rs.) City A 10 75 15 110 City B 8 91 14 145 Situation 1: In city A, for a journey of 10 km, the charge paid is Rs 75 and for a journey of 15 km, the charge paid is Rs 110. Situation 2: In a city B, for a journey of 8km, the charge paid is Rs91 and for a journey of 14km, the charge paid is Rs 145. Refer situation 1",
+            "image_path": "pair_of_linear_equations_in_two_variables/pair_of_linear_equations_in_two_variables_cs3.png",
+            "questions": [
+                {
+                    "question_number": 1,
+                    "text": "If the fixed charges of auto rickshaw be Rs x and the running charges be Rs y \nkm/hr, the pair of linear equations representing the situation is",
+                    "options": [
+                        "x + 10y =110,  x + 15y = 75",
+                        "x + 10y =75,   x + 15y = 110",
+                        "10x + y =110,   15x + y = 75",
+                        "10x + y = 75,   15 x + y =110"
+                    ],
+                    "answer": "B"
+                },
+                {
+                    "question_number": 2,
+                    "text": "A person travels a distance of 50km. The amount he has to pay is",
+                    "options": [
+                        "Rs.155",
+                        "Rs.255",
+                        "Rs.355",
+                        "Rs.455"
+                    ],
+                    "answer": "C"
+                },
+                {
+                    "question_number": 3,
+                    "text": "What will a person have to pay for travelling a distance of 30km?",
+                    "options": [
+                        "Rs.185",
+                        "Rs.289",
+                        "Rs.275",
+                        "Rs.305"
+                    ],
+                    "answer": "B"
+                },
+                {
+                    "question_number": 4,
+                    "text": "The graph of lines representing the conditions are: (situation 2)",
+                    "options": [],
+                    "answer": "(iii)"
+                }
+            ]
+        }
+    ]
+}

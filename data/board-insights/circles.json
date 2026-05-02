@@ -1,0 +1,119 @@
+{
+    "chapter_id": 10,
+    "chapter_name": "Circles",
+    "grade": "10",
+    "subject": "Mathematics",
+    "insights": [
+        {
+            "context": "A Ferris wheel (or a big wheel in the United Kingdom) is an amusement ride consisting of a rotating upright wheel with multiple passenger-carrying components (commonly referred to as passenger cars, cabins, tubs, capsules, gondolas, or pods) attached to the rim in such a way that as the wheel turns, they are kept upright, usually by gravity. After taking a ride in Ferris wheel, Aarti came out from the crowd and was observing her friends who were enjoying the ride . She was curious about the different angles and measures that the wheel will form. She forms the figure as given below. ∟",
+            "image_path": "circles/circles_cs1.png",
+            "questions": [
+                {
+                    "question_number": 1,
+                    "text": "In the given figure find  ROQ",
+                    "options": [
+                        "60",
+                        "100",
+                        "150",
+                        "90"
+                    ],
+                    "answer": "c) 150"
+                },
+                {
+                    "question_number": 2,
+                    "text": "Find  RQP",
+                    "options": [
+                        "75",
+                        "60",
+                        "30",
+                        "90"
+                    ],
+                    "answer": "a) 75"
+                },
+                {
+                    "question_number": 3,
+                    "text": "Find  RSQ",
+                    "options": [
+                        "60",
+                        "75",
+                        "100",
+                        "30"
+                    ],
+                    "answer": "b) 75"
+                },
+                {
+                    "question_number": 4,
+                    "text": "Find  ORP",
+                    "options": [
+                        "90",
+                        "70",
+                        "100",
+                        "60"
+                    ],
+                    "answer": "a) 90"
+                }
+            ]
+        },
+        {
+            "context": "Varun has been selected by his School to design logo for Sports Day T-shirts for students and staff . The logo design is as given in the figure and he is working on the fonts and different colours according to the theme. In given figure, a circle with centre O is inscribed in a ΔABC, such that it touches the sides AB, BC and CA at points D, E and F respectively. The lengths of sides AB, BC and CA are 12 cm, 8 cm and 10 cm respectively.",
+            "image_path": "circles/circles_cs2.png",
+            "questions": [
+                {
+                    "question_number": 1,
+                    "text": "Find the length of AD",
+                    "options": [
+                        "7",
+                        "8",
+                        "5",
+                        "9"
+                    ],
+                    "answer": "a) 7"
+                },
+                {
+                    "question_number": 2,
+                    "text": "Find the Length of BE",
+                    "options": [
+                        "8",
+                        "5",
+                        "2",
+                        "9"
+                    ],
+                    "answer": "b) 5"
+                },
+                {
+                    "question_number": 3,
+                    "text": "Find the length of CF",
+                    "options": [
+                        "9",
+                        "5",
+                        "2",
+                        "3"
+                    ],
+                    "answer": "d) 3"
+                },
+                {
+                    "question_number": 4,
+                    "text": "If radius of the circle is 4cm, Find the area of ∆OAB",
+                    "options": [
+                        "20",
+                        "36",
+                        "24",
+                        "48"
+                    ],
+                    "answer": "c) 24"
+                },
+                {
+                    "question_number": 5,
+                    "text": "Find area of ∆ABC",
+                    "options": [
+                        "50",
+                        "60",
+                        "100",
+                        "90"
+                    ],
+                    "answer": "b) 60"
+                }
+            ]
+        }
+    ]
+}
