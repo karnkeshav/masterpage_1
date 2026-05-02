@@ -195,3 +195,229 @@ R4E.renderFooter = (targetId = "app-footer") => {
     }
     target.innerHTML = `<p>&copy; 2026 Ready4Exam Academic Portal.</p>`;
 };
+
+// PWA Router and Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        // Assume service-worker.js is in the root directory
+        const swUrl = new URL('/service-worker.js', window.location.origin).href;
+        navigator.serviceWorker.register(swUrl).catch(err => {
+            console.warn('ServiceWorker registration failed: ', err);
+        });
+    });
+}
+
+function handleInternalNavigation(url, isPopState = false) {
+    const targetUrl = new URL(url, window.location.origin);
+
+    // Skip non-HTML files and external domains
+    if (targetUrl.origin !== window.location.origin) return false;
+    if (targetUrl.pathname.match(/\.(png|jpg|jpeg|gif|css|js|json|pdf)$/i)) return false;
+
+    // Use fetch to partial load the content
+    const startTime = performance.now();
+    fetch(targetUrl.href)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // Find the main container to swap
+            const possibleContainers = ['#app', '.flex-grow', '#content-container', '#library-container', 'main'];
+            let newContent = null;
+            let currentContainer = null;
+
+            for (const selector of possibleContainers) {
+                const foundNew = doc.querySelector(selector);
+                if (foundNew) {
+                    newContent = foundNew;
+                    break;
+                }
+            }
+
+            for (const selector of possibleContainers) {
+                const foundCurrent = document.querySelector(selector);
+                if (foundCurrent) {
+                    currentContainer = foundCurrent;
+                    break;
+                }
+            }
+
+            if (!newContent || !currentContainer) {
+                // Fallback to full page load if containers don't match
+                window.location.href = targetUrl.href;
+                return;
+            }
+
+            currentContainer.replaceWith(newContent);
+            currentContainer = newContent;
+
+            // Update title
+            if (doc.title) {
+                document.title = doc.title;
+            }
+
+            // Update History API
+            if (!isPopState) {
+                window.history.pushState({ path: targetUrl.href }, '', targetUrl.href);
+            }
+
+            // Execute scripts inside the new content AND the new head!
+            // Actually, if we want to run the scripts from the new page, we should find ALL scripts that were NOT in the old page.
+            // A simpler approach for this architecture is to just grab all scripts from the fetched doc.head and doc.body
+            const scripts = doc.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+
+                if (oldScript.src) {
+                    if(oldScript.type === 'module') {
+                        const scriptUrl = new URL(oldScript.getAttribute('src'), targetUrl.href).href;
+                        import(scriptUrl).catch(e => console.error("Dynamic import failed", e));
+                    } else {
+                        newScript.src = oldScript.src;
+                        document.body.appendChild(newScript);
+                    }
+                } else {
+                    if (oldScript.type === 'module') {
+                        // The issue is dynamic inline module import via blob URL loses the context to resolve absolute paths properly if there are multi-line imports or if the regex misses.
+                        // Actually, appending an inline module script directly to the DOM *does* work in modern browsers if we recreate the script tag.
+                        // Let's just create a new script tag, set its type to module, and append its text content.
+                        // Wait, we did that and it didn't run?
+                        // Because relative imports inside inline modules will be resolved against the original document base URI,
+                        // and changing history.pushState doesn't always synchronously update the module resolver base URI,
+                        // we'll rewrite relative imports to be absolute!
+                        let code = oldScript.innerHTML;
+
+                        // We will execute the code as an async IIFE, after transforming static imports to dynamic imports!
+                        // This avoids the blob and strict module script tag limitations.
+                        // Transform: import { a, b } from '../js/b.js' -> const { a, b } = await import(new URL('../js/b.js', targetUrl.href).href);
+
+                        code = code.replace(/import\s+\{\s*([^}]+)\s*\}\s+from\s+['"](.*?)['"];?/g, (match, imports, path) => {
+                            const absPath = new URL(path, targetUrl.href).href;
+                            return `const { ${imports} } = await import("${absPath}");`;
+                        });
+
+                        // Handle default imports
+                        code = code.replace(/import\s+\*\s+as\s+(\w+)\s+from\s+['"](.*?)['"];?/g, (match, name, path) => {
+                            const absPath = new URL(path, targetUrl.href).href;
+                            return `const ${name} = await import("${absPath}");`;
+                        });
+
+                        // Let's replace top-level let/const with var if needed, or simply scope it.
+                        // Wrap inside async IIFE
+                        code = `(async () => { try { ${code} } catch(e) { console.error("Module Execution Error:", e); } })();`;
+
+                        const newScript = document.createElement('script');
+                        newScript.textContent = code;
+                        document.body.appendChild(newScript);
+
+
+                    } else {
+                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    }
+                }
+            });
+
+            // Wait a tick for modules
+            setTimeout(() => {
+                const event = new Event('DOMContentLoaded');
+                document.dispatchEvent(event);
+
+                const endTime = performance.now();
+                console.log(`DOM injection latency for ${targetUrl.pathname}: ${Math.round(endTime - startTime)}ms`);
+
+                wireLanguageSwitcher();
+            }, 50);
+
+        })
+        .catch(err => {
+            console.error('PWA routing failed, falling back to full load:', err);
+            window.location.href = targetUrl.href;
+        });
+
+    return true; // Successfully intercepted
+}
+
+// Intercept link clicks
+document.addEventListener('click', (e) => {
+    const link = e.target.closest('a');
+
+    if (link && link.href) {
+        // Skip links that are just anchor hashes or open in new tabs/downloads
+        const href = link.getAttribute('href');
+        const isHashLink = href.startsWith('#');
+        const isJsLink = href.startsWith('javascript:');
+        if (isHashLink || isJsLink || link.getAttribute('target') === '_blank' || link.hasAttribute('download')) {
+            return;
+        }
+
+        if (handleInternalNavigation(link.href)) {
+            e.preventDefault();
+        }
+    }
+});
+
+const checkAndOverrideRouters = setInterval(() => {
+    if (typeof window.routeToLibrary === 'function' && !window.routeToLibrary._overridden) {
+        const origRoute = window.routeToLibrary;
+        window.routeToLibrary = (subject) => {
+            const gradeBadge = document.getElementById("context-badge").textContent;
+            const grade = gradeBadge.replace("Grade ", "").trim();
+            if (!grade || grade === "undefined") return;
+            const url = new URL(`../study-library.html?grade=${grade}&subject=${encodeURIComponent(subject)}`, window.location.href).href;
+            handleInternalNavigation(url);
+        };
+        window.routeToLibrary._overridden = true;
+    }
+
+    if (typeof window.launchFromInbox === 'function' && !window.launchFromInbox._overridden) {
+        const origLaunch = window.launchFromInbox;
+        window.launchFromInbox = async (topicSlug, discipline, notifGrade, chapterTitle) => {
+            const grade = notifGrade || new URLSearchParams(window.location.search).get("grade") || "9";
+            const chapter = chapterTitle || topicSlug;
+
+            let subject = discipline;
+            try {
+                const { loadCurriculum } = await import("../../js/curriculum/loader.js");
+                const curriculum = await loadCurriculum(grade);
+
+                if (!curriculum[discipline]) {
+                    for (const [topSubject, subData] of Object.entries(curriculum)) {
+                        if (typeof subData === 'object' && !Array.isArray(subData)) {
+                            const match = Object.keys(subData).some(k => k.toLowerCase().includes(discipline.toLowerCase()));
+                            if (match) {
+                                subject = topSubject;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Curriculum lookup failed, using discipline as subject:", e);
+            }
+
+            const url = new URL(`../study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`, window.location.href).href;
+            handleInternalNavigation(url);
+        };
+        window.launchFromInbox._overridden = true;
+    }
+}, 100);
+
+// Initialize state for the first page load to ensure proper popstate behavior
+if (!window.history.state || !window.history.state.path) {
+    window.history.replaceState({ path: window.location.href }, '', window.location.href);
+}
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (e) => {
+    if (e.state && e.state.path) {
+        handleInternalNavigation(e.state.path, true);
+    } else {
+        handleInternalNavigation(window.location.href, true);
+    }
+});
