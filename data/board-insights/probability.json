@@ -6,6 +6,7 @@
     "insights": [
         {
             "context": "On a weekend Rani was playing cards with her family .The deck has 52 cards.If her \nbrother drew one card .",
+            "image_path": "probability/probability_cs1.png",
             "questions": [
                 {
                     "text": "Find the probability of getting a king of red colour.",

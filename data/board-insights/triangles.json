@@ -6,6 +6,7 @@
     "insights": [
         {
             "context": "Vijay is trying to find the average height of a tower near his house. He is using the \nproperties of similar triangles.The height of Vijay\u2019s house if 20m when Vijay\u2019s house \ncasts a shadow 10m long on the ground. At the same time, the tower casts a \nshadow 50m long on the ground and the house of Ajay casts 20m shadow on the \nground.",
+            "image_path": "triangles/triangles_cs1.png",
             "questions": [
                 {
                     "text": "What is the height of the tower?",
@@ -15,7 +16,7 @@
                         "100m",
                         "200m"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "What will be the length of the shadow of the tower when Vijay\u2019s house casts a \nshadow of 12m?",
@@ -25,7 +26,7 @@
                         "45m",
                         "60m"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "What is the height of Ajay\u2019s house?",
@@ -35,7 +36,7 @@
                         "50m",
                         "20m"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "When the tower casts a shadow of 40m, same time what will be the length of \nthe shadow of Ajay\u2019s house?",
@@ -45,7 +46,7 @@
                         "20m",
                         "8m"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "When the tower casts a shadow of 40m, same time what will be the length of \nthe shadow of Vijay\u2019s house?",
@@ -55,12 +56,13 @@
                         "16m",
                         "8m \nANSWER:"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "Rohan wants to measure the distance of a pond during the visit to his native. \nHe marks points A and B on the opposite edges of a pond as shown in the \nfigure below. To find the distance between the points, he makes a right-angled \ntriangle using rope connecting B with another point C are a distance of 12m, \nconnecting C to point D at a distance of 40m from point C and the connecting D \nto the point A which is are a distance of 30m from D such the  ADC=900 .",
+            "image_path": "triangles/triangles_cs2.png",
             "questions": [
                 {
                     "text": "Which property of geometry will be used to find the distance AC?",
@@ -144,35 +146,35 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "7m",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "7cm",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "07cm",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "07m",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "If two similar triangles have a scale factor 5:3 which statement regarding the \ntwo triangles is true?",

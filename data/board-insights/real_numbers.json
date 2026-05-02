@@ -6,6 +6,7 @@
     "insights": [
         {
             "context": "To enhance the reading skills of grade X students, the school nominates you and \ntwo of your friends to set up a class library. There are two sections- section A and \nsection B of grade X. There are 32 students in section A and 36 students in section \nB.",
+            "image_path": "real_numbers/real_numbers_cs1.png",
             "questions": [
                 {
                     "text": "What is the minimum number of books you will acquire for the class library, so \nthat they can be distributed equally among students of Section A or Section \nB?",
@@ -15,7 +16,7 @@
                         "288",
                         "272"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "If the product of two positive integers is equal to the product of their HCF and \nLCM is true then, the HCF (32 , 36) is",
@@ -25,7 +26,7 @@
                         "6",
                         "8"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "36 can be expressed as a product of its primes as",
@@ -35,7 +36,7 @@
                         "",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "7             is a",
@@ -45,7 +46,7 @@
                         "Neither prime nor composite",
                         "None of the above"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "If p and q are positive integers such that p = a   and q=   b, where a , b are \nprime numbers, then the LCM (p, q) is",
@@ -55,12 +56,13 @@
                         "",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "A seminar is being conducted by an Educational Organisation, where the \nparticipants will be educators of different subjects. The number of participants in \nHindi, English and Mathematics are 60, 84 and 108 respectively.",
+            "image_path": "real_numbers/real_numbers_cs2.png",
             "questions": [
                 {
                     "text": "In each room the same number of participants are to be seated and all of \nthem being in the same subject, hence maximum number participants that \ncan accommodated in each room are",
@@ -70,7 +72,7 @@
                         "16",
                         "18"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "What is the minimum number of rooms required during the event?",
@@ -80,7 +82,7 @@
                         "41",
                         "21"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The LCM of 60, 84 and 108 is",
@@ -90,7 +92,7 @@
                         "4780",
                         "4680"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The product of HCF and LCM  of  60,84 and 108 is",
@@ -100,7 +102,7 @@
                         "45500",
                         "45360"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "108 can be expressed as a product of its primes as",
@@ -110,12 +112,13 @@
                         "",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "A Mathematics Exhibition is being conducted in your School and one of your friends \nis making a model of a factor tree. He has some difficulty and asks for your help in \ncompleting a quiz for the audience. \nObserve the following factor tree and answer the following:",
+            "image_path": "real_numbers/real_numbers_cs3.png",
             "questions": [
                 {
                     "text": "What will be the value of x?",

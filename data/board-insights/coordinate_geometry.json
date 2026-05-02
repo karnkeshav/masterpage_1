@@ -6,6 +6,7 @@
     "insights": [
         {
             "context": "In order to conduct Sports Day activities in your School, lines have been drawn with \nchalk powder at a distance of 1 m each, in a rectangular shaped ground ABCD,  100 \nflowerpots have been placed at a distance of 1 m from each other along AD, as \nshown in given figure below. Niharika runs 1/4 th the distance AD on the 2nd line \nand posts a green flag. Preet runs 1/5 th distance AD on the eighth line and posts a \nred flag.",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs1.png",
             "questions": [
                 {
                     "text": "Find the position of green flag",
@@ -21,7 +22,7 @@
                         "(25,2)",
                         "(0, -25)"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "Find the position of red flag",
@@ -38,7 +39,7 @@
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "What is the distance between both the flags?",
@@ -69,14 +70,14 @@
                         "(10,22)",
                         "(2,"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5)",
                     "options": [
                         "("
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5,20)",
@@ -104,14 +105,14 @@
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5)",
                     "options": [
                         "("
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "25,",
@@ -125,12 +126,13 @@
                     "options": [
                         "(25,20)"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "The class X students school in krishnagar have been allotted a rectangular plot of \nland for their gardening activity. Saplings of Gulmohar are planted on the boundary \nat a distance of 1 m from each other. There is triangular grassy lawn in the plot as \nshown in the figure. The students are to sow seeds of flowering plants on the \nremaining \narea \nof \nthe \nplot.",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs2.png",
             "questions": [
                 {
                     "text": "Taking A as origin, find the coordinates of P",
@@ -184,7 +186,7 @@
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "Calculate the area of the triangles if C is the origin",
@@ -200,7 +202,7 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5",
@@ -213,6 +215,7 @@
         },
         {
             "context": "A Ferris wheel (or a big wheel in the United Kingdom) is an amusement ride \nconsisting of a rotating upright wheel with multiple passenger-carrying components \n(commonly referred to as passenger cars, cabins, tubs, capsules, gondolas, or pods) \nattached to the rim in such a way that as the wheel turns, they are kept upright, \nusually by gravity. \nAfter taking a ride in Ferris wheel, Aarti came out from the crowd and was observing \nher friends who were enjoying the ride . She was curious about the different angles \nand measures that the wheel will form. She forms the figure as given below. \n \n\u221f",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs3.png",
             "questions": [
                 {
                     "text": "In the given figure find  ROQ",
@@ -258,6 +261,7 @@
         },
         {
             "context": "Varun has been selected by his School to design logo for Sports Day T-shirts for \nstudents and staff . The logo design is as given in the figure and he is working on the \nfonts and different colours according to the \ntheme. In given figure, a circle with centre O is \n\ninscribed in a \u0394ABC, such that it touches the sides AB, BC and CA at points D, E \nand F respectively. The lengths of sides AB, BC and CA are 12 cm, 8 cm and 10 cm \nrespectively.",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs4.png",
             "questions": [
                 {
                     "text": "Find the length of AD",
@@ -313,13 +317,14 @@
         },
         {
             "context": "A group of students of class  X visited India Gate on an education trip. The teacher \nand students had interest in history as well.  The teacher narrated that  India Gate, \nofficial name Delhi Memorial, originally called All-India War Memorial, monumental \nsandstone arch in New Delhi, dedicated to the troops of British India who died in \nwars fought between 1914 and 1919.The teacher also said that  India Gate, which is \nlocated at the eastern end of the Rajpath (formerly called the Kingsway), is about \n138 feet (42 metres) in height.",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs5.png",
             "questions": [
                 {
                     "text": "The teacher also said that  India Gate, which is \nlocated at the eastern end of the Rajpath (formerly called the Kingsway), is about \n138 feet (42 metres) in height.",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "What is the angle of elevation if they are standing at a distance of 42m away \nfrom the monument?",
@@ -343,7 +348,7 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "12 m",
@@ -351,14 +356,14 @@
                         "42 m",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "64 m",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "If the altitude of the Sun is at 60 , then the height of the vertical tower that will \ncast a shadow of length 20 m is",
@@ -394,6 +399,7 @@
         },
         {
             "context": "A Satellite flying at height h is watching the top of the two tallest mountains in \nUttarakhand and Karnataka ,them being Nanda Devi(height 7,816m) and \nMullayanagiri (height 1,930 m). The angles of depression  from the satellite , to the \ntop of Nanda Devi and Mullayanagiri are 30\u00b0 and 60\u00b0 respectively. If the distance \nbetween the peaks of two mountains is 1937 km , and the satellite is vertically above \nthe midpoint of the distance between the two mountains.",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs6.png",
             "questions": [
                 {
                     "text": "The distance of the satellite from the top of Nanda Devi is",
@@ -407,7 +413,7 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "52  km",
@@ -415,14 +421,14 @@
                         "1937 km",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "36 km",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The distance of the satellite from the top of Mullayanagiri  is",
@@ -436,7 +442,7 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "52 km",
@@ -444,14 +450,14 @@
                         "1937 km",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "36 km",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The distance of the satellite from the ground is",
@@ -465,7 +471,7 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "52  km",
@@ -473,14 +479,14 @@
                         "1937 km",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "36 km",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "What is the angle of elevation if a man is standing at a distance of 7816m from \nNanda Devi?",
@@ -504,7 +510,7 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "976  km",
@@ -512,19 +518,20 @@
                         "1937 km",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "36 km",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "Pookalam is the flower bed or flower pattern designed during Onam in Kerala. It is \nsimilar as Rangoli in North India and Kolam in Tamil Nadu. \nDuring the festival of Onam , your school is planning to conduct a Pookalam \ncompetition. Your friend who is a partner in competition , suggests two designs given \nbelow. \nObserve these carefully. \n \n\n \n \nDesign I: This design is made with a circle of radius 32cm leaving equilateral \ntriangle ABC in the middle as shown in the given figure. \nDesign II:  This Pookalam is made with 9 circular design each of radius 7cm. \n \nRefer Design I:",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs7.png",
             "questions": [
                 {
                     "text": "The side of equilateral triangle is",
@@ -580,6 +587,7 @@
         },
         {
             "context": "A brooch is a small piece of jewellery which has a pin at the back so it can be \nfastened on a dress, blouse or coat. \nDesigns \nof \nsome \nbrooch \nare \nshown \nbelow. \nObserve \nthem \ncarefully. \n                 \n       \nDesign A: Brooch A is made with silver wire in the form of a circle with diameter \n28mm. The wire used for making 4 diameters which divide the circle into 8 equal \nparts. \nDesign B: Brooch b is made two colours_ Gold and silver. Outer part is made with \nGold. The circumference of silver part is 44mm and the gold part is 3mm wide \neverywhere. \nRefer to Design A",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs8.png",
             "questions": [
                 {
                     "text": "The total length of silver wire required is",
@@ -613,28 +621,28 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "2 mm",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "50 mm",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "86 mm",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The difference of areas of golden and silver parts is",
@@ -660,83 +668,84 @@
         },
         {
             "context": "Adventure camps are the perfect place for the children to practice decision making \nfor themselves without parents and teachers guiding their every move. Some \nstudents of a school reached for adventure at Sakleshpur. At the camp, the waiters \nserved some students with a welcome drink in a cylindrical glass and some students \nin a hemispherical cup whose dimensions are shown below. After that they went for \na jungle trek. The jungle trek was enjoyable but tiring. As dusk fell, it was time to take \nshelter. Each group of four students was given a canvas of area 551m2. Each group \nhad to make a conical tent to accommodate all the four students. Assuming that all \nthe stitching and wasting incurred while cutting, would amount to 1m2, the students \nput the tents. The radius of the tent is 7m.",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs9.png",
             "questions": [
                 {
                     "text": "Each group \nhad to make a conical tent to accommodate all the four students. Assuming that all \nthe stitching and wasting incurred while cutting, would amount to 1m2, the students \nput the tents. The radius of the tent is 7m.",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The volume of cylindrical cup is",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "75cm3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5cm3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "88cm3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "25cm3",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The volume of hemispherical cup is",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "67cm3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "83 cm3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "25 cm3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "60 cm3",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "Which container had more juice and by how much?",
@@ -745,21 +754,21 @@
                         "Cylindrical glass, 207 cm3",
                         "Hemispherical cup,"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "85 cm3",
                     "options": [
                         "Cylindrical glass,"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "42 cm3",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The height of the conical tent prepared to accommodate four students is",
@@ -769,7 +778,7 @@
                         "24m",
                         "14m"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "How much space on the ground is occupied by each student in the conical \ntent",
@@ -777,7 +786,7 @@
                         "54m2",
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5m2",
@@ -785,40 +794,41 @@
                         "86m2",
                         "24m2 \nAnswers"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "25cm3",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "83 cm3",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "42 cm3",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5m2",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "Top View \n  \n \nThe Great Stupa at Sanchi is one of the oldest stone structures in India, and an \nimportant monument of Indian Architecture. It was originally commissioned by the \nemperor Ashoka in the 3rd century BCE. Its nucleus was a simple hemispherical \nbrick structure built over the relics of the Buddha. .It is a perfect example of \ncombination of solid figures. A big hemispherical dome with a cuboidal structure \nmounted on it. (Take   =\n  \n )",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs10.png",
             "questions": [
                 {
                     "text": "Calculate the volume of the hemispherical dome if the height of the dome is \n21 m \u2013",
@@ -828,7 +838,7 @@
                         "15000 cu. m",
                         "19000 cu. m"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The formula to find the Volume of Sphere is-",
@@ -838,7 +848,7 @@
                         "4",
                         "2"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The cloth require to cover the hemispherical dome if the radius of its base is \n14m is",
@@ -848,7 +858,7 @@
                         "1200 sq.m",
                         "1400 sq.m"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The total surface area of the combined figure i.e. hemispherical dome with \nradius 14m and cuboidal shaped top with dimensions 8m   6m   4m is",
@@ -858,21 +868,21 @@
                         "1392 sq.m",
                         "1932 sq. m"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The volume of the cuboidal shaped top is with dimensions mentioned in \nquestion 4",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "45 m3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "45 m3",
@@ -880,12 +890,13 @@
                         "292m3",
                         "192m3 \nAnswers"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "On a Sunday, your Parents took you to a fair. You could see lot of toys displayed, \nand you wanted them to buy a RUBIK\u2019s cube and strawberry ice-cream for you. \nObserve the figures and answer the questions-:",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs11.png",
             "questions": [
                 {
                     "text": "The length of the diagonal if each edge measures 6cm is",
@@ -941,6 +952,7 @@
         },
         {
             "context": "COVID-19 Pandemic \nThe COVID-19 pandemic, also known as coronavirus pandemic, is an ongoing \npandemic of coronavirus disease caused by the transmission of severe acute \nrespiratory syndrome coronavirus 2 (SARS-CoV-2)  among humans. \n \n \n \n \nThe following tables shows the age distribution of case admitted during a day in two \ndifferent hospitals \nTable 1 \nAge (in years) \n5-15 \n15-25 \n25-35 \n35-45 \n45-55 \n55-65 \nNo. of cases \n6 \n11 \n21 \n23 \n14 \n5 \n \nTable 2 \nAge (in years) \n5-15 \n15-25 \n25-35 \n35-45 \n45-55 \n55-65 \nNo. of cases \n8 \n16 \n10 \n42 \n24 \n12 \n \nRefer to table 1",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs12.png",
             "questions": [
                 {
                     "text": "The average age for which maximum cases occurred is",
@@ -954,28 +966,28 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "36",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "82",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "24",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The upper limit of modal class is",
@@ -999,28 +1011,28 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "4",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "4 \nRefer to table 2",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The mode of the given data is",
@@ -1034,28 +1046,28 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "2",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "6",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The median of the given data is",
@@ -1069,33 +1081,34 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "2",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "3",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "6",
                     "options": [
                         "Refer to Image"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "Electricity energy consumption is the form of energy consumption that uses electric \nenergy. Global electricity consumption continues to increase faster than world \npopulation, leading to an increase in the average amount of electricity consumed per \nperson (per capita electricity consumption). \n \nA survey is conducted for 56 families of a Colony A. The following tables gives the \nweekly consumption of electricity of these families. \nWeekly consumption (in \nunits) \n0-10 \n10-20 \n20-30 \n30-40 \n40-50 \n50-60 \nNo. of families \n16 \n12 \n18 \n6 \n4 \n0 \n \nThe similar survey is conducted for 80 families of Colony B and the data is recorded \nas below: \nWeekly consumption (in \nunits) \n0-10 \n10-20 \n20-30 \n30-40 \n40-50 \n50-60 \nNo. of families \n0 \n5 \n10 \n20 \n40 \n5 \n \nRefer to data received from Colony A",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs13.png",
             "questions": [
                 {
                     "text": "The median weekly consumption is",
@@ -1119,7 +1132,7 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "5 units",
@@ -1127,7 +1140,7 @@
                         "26 units",
                         "None of these"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The modal class of the above data is  I",
@@ -1151,7 +1164,7 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "6 units",
@@ -1159,7 +1172,7 @@
                         "26 units",
                         "32 units"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "The mean weekly consumption is",
@@ -1173,26 +1186,27 @@
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "8 units",
                     "options": [
                         ""
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 },
                 {
                     "text": "75 units",
                     "options": [
                         "48 units"
                     ],
-                    "answer": "See PDF"
+                    "answer": "See PDF Visual"
                 }
             ]
         },
         {
             "context": "On a weekend Rani was playing cards with her family .The deck has 52 cards.If her \nbrother drew one card .",
+            "image_path": "coordinate_geometry/coordinate_geometry_cs14.png",
             "questions": [
                 {
                     "text": "Find the probability of getting a king of red colour.",
