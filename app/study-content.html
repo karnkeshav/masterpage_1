@@ -25,7 +25,6 @@
     </script>
     <script src="../js/tailwind-config.js"></script>
     <link href="../css/global.css" rel="stylesheet">
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -43,7 +42,6 @@
 </head>
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
-    <!-- Glass Header -->
     <div id="app-header"></div>
     <script>R4E.renderHeader({
         title: "Study Library",
@@ -68,16 +66,27 @@
         </div>
 
         <div id="content-container">
-            <!-- Dynamic Content loaded via ncert-renderer.js -->
+            <!-- Dynamic Content -->
         </div>
 
-        <!-- NEW: Trigger Section for Board Pattern Insights -->
-        <div id="insight-trigger-wrapper" class="mt-8 text-center hidden border-t border-slate-200 pt-8">
-            <button id="trigger-board-insights" class="bg-cbse-blue text-white px-8 py-4 rounded-2xl font-bold hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3 mx-auto">
-                <i class="fas fa-lightbulb text-accent-gold animate-pulse"></i>
-                <span>Explore Board Pattern Insights</span>
-            </button>
-            <p class="text-slate-400 text-[10px] mt-3 font-bold uppercase tracking-widest">Available Offline after first sync</p>
+        <!-- Symmetric Action Bar -->
+        <div id="action-bar-wrapper" class="mt-12 pt-8 border-t border-slate-200 hidden">
+            <!-- Guidance Message -->
+            <div id="quiz-guidance-msg" class="text-center text-[10px] font-black uppercase tracking-[0.2em] mb-4 min-h-[1.5rem]"></div>
+            
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4 max-w-2xl mx-auto">
+                <!-- Chapter Test Button (Populated via JS) -->
+                <div id="test-btn-slot" class="w-full md:w-1/2"></div>
+
+                <!-- Board Pattern Questions Button -->
+                <div id="insight-trigger-slot" class="w-full md:w-1/2">
+                    <button id="trigger-board-insights" class="w-full bg-white border-2 border-cbse-blue text-cbse-blue px-6 py-4 rounded-2xl font-black hover:bg-cbse-blue hover:text-white transition-all shadow-lg flex items-center justify-center gap-3 group">
+                        <i class="fas fa-lightbulb text-accent-gold group-hover:scale-125 transition"></i>
+                        <span>Board Pattern Questions</span>
+                    </button>
+                </div>
+            </div>
+            <p class="text-center text-slate-400 text-[9px] mt-4 font-bold uppercase tracking-widest">Permanent Offline Access after first sync</p>
         </div>
 
         <div id="board-insight-container" class="mt-12 w-full mx-auto hidden"></div>
@@ -93,7 +102,7 @@
 
         const engine = new SlugEngine(curriculum);
 
-        // --- IndexedDB Manager (Permanent Local Storage) ---
+        // --- IndexedDB Sync Logic ---
         const DB_NAME = 'Ready4Exam_Insights_DB';
         const STORE_NAME = 'board_insights';
         const DB_VERSION = 1;
@@ -129,34 +138,44 @@
             store.put({ id: chapterKey, content: data, timestamp: Date.now() });
         }
 
-        // --- DOM Observers ---
+        // --- UI Observers & Dynamic Layout ---
         const container = document.getElementById('content-container');
         if (container) {
             const observer = new MutationObserver(() => {
-                // Show the Insight trigger once content is rendered
-                const wrapper = document.getElementById('insight-trigger-wrapper');
-                if (wrapper) {
-                    wrapper.classList.remove('hidden');
-                    wrapper.classList.add('flex');
-                }
-
-                // Upgrade standard test button if found
                 const testBtn = document.getElementById('btn-target-test');
-                if (testBtn && !testBtn.dataset.upgraded) {
-                    upgradeTestButton(testBtn);
+                if (testBtn && !testBtn.dataset.moved) {
+                    setupSymmetricLayout(testBtn);
                 }
             });
             observer.observe(container, { childList: true, subtree: true });
         }
 
-        // Initial backup check for button visibility
-        setTimeout(() => {
-            if (document.getElementById('content-container').innerHTML.length > 50) {
-                document.getElementById('insight-trigger-wrapper').classList.remove('hidden');
-            }
-        }, 1500);
+        function setupSymmetricLayout(originalBtn) {
+            originalBtn.dataset.moved = "true";
+            originalBtn.classList.add('hidden'); // Hide the one inside ncert-renderer
+            
+            const actionWrapper = document.getElementById('action-bar-wrapper');
+            const slot = document.getElementById('test-btn-slot');
+            
+            // Create New Styled Test Button
+            const newBtn = document.createElement('button');
+            newBtn.className = "w-full bg-cbse-blue text-white px-6 py-4 rounded-2xl font-black hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center gap-3";
+            newBtn.innerHTML = `<span>Take Chapter Test</span> <i class="fas fa-bolt text-accent-gold"></i>`;
+            
+            newBtn.onclick = () => {
+                 const params = new URLSearchParams(window.location.search);
+                 openDifficultyModal({
+                     subject: params.get('subject') || 'Mathematics',
+                     chapter: params.get('chapter') || 'Real_Numbers',
+                     grade: params.get('grade') || '10'
+                 });
+            };
 
-        // --- Event Handlers ---
+            slot.appendChild(newBtn);
+            actionWrapper.classList.remove('hidden');
+            renderGuidance();
+        }
+
         document.getElementById('trigger-board-insights').addEventListener('click', handleInsightRequest);
 
         async function handleInsightRequest() {
@@ -164,30 +183,22 @@
             const chapter = params.get('chapter') || 'real_numbers';
             const chapterKey = chapter.toLowerCase().replace(/ /g, '_');
             
-            // 1. Try loading from local device storage
             let data = await getLocalInsight(chapterKey);
 
-            // 2. SYNC CHECK: If missing OR local copy is the old empty template, pull from GitHub
+            // Sync Check for Empty/Outdated local data
             if (!data || !data.content.insights || data.content.insights.length === 0) {
-                console.log("Local storage empty or outdated. Performing one-time sync from GitHub...");
-                // Add cache-buster to ensure we get the newest version from GitHub
                 const cloudUrl = `https://karnkeshav.github.io/masterpage_1/data/board-insights/${chapterKey}.json?v=${Date.now()}`;
-                
                 try {
                     const response = await fetch(cloudUrl);
-                    if (!response.ok) throw new Error("Chapter data not found on server.");
+                    if (!response.ok) throw new Error();
                     const jsonData = await response.json();
-                    
-                    // 3. Save to device forever
                     await saveInsightLocally(chapterKey, jsonData);
                     data = { content: jsonData };
                 } catch (err) {
-                    alert("A one-time internet connection is required to sync this chapter's board insights.");
+                    alert("A one-time internet connection is required to sync board pattern questions.");
                     return;
                 }
             }
-
-            // 4. Display the content
             renderInsightsUI(data.content);
         }
 
@@ -201,35 +212,33 @@
                     <div class="bg-cbse-blue p-6 text-white flex justify-between items-center">
                         <div>
                             <div class="flex items-center gap-3 mb-1">
-                                <span class="bg-accent-gold text-cbse-blue text-[10px] font-black px-2 py-0.5 rounded uppercase">Verified Pattern</span>
-                                <h2 class="text-xl font-bold">${data.chapter_name} Insights</h2>
+                                <span class="bg-accent-gold text-cbse-blue text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Official Board Pattern</span>
+                                <h2 class="text-xl font-bold">${data.chapter_name} Questions</h2>
                             </div>
-                            <p class="text-blue-100 text-xs italic">Extracted Case Study Questions</p>
+                            <p class="text-blue-100 text-xs italic">Authentic PDF Extractions</p>
                         </div>
-                        <button onclick="document.getElementById('board-insight-container').classList.add('hidden')" class="text-white/50 hover:text-white transition">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
+                        <button onclick="document.getElementById('board-insight-container').classList.add('hidden')" class="text-white/30 hover:text-white transition"><i class="fas fa-times-circle text-2xl"></i></button>
                     </div>
                     <div class="p-8 space-y-10">
                         ${data.insights.map((insight, idx) => `
                             <div class="border-l-4 border-accent-gold pl-6">
                                 <h4 class="text-cbse-blue font-black uppercase text-[10px] tracking-widest mb-2">Case Study ${idx + 1}</h4>
-                                <div class="text-slate-700 italic mb-6 text-sm leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                    "${insight.context.replace(/\n/g, '<br>')}"[cite: 2]
+                                <div class="text-slate-700 italic mb-6 text-sm leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                    "${insight.context.replace(/\n/g, '<br>')}"
                                 </div>
-                                <div class="space-y-6">
+                                <div class="space-y-8">
                                     ${insight.questions.map((q, qIdx) => `
                                         <div>
-                                            <p class="font-bold text-slate-800 mb-3 text-sm">${qIdx+1}. ${q.text}</p>
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 ml-4">
-                                                ${q.options.map(opt => `<div class="bg-white p-3 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium">${opt}</div>`).join('')}
+                                            <p class="font-bold text-slate-800 mb-4 text-sm">${qIdx+1}. ${q.text}</p>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 ml-4">
+                                                ${q.options.map(opt => `<div class="bg-white p-4 rounded-xl border border-slate-200 text-xs text-slate-600 font-bold">${opt}</div>`).join('')}
                                             </div>
-                                            <details class="mt-3 ml-4 group">
-                                                <summary class="text-[10px] font-black text-cbse-blue cursor-pointer list-none uppercase tracking-widest hover:text-accent-gold transition">
-                                                    <i class="fas fa-key mr-1"></i> Reveal Answer
+                                            <details class="mt-4 ml-4 group">
+                                                <summary class="text-[10px] font-black text-cbse-blue cursor-pointer list-none uppercase tracking-[0.2em] hover:text-accent-gold transition">
+                                                    <i class="fas fa-check-circle mr-1"></i> Reveal Official Answer
                                                 </summary>
-                                                <div class="mt-2 p-3 bg-green-50 text-success-green border border-green-100 rounded-lg font-bold text-xs">
-                                                    Correct Answer: ${q.answer}[cite: 2]
+                                                <div class="mt-3 p-4 bg-green-50 text-success-green border border-green-100 rounded-xl font-black text-xs">
+                                                    Correct Answer: ${q.answer}
                                                 </div>
                                             </details>
                                         </div>
@@ -242,27 +251,77 @@
             `;
         }
 
-        // --- Helper: Upgrade Test Button ---
-        function upgradeTestButton(oldBtn) {
-            const newBtn = oldBtn.cloneNode(true);
-            oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-            newBtn.innerHTML = `<span>Take Chapter Test</span> <i class="fas fa-bolt"></i>`;
-            newBtn.dataset.upgraded = "true";
-            newBtn.addEventListener('click', () => {
-                 const params = new URLSearchParams(window.location.search);
-                 openDifficultyModal({
-                     subject: params.get('subject') || 'Mathematics',
-                     chapter: params.get('chapter') || 'Real_Numbers',
-                     grade: params.get('grade') || '10'
-                 });
-            });
+        // --- Core Application Logic ---
+        async function renderGuidance() {
+            const params = new URLSearchParams(window.location.search);
+            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
+            const msgEl = document.getElementById('quiz-guidance-msg');
+            try {
+                const { auth, db } = await getInitializedClients();
+                const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                let user = auth.currentUser;
+                if (!user) await new Promise(resolve => {
+                    const unsub = auth.onAuthStateChanged(u => { if (u) { user = u; resolve(); unsub(); } });
+                    setTimeout(() => { resolve(); unsub(); }, 2000);
+                });
+                if (!user) { msgEl.innerHTML = `<span class="text-slate-400 tracking-widest"><i class="fas fa-lock"></i> Login for guidance</span>`; return; }
+                
+                const q = query(collection(db, "quiz_scores"), where("user_id", "==", user.uid), where("topicSlug", "==", quizSlug));
+                const snap = await getDocs(q);
+                let bestSimple = 0, bestMedium = 0;
+                snap.forEach(d => {
+                    const data = d.data();
+                    const pct = data.percentage || 0;
+                    if (data.difficulty === "Simple" && pct > bestSimple) bestSimple = pct;
+                    if (data.difficulty === "Medium" && pct > bestMedium) bestMedium = pct;
+                });
+                
+                if (bestSimple === 0) { msgEl.className = 'text-center text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-danger-red'; msgEl.innerHTML = `Ready to Start? Begin with Simple Level`; }
+                else if (bestSimple < 95) { msgEl.className = 'text-center text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-warning-yellow'; msgEl.innerHTML = `Current Focus: Master Simple Level (95%+)`; }
+                else if (bestMedium < 95) { msgEl.className = 'text-center text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-success-green'; msgEl.innerHTML = `Great Work! Advance to Medium Level`; }
+                else { msgEl.className = 'text-center text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-cbse-blue'; msgEl.innerHTML = `Chapter Mastery Achieved!`; }
+            } catch (e) { console.error(e); }
         }
 
-        // --- Standard UI Components (Stubs) ---
         function openDifficultyModal(ctx) {
-            // Re-uses your existing modal logic
-            console.log("Opening Modal for:", ctx.chapter);
+            const theme = engine.themes[ctx.subject] || engine.themes["General"];
+            const modal = document.createElement('div');
+            modal.id = 'symmetric-difficulty-modal';
+            modal.className = `fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4 fade-in`;
+            let colorName = 'slate';
+            try { if (theme.bg) colorName = theme.bg.split('-')[1]; } catch (e) {}
+            modal.innerHTML = `
+                <div class="bg-white rounded-[2.5rem] w-full max-w-md p-10 shadow-2xl relative border-b-8 border-cbse-blue text-center overflow-hidden">
+                    <button id="close-sym-modal" class="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 transition">✕</button>
+                    <div class="w-20 h-20 mx-auto bg-cbse-blue/5 rounded-3xl flex items-center justify-center text-cbse-blue text-4xl mb-6 shadow-inner">
+                        <i class="fas ${theme.icon || 'fa-shapes'}"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-2">Target Proficiency</h3>
+                    <p class="text-[10px] font-black text-cbse-blue uppercase tracking-[0.3em] mb-10">${ctx.subject} Syllabus</p>
+                    <div class="space-y-4">
+                        ${createCard('Simple', 'Foundation', 'bg-green-50', 'border-green-200', 'text-green-700', '🌱')}
+                        ${createCard('Medium', 'Standard', 'bg-yellow-50', 'border-yellow-200', 'text-yellow-700', '⚡')}
+                        ${createCard('Advanced', 'Challenger', 'bg-red-50', 'border-red-200', 'text-red-700', '🔥')}
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('close-sym-modal').onclick = () => modal.remove();
         }
+
+        function createCard(level, subtitle, bg, border, text, icon) {
+            return `<button onclick="launchQuiz('${level}')" class="w-full p-5 ${bg} border-2 ${border} rounded-3xl hover:scale-[1.03] active:scale-95 transition-all group text-left flex items-center gap-5 shadow-sm">
+                <span class="w-14 h-14 rounded-2xl bg-white/60 ${text} flex items-center justify-center text-2xl shadow-sm">${icon}</span>
+                <div><div class="font-black ${text} text-xl leading-tight">${level}</div><div class="text-[10px] ${text} opacity-70 font-black uppercase tracking-widest">${subtitle}</div></div>
+                <span class="ml-auto ${text} group-hover:translate-x-1 transition text-xl"><i class="fas fa-chevron-right"></i></span>
+            </button>`;
+        }
+
+        window.launchQuiz = (difficulty) => {
+            const params = new URLSearchParams(window.location.search);
+            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
+            window.location.href = `quiz-engine.html?topic=${encodeURIComponent(quizSlug)}&difficulty=${difficulty}&grade=${params.get('grade')}&subject=${encodeURIComponent(params.get('subject'))}&chapter_name=${encodeURIComponent(params.get('chapter'))}`;
+        };
     </script>
 </body>
 </html>
