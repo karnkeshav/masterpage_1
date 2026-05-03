@@ -14,16 +14,39 @@ const GRADE_MAP = {
  * @param {string|number} grade - The grade level (e.g., 9, "10").
  * @returns {Promise<Object>} - The curriculum object.
  */
-export async function loadCurriculum(grade) {
+export async function loadCurriculum(grade, stream = null) {
     const gradeKey = grade.toString();
     if (!GRADE_MAP[gradeKey]) {
         throw new Error(`Curriculum for Grade ${grade} not found.`);
     }
 
     try {
-        // Dynamic import relative to this file
         const module = await import(GRADE_MAP[gradeKey]);
-        return module.default || module.curriculum;
+        const curriculum = module.default || module.curriculum;
+
+        // For Class 11 and 12, filter by stream if provided
+        if ((gradeKey === '11' || gradeKey === '12') && stream) {
+            const filtered = {};
+            for (const [subject, subData] of Object.entries(curriculum)) {
+                // If it is flat array, check the first chapter's section
+                if (Array.isArray(subData) && subData.length > 0) {
+                    if (subData[0].section && subData[0].section.toLowerCase() === stream.toLowerCase()) {
+                        filtered[subject] = subData;
+                    }
+                } else if (typeof subData === 'object' && subData !== null) {
+                    // Check nested books
+                    const firstBook = Object.values(subData)[0];
+                    if (firstBook && Array.isArray(firstBook) && firstBook.length > 0) {
+                        if (firstBook[0].section && firstBook[0].section.toLowerCase() === stream.toLowerCase()) {
+                            filtered[subject] = subData;
+                        }
+                    }
+                }
+            }
+            if (Object.keys(filtered).length > 0) return filtered;
+        }
+
+        return curriculum;
     } catch (error) {
         console.error(`Failed to load curriculum for Grade ${grade}:`, error);
         throw error;

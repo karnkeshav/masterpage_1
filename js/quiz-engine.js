@@ -299,6 +299,11 @@ async function handleSubmit() {
 
     saveResult({
         ...quizState,
+        // Send raw answers for server-side scoring as required by strict zero-lag architecture guards
+        userAnswers: quizState.userAnswers,
+        questions: quizState.questions, // Include question IDs/metadata for server reference
+
+        // Keep stats for local optimistic UI rendering but backend should recalculate
         score: stats.correct,
         total: stats.total,
         topic: quizState.topicSlug,

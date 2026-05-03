@@ -16,8 +16,7 @@
             'cbse-light':'#f5f7fa',
             'accent-gold':'#ffb703',
             'success-green': '#16a34a',
-            'warning-yellow': '#ca8a04',
-            'danger-red': '#dc2626'
+            'warning-yellow': '#ca8a04'
           }
         }
       }
@@ -28,21 +27,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Firebase & Configuration -->
     <script src="../js/firebase-master-config.js"></script>
     <script src="../js/config.js" type="module"></script>
 
     <script>
-    window.MathJax = {
-      loader: { load: ['[tex]/mhchem'] },
-      tex: { packages: { '[+]': ['mhchem'] } }
-    };
+    window.MathJax = { loader: { load: ['[tex]/mhchem'] }, tex: { packages: { '[+]': ['mhchem'] } } };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- Core Renderers -->
     <script type="module" src="../js/ncert-renderer.js"></script>
 </head>
 <body class="bg-cbse-light min-h-screen flex flex-col">
 
-    <!-- Glass Header -->
     <div id="app-header"></div>
     <script>R4E.renderHeader({
         title: "Study Library",
@@ -50,8 +48,7 @@
         userWelcomeDefault: "Student",
         roleBadge: "Grade --",
         roleBadgeId: "context-badge",
-        showLogout: true,
-        logoutId: "logout-nav-btn"
+        showLogout: true
     });</script>
 
     <div class="flex-grow max-w-5xl mx-auto w-full p-4 md:p-8 fade-in">
@@ -66,269 +63,40 @@
             <p id="subject-subtitle" class="text-slate-500 font-medium">--</p>
         </div>
 
-        <div id="content-container">
-            <!-- Dynamic Content via ncert-renderer.js -->
+        <!-- Target for ncert-renderer.js -->
+        <div id="content-container"></div>
+
+        <!-- Symmetric Professional Action Bar -->
+        <div id="action-bar-wrapper" class="mt-12 pt-10 border-t border-slate-200 hidden bg-white rounded-[2rem] p-8 md:p-12 shadow-sm border border-slate-100">
+            <div class="flex flex-col md:flex-row items-stretch justify-center gap-8 max-w-4xl mx-auto">
+                
+                <!-- Left Column: Mastery & Test -->
+                <div class="flex-1 flex flex-col items-center">
+                    <div id="quiz-guidance-msg" class="text-center text-[10px] font-black uppercase tracking-[0.2em] mb-4 min-h-[1.5rem] text-slate-400">Ready to Start? Begin with Simple Level</div>
+                    <div id="test-btn-slot" class="w-full"></div>
+                    <p class="text-center text-slate-400 text-[11px] font-medium mt-4 italic">Mastery Level: Recommended 85%+</p>
+                </div>
+
+                <div class="hidden md:block w-px bg-slate-100 self-stretch"></div>
+
+                <!-- Right Column: Board Pattern Questions -->
+                <div class="flex-1 flex flex-col items-center">
+                    <div class="text-center text-[10px] font-black uppercase tracking-[0.2em] mb-4 min-h-[1.5rem] text-slate-400">Official Board Pattern Questions</div>
+                    <button id="trigger-board-insights" class="w-full bg-cbse-blue text-white px-6 py-4 rounded-2xl font-black hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center gap-3">
+                        <i class="fas fa-file-signature text-accent-gold"></i>
+                        <span>Board Pattern Questions</span>
+                    </button>
+                    <div id="sync-status-msg" class="text-center text-[9px] mt-4 font-bold uppercase tracking-widest text-warning-yellow flex items-center gap-2">
+                        <i class="fas fa-cloud-download-alt text-xs opacity-50"></i>
+                        <span>One-time sync required for offline access</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Board Insights Section -->
-        <div id="board-insight-container" class="mt-12 w-full mx-auto hidden"></div>
-    </div>
 
-    <div id="app-footer"></div>
     <script>R4E.renderFooter();</script>
 
-    <script type="module">
-        import { SlugEngine } from '../js/slug-engine.js';
-        import { getInitializedClients } from '../js/config.js';
-        import { curriculum } from '../js/curriculum/class-9.js';
-
-        const engine = new SlugEngine(curriculum);
-
-        // --- IndexedDB Manager (Offline Permanent Storage) ---
-        const DB_NAME = 'Ready4Exam_Insights_DB';
-        const STORE_NAME = 'board_insights';
-        const DB_VERSION = 1;
-
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                    }
-                };
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        async function getLocalInsight(chapterKey) {
-            const db = await openDB();
-            return new Promise((resolve) => {
-                const transaction = db.transaction(STORE_NAME, 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.get(chapterKey);
-                request.onsuccess = () => resolve(request.result);
-            });
-        }
-
-        async function saveInsightLocally(chapterKey, data) {
-            const db = await openDB();
-            const transaction = db.transaction(STORE_NAME, 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            store.put({ id: chapterKey, content: data, timestamp: Date.now() });
-        }
-
-        // --- UI Observers & Event Binding ---
-        const container = document.getElementById('content-container');
-        if (container) {
-            const observer = new MutationObserver(() => {
-                // Handle Test Button Upgrade
-                const testBtn = document.getElementById('btn-target-test');
-                if (testBtn && !testBtn.dataset.upgraded) {
-                    upgradeTestButton(testBtn);
-                }
-
-                // Handle Board Insights Trigger
-                // Ensure ncert-renderer.js adds an element with this ID at the bottom of the summary
-                const insightTrigger = document.getElementById('trigger-board-insights');
-                if (insightTrigger && !insightTrigger.dataset.bound) {
-                    insightTrigger.dataset.bound = "true";
-                    insightTrigger.addEventListener('click', handleInsightRequest);
-                }
-            });
-            observer.observe(container, { childList: true, subtree: true });
-        }
-
-        function upgradeTestButton(oldBtn) {
-            const newBtn = oldBtn.cloneNode(true);
-            oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-            newBtn.innerHTML = `<span>Take Chapter Test</span> <i class="fas fa-bolt"></i>`;
-            newBtn.dataset.upgraded = "true";
-
-            const msgDiv = document.createElement('div');
-            msgDiv.id = 'quiz-guidance-msg';
-            msgDiv.className = 'text-xs font-bold uppercase tracking-widest mb-3 animate-pulse';
-            newBtn.parentNode.insertBefore(msgDiv, newBtn);
-
-            newBtn.addEventListener('click', () => {
-                 const params = new URLSearchParams(window.location.search);
-                 const context = {
-                     subject: params.get('subject') || 'Mathematics',
-                     chapter: params.get('chapter') || 'Polynomials',
-                     grade: params.get('grade') || '9'
-                 };
-                 openDifficultyModal(context);
-            });
-            renderGuidance();
-        }
-
-        async function handleInsightRequest(e) {
-            if(e) e.preventDefault();
-            const params = new URLSearchParams(window.location.search);
-            const chapter = params.get('chapter') || 'real_numbers';
-            const chapterKey = chapter.toLowerCase().replace(/ /g, '_');
-            
-            // 1. Try Loading from Local IndexedDB (Zero Latency)
-            let data = await getLocalInsight(chapterKey);
-
-            if (!data) {
-                // 2. One-Time Sync from GitHub if not found locally
-                const cloudUrl = `https://karnkeshav.github.io/masterpage_1/data/board-insights/${chapterKey}.json`;
-                try {
-                    const response = await fetch(cloudUrl);
-                    if (!response.ok) throw new Error("Not found");
-                    const jsonData = await response.json();
-                    
-                    // 3. Save Permanently to device
-                    await saveInsightLocally(chapterKey, jsonData);
-                    data = { content: jsonData };
-                } catch (err) {
-                    alert("Please connect to the internet once to sync board insights for this chapter.");
-                    return;
-                }
-            }
-
-            // 4. Render to UI
-            renderInsightsUI(data.content);
-        }
-
-        function renderInsightsUI(data) {
-            const target = document.getElementById('board-insight-container');
-            target.classList.remove('hidden');
-            target.scrollIntoView({ behavior: 'smooth' });
-
-            // Note: Update this mapping once your JSONs are fully populated with questions
-            target.innerHTML = `
-                <div class="bg-white border-4 border-cbse-blue rounded-3xl overflow-hidden shadow-2xl mb-12">
-                    <div class="bg-cbse-blue p-6 text-white">
-                        <div class="flex items-center gap-3 mb-2">
-                            <span class="bg-accent-gold text-cbse-blue text-[10px] font-black px-2 py-0.5 rounded uppercase">Verified Board Pattern</span>
-                            <h2 class="text-xl font-bold">${data.chapter_name} Case Studies</h2>
-                        </div>
-                        <p class="text-blue-100 text-xs font-medium">Data synced locally for offline access.</p>
-                    </div>
-                    <div class="p-8 space-y-10">
-                        ${data.insights && data.insights.length > 0 ? 
-                            data.insights.map((insight, idx) => `
-                                <div class="border-l-4 border-accent-gold pl-6">
-                                    <h4 class="text-cbse-blue font-black uppercase text-xs tracking-widest mb-4">Case Study ${idx + 1}</h4>
-                                    <div class="prose prose-slate max-w-none text-slate-700 italic mb-6">
-                                        "${insight.context}"
-                                    </div>
-                                    <div class="space-y-6">
-                                        ${insight.questions.map((q, qIdx) => `
-                                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                                <p class="font-bold text-slate-800 mb-3">${qIdx+1}. ${q.text}</p>
-                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                    ${q.options.map(opt => `<div class="bg-white p-3 rounded-lg border border-slate-200 text-sm text-slate-600">${opt}</div>`).join('')}
-                                                </div>
-                                                <details class="mt-4 group">
-                                                    <summary class="text-xs font-black text-cbse-blue cursor-pointer list-none uppercase tracking-tighter hover:opacity-70 transition">
-                                                        <i class="fas fa-key mr-1"></i> Reveal Answer
-                                                    </summary>
-                                                    <div class="mt-3 p-3 bg-green-100 text-success-green rounded-xl font-bold text-sm">
-                                                        Correct Answer: ${q.answer}
-                                                    </div>
-                                                </details>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            `).join('') : 
-                            `<div class="py-12 text-center text-slate-400 font-medium">
-                                <i class="fas fa-hourglass-start text-4xl mb-4 block"></i>
-                                Content is being processed for this chapter. Check back soon.
-                            </div>`
-                        }
-                    </div>
-                </div>
-            `;
-        }
-
-        // --- Standard App Functions (Guidance & Modals) ---
-        async function renderGuidance() {
-            const params = new URLSearchParams(window.location.search);
-            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
-            const msgEl = document.getElementById('quiz-guidance-msg');
-            try {
-                const { auth, db } = await getInitializedClients();
-                const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                let user = auth.currentUser;
-                if (!user) await new Promise(resolve => {
-                    const unsub = auth.onAuthStateChanged(u => { if (u) { user = u; resolve(); unsub(); } });
-                    setTimeout(() => { resolve(); unsub(); }, 3000);
-                });
-                if (!user) { msgEl.innerHTML = `<i class="fas fa-lock"></i> Login for guidance.`; return; }
-                const q = query(collection(db, "quiz_scores"), where("user_id", "==", user.uid), where("topicSlug", "==", quizSlug));
-                const snap = await getDocs(q);
-                let bestSimple = 0, bestMedium = 0;
-                snap.forEach(d => {
-                    const data = d.data();
-                    const pct = data.percentage || data.score_percent || 0;
-                    if (data.difficulty === "Simple" && pct > bestSimple) bestSimple = pct;
-                    if (data.difficulty === "Medium" && pct > bestMedium) bestMedium = pct;
-                });
-                if (bestSimple === 0) { msgEl.className = 'text-xs font-bold uppercase mb-3 text-red-600'; msgEl.innerHTML = `Start with Simple Level.`; }
-                else if (bestSimple < 95) { msgEl.className = 'text-xs font-bold uppercase mb-3 text-amber-600'; msgEl.innerHTML = `Master Simple (95%) first.`; }
-                else if (bestMedium < 95) { msgEl.className = 'text-xs font-bold uppercase mb-3 text-green-600'; msgEl.innerHTML = `Great! Try Medium Level now.`; }
-                else { msgEl.className = 'text-xs font-bold uppercase mb-3 text-blue-600'; msgEl.innerHTML = `Mastery achieved!`; }
-            } catch (e) { console.error(e); }
-        }
-
-        function openDifficultyModal(ctx) {
-            const theme = engine.themes[ctx.subject] || engine.themes["General"];
-            const existing = document.getElementById('symmetric-difficulty-modal');
-            if (existing) existing.remove();
-            const modal = document.createElement('div');
-            modal.id = 'symmetric-difficulty-modal';
-            modal.className = `fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in`;
-            let colorName = 'slate';
-            try { if (theme.bg) colorName = theme.bg.split('-')[1]; } catch (e) {}
-            modal.innerHTML = `
-                <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl relative border-4 border-${colorName}-100 text-center">
-                    <button id="close-sym-modal" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-red-50 hover:text-red-500 transition">✕</button>
-                    <div class="w-16 h-16 mx-auto bg-${colorName}-50 rounded-2xl flex items-center justify-center text-${colorName}-600 text-3xl mb-4 shadow-sm">
-                        <i class="fas ${theme.icon || 'fa-shapes'}"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-slate-900 mb-1">Select Difficulty</h3>
-                    <p class="text-xs font-bold text-${colorName}-600 uppercase tracking-widest mb-8">
-                        ${ctx.subject} > ${ctx.chapter}
-                    </p>
-                    <div class="space-y-4">
-                        ${createCard('Simple', 'Foundation', 'bg-green-50', 'border-green-200', 'text-green-700', '🌱')}
-                        ${createCard('Medium', 'Standard', 'bg-yellow-50', 'border-yellow-200', 'text-yellow-700', '⚡')}
-                        ${createCard('Advanced', 'Challenger', 'bg-red-50', 'border-red-200', 'text-red-700', '🔥')}
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            document.getElementById('close-sym-modal').onclick = () => modal.remove();
-        }
-
-        function createCard(level, subtitle, bg, border, text, icon) {
-            return `
-                <button onclick="launchQuiz('${level}')"
-                    class="w-full p-4 ${bg} border-2 ${border} rounded-2xl hover:scale-[1.02] active:scale-95 transition-all group text-left flex items-center gap-4 shadow-sm">
-                    <span class="w-12 h-12 rounded-xl bg-white/50 ${text} flex items-center justify-center text-2xl shadow-sm">${icon}</span>
-                    <div>
-                        <div class="font-bold ${text} text-lg leading-tight">${level}</div>
-                        <div class="text-[10px] ${text} opacity-80 font-black uppercase tracking-wider">${subtitle}</div>
-                    </div>
-                    <span class="ml-auto ${text} group-hover:translate-x-1 transition text-xl"><i class="fas fa-arrow-right"></i></span>
-                </button>
-            `;
-        }
-
-        window.launchQuiz = (difficulty) => {
-            const params = new URLSearchParams(window.location.search);
-            const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
-            window.location.href = `quiz-engine.html?topic=${encodeURIComponent(quizSlug)}` +
-                `&difficulty=${difficulty}&grade=${params.get('grade')}` +
-                `&subject=${encodeURIComponent(params.get('subject'))}` +
-                `&chapter_name=${encodeURIComponent(params.get('chapter'))}`;
-        };
-    </script>
+    <script type="module" src="../js/study-content.js"></script>
 </body>
 </html>
