@@ -15,19 +15,16 @@
 <title>Class Hub — Ready4Exam</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
-
+<script src="https://cdn.tailwindcss.com"></script>
     <script src="../js/shell.js"></script>
 <script src="../js/tailwind-config.js"></script>
 <link href="../css/global.css" rel="stylesheet">
-
-
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="../js/firebase-master-config.js"></script>
 <script src="../js/config.js" type="module"></script>
 
 <style>
-
 .subject-card{width:100%;background:white;padding:1.6rem 1.2rem;border-radius:20px;
   border:1px solid rgba(0,0,0,.04);box-shadow:0 4px 12px rgba(0,0,0,.03);
   transition:.3s cubic-bezier(0.4, 0, 0.2, 1);cursor:pointer;}
@@ -105,7 +102,6 @@ document.getElementById("hub-title").textContent = `Class ${GRADE} Hub`;
 const note=document.getElementById("class-note");
 const grid=document.getElementById("subject-grid");
 
-// --- TOGGLE LOGIC ---
 let currentMode = "standard";
 window.setMode = function(mode) {
     currentMode = mode;
@@ -120,7 +116,6 @@ window.setMode = function(mode) {
         btnT.className = "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wide transition-all bg-white text-cbse-blue shadow-lg";
     }
 
-    // Refresh subjects
     loadSubjects();
 };
 
@@ -149,6 +144,18 @@ function loadSubjects(){
   if (!curriculumData) return;
 
   Object.keys(curriculumData).forEach(sub=>{
+    // --- ICON DIFFERENTIATION LOGIC ---[cite: 1]
+    const lowerSub = sub.toLowerCase();
+    let iconName = 'book-open'; // Default icon
+    
+    if (lowerSub.includes('science') && !lowerSub.includes('social')) {
+        iconName = 'flask';
+    } else if (lowerSub.includes('social')) {
+        iconName = 'globe';
+    } else if (lowerSub.includes('math')) {
+        iconName = 'calculator';
+    }
+
     let href = `curriculum.html?grade=${GRADE}&subject=${encodeURIComponent(sub)}`;
     if (currentMode === "term_prep") {
         href += `&mode=term_prep`;
@@ -156,7 +163,7 @@ function loadSubjects(){
 
     grid.innerHTML+=`
     <a href="${href}" class="subject-card group">
-      <div class="card-header"><i data-lucide="book-open" class="text-cbse-blue h-8 w-8"></i>
+      <div class="card-header"><i data-lucide="${iconName}" class="text-cbse-blue h-8 w-8"></i>
       <h3 class="card-title">${sub}</h3></div>
       <p class="card-description">${currentMode === "term_prep" ? "Select chapters for Term Exams." : "Practice specific worksheets for " + sub + "."}</p>
       <div class="mt-6 text-center"><button class="card-button bg-cbse-blue group-hover:bg-blue-600">${currentMode === "term_prep" ? "Start Prep" : "View Chapters"}</button></div>
