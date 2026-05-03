@@ -160,12 +160,8 @@ export async function routeUser(user) {
 
     // 2. School/B2B Routing
     if (data.tenantType === "school") {
-        if ((data.role === "school_master" || data.role === "gateway" || data.role === "principal" || data.role === "admin") && data.school_id) {
-            if (data.role === "admin") {
-                window.location.href = `app/consoles/admin.html`;
-            } else {
-                window.location.href = `school-landing.html?schoolId=${data.school_id}`;
-            }
+        if ((data.role === "school_master" || data.role === "gateway") && data.school_id) {
+            window.location.href = `school-landing.html?schoolId=${data.school_id}`;
             return;
         }
         window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;

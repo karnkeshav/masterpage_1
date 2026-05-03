@@ -810,7 +810,8 @@ async function listenToIntercom() {
 
     const q = query(
         collection(db, "messages"),
-        where("school_id", "==", schoolId)
+        where("school_id", "==", schoolId),
+        where("student_id", "==", auth.currentUser.uid)
     );
 
     unsubIntercom = onSnapshot(q, (snapshot) => {
@@ -829,7 +830,7 @@ async function listenToIntercom() {
         docs.forEach(doc => {
             const data = doc.data();
 
-            if(data.target_grade === targetGrade && data.target_section === targetSection) {
+            if(true) {
                 const date = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : 'Just now';
                 const toast = document.createElement('div');
                 toast.className = 'bg-blue-50 border-l-4 border-blue-500 p-3 rounded shadow-sm text-xs relative';
