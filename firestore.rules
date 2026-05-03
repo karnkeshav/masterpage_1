@@ -15,6 +15,11 @@ service cloud.firestore {
     function isOwner() {
       return isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
     }
+    function isSchoolMasterOf(schoolId) {
+      return isLoggedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.school_id == schoolId
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ["admin", "school_master"];
+    }
 
     // Global Owner Override
     match /{document=**} {
@@ -23,21 +28,28 @@ service cloud.firestore {
 
     // Users Collection
     match /users/{userId} {
-      allow read: if isLoggedIn();
-      allow write: if isSelf(userId) || isAdmin();
+      allow read: if isOwner() || isSelf(userId);
+      allow write: if isOwner() || isSelf(userId);
+    }
+
+    // Root financial_events (B2C)
+    match /financial_events/{eventId} {
+      allow read, write: if isOwner();
     }
 
     // Quiz Scores Collection
     match /quiz_scores/{scoreId} {
+      allow read: if isOwner();
+      allow read, write: if request.auth != null && resource.data.user_id == request.auth.uid;
       allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
-      allow read: if isLoggedIn();
       allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
     }
 
     // Mistake Notebook Collection
     match /mistake_notebook/{docId} {
+      allow read: if isOwner();
+      allow read, write: if request.auth != null && resource.data.user_id == request.auth.uid;
       allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
-      allow read: if isLoggedIn();
       allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
     }
 
@@ -56,11 +68,11 @@ service cloud.firestore {
 
     // Schools Collection
     match /schools/{schoolId} {
-      allow read: if isLoggedIn();
-      allow write: if isAdmin() || isOwner();
+      allow read: if isOwner() || isSchoolMasterOf(schoolId);
+      allow write: if isOwner();
 
       match /financial_events/{eventId} {
-        allow read, write: if isAdmin() || isOwner();
+        allow read, write: if isOwner();
       }
     }
 
