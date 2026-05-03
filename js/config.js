@@ -3,7 +3,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { createClient as createSupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { initializeFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { initializeFirestore, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 let firebaseApp = null;
@@ -51,6 +51,12 @@ export async function initializeServices() {
         experimentalForceLongPolling: true,
         useFetchStreams: false
       });
+
+      if (window.__firebase_config?.enableIndexedDbPersistence || window.enableIndexedDbPersistenceFlag) {
+          enableIndexedDbPersistence(firebaseDB).catch(err => {
+              console.warn("Firestore IndexedDB persistence failed:", err);
+          });
+      }
 
       // --- AUTOMATION PROJECT (Vault) ---
       if (autoCfg?.apiKey) {
