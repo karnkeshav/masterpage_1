@@ -323,10 +323,6 @@ export async function saveResult(result) {
             percentage: Math.round((result.score / result.total) * 100), // Keep for backward compatibility
             timestamp: serverTimestamp(),
 
-            // Send raw answers for server-side scoring as required by strict zero-lag architecture guards
-            userAnswers: result.userAnswers || null,
-            questions: result.questions ? result.questions.map(q => ({ id: q.id, correct_answer: q.correct_answer, question_type: q.question_type })) : null,
-
             quiz_mode: result.quiz_mode || "standard",
             latency_vector: result.latency_vector || [],
             term_id: result.term_id || null,
@@ -493,16 +489,24 @@ function inferSubject(chapterSlug) {
 
 // --- GOVERNANCE & LEDGER ---
 
-export async function recordFinancialEvent(schoolId, type, amount, details) {
+export async function recordFinancialEvent(entityId, type, amount, details) {
     const { db } = await getInitializedClients();
-    if (!schoolId) return;
+
+    const isB2C = entityId === "B2C_REVENUE" || (type || "").includes("B2C") || (type || "").includes("USER");
+    const entityType = isB2C ? "B2C" : "B2B";
+
+    const collPath = isB2C
+        ? collection(db, "financial_events")
+        : collection(db, "schools", entityId, "financial_events");
 
     try {
-        const ref = collection(db, "schools", schoolId, "financial_events");
-        await addDoc(ref, {
+        await addDoc(collPath, {
+            entityType,
             type,
-            amount,
-            details,
+            amount: Number(amount) || 0,
+            details: details || "",
+            school_id: isB2C ? null : entityId,
+            uid: null,
             timestamp: serverTimestamp(),
             recorded_by: getAuthUser()?.uid || "system"
         });
