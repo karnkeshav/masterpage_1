@@ -68,7 +68,7 @@ async function generateKnowledgeHub(profile, grade) {
 
     let curriculum = null;
     try {
-        curriculum = await loadCurriculum(grade, profile.stream);
+        curriculum = await loadCurriculum(grade);
     } catch(e) {
         console.error("Curriculum load failed for knowledge hub:", e);
         container.innerHTML = `<div class="glass-panel p-5 rounded-3xl text-center text-slate-500 italic">Curriculum Coming Soon</div>`;
@@ -810,8 +810,7 @@ async function listenToIntercom() {
 
     const q = query(
         collection(db, "messages"),
-        where("school_id", "==", schoolId),
-        where("student_id", "==", auth.currentUser.uid)
+        where("school_id", "==", schoolId)
     );
 
     unsubIntercom = onSnapshot(q, (snapshot) => {
@@ -830,7 +829,7 @@ async function listenToIntercom() {
         docs.forEach(doc => {
             const data = doc.data();
 
-            if(true) {
+            if(data.target_grade === targetGrade && data.target_section === targetSection) {
                 const date = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : 'Just now';
                 const toast = document.createElement('div');
                 toast.className = 'bg-blue-50 border-l-4 border-blue-500 p-3 rounded shadow-sm text-xs relative';
