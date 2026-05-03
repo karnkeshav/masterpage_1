@@ -6,13 +6,6 @@ import { doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebas
 
 export async function guardConsole(requiredRole) {  
     await getInitializedClients();  
-
-    // Check local session immediately to bypass slow onAuthStateChanged
-    const cachedUid = sessionStorage.getItem('uid');
-    if (cachedUid && window.userProfile && (window.userProfile.role === requiredRole || window.userProfile.role === 'owner')) {
-        console.log("Guard: Fast-track Access Granted from Cache");
-        revealApp(window.userProfile);
-    }
   
     initializeAuthListener(async (user, initialProfile) => {  
         if (!user) {  
