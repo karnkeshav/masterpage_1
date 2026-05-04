@@ -1,6 +1,6 @@
 import { getInitializedClients } from './config.js';
 import { bindConsoleLogout } from './guard.js';
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";\\
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- GITHUB DATA CONFIGURATION ---
 const GITHUB_CONFIG = {
@@ -209,7 +209,8 @@ window.handleBack = () => {
         updateNavigationUI();
         showView('subject-selection-view');
     } else {
-        window.location.href = "consoles/student.html";
+        // Updated path to ensure back button works from the subfolder
+        window.location.href = "../consoles/student.html"; 
     }
 };
 
