@@ -59,7 +59,7 @@ async function runPulseAnalysis() {
         weightageContainer.innerHTML = `<p class="text-cbse-blue animate-pulse text-[10px] font-black uppercase">Forensic Sync in Progress...</p>`;
 
         // Construct URL: e.g., archive/mathematics_refined.json
-        const fileName = `${state.subject.toLowerCase()}_refined.json`;
+        const fileName = `${state.subject.toLowerCase().replace(/\s+/g, '_')}_refined.json`;
         const rawUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folder}/${fileName}`;
         
         const response = await fetch(rawUrl);
