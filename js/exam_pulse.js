@@ -1,6 +1,6 @@
 import { getInitializedClients } from './config.js';
 import { bindConsoleLogout } from './guard.js';
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";\\
 
 // --- GITHUB DATA CONFIGURATION ---
 const GITHUB_CONFIG = {
@@ -102,19 +102,46 @@ function renderStrategicPriority(selectedMark) {
 
     state.currentPriorityMark = selectedMark;
 
-    // Filter for questions matching marks AND repeated at least twice
+    // --- 1. THE FORENSIC NOISE BLACKLIST ---
+    const JUNK_TOPICS = [
+        "EXAM_INSTRUCTIONS", "INSTRUCTIONS", "GENERAL INSTRUCTIONS", 
+        "INSTRUCTION", "GENERAL", "TOPIC", "MAP WORK"
+    ];
+
+    const JUNK_PHRASES = [
+        "QUESTIONS IN THIS SECTION CARRY",
+        "READING TIME",
+        "GENERAL INSTRUCTIONS",
+        "ALL QUESTIONS ARE COMPULSORY",
+        "SECTION A", "SECTION B", "SECTION C", "SECTION D", "SECTION E"
+    ];
+
+    // Filter for marks and repetition
     const filtered = state.data.filter(q => 
         Number(q.marks) === selectedMark && 
         Number(q.repeat_count) > 1
     );
 
-    // Group by Topic and Repetition Count
     const grouped = {};
     filtered.forEach(q => {
-        const key = `${q.topic}-${q.repeat_count}`;
+        const topicName = (q.topic || "General").toUpperCase().trim();
+        const contentUpper = (q.content || "").toUpperCase();
+
+        // --- 2. THE MULTI-STAGE FILTER ---
+        // Skip if the topic is in the blacklist
+        if (JUNK_TOPICS.includes(topicName)) return;
+
+        // Skip if the content contains administrative junk phrases
+        const isAdministrativeNoise = JUNK_PHRASES.some(phrase => contentUpper.includes(phrase));
+        if (isAdministrativeNoise) return;
+
+        // Skip if the content is too short (likely a fragment or OCR glitch)
+        if (q.content.length < 15) return;
+
+        const key = `${topicName}-${q.repeat_count}`;
         if (!grouped[key]) {
             grouped[key] = { 
-                topic: q.topic || "General", 
+                topic: topicName, 
                 count: q.repeat_count, 
                 questions: [] 
             };
@@ -122,7 +149,10 @@ function renderStrategicPriority(selectedMark) {
         grouped[key].questions.push(q.content);
     });
 
-    const sorted = Object.values(grouped).sort((a, b) => b.count - a.count);
+    // Sort by repetition count
+    const sorted = Object.values(grouped)
+        .filter(item => item.questions.length > 0)
+        .sort((a, b) => b.count - a.count);
 
     priorityEl.innerHTML = `
         <div class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
@@ -158,7 +188,7 @@ function renderStrategicPriority(selectedMark) {
                         `).join('')}
                     </div>
                 </div>
-            `).join('') : `<p class="text-xs text-slate-400 italic text-center py-8">No repeated ${selectedMark}-mark patterns identified in current datasets.</p>`}
+            `).join('') : `<p class="text-xs text-slate-400 italic text-center py-8">No repeated ${selectedMark}-mark patterns identified.</p>`}
         </div>
     `;
 }
