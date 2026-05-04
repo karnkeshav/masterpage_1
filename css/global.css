@@ -15,6 +15,13 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Add this to your base section */
+#app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50; /* Stays above content but below modals */
+}
+
 /* ===========================
    GLASSMORPHISM
    =========================== */
@@ -96,6 +103,10 @@ body.focus-mode #quiz-content {
   background-color: #dbeafe;
 }
 
+.option-label:hover, .option-label:focus-within {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
 /* ===========================
    RESULT CARD ANIMATION
    =========================== */
@@ -143,6 +154,30 @@ body.focus-mode #quiz-content {
 
 #analysis-modal div::-webkit-scrollbar { width: 6px; }
 #analysis-modal div::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+/* ===========================
+   EXAM PULSE PRIORITY SECTION
+   =========================== */
+.priority-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+.priority-card:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    border-color: #1a3e6a;
+}
+.repetition-badge {
+    background: #f0f7ff;
+    color: #1a3e6a;
+    font-size: 0.65rem;
+    font-weight: 900;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    text-transform: uppercase;
+}
 
 /* ===========================
    WHATSAPP FLOAT
