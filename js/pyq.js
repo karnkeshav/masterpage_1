@@ -210,9 +210,8 @@ function resolveGrade(user) {
 
 function normalizeSubject(value) {
   const raw = String(value || "").trim().toLowerCase();
-  // Merges all variants (Basic/Standard/Maths) into one subject category
-  if (["math", "maths", "mathematics"].some(s => raw.includes(s))) return "Mathematics";
-  
+  if (["math", "maths", "mathematics"].includes(raw)) return "Mathematics";
+
    if (raw.includes("social")) return "Social Science";
   if (raw.includes("science")) return "Science";
  
@@ -340,7 +339,6 @@ function updateHeader(grade) {
 function resolveSubjectOptions() {
   const fromData = [...new Set(
     currentVaultData
-      .filter(item => item.year === activeYear) // Only shows subjects available in the selected year
       .map((item) => normalizeSubject(item.subject))
       .filter(Boolean)
   )];
@@ -412,19 +410,11 @@ function setupFilters() {
     opt.textContent = subject;
     subjectSelect.appendChild(opt);
   });
-
   subjectSelect.value = activeSubject;
 
-  // Logic: Enable difficulty for Math, but keep it disabled for 2022 (which has no Basic/Standard)
-  const isMath = normalizeSubject(activeSubject) === "Mathematics";
-  const is2022 = activeYear === "2022";
-  difficultySelect.disabled = !isMath || is2022;
-  
-  if (is2022) activeDifficulty = "all"; 
+  difficultySelect.disabled = normalizeSubject(activeSubject) !== "Mathematics";
   difficultySelect.value = activeDifficulty;
-
   typeSelect.value = activeType;
-  
 
   const sets = resolveAvailableSets(activeSubject, activeYear, activeType, activeDifficulty);
   setSelect.innerHTML = `<option value="all">All Sets</option>`;
