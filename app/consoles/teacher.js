@@ -121,22 +121,12 @@ async function fetchSectionStudents() {
         const batch = studentUids.slice(i, i + 10);
         if (batch.length === 0) continue;
 
-            // 🔥 FIX: fallback if school_id is missing in documents
-let scoresQuery;
-
-try {
-  scoresQuery = query(
-    collection(db, "quiz_scores"),
-    where("user_id", "in", batch),
-    where("school_id", "==", schoolId)
-  );
-} catch (e) {
-  // fallback query (no school filter)
-  scoresQuery = query(
-    collection(db, "quiz_scores"),
-    where("user_id", "in", batch)
-  );
-}
+            
+// 🔥 FIX: simplified query (no school_id filter)
+const scoresQuery = query(
+  collection(db, "quiz_scores"),
+  where("user_id", "in", batch)
+);
         
         let scoresSnap;
 
