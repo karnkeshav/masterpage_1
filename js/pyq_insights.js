@@ -132,33 +132,43 @@ function renderBlueprint(data) {
 async function renderCompendium(questions) {  
     const container = document.getElementById('compendium-container');  
     if (!container) return;  
+    
     if (questions.length === 0) {  
         container.innerHTML = `<div class="text-center py-10 italic text-slate-400">No records found for this selection.</div>`;  
         return;  
     }  
 
-    // Renders list with 'content' field from your refined JSON[cite: 1, 3]
-    container.innerHTML = questions.map(q => `  
-        <div class="group p-5 border border-slate-100 rounded-2xl hover:border-blue-200 transition-all bg-white shadow-sm">  
-            <div class="flex items-start justify-between gap-4">  
-                <div class="space-y-2">  
-                    <div class="flex items-center gap-2">  
-                        <span class="text-[10px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded">${q.marks}M</span>  
-                        <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase">${q.topic || 'CORE'}</span>  
-                    </div>  
-                    <p class="text-slate-700 font-medium leading-relaxed">${q.content || q.text || 'Content missing'}</p>  
-                </div>  
-                <span class="text-[10px] font-black text-slate-300 whitespace-nowrap">${q.year} BOARD</span>  
-            </div>  
-        </div>  
-    `).join('');  
+    container.innerHTML = questions.map(q => {
+        // PRE-PROCESSOR: Automatically wrap common math patterns in $ delimiters 
+        // if the JSON doesn't already have them.
+        let text = q.content || q.text || 'Content missing';
+        
+        // This regex looks for simple polynomials like x^2 + 5x + 6
+        text = text.replace(/([a-z]\^?\d*(\s?[\+\-\*\/]\s?\d*[a-z]?\^?\d*)*)/gi, (match) => {
+            return (match.includes('^') || match.length > 3) ? `$${match}$` : match;
+        });
 
-    // Re-trigger MathJax to typeset new formulas[cite: 1]
-    if (window.MathJax) {
-        window.MathJax.typesetPromise([container]);
+        return `  
+            <div class="group p-5 border border-slate-100 rounded-2xl hover:border-blue-200 transition-all bg-white shadow-sm">  
+                <div class="flex items-start justify-between gap-4">  
+                    <div class="space-y-2">  
+                        <div class="flex items-center gap-2">  
+                            <span class="text-[10px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded">${q.marks}M</span>  
+                            <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase">${q.topic || 'CORE'}</span>  
+                        </div>  
+                        <p class="text-slate-700 font-medium leading-relaxed">${text}</p>  
+                    </div>  
+                    <span class="text-[10px] font-black text-slate-300 whitespace-nowrap">${q.year} BOARD</span>  
+                </div>  
+            </div>  
+        `;  
+    }).join('');  
+
+    // RE-TRIGGER MATHJAX: This is the critical step for dynamic content
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([container]).catch((err) => console.warn('MathJax failed:', err));
     }
 }  
-  
 function setupFilterListeners() {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
