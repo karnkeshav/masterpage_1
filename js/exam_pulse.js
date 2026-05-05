@@ -206,7 +206,7 @@ window.handleBack = () => {
         updateNavigationUI();
         showView('subject-selection-view');
     } else {
-        window.location.href = "../consoles/student.html";
+        window.location.href = "consoles/student.html";
     }
 };
 window.selectSubject = async (sub) => {
