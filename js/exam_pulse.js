@@ -92,25 +92,39 @@ async function runPulseAnalysis() {
     }
 }
 
+/**
+ * Logic for the Strategic Priority Section: Filters junk and formats math
+ */
 function renderStrategicPriority(selectedMark) {
     const priorityEl = document.getElementById('priority-list');
     if (!priorityEl || !state.data.length) return;
 
     state.currentPriorityMark = selectedMark;
 
-    const JUNK_TOPICS = ["EXAM_INSTRUCTIONS", "INSTRUCTIONS", "GENERAL INSTRUCTIONS", "INSTRUCTION", "GENERAL", "TOPIC", "MAP WORK"];
-    const JUNK_PHRASES = ["QUESTIONS IN THIS SECTION CARRY", "READING TIME", "GENERAL INSTRUCTIONS", "ALL QUESTIONS ARE COMPULSORY"];
+    // --- 1. EXPANDED NOISE FILTER ---
+    const JUNK_TOPICS = ["EXAM_INSTRUCTIONS", "INSTRUCTIONS", "GENERAL INSTRUCTIONS", "INSTRUCTION", "GENERAL", "TOPIC"];
+    const JUNK_PHRASES = [
+        "15 MINUTES ALLOTTED", 
+        "15-MINUTE PERIOD", 
+        "READ THE QUESTION PAPER", 
+        "QUESTIONS IN THIS SECTION", 
+        "ALL QUESTIONS ARE COMPULSORY"
+    ];
 
-    const filtered = state.data.filter(q => Number(q.marks) === selectedMark && Number(q.repeat_count) > 1);
+    const filtered = state.data.filter(q => 
+        Number(q.marks) === selectedMark && 
+        Number(q.repeat_count) > 1
+    );
 
     const grouped = {};
     filtered.forEach(q => {
         const topicName = (q.topic || "General").toUpperCase().trim();
         const contentUpper = (q.content || "").toUpperCase();
 
+        // Strict skip for the "15-minute" anomaly even if tagged as REAL NUMBERS
         if (JUNK_TOPICS.includes(topicName)) return;
         const isNoise = JUNK_PHRASES.some(phrase => contentUpper.includes(phrase));
-        if (isNoise || q.content.length < 15) return;
+        if (isNoise || q.content.length < 20) return;
 
         const key = `${topicName}-${q.repeat_count}`;
         if (!grouped[key]) {
@@ -125,8 +139,8 @@ function renderStrategicPriority(selectedMark) {
         <div class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
             ${[1, 2, 3, 4, 5].map(m => `
                 <button onclick="window.updatePriorityFilter(${m})" 
-                    class="px-4 py-2 rounded-full text-[10px] font-bold uppercase transition-all whitespace-nowrap
-                    ${state.currentPriorityMark === m ? 'bg-cbse-blue text-white shadow-lg' : 'bg-slate-100 text-slate-400'}">
+                    class="px-4 py-2 rounded-full text-[10px] font-bold uppercase transition-all
+                    ${state.currentPriorityMark === m ? 'bg-cbse-blue text-white' : 'bg-slate-100 text-slate-400'}">
                     ${m} Mark
                 </button>
             `).join('')}
@@ -144,11 +158,13 @@ function renderStrategicPriority(selectedMark) {
                             View Questions
                         </button>
                     </div>
-                    <div id="q-prio-${idx}" class="hidden mt-4 pt-4 border-t border-slate-200 space-y-3">
+                    <div id="q-prio-${idx}" class="hidden mt-4 pt-4 border-t border-slate-200 space-y-4">
                         ${[...new Set(item.questions)].map(q => `
                             <div class="flex gap-3">
                                 <i class="fas fa-arrow-right text-cbse-blue text-[8px] mt-1.5"></i>
-                                <p class="text-xs text-slate-600 leading-relaxed">${q}</p>
+                                <p class="text-xs text-slate-600 leading-relaxed font-medium">
+                                    ${formatMathText(q)}
+                                </p>
                             </div>
                         `).join('')}
                     </div>
@@ -156,6 +172,28 @@ function renderStrategicPriority(selectedMark) {
             `).join('')}
         </div>
     `;
+}
+
+/**
+ * --- MATH RENDERING ENGINE ---
+ * Converts raw OCR text/exponents into clean HTML formatting
+ */
+function formatMathText(text) {
+    if (!text) return "";
+    
+    return text
+        // 1. Convert sqrt(abc) to √abc
+        .replace(/sqrt\(([^)]+)\)/g, '√($1)')
+        // 2. Convert ^2, ^3, etc. to superscripts
+        .replace(/\^(\d+)/g, '<sup>$1</sup>')
+        // 3. Convert x1, y1 to subscripts
+        .replace(/([a-zA-Z])(\d)/g, '$1<sub>$2</sub>')
+        // 4. Convert standard operators for better readability
+        .replace(/\*/g, ' × ')
+        .replace(/PI/gi, 'π')
+        .replace(/alpha/gi, 'α')
+        .replace(/beta/gi, 'β')
+        .replace(/theta/gi, 'θ');
 }
 
 // --- GLOBAL ATTACHMENTS ---
