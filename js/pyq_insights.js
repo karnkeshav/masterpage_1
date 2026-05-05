@@ -6,9 +6,9 @@ import { ensureUserInFirestore } from "./auth-paywall.js";
  * Based on the project structure in your 'archive' folder.
  */
 const ARCHIVE_MAP = {
-    "Mathematics": "../archive/mathematics_refined_clean.json",
-    "Science": "../archive/science_refined.json",
-    "Social Science": "../archive/social_science_refined.json"
+    "Mathematics": "/masterpage_1/archive/mathematics_refined.json",
+    "Science": "/masterpage_1/archive/science_refined.json",
+    "Social Science": "/masterpage_1/archive/social_science_refined.json"
 };
 
 let state = {  
