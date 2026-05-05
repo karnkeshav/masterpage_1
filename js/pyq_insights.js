@@ -1,7 +1,10 @@
 import { getInitializedClients } from './config.js';  
 import { ensureUserInFirestore } from "./auth-paywall.js"; 
 
-// 1. ARCHIVE MAPPING: Subject names to local JSON file paths[cite: 1, 2, 3]
+/**
+ * ARCHIVE MAPPING: Links subjects to local JSON file paths
+ * Based on the project structure in your 'archive' folder.
+ */
 const ARCHIVE_MAP = {
     "Mathematics": "../archive/mathematics_refined_clean.json",
     "Science": "../archive/science_refined.json",
@@ -18,8 +21,7 @@ let state = {
 const normalizeChapter = (slug) => slug.replace(/_/g, ' ').trim().toLowerCase();  
   
 /**
- * Preserved Auth logic for the paywall/login check, 
- * but data retrieval is now 100% local JSON.
+ * INITIALIZATION: Maintains Auth-Paywall while switching to local JSON data.
  */
 export async function initInsights() {  
     try {  
@@ -31,7 +33,7 @@ export async function initInsights() {
                 const profile = await ensureUserInFirestore(user); 
                 updateHeaderUI(profile); 
                 updatePageTitles();  
-                await runDeepAnalysis(); // This now fetches from the /archive folder
+                await runDeepAnalysis(); 
             } else {  
                 window.location.href = "../offering.html";  
             }  
@@ -51,25 +53,27 @@ function updateHeaderUI(profile) {
 function updatePageTitles() {  
     const titleEl = document.getElementById('header-title');  
     if (titleEl) {  
-        titleEl.innerHTML = `${state.subject} <span class="text-white opacity-60 text-lg font-normal ml-2">| ${state.chapterID.replace(/_/g, ' ')}</span>`;  
+        const displayChapter = state.chapterID.replace(/_/g, ' ');
+        titleEl.innerHTML = `${state.subject} <span class="text-white opacity-60 text-lg font-normal ml-2">| ${displayChapter}</span>`;  
     }  
 }
 
 /**
- * CORE LOGIC: Fetches local JSON and runs analysis on the array
+ * CORE ANALYSIS: Fetches local JSON and populates the Intelligence Grid.
+ * Replaces old Firebase Firestore collection logic.
  */
 async function runDeepAnalysis() {  
     const chapterSearchTerm = normalizeChapter(state.chapterID);  
   
-    try {  
-        // 2. FETCH FROM GITHUB ARCHIVE FOLDER
+    try {
+        // 1. Fetch from Archive Folder
         const filePath = ARCHIVE_MAP[state.subject] || ARCHIVE_MAP["Mathematics"];
         const response = await fetch(filePath);
         if (!response.ok) throw new Error(`Archive path error: ${filePath}`);
         
         const allData = await response.json();
 
-        // 3. FILTER BY CHAPTER
+        // 2. Client-side Filter by Chapter
         const questions = allData.filter(q => {
             const dbChapter = (q.chapter || "").toLowerCase();
             return dbChapter.includes(chapterSearchTerm);
@@ -77,26 +81,26 @@ async function runDeepAnalysis() {
 
         state.rawQuestions = questions; 
   
-        // 4. DATA AGGREGATION FOR UI ANALYSIS
+        // 3. UI Logic Aggregation[cite: 1, 2, 3]
         const blueprint = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };  
         const topicMap = {};  
         let subjectiveCount = 0;  
   
-        questions.forEach(q => {  
-            // Blueprint: Map marks
+        questions.forEach(q => {
+            // Count for Marks Blueprint
             const m = String(q.marks);
             if (blueprint.hasOwnProperty(m)) blueprint[m]++;  
   
-            // Heatmap: Map topics
+            // Map for Concept Heatmap
             const t = q.topic || 'General';  
             topicMap[t] = (topicMap[t] || 0) + 1;  
   
-            // Forensics: Identify Subjective vs MCQ[cite: 2, 3]
+            // Ratio for Forensics
             const qType = (q.type || '').toLowerCase();  
             if (!qType.includes('mcq')) subjectiveCount++;  
         });  
   
-        // 5. UPDATE UI COMPONENTS
+        // 4. Component Rendering
         renderBlueprint(blueprint);  
         renderHeatmap(topicMap, questions.length);  
         renderForensics(subjectiveCount, questions.length);  
@@ -104,10 +108,11 @@ async function runDeepAnalysis() {
         renderCompendium(questions); 
         setupFilterListeners(); 
         
-        // Dynamic industry context replaces the old Firestore loadMeta()
-        const topTopic = Object.keys(topicMap).sort((a,b) => topicMap[b] - topicMap[a])[0] || "core principles";
+        // 5. Dynamic Industry Panel
+        const sortedTopics = Object.entries(topicMap).sort((a,b) => b[1] - a[1]);
+        const topTopic = sortedTopics.length > 0 ? sortedTopics[0][0] : "core principles";
         document.getElementById('industry-connection-text').textContent = 
-            `Real-world implementation of ${topTopic} is a standard requirement for architecture roles in the IT sector.`;
+            `Real-world implementation of ${topTopic} is a key benchmark for architecture and engineering roles in the technology sector.`;
 
     } catch (err) {  
         console.error("Local Analysis Failed:", err);  
@@ -124,13 +129,15 @@ function renderBlueprint(data) {
     set('blueprint-5m', data['5'] || 0);  
 } 
   
-function renderCompendium(questions) {  
+async function renderCompendium(questions) {  
     const container = document.getElementById('compendium-container');  
     if (!container) return;  
     if (questions.length === 0) {  
         container.innerHTML = `<div class="text-center py-10 italic text-slate-400">No records found for this selection.</div>`;  
         return;  
     }  
+
+    // Renders list with 'content' field from your refined JSON[cite: 1, 3]
     container.innerHTML = questions.map(q => `  
         <div class="group p-5 border border-slate-100 rounded-2xl hover:border-blue-200 transition-all bg-white shadow-sm">  
             <div class="flex items-start justify-between gap-4">  
@@ -141,20 +148,29 @@ function renderCompendium(questions) {
                     </div>  
                     <p class="text-slate-700 font-medium leading-relaxed">${q.content || q.text || 'Content missing'}</p>  
                 </div>  
-                <span class="text-[10px] font-black text-slate-300">YEAR ${q.year}</span>  
+                <span class="text-[10px] font-black text-slate-300 whitespace-nowrap">${q.year} BOARD</span>  
             </div>  
         </div>  
     `).join('');  
+
+    // Re-trigger MathJax to typeset new formulas[cite: 1]
+    if (window.MathJax) {
+        window.MathJax.typesetPromise([container]);
+    }
 }  
   
 function setupFilterListeners() {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
         btn.onclick = () => {
-            buttons.forEach(b => { b.classList.remove('bg-slate-900', 'text-white'); b.classList.add('bg-white', 'text-slate-600'); });
+            buttons.forEach(b => { 
+                b.classList.remove('bg-slate-900', 'text-white'); 
+                b.classList.add('bg-white', 'text-slate-600'); 
+            });
             btn.classList.add('bg-slate-900', 'text-white');
             const mark = btn.getAttribute('data-filter');
-            renderCompendium(mark === 'all' ? state.rawQuestions : state.rawQuestions.filter(q => String(q.marks) === mark));
+            const filtered = mark === 'all' ? state.rawQuestions : state.rawQuestions.filter(q => String(q.marks) === mark);
+            renderCompendium(filtered);
         };
     });
 }
@@ -166,7 +182,7 @@ function renderHeatmap(topicMap, total) {
         const perc = Math.round((count / total) * 100);
         return `<div><div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
             <span>${topic}</span><span>${perc}%</span></div>
-            <div class="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
             <div class="bg-blue-600 h-full" style="width: ${perc}%"></div></div></div>`;
     }).join('');
 }
@@ -175,7 +191,7 @@ function renderForensics(subCount, total) {
     const el = document.getElementById('forensics-text');
     if (!el || total === 0) return;
     const ratio = (subCount / total) * 100;
-    el.innerHTML = ratio > 60 ? `<strong>Pattern:</strong> Subjective-heavy. Focus on precise definitions and diagrams.` : `<strong>Pattern:</strong> Balanced mix of MCQs and subjective problems.`;
+    el.innerHTML = ratio > 60 ? `<strong>Pattern:</strong> Subjective-heavy. Focus on precise steps and diagrams.` : `<strong>Pattern:</strong> Balanced mix of MCQs and subjective problems.`;
 }
 
 function renderPredictive(topicMap) {
@@ -183,5 +199,5 @@ function renderPredictive(topicMap) {
     if (!el) return;
     const entries = Object.entries(topicMap);
     const top = entries.length > 0 ? entries.sort((a,b)=>b[1]-a[1])[0][0] : "General";
-    el.innerHTML = `High probability of appearing in 2026: <span class="font-bold underline decoration-green-300">"${top}"</span>`;
+    el.innerHTML = `Probability High for: <span class="font-bold underline decoration-green-300">"${top}"</span>`;
 }
