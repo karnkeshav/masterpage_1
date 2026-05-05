@@ -120,7 +120,9 @@ async function fetchSectionStudents() {
     for (let i = 0; i < studentUids.length; i += 10) {
         const batch = studentUids.slice(i, i + 10);
         if (batch.length === 0) continue;
-        let scoresQuery;
+
+            // 🔥 FIX: fallback if school_id is missing in documents
+let scoresQuery;
 
 try {
   scoresQuery = query(
@@ -134,8 +136,22 @@ try {
     collection(db, "quiz_scores"),
     where("user_id", "in", batch)
   );
-}   
-        const scoresSnap = await getDocs(scoresQuery);
+}
+        
+        let scoresSnap;
+
+try {
+  scoresSnap = await getDocs(scoresQuery);
+} catch (err) {
+  console.warn("⚠️ school_id query failed, retrying without filter");
+
+  const fallbackQuery = query(
+    collection(db, "quiz_scores"),
+    where("user_id", "in", batch)
+  );
+
+  scoresSnap = await getDocs(fallbackQuery);
+}
         scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
     }
 }
