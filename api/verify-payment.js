@@ -15,7 +15,7 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 module.exports = async (req, res) => {
-    // 1. ROBUST CORS HANDLING
+    // --- STEP 1: ROBUST CORS HANDLING ---
     const origin = req.headers.origin;
     const allowedOrigins = [
         'https://karnkeshav.github.io',
@@ -25,12 +25,17 @@ module.exports = async (req, res) => {
 
     if (allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+        res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
         res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
 
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    // Handle Preflight (OPTIONS) immediately
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     try {
@@ -98,7 +103,7 @@ module.exports = async (req, res) => {
                 userRecord = await auth.getUser(stableUid);
             }
         } catch (err) {
-            await pendingRef.update({ status: 'pending' }); // Allow retry on failure
+            await pendingRef.update({ status: 'pending' }); 
             throw err;
         }
 
@@ -107,7 +112,6 @@ module.exports = async (req, res) => {
         if (pendingData.planID === 'legacy') expiry.setFullYear(expiry.getFullYear() + 3);
         else expiry.setDate(expiry.getDate() + 30);
 
-        // Define Module Access
         let activeModules = ["SimpleQuizzes"];
         const pID = pendingData.planID;
         
