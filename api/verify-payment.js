@@ -2,36 +2,24 @@ const crypto = require('crypto');
 const admin = require('firebase-admin');
 const Razorpay = require('razorpay');
 
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        })
-    });
-}
-const db = admin.firestore();
-const auth = admin.auth();
-
 module.exports = async (req, res) => {
-    // 1. ROBUST CORS HANDLING
-    const origin = req.headers.origin;
-    const allowedOrigins = [
-        'https://karnkeshav.github.io',
-        'https://masterpage-1.vercel.app',
-        process.env.ALLOWED_ORIGIN
-    ].filter(Boolean);
-
-    if (allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-
+    // CORS handled by vercel.json at infrastructure level — OPTIONS exits here
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+    // Firebase init inside handler so a missing env var never crashes the module
+    // and blocks the OPTIONS preflight response
+    if (!admin.apps.length) {
+        admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+            })
+        });
+    }
+    const db = admin.firestore();
+    const auth = admin.auth();
 
     try {
         const {
