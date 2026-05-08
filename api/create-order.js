@@ -13,19 +13,24 @@ const TIER_META = {
 };
 
 module.exports = async (req, res) => {
-    // --- STEP 1: ABSOLUTE TOP CORS HANDLING ---
+    // --- STEP 1: ROBUST CORS HANDLING ---
     const origin = req.headers.origin;
-    // Explicitly allow your GitHub and Vercel domains
-    if (origin === 'https://karnkeshav.github.io' || origin === 'https://masterpage-1.vercel.app') {
+    const allowedOrigins = [
+        'https://karnkeshav.github.io',
+        'https://masterpage-1.vercel.app'
+    ];
+
+    if (allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+        res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
         res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
 
-    // Handle Preflight immediately
+    // Handle Browser Preflight (OPTIONS) immediately
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        res.status(200).end();
+        return;
     }
 
     // --- STEP 2: PROTECTED INITIALIZATION ---
@@ -89,7 +94,6 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         console.error("FATAL API ERROR:", error);
-        // We still send the error as JSON so the frontend can read it
         return res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 };

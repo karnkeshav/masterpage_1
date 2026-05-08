@@ -3,8 +3,27 @@ const admin = require('firebase-admin');
 const Razorpay = require('razorpay');
 
 module.exports = async (req, res) => {
-    // CORS handled by vercel.json at infrastructure level — OPTIONS exits here
-    if (req.method === 'OPTIONS') return res.status(200).end();
+    // --- STEP 1: ROBUST CORS HANDLING ---
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+        'https://karnkeshav.github.io',
+        'https://masterpage-1.vercel.app',
+        process.env.ALLOWED_ORIGIN
+    ].filter(Boolean);
+
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+        res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+
+    // Handle Preflight (OPTIONS) immediately
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     // Firebase init inside handler so a missing env var never crashes the module
@@ -86,7 +105,7 @@ module.exports = async (req, res) => {
                 userRecord = await auth.getUser(stableUid);
             }
         } catch (err) {
-            await pendingRef.update({ status: 'pending' }); // Allow retry on failure
+            await pendingRef.update({ status: 'pending' }); 
             throw err;
         }
 
@@ -95,7 +114,6 @@ module.exports = async (req, res) => {
         if (pendingData.planID === 'legacy') expiry.setFullYear(expiry.getFullYear() + 3);
         else expiry.setDate(expiry.getDate() + 30);
 
-        // Define Module Access
         let activeModules = ["SimpleQuizzes"];
         const pID = pendingData.planID;
         
