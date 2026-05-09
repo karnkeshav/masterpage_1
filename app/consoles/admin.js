@@ -1144,6 +1144,44 @@ window.handleCSVUpload = async (event) => {
                             errorCount++;
                             continue;
                         }
+                    } else if (role === 'teacher') {
+                        // Auto-provision new teacher account
+                        const csvDiscipline = (row[5] || '').trim();
+                        if (!csvDiscipline) {
+                            window.logMessage(`Skipped ${email}: Missing Discipline column for new teacher.`, true);
+                            errorCount++;
+                            continue;
+                        }
+                        if (!secondaryAuth) {
+                            window.logMessage(`Skipped ${email}: Secondary auth not initialized.`, true);
+                            errorCount++;
+                            continue;
+                        }
+                        try {
+                            const teacherCred = await createUserWithEmailAndPassword(secondaryAuth, email, "Ready4Exam@2026");
+                            userId = teacherCred.user.uid;
+                            await signOut(secondaryAuth);
+                            await setDoc(doc(db, "users", userId), {
+                                displayName: email.split('+')[1]?.split('@')[0] || email.split('@')[0],
+                                email: email,
+                                uid: userId,
+                                role: 'teacher',
+                                school_id: currentSchoolId,
+                                tenantType: "school",
+                                setupComplete: false,
+                                created_at: serverTimestamp()
+                            });
+                            window.logMessage(`Created teacher ${email}`);
+                            // Falls through to teacher mapping block below
+                        } catch (createErr) {
+                            if (createErr.code === 'auth/email-already-in-use') {
+                                window.logMessage(`Skipped ${email}: Auth account exists outside this school. Add manually.`, true);
+                            } else {
+                                window.logMessage(`Failed to create teacher ${email}: ${createErr.message}`, true);
+                            }
+                            errorCount++;
+                            continue;
+                        }
                     } else {
                         window.logMessage(`Skipped ${email}: User not found in school.`, true);
                         errorCount++;
@@ -1155,8 +1193,8 @@ window.handleCSVUpload = async (event) => {
                 }
 
                 if (role === 'teacher') {
-                    const targetGrade = row[3] || '9';
-                    const targetSection = row[4];
+                    const targetGrade = row[2] || '9';
+                    const targetSection = row[3];
                     const targetDiscipline = row[5];
 
                     if (!targetSection || !targetDiscipline) {
