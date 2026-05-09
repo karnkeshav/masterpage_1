@@ -1,0 +1,2049 @@
+{
+  "generatedAt": "2026-05-09T18:49:16.737Z",
+  "baseUrl": "http://127.0.0.1:4173",
+  "limits": {
+    "maxClickTargetsPerPage": 80,
+    "navigationTimeoutMs": 15000
+  },
+  "htmlPages": [
+    {
+      "file": "app/chapter-selection.html",
+      "route": "/app/chapter-selection.html"
+    },
+    {
+      "file": "app/class-hub.html",
+      "route": "/app/class-hub.html"
+    },
+    {
+      "file": "app/cognitive-priming.html",
+      "route": "/app/cognitive-priming.html"
+    },
+    {
+      "file": "app/consoles/admin.html",
+      "route": "/app/consoles/admin.html"
+    },
+    {
+      "file": "app/consoles/owner.html",
+      "route": "/app/consoles/owner.html"
+    },
+    {
+      "file": "app/consoles/parent.html",
+      "route": "/app/consoles/parent.html"
+    },
+    {
+      "file": "app/consoles/practitioner.html",
+      "route": "/app/consoles/practitioner.html"
+    },
+    {
+      "file": "app/consoles/principal.html",
+      "route": "/app/consoles/principal.html"
+    },
+    {
+      "file": "app/consoles/student.html",
+      "route": "/app/consoles/student.html"
+    },
+    {
+      "file": "app/consoles/teacher.html",
+      "route": "/app/consoles/teacher.html"
+    },
+    {
+      "file": "app/curriculum.html",
+      "route": "/app/curriculum.html"
+    },
+    {
+      "file": "app/exam_pulse.html",
+      "route": "/app/exam_pulse.html"
+    },
+    {
+      "file": "app/mistake-book.html",
+      "route": "/app/mistake-book.html"
+    },
+    {
+      "file": "app/pyq.html",
+      "route": "/app/pyq.html"
+    },
+    {
+      "file": "app/pyq_insights.html",
+      "route": "/app/pyq_insights.html"
+    },
+    {
+      "file": "app/quiz-engine.html",
+      "route": "/app/quiz-engine.html"
+    },
+    {
+      "file": "app/review.html",
+      "route": "/app/review.html"
+    },
+    {
+      "file": "app/study-content.html",
+      "route": "/app/study-content.html"
+    },
+    {
+      "file": "app/study-library.html",
+      "route": "/app/study-library.html"
+    },
+    {
+      "file": "index.html",
+      "route": "/index.html"
+    },
+    {
+      "file": "offering.html",
+      "route": "/offering.html"
+    },
+    {
+      "file": "register.html",
+      "route": "/register.html"
+    },
+    {
+      "file": "scert/telangana-9/chapter-selection.html",
+      "route": "/scert/telangana-9/chapter-selection.html"
+    },
+    {
+      "file": "scert/telangana-9/index.html",
+      "route": "/scert/telangana-9/index.html"
+    },
+    {
+      "file": "scert/telangana-9/quiz-engine.html",
+      "route": "/scert/telangana-9/quiz-engine.html"
+    },
+    {
+      "file": "school-landing.html",
+      "route": "/school-landing.html"
+    },
+    {
+      "file": "stitch.html",
+      "route": "/stitch.html"
+    },
+    {
+      "file": "stitch2.html",
+      "route": "/stitch2.html"
+    }
+  ],
+  "staticReferences": [
+    {
+      "source": "app/chapter-selection.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/chapter-selection.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/chapter-selection.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/chapter-selection.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/chapter-selection.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/class-hub.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/class-hub.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/class-hub.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/class-hub.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/class-hub.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/cognitive-priming.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/cognitive-priming.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/cognitive-priming.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/cognitive-priming.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/cognitive-priming.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/admin.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/admin.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/admin.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/admin.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/admin.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/admin.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./admin.js",
+      "resolvedPath": "app/consoles/admin.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/owner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/owner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/owner.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/owner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/owner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./owner.js",
+      "resolvedPath": "app/consoles/owner.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/parent.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/parent.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/parent.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/parent.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/parent.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/parent.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "parent.js",
+      "resolvedPath": "app/consoles/parent.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/practitioner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/practitioner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/practitioner.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/practitioner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/practitioner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/practitioner.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "../../offering.html",
+      "resolvedPath": "offering.html",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/practitioner.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "../curriculum.html",
+      "resolvedPath": "app/curriculum.html",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/practitioner.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "practitioner.js",
+      "resolvedPath": "app/consoles/practitioner.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/principal.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/principal.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/principal.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/i18n-config.js",
+      "resolvedPath": "js/i18n-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/principal.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/translator.js",
+      "resolvedPath": "js/translator.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/principal.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/principal.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/principal.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/principal.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "principal.js",
+      "resolvedPath": "app/consoles/principal.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "student.js",
+      "resolvedPath": "app/consoles/student.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "../mistake-book.html",
+      "resolvedPath": "app/mistake-book.html",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "../exam_pulse.html",
+      "resolvedPath": "app/exam_pulse.html",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/student.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "../pyq.html",
+      "resolvedPath": "app/pyq.html",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/teacher.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/teacher.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/teacher.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/teacher.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/teacher.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/consoles/teacher.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "teacher.js",
+      "resolvedPath": "app/consoles/teacher.js",
+      "issue": null
+    },
+    {
+      "source": "app/curriculum.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/curriculum.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/curriculum.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/curriculum.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/curriculum.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/curriculum.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "consoles/student.html",
+      "resolvedPath": "app/consoles/student.html",
+      "issue": null
+    },
+    {
+      "source": "app/exam_pulse.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/exam_pulse.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/exam_pulse.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/exam_pulse.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/mistake-book.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/mistake-book.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/mistake-book.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/mistake-book.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/mistake-book.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/mistake-book.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/mistake-book.js",
+      "resolvedPath": "js/mistake-book.js",
+      "issue": null
+    },
+    {
+      "source": "app/mistake-book.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "consoles/student.html",
+      "resolvedPath": "app/consoles/student.html",
+      "issue": null
+    },
+    {
+      "source": "app/pyq.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/pyq.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/pyq.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/pyq.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/pyq.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-automation-config.js",
+      "resolvedPath": "js/firebase-automation-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/pyq.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/pyq.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/pyq.js",
+      "resolvedPath": "js/pyq.js",
+      "issue": null
+    },
+    {
+      "source": "app/pyq_insights.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/pyq_insights.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/pyq_insights.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/pyq_insights.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/auth-paywall.js",
+      "resolvedPath": "js/auth-paywall.js",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/api.js",
+      "resolvedPath": "js/api.js",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/ui-renderer.js",
+      "resolvedPath": "js/ui-renderer.js",
+      "issue": null
+    },
+    {
+      "source": "app/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/quiz-engine.js",
+      "resolvedPath": "js/quiz-engine.js",
+      "issue": null
+    },
+    {
+      "source": "app/review.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/review.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/review.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/review.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/review.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-content.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-content.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-content.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/study-content.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-content.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-content.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/ncert-renderer.js",
+      "resolvedPath": "js/ncert-renderer.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-content.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/study-content.js",
+      "resolvedPath": "js/study-content.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-library.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-library.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-library.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "app/study-library.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-library.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    },
+    {
+      "source": "app/study-library.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "consoles/student.html",
+      "resolvedPath": "app/consoles/student.html",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "./css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "img",
+      "attr": "src",
+      "rawValue": "images/dashboard-subject-navigator.png",
+      "resolvedPath": "images/dashboard-subject-navigator.png",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "img",
+      "attr": "src",
+      "rawValue": "images/dashboard-parent-console.png",
+      "resolvedPath": "images/dashboard-parent-console.png",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "img",
+      "attr": "src",
+      "rawValue": "images/dashboard-study-guide.png",
+      "resolvedPath": "images/dashboard-study-guide.png",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "img",
+      "attr": "src",
+      "rawValue": "images/dashboard-performance.png",
+      "resolvedPath": "images/dashboard-performance.png",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "offering.html",
+      "resolvedPath": "offering.html",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/index-auth.js",
+      "resolvedPath": "js/index-auth.js",
+      "issue": null
+    },
+    {
+      "source": "index.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/index-quiz-widget.js",
+      "resolvedPath": "js/index-quiz-widget.js",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "./css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "register.html?plan=practitioner",
+      "resolvedPath": "register.html",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "register.html?plan=strategist",
+      "resolvedPath": "register.html",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "register.html?plan=sync",
+      "resolvedPath": "register.html",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "register.html?plan=board_ready",
+      "resolvedPath": "register.html",
+      "issue": null
+    },
+    {
+      "source": "offering.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "register.html?plan=legacy",
+      "resolvedPath": "register.html",
+      "issue": null
+    },
+    {
+      "source": "register.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "register.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "./css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "register.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "register.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "register.html",
+      "tag": "a",
+      "attr": "href",
+      "rawValue": "offering.html",
+      "resolvedPath": "offering.html",
+      "issue": null
+    },
+    {
+      "source": "register.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/register-handler.js",
+      "resolvedPath": "js/register-handler.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/chapter-selection.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/chapter-selection.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/chapter-selection.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/index.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/index.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/index.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "../../js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/quiz-engine.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "../../css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/config.js",
+      "resolvedPath": "scert/telangana-9/js/config.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/auth-paywall.js",
+      "resolvedPath": "scert/telangana-9/js/auth-paywall.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/api.js",
+      "resolvedPath": "scert/telangana-9/js/api.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/ui-renderer.js",
+      "resolvedPath": "scert/telangana-9/js/ui-renderer.js",
+      "issue": null
+    },
+    {
+      "source": "scert/telangana-9/quiz-engine.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/quiz-engine.js",
+      "resolvedPath": "scert/telangana-9/js/quiz-engine.js",
+      "issue": null
+    },
+    {
+      "source": "school-landing.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/shell.js",
+      "resolvedPath": "js/shell.js",
+      "issue": null
+    },
+    {
+      "source": "school-landing.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "./js/tailwind-config.js",
+      "resolvedPath": "js/tailwind-config.js",
+      "issue": null
+    },
+    {
+      "source": "school-landing.html",
+      "tag": "link",
+      "attr": "href",
+      "rawValue": "./css/global.css",
+      "resolvedPath": "css/global.css",
+      "issue": null
+    },
+    {
+      "source": "school-landing.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "js/firebase-master-config.js",
+      "resolvedPath": "js/firebase-master-config.js",
+      "issue": null
+    },
+    {
+      "source": "school-landing.html",
+      "tag": "script",
+      "attr": "src",
+      "rawValue": "js/config.js",
+      "resolvedPath": "js/config.js",
+      "issue": null
+    }
+  ],
+  "pageAudits": [
+    {
+      "route": "/app/chapter-selection.html",
+      "title": "Chapter Selection — Ready4Exam",
+      "buttonCount": 0,
+      "formCount": 0,
+      "clickTargetCount": 1,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/class-hub.html",
+      "title": "Class Hub — Ready4Exam",
+      "buttonCount": 2,
+      "formCount": 0,
+      "clickTargetCount": 3,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/cognitive-priming.html",
+      "title": "Cognitive Priming — Ready4Exam",
+      "buttonCount": 1,
+      "formCount": 0,
+      "clickTargetCount": 2,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/consoles/admin.html",
+      "title": "Admin Console — Ready4Exam",
+      "buttonCount": 3,
+      "formCount": 0,
+      "clickTargetCount": 3,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/consoles/owner.html",
+      "title": "Command Center — Ready4Exam",
+      "buttonCount": 12,
+      "formCount": 2,
+      "clickTargetCount": 12,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/consoles/parent.html",
+      "title": "Parent Console — Ready4Exam",
+      "buttonCount": 1,
+      "formCount": 0,
+      "clickTargetCount": 1,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/consoles/practitioner.html",
+      "title": "Practitioner Console | Ready4Exam",
+      "buttonCount": 0,
+      "formCount": 0,
+      "clickTargetCount": 2,
+      "localAnchors": [
+        {
+          "text": "Upgrade My Package",
+          "href": "../../offering.html",
+          "resolvedPath": "offering.html"
+        },
+        {
+          "text": "Assessment Engine\n                            TAKE CHAPTER TEST",
+          "href": "../curriculum.html",
+          "resolvedPath": "app/curriculum.html"
+        }
+      ],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/consoles/principal.html",
+      "title": "Principal Console — Ready4Exam",
+      "buttonCount": 1,
+      "formCount": 0,
+      "clickTargetCount": 1,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/consoles/student.html",
+      "title": "Class Hub — Ready4Exam",
+      "buttonCount": 1,
+      "formCount": 0,
+      "clickTargetCount": 5,
+      "localAnchors": [
+        {
+          "text": "Mistake Notebook",
+          "href": "../mistake-book.html",
+          "resolvedPath": "app/mistake-book.html"
+        },
+        {
+          "text": "Exam Pulse",
+          "href": "../exam_pulse.html",
+          "resolvedPath": "app/exam_pulse.html"
+        },
+        {
+          "text": "PYQ Paper",
+          "href": "../pyq.html",
+          "resolvedPath": "app/pyq.html"
+        }
+      ],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/consoles/teacher.html",
+      "title": "Teacher Console — Ready4Exam",
+      "buttonCount": 8,
+      "formCount": 0,
+      "clickTargetCount": 8,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/curriculum.html",
+      "title": "Start Quiz — Ready4Exam",
+      "buttonCount": 0,
+      "formCount": 0,
+      "clickTargetCount": 2,
+      "localAnchors": [
+        {
+          "text": "Back to Hub",
+          "href": "consoles/student.html",
+          "resolvedPath": "app/consoles/student.html"
+        }
+      ],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/exam_pulse.html",
+      "title": "Exam Pattern Pulse — Ready4Exam",
+      "buttonCount": 4,
+      "formCount": 0,
+      "clickTargetCount": 4,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/mistake-book.html",
+      "title": "Diagnostic Console — Mistake Notebook",
+      "buttonCount": 0,
+      "formCount": 0,
+      "clickTargetCount": 1,
+      "localAnchors": [
+        {
+          "text": "Back to Hub",
+          "href": "consoles/student.html",
+          "resolvedPath": "app/consoles/student.html"
+        }
+      ],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/pyq.html",
+      "title": "PYQ Vault — Ready4Exam",
+      "buttonCount": 1,
+      "formCount": 0,
+      "clickTargetCount": 2,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/pyq_insights.html",
+      "title": "Chapter Insight — Ready4Exam",
+      "buttonCount": 6,
+      "formCount": 0,
+      "clickTargetCount": 7,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/quiz-engine.html",
+      "title": "Ready4Exam | Quiz Engine",
+      "buttonCount": 12,
+      "formCount": 0,
+      "clickTargetCount": 12,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/review.html",
+      "title": "Mistake Notebook — Ready4Exam",
+      "buttonCount": 0,
+      "formCount": 0,
+      "clickTargetCount": 0,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/study-content.html",
+      "title": "Study Content — Ready4Exam",
+      "buttonCount": 1,
+      "formCount": 0,
+      "clickTargetCount": 2,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/app/study-library.html",
+      "title": "Study Library — Ready4Exam",
+      "buttonCount": 0,
+      "formCount": 0,
+      "clickTargetCount": 1,
+      "localAnchors": [
+        {
+          "text": "Back to Hub",
+          "href": "consoles/student.html",
+          "resolvedPath": "app/consoles/student.html"
+        }
+      ],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/index.html",
+      "title": "Ready4Exam — Board-Aligned Academic Portal",
+      "buttonCount": 11,
+      "formCount": 2,
+      "clickTargetCount": 15,
+      "localAnchors": [
+        {
+          "text": "Get Started — Subscribe Today",
+          "href": "offering.html",
+          "resolvedPath": "offering.html"
+        }
+      ],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/offering.html",
+      "title": "Pricing & Plans | Ready4Exam",
+      "buttonCount": 0,
+      "formCount": 0,
+      "clickTargetCount": 5,
+      "localAnchors": [
+        {
+          "text": "Start Practicing",
+          "href": "register.html?plan=practitioner",
+          "resolvedPath": "register.html"
+        },
+        {
+          "text": "Own Your Growth",
+          "href": "register.html?plan=strategist",
+          "resolvedPath": "register.html"
+        },
+        {
+          "text": "Sync Now",
+          "href": "register.html?plan=sync",
+          "resolvedPath": "register.html"
+        },
+        {
+          "text": "Get Board-Ready",
+          "href": "register.html?plan=board_ready",
+          "resolvedPath": "register.html"
+        },
+        {
+          "text": "Begin Your Legacy",
+          "href": "register.html?plan=legacy",
+          "resolvedPath": "register.html"
+        }
+      ],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/register.html",
+      "title": "Register | Ready4Exam Academy",
+      "buttonCount": 1,
+      "formCount": 1,
+      "clickTargetCount": 2,
+      "localAnchors": [
+        {
+          "text": "Back to Plans",
+          "href": "offering.html",
+          "resolvedPath": "offering.html"
+        }
+      ],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/scert/telangana-9/chapter-selection.html",
+      "title": "Select Book & Chapter — Class 9 Telangana",
+      "buttonCount": 4,
+      "formCount": 0,
+      "clickTargetCount": 4,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/scert/telangana-9/index.html",
+      "title": "SCERT Class 9 — Ready4Exam",
+      "buttonCount": 4,
+      "formCount": 0,
+      "clickTargetCount": 6,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/scert/telangana-9/quiz-engine.html",
+      "title": "Ready4Exam | Quiz Engine — Class 9Telangana",
+      "buttonCount": 13,
+      "formCount": 0,
+      "clickTargetCount": 13,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/school-landing.html",
+      "title": "School Portal — Stakeholder Entry",
+      "buttonCount": 3,
+      "formCount": 0,
+      "clickTargetCount": 3,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/stitch.html",
+      "title": "Sovereign Split-Screen Landing Page",
+      "buttonCount": 2,
+      "formCount": 0,
+      "clickTargetCount": 5,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    },
+    {
+      "route": "/stitch2.html",
+      "title": "",
+      "buttonCount": 3,
+      "formCount": 0,
+      "clickTargetCount": 8,
+      "localAnchors": [],
+      "navigation": {
+        "ok": true,
+        "status": 200,
+        "error": null
+      },
+      "consoleMessages": [],
+      "pageErrors": [],
+      "failedRequests": [],
+      "badResponses": [],
+      "screenshot": null,
+      "auditMode": "playwright-api-request"
+    }
+  ],
+  "clickAudits": [],
+  "environmentNotes": [
+    "Chromium browser launch failed, so this run used Playwright APIRequest plus static link/workflow analysis only: browserType.launch: Failed to launch chromium because executable doesn't exist at /root/.cache/ms-playwright/chromium-1217/chrome-linux64/chrome"
+  ]
+}

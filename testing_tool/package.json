@@ -5,7 +5,8 @@
   "main": "run_tests.js",
   "scripts": {
     "test": "node run_tests.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "audit": "node exhaustive_playwright_audit.js"
   },
   "keywords": [],
   "author": "",
