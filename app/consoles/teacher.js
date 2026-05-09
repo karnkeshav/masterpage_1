@@ -122,26 +122,13 @@ async function fetchSectionStudents() {
         if (batch.length === 0) continue;
 
             
-// 🔥 FIX: simplified query (no school_id filter)
-const scoresQuery = query(
-  collection(db, "quiz_scores"),
-  where("user_id", "in", batch)
-);
-        
-        let scoresSnap;
-
-try {
-  scoresSnap = await getDocs(scoresQuery);
-} catch (err) {
-  console.warn("⚠️ school_id query failed, retrying without filter");
-
-  const fallbackQuery = query(
-    collection(db, "quiz_scores"),
-    where("user_id", "in", batch)
-  );
-
-  scoresSnap = await getDocs(fallbackQuery);
-}
+        // UIDs in `batch` come from a school-scoped student query, so this
+        // is already implicitly school-isolated. No extra school_id filter
+        // needed (and it would require a composite Firestore index).
+        const scoresSnap = await getDocs(query(
+            collection(db, "quiz_scores"),
+            where("user_id", "in", batch)
+        ));
         scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
     }
 }

@@ -911,7 +911,7 @@ window.submitAddModal = async (role) => {
                     const chapterQuery = query(
                         collection(db, "chapter_control"),
                         where("grade", "==", studentGrade),
-                        where("section", "==", studentGrade + studentSection),
+                        where("section", "==", `${studentGrade}-${studentSection}`),
                         where("school_id", "==", studentSchoolId),
                         where("status", "==", "finished")
                     );

@@ -897,3 +897,8 @@ async function renderInbox() {
         console.warn("Inbox listener error:", error.message);
     });
 }
+
+window.addEventListener('pagehide', () => {
+    if (unsubInbox) { unsubInbox(); unsubInbox = null; }
+    if (unsubIntercom) { unsubIntercom(); unsubIntercom = null; }
+});
