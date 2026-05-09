@@ -71,26 +71,41 @@ function setupSymmetricBar(oldBtn) {
     document.getElementById('test-btn-slot').appendChild(newBtn);
     document.getElementById('action-bar-wrapper').classList.remove('hidden');
     
-    const chapterKey = (params.get('chapter') || 'real_numbers').toLowerCase().replace(/ /g, '_');
+    const chapterKey = (params.get('chapter') || 'real_numbers')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')   // replace en-dashes, ampersands, parens, etc.
+        .replace(/^_+|_+$/g, '');       // trim leading/trailing underscores
     getLocalData(chapterKey).then(data => { if(data) updateSyncStatus(); });
     renderGuidance();
 }
 
 // --- Board Insights Sync ---
 document.getElementById('trigger-board-insights').addEventListener('click', async () => {
-    const chapterKey = (params.get('chapter') || 'real_numbers').toLowerCase().replace(/ /g, '_');
+    const chapterKey = (params.get('chapter') || 'real_numbers')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')   // normalize en-dashes, ampersands, parens, etc.
+        .replace(/^_+|_+$/g, '');       // trim leading/trailing underscores
+
     let data = await getLocalData(chapterKey);
 
     if (!data) {
         const cloudUrl = `https://karnkeshav.github.io/masterpage_1/data/board-insights/${chapterKey}.json?v=${Date.now()}`;
         try {
             const response = await fetch(cloudUrl);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    showInsightsUnavailable();
+                } else {
+                    alert("Could not load Board Insights. Please check your connection and try again.");
+                }
+                return;
+            }
             const jsonData = await response.json();
             await saveLocalData(chapterKey, jsonData);
             data = { content: jsonData };
             updateSyncStatus();
         } catch (err) {
-            alert("Internet connection required for the first sync.");
+            alert("Could not load Board Insights. Please check your connection and try again.");
             return;
         }
     }
@@ -101,6 +116,21 @@ function updateSyncStatus() {
     const msg = document.getElementById('sync-status-msg');
     msg.classList.replace('text-warning-yellow', 'text-success-green');
     msg.innerHTML = `<i class="fas fa-check-circle"></i><span>Verified & Synced for Offline</span>`;
+}
+
+function showInsightsUnavailable() {
+    const target = document.getElementById('board-insight-container');
+    if (!target) return;
+    target.classList.remove('hidden');
+    target.scrollIntoView({ behavior: 'smooth' });
+    target.innerHTML = `
+        <div class="mt-8 border-t border-slate-200 pt-8">
+            <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100">
+                <div class="text-3xl mb-3">📋</div>
+                <h3 class="font-bold text-slate-700 mb-2">Board Pattern Insights Coming Soon</h3>
+                <p class="text-sm text-slate-500">We are currently digitizing Board Pattern questions for this chapter. Please check back soon.</p>
+            </div>
+        </div>`;
 }
 
 // --- CLEAN UI RENDERING ENGINE ---

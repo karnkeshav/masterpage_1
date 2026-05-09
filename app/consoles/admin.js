@@ -1028,6 +1028,7 @@ window.handleCSVUpload = async (event) => {
                         // Auto-create student account
                         const csvGrade = row[2] || '9';
                         const csvSection = row[3] || 'A';
+                        const csvParentEmail = (row[4] || '').trim();
                         if (!secondaryAuth) {
                             window.logMessage(`Skipped ${email}: Secondary auth not initialized.`, true);
                             errorCount++;
@@ -1053,6 +1054,52 @@ window.handleCSVUpload = async (event) => {
                             });
                             window.logMessage(`Created student ${email} in ${csvGrade}-${csvSection}`);
 
+                            // --- Parent Verification / Creation ---
+                            let parentId = null;
+                            if (csvParentEmail) {
+                                try {
+                                    const parentQuery = query(collection(db, "users"), where("email", "==", csvParentEmail), where("role", "==", "parent"));
+                                    const parentSnap = await getDocs(parentQuery);
+
+                                    if (parentSnap.empty) {
+                                        try {
+                                            const parentCred = await createUserWithEmailAndPassword(secondaryAuth, csvParentEmail, "Ready4Exam@2026");
+                                            parentId = parentCred.user.uid;
+                                            await signOut(secondaryAuth);
+                                            await setDoc(doc(db, "users", parentId), {
+                                                displayName: "Parent User",
+                                                email: csvParentEmail,
+                                                uid: parentId,
+                                                role: "parent",
+                                                school_id: currentSchoolId,
+                                                tenantType: "school",
+                                                setupComplete: false,
+                                                created_at: serverTimestamp(),
+                                                updated_at: serverTimestamp()
+                                            }, { merge: true });
+                                            window.logMessage(`Created parent account for ${csvParentEmail}`);
+                                        } catch (parentAuthErr) {
+                                            if (parentAuthErr.code === 'auth/email-already-in-use') {
+                                                window.logMessage(`Parent auth exists but no profile for ${csvParentEmail} — skipping parent link.`, true);
+                                            } else {
+                                                throw parentAuthErr;
+                                            }
+                                        }
+                                    } else {
+                                        parentId = parentSnap.docs[0].id;
+                                        window.logMessage(`Linked existing parent ${csvParentEmail}`);
+                                    }
+                                } catch (parentErr) {
+                                    window.logMessage(`Failed to link parent ${csvParentEmail}: ${parentErr.message}`, true);
+                                }
+                            }
+
+                            // --- Atomic Linking ---
+                            if (parentId) {
+                                await updateDoc(doc(db, "users", userId), { parent_id: parentId });
+                                await updateDoc(doc(db, "users", parentId), { linked_children: arrayUnion(userId) });
+                            }
+
                             // GAP 1 FIX: Retroactive notifications for CSV-created student
                             try {
                                 const chapterQuery = query(
@@ -1068,7 +1115,7 @@ window.handleCSVUpload = async (event) => {
                                     const ch = chDoc.data();
                                     retroNotifs.push(addDoc(collection(db, "student_notifications"), {
                                         student_id: userId,
-                                        parent_id: null,
+                                        parent_id: parentId,
                                         type: "TEST_ASSIGNED",
                                         topicSlug: ch.chapter_slug,
                                         chapter_title: ch.chapter_title,
