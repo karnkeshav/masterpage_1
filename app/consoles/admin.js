@@ -1226,12 +1226,26 @@ window.handleCSVUpload = async (event) => {
                     }
 
                 } else if (role === 'parent') {
-                    const studentId = row[2];
-                    if(!studentId) {
-                        window.logMessage(`Skipped ${email}: No student ID provided.`, true);
+                    const studentEmail = (row[2] || '').trim();
+                    if (!studentEmail) {
+                        window.logMessage(`Skipped ${email}: No student email provided in column 3.`, true);
                         errorCount++;
                         continue;
                     }
+
+                    // row[2] is the student EMAIL, not their Firestore doc ID.
+                    // Look up the student by email to get their Firebase UID.
+                    const studentLookup = await getDocs(query(
+                        collection(db, "users"),
+                        where("email", "==", studentEmail),
+                        where("role", "==", "student")
+                    ));
+                    if (studentLookup.empty) {
+                        window.logMessage(`Skipped ${email}: Student ${studentEmail} not found — create student first.`, true);
+                        errorCount++;
+                        continue;
+                    }
+                    const studentId = studentLookup.docs[0].id; // Firebase UID
 
                     // Double-Link: Map parent -> student AND student -> parent
                     await updateDoc(doc(db, "users", studentId), {
@@ -1243,7 +1257,7 @@ window.handleCSVUpload = async (event) => {
                         updated_at: serverTimestamp()
                     });
 
-                    window.logMessage(`Double-Bridged Parent ${email} and Student ${studentId}`);
+                    window.logMessage(`Linked Parent ${email} ↔ Student ${studentEmail}`);
                     successCount++;
                 }
             } catch (err) {
