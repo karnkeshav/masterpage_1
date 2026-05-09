@@ -40,6 +40,18 @@ let chapterListeners = [];
 let heatmapTaughtDate = null;
 let selectedChapterId = "";
 
+// Returns true when a quiz_score doc matches the currently selected chapter.
+// Checks both the title-derived id AND the curriculum table_id (quiz slug format)
+// because quiz-engine saves topicSlug in table_id format (e.g. "science_light_refraction_10_quiz")
+// while selectedChapterId is derived from the chapter title.
+function scoreMatchesChapter(s, chapterId) {
+    const tableId = activeChapters.find(c => c.id === chapterId)?.tableId || null;
+    return (
+        s.topicSlug === chapterId || s.topic === chapterId || s.chapter === chapterId ||
+        (tableId && (s.topicSlug === tableId || s.topic === tableId))
+    );
+}
+
 // UI Event Handlers Exposure
 window.switchTab = switchTab;
 window.markChapterFinished = markChapterFinished;
@@ -48,7 +60,7 @@ window.revokeChapterFinished = revokeChapterFinished;
 window.showStudentDetail = (uid) => {
     const name = window.sectionStudents?.names[uid] || uid;
     const scores = studentScores.filter(s =>
-        s.user_id === uid && (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId)
+        s.user_id === uid && scoreMatchesChapter(s, selectedChapterId)
     );
 
     let detailHtml = '';
@@ -262,6 +274,7 @@ function updateActiveChapters(curriculumData) {
 
     activeChapters = chaps.map(c => ({
         id: c.chapter_title.toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/(^-|-$)/g, ''),
+        tableId: c.table_id || null,
         title: c.chapter_title
     }));
 
@@ -545,7 +558,7 @@ function renderSectionHeatmap() {
     } else {
         students.uids.forEach((uid, i) => {
             const hasScore = studentScores.some(s =>
-                s.user_id === uid && (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId)
+                s.user_id === uid && scoreMatchesChapter(s, selectedChapterId)
             );
             const colorClass = hasScore
                 ? 'bg-success-green shadow-[0_0_12px_rgba(5,150,105,0.4)] border border-green-400 text-white'
@@ -666,7 +679,7 @@ function renderRoster() {
     } else {
         students.uids.forEach(uid => {
             const hasScore = studentScores.some(s =>
-                s.user_id === uid && (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId)
+                s.user_id === uid && scoreMatchesChapter(s, selectedChapterId)
             );
             const name = students.names[uid] || uid;
             const parentId = students.parentIds[uid];
@@ -739,7 +752,7 @@ function calculateRemedialQueue() {
     // Group scores by student for the selected chapter
     const studentMap = {};
     studentScores.forEach(s => {
-        const matchesChapter = (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId);
+        const matchesChapter = scoreMatchesChapter(s, selectedChapterId);
         if (!matchesChapter) return;
 
         const uid = s.user_id;

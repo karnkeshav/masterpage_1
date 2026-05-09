@@ -312,7 +312,6 @@ async function handleSubmit() {
     if (percentage < 85) {
         setTimeout(() => {
             alert("⚠️ Mastery Alert: Score below 85%.\nQuestions have been added to your Mistake Notebook.");
-            UI.toggleFocusMode(true);
             UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
         }, 300);
     }
