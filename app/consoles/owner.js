@@ -105,11 +105,12 @@ async function initRealtimeStreams() {
                 const data = eventDoc.data();
                 const isB2C = classifyAsB2C(data);
 
+                // null = unclassifiable — include in ledger table but exclude from KPI totals
                 financialCache.push({
                     id: eventDoc.id,
                     ...data,
-                    entity: isB2C ? (data.uid || "Individual B2C") : (data.school_id || "B2B"),
-                    source: isB2C ? "B2C" : "B2B"
+                    entity: isB2C === true ? (data.uid || "Individual B2C") : (data.school_id || "B2B"),
+                    source: isB2C === true ? "B2C" : isB2C === false ? "B2B" : "UNKNOWN"
                 });
             });
 
@@ -148,11 +149,22 @@ function renderRevenueKPIs() {
 }
 
 function classifyAsB2C(data) {
+    // 1. Primary: entityType field (written by both verify-payment.js and recordFinancialEvent)
     const et = (data.entityType || "").toLowerCase();
     if (et === "b2c") return true;
     if (et === "b2b") return false;
-    console.warn("[classifyAsB2C] Event missing entityType — excluded from totals:", data);
-    return false;
+
+    // 2. Fallback: type field ("B2C_REVENUE" written by verify-payment.js)
+    const type = (data.type || "").toUpperCase();
+    if (type === "B2C_REVENUE") return true;
+    if (type === "LICENSE_ACTIVATION" || type === "SCHOOL_PAYMENT") return false;
+
+    // 3. Fallback: school_id sentinel value set by verify-payment.js
+    if (data.school_id === "B2C_REVENUE" || data.uid) return true;
+
+    // 4. Truly unknown — exclude from both totals (do not inflate B2B)
+    console.warn("[classifyAsB2C] Cannot classify event, excluded from totals:", data);
+    return null;
 }
 
 function initLicenseCalculator() {
@@ -646,14 +658,16 @@ function updateSegmentedCharts(events) {
         if (!dt) return;
 
         const amount = Number(e.amount || 0);
+        const src = e.source || "";
 
-        if ((e.source || "") === "B2C") {
+        if (src === "B2C") {
             const idx = b2cLabels.indexOf(dayKey(dt));
             if (idx >= 0) b2cSeries[idx] += amount;
-        } else {
+        } else if (src === "B2B") {
             const idx = b2bLabels.indexOf(monthKey(dt));
             if (idx >= 0) b2bSeries[idx] += amount;
         }
+        // "UNKNOWN" events are excluded from both charts
     });
 
     b2bChart.data.labels = b2bLabels;
