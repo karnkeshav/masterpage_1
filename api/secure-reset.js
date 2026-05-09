@@ -1,19 +1,7 @@
 const admin = require('firebase-admin');
 
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        })
-    });
-}
-const db = admin.firestore();
-const auth = admin.auth();
-
 module.exports = async (req, res) => {
-    // 1. ROBUST CORS HANDLING
+    // CORS — must run before any early return so preflight always gets headers
     const origin = req.headers.origin;
     const allowedOrigins = [
         'https://karnkeshav.github.io',
@@ -28,14 +16,22 @@ module.exports = async (req, res) => {
         res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
 
-    // 2. Handle Preflight (OPTIONS)
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
+    // Firebase init inside handler — a missing env var must not crash the module
+    // and silently block OPTIONS preflight on cold start
+    if (!admin.apps.length) {
+        admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+            })
+        });
     }
+    const db = admin.firestore();
+    const auth = admin.auth();
 
     try {
         const { email, studentName } = req.body;
@@ -48,9 +44,9 @@ module.exports = async (req, res) => {
         let querySnapshot = await usersRef.where('email', '==', email).limit(1).get();
 
         if (querySnapshot.empty) {
-            // Check by parent email since students use internal login IDs
             querySnapshot = await usersRef.where('parentEmail', '==', email).limit(1).get();
             if (querySnapshot.empty) {
+                // Deliberate vague response — don't reveal whether email exists
                 return res.status(200).json({ message: 'If the details match, a reset link will be sent shortly.' });
             }
         }
@@ -58,18 +54,17 @@ module.exports = async (req, res) => {
         const userDoc = querySnapshot.docs[0];
         const userData = userDoc.data();
 
-        // Identity verification (case-insensitive)
+        // Identity verification (case-insensitive) — prevents enumeration via name mismatch
         if (!userData.displayName || userData.displayName.toLowerCase().trim() !== studentName.toLowerCase().trim()) {
             return res.status(200).json({ message: 'If the details match, a reset link will be sent shortly.' });
         }
 
-        // Generate the reset link using the internal student email
         const resetLink = await auth.generatePasswordResetLink(userData.email);
 
         return res.status(200).json({
             success: true,
             message: 'Identity verified. Use the reset link to set a new password.',
-            resetLink: resetLink
+            resetLink
         });
 
     } catch (error) {

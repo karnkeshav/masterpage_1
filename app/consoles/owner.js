@@ -4,7 +4,7 @@ import { getInitializedClients } from "../../js/config.js";
 import { recordFinancialEvent } from "../../js/api.js";
 import {
     collection, query, where, orderBy, onSnapshot,
-    doc, setDoc, updateDoc, deleteDoc, serverTimestamp, collectionGroup,
+    doc, setDoc, updateDoc, deleteDoc, getDoc, serverTimestamp, collectionGroup,
     getDocs, writeBatch, limit, startAfter
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
