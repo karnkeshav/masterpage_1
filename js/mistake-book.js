@@ -93,8 +93,11 @@ async function init(user, profile) {
                     const data = d.data();
                     const topic = data.topic || data.topicSlug || data.chapter_slug || "";
                     const t1 = data.timestamp ? data.timestamp.seconds : 0;
+                    const sid = data.session_id;
                     const matchingNotebookEntry = mistakesSnap.docs.find(md => {
                         const mData = md.data();
+                        // Prefer exact session_id match; fall back to topic+timestamp proximity
+                        if (sid && mData.session_id) return mData.session_id === sid;
                         return (mData.topic === topic || mData.chapter_slug === topic) && (Math.abs((mData.timestamp?.seconds || 0) - t1) < 5);
                     });
                     data.mistakes = matchingNotebookEntry ? (matchingNotebookEntry.data().mistakes || []) : [];
@@ -108,10 +111,12 @@ async function init(user, profile) {
                     const mTime = mData.timestamp ? mData.timestamp.seconds : 0;
                     const alreadyMapped = scoreDocs.some(sd => {
                         const sData = sd.data();
+                        // Prefer exact session_id match; fall back to topic+timestamp proximity
+                        if (mData.session_id && sData.session_id) return mData.session_id === sData.session_id;
                         return (sData.topic === topic || sData.topicSlug === topic || sData.chapter_slug === topic) && (Math.abs((sData.timestamp?.seconds || 0) - mTime) < 5);
                     });
                     if (!alreadyMapped) {
-                        scoreDocs.push({ data: () => ({ topic, timestamp: mData.timestamp, percentage: 0, difficulty: mData.difficulty || 'simple', mistakes: mData.mistakes || [] })});
+                        scoreDocs.push({ data: () => ({ topic, timestamp: mData.timestamp, percentage: 0, difficulty: mData.difficulty || 'simple', mistakes: mData.mistakes || [], session_id: mData.session_id || null })});
                     }
                 });
 

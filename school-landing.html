@@ -226,6 +226,12 @@
             document.getElementById("login-modal").classList.add("hidden");
         };
 
+        ["login-user", "login-pass"].forEach(id => {
+            document.getElementById(id).addEventListener("keydown", (e) => {
+                if (e.key === "Enter") executeStakeholderLogin();
+            });
+        });
+
 
         document.getElementById("forgot-password-btn").addEventListener("click", async () => {
             const username = document.getElementById("login-user").value.trim();
