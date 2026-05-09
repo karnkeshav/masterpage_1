@@ -127,8 +127,8 @@ function getSubjectTheme(subject) {
     if (s.includes("biology")) return { icon: "fas fa-dna", borderColor: "border-green-500", bgColor: "bg-green-50", textColor: "text-green-600", hoverColor: "text-green-500", tagline: "The science of life." };
     if (s.includes("chemistry")) return { icon: "fas fa-flask", borderColor: "border-teal-500", bgColor: "bg-teal-50", textColor: "text-teal-600", hoverColor: "text-teal-500", tagline: "Matter and its interactions." };
     if (s.includes("math")) return { icon: "fas fa-calculator", borderColor: "border-blue-500", bgColor: "bg-blue-50", textColor: "text-blue-600", hoverColor: "text-blue-500", tagline: "Build your foundation." };
-    if (s.includes("science")) return { icon: "fas fa-atom", borderColor: "border-purple-500", bgColor: "bg-purple-50", textColor: "text-purple-600", hoverColor: "text-purple-500", tagline: "Explore the universe." };
-    if (s.includes("social")) return { icon: "fas fa-globe-americas", borderColor: "border-amber-500", bgColor: "bg-amber-50", textColor: "text-amber-600", hoverColor: "text-amber-500", tagline: "Understand the world." };
+    if (s.includes("social")) return { icon: "fas fa-landmark", borderColor: "border-amber-500", bgColor: "bg-amber-50", textColor: "text-amber-600", hoverColor: "text-amber-500", tagline: "Understand the world." };
+    if (s.includes("science")) return { icon: "fas fa-flask", borderColor: "border-purple-500", bgColor: "bg-purple-50", textColor: "text-purple-600", hoverColor: "text-purple-500", tagline: "Explore the universe." };
     if (s.includes("english")) return { icon: "fas fa-book", borderColor: "border-indigo-500", bgColor: "bg-indigo-50", textColor: "text-indigo-600", hoverColor: "text-indigo-500", tagline: "Master the language." };
 
     return { icon: "fas fa-book-open", borderColor: "border-slate-500", bgColor: "bg-slate-50", textColor: "text-slate-600", hoverColor: "text-slate-500", tagline: "Explore knowledge." };
@@ -157,8 +157,8 @@ function getSubjectIcon(subject) {
         "Psychology": "fa-brain",
         "Hindi": "fa-om",
         "English": "fa-language",
-        "Science": "fa-microscope",
-        "Social Science": "fa-users-cog"
+        "Science": "fa-flask",
+        "Social Science": "fa-landmark"
     };
     return icons[subject] || "fa-book";
 }
@@ -608,8 +608,8 @@ window.loadStudentStats = async (uid, grade) => {
         let diagnosticRows = "";
         const subjectConfigs = [
             { key: "Mathematics", label: "M", icon: "fa-calculator", bg: "bg-blue-50", text: "text-success-green", border: "border-blue-100", bar: "bg-success-green" },
-            { key: "Science", label: "S", icon: "fa-atom", bg: "bg-purple-50", text: "text-cbse-blue", border: "border-purple-100", bar: "bg-cbse-blue" },
-            { key: "Social Science", label: "SS", icon: "fa-globe-americas", bg: "bg-amber-50", text: "text-accent-gold", border: "border-amber-100", bar: "bg-accent-gold" }
+            { key: "Science", label: "S", icon: "fa-flask", bg: "bg-purple-50", text: "text-cbse-blue", border: "border-purple-100", bar: "bg-cbse-blue" },
+            { key: "Social Science", label: "SS", icon: "fa-landmark", bg: "bg-amber-50", text: "text-accent-gold", border: "border-amber-100", bar: "bg-accent-gold" }
         ];
 
         subjectConfigs.forEach(cfg => {
