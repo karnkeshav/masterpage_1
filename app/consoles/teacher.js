@@ -157,31 +157,54 @@ async function init(user) {
     window.teacherProfile = user;
 
     // Populate dropdowns from teacher profile
-    const sections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || 'Unassigned'}${user.mapped_section}`] : []);
+    const rawSections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || 'Unassigned'}${user.mapped_section}`] : []);
+    // Filter to only well-formed sections: digits 6-12 + a single uppercase letter (e.g. "9A", "10B")
+    // CSV teachers occasionally have garbage values like "98" or "912" when admins put a number
+    // in the Section column. Skip those instead of crashing later in loadCurriculum.
+    const sections = rawSections.filter(s => /^(6|7|8|9|10|11|12)[A-Z]$/.test(String(s)));
+    if (rawSections.length > 0 && sections.length === 0) {
+        console.warn("[teacher.js] All sections in profile are malformed:", rawSections);
+    }
     const disciplines = user?.mapped_disciplines || (user?.mapped_discipline ? [user.mapped_discipline] : []);
 
     const sectionSelect = document.getElementById('section-select');
-    sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('');
+    sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('') || '<option value="Unassigned">Unassigned</option>';
 
     const discSelect = document.getElementById('discipline-select');
-    discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${trSubject(d)}</option>`).join('');
+    discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${trSubject(d)}</option>`).join('') || '<option value="Unassigned">Unassigned</option>';
 
-    // Derive grades from sections (e.g., "9A" -> "9")
+    // Derive grades from valid sections (e.g., "9A" -> "9")
     const grades = [...new Set(sections.map(s => s.replace(/[A-Z]/g, '')))];
     const gradeSelect = document.getElementById('grade-select');
-    gradeSelect.innerHTML = grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('');
+    gradeSelect.innerHTML = grades.length > 0
+        ? grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('')
+        : '<option value="">Unassigned</option>';
 
     // Set initial context
-    currentContext.grade = document.getElementById('grade-select').value || grades[0] || 'Unassigned';
+    currentContext.grade = document.getElementById('grade-select').value || grades[0] || '';
     currentContext.section = document.getElementById('section-select').value || sections[0] || 'Unassigned';
     currentContext.discipline = document.getElementById('discipline-select').value || disciplines[0] || 'Unassigned';
 
-    document.getElementById('header-class').innerText = `${currentContext.grade}-${currentContext.section}`;
+    document.getElementById('header-class').innerText = `${currentContext.grade || '—'}-${currentContext.section}`;
     document.getElementById('header-discipline').innerText = trSubject(currentContext.discipline);
 
 
     const viewport = document.getElementById('tab-viewport');
     UI.showSkeleton(viewport, 3);
+
+    // If teacher has no valid section assigned, show a helpful message instead of crashing
+    if (!currentContext.grade || !sections.length) {
+        viewport.innerHTML = `
+            <div class="p-12 text-center">
+                <i class="fas fa-user-shield text-5xl text-slate-300 mb-4"></i>
+                <h2 class="text-xl font-black text-slate-700 mb-2">No Section Assigned</h2>
+                <p class="text-sm text-slate-500 max-w-md mx-auto">
+                    Your teacher profile doesn't have a valid section assigned yet.
+                    Please contact your school admin to assign you a grade-section like "9A", "10B", etc.
+                </p>
+            </div>`;
+        return;
+    }
 
     try {
         // Step A: Await clients
@@ -561,19 +584,21 @@ function renderSectionHeatmap() {
                 s.user_id === uid && scoreMatchesChapter(s, selectedChapterId)
             );
             const colorClass = hasScore
-                ? 'bg-success-green shadow-[0_0_12px_rgba(5,150,105,0.4)] border border-green-400 text-white'
+                ? 'bg-success-green shadow-[0_0_8px_rgba(5,150,105,0.35)] border border-green-400 text-white'
                 : 'bg-slate-200 border border-slate-300 text-slate-500';
             const name = students.names[uid] || `Student ${i + 1}`;
+            const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || String(i + 1);
 
             gridHtml += `
                 <button title="${esc(name)}" onclick="window.showStudentDetail('${uid}')"
-                    class="w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center font-black text-xs ${colorClass}">
-                    ${i + 1}
+                    class="w-10 h-10 rounded-lg transition-all duration-200 hover:scale-110 flex flex-col items-center justify-center font-black ${colorClass}"
+                    style="font-size:9px;line-height:1.1;">
+                    <span style="font-size:11px;font-weight:900;">${initials}</span>
+                    <span style="font-size:8px;opacity:0.75;">${i + 1}</span>
                 </button>
             `;
         });
     }
-    const cols = Math.max(1, Math.min(10, Math.ceil(Math.sqrt(studentCount))));
 
     let syncText = heatmapTaughtDate && heatmapTaughtDate.toDate ? `Sync Activated: ${heatmapTaughtDate.toDate().toLocaleDateString()}` : "Sync Not Activated";
 
@@ -629,7 +654,7 @@ function renderSectionHeatmap() {
                     </div>
                 </div>
 
-                <div class="grid gap-3 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner" style="grid-template-columns: repeat(${cols}, 1fr);">
+                <div class="grid gap-2 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner overflow-y-auto" style="grid-template-columns: repeat(auto-fill, minmax(40px, 44px)); max-height: calc(100vh - 320px);">
                     ${gridHtml}
                 </div>
 
