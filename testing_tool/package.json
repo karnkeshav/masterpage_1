@@ -2,9 +2,9 @@
   "name": "testing_tool",
   "version": "1.0.0",
   "description": "",
-  "main": "run_tests.js",
+  "main": "run_tests_curriculum.js",
   "scripts": {
-    "test": "node run_tests.js",
+    "test": "node run_tests_curriculum.js",
     "start": "node server.js",
     "audit": "node exhaustive_playwright_audit.js"
   },
