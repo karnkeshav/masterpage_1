@@ -1,0 +1,39 @@
+name: Repository Audit
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: 
+
+jobs:
+  run-audit:
+    runs-on: ubuntu-latest
+    # Give the action permission to write back to the repository
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd testing_tool
+          npm install
+
+      - name: Run Audit
+        run: |
+          cd testing_tool
+          npm run audit
+
+      - name: Commit and Push Results
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update automated audit results"
+          # This ensures it only looks at your specific results folder
+          file_pattern: 'testing_tool/test-results/playwright-audit/*'
