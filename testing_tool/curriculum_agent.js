@@ -22,29 +22,27 @@ async function runCurriculumAgent() {
     report += '| Student | Grade | Subject | Topic | Tier | Status | Score |\n';
     report += '| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n';
 
-    // One browser, but a fresh isolated context + page per student.
     const browser = await chromium.launch({ headless: true });
 
     for (const student of students) {
         console.log(`\n[AUTH] Logging in as: ${student.email}`);
 
-        // Fresh context per student — no cookie/auth bleed between runs.
+        // Fresh isolated context per student.
         const context = await browser.newContext();
         const page = await context.newPage();
 
         try {
             await page.goto(BASE_URL, { waitUntil: 'load' });
 
-            // Wait for the JS-rendered login form before filling.
-            // Without this, page.fill times out because the form isn't in
-            // the DOM yet when page.goto resolves.
-            await page.waitForSelector('#login-email', { state: 'visible', timeout: 20000 });
+            // Login form on index.html uses #username / #password (NOT #login-email).
+            await page.waitForSelector('#username', { state: 'visible', timeout: 20000 });
+            await page.fill('#username', student.email);
+            await page.fill('#password', DEFAULT_PASSWORD);
 
-            await page.fill('#login-email', student.email);
-            await page.fill('#login-password', DEFAULT_PASSWORD);
-            await page.click('#login-submit-btn');
+            // Submit by pressing the form's submit button.
+            await page.click('#sovereign-login-form button[type="submit"]');
 
-            await page.waitForURL('**/student.html', { timeout: 20000 });
+            await page.waitForURL('**/student.html**', { timeout: 20000 });
             console.log(`[SUCCESS] Authenticated ${student.email}`);
 
             for (const subject of student.subjects) {
@@ -56,35 +54,54 @@ async function runCurriculumAgent() {
 
                     try {
                         await page.goto(quizUrl, { waitUntil: 'load' });
-                        await page.waitForSelector('#quiz-content', { state: 'visible', timeout: 10000 });
 
-                        const questions = await page.$$('.question-card');
-                        for (const q of questions) {
-                            const options = await q.$$('.option-btn');
-                            if (options.length > 0) await options[0].click();
+                        // Wait for the quiz to render (it un-hides #quiz-content
+                        // after auth + curriculum load resolve).
+                        await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 15000 });
+                        await page.waitForSelector('#question-list label', { timeout: 10000 });
+
+                        // Quiz is paginated: one question on screen at a time.
+                        // Click first option, click Next, repeat until Submit appears.
+                        let safety = 50;
+                        while (safety-- > 0) {
+                            // Pick first radio option of the visible question.
+                            const firstOption = await page.$('#question-list label');
+                            if (firstOption) await firstOption.click();
+
+                            // If Submit is now visible, this was the last question.
+                            const submitVisible = await page.locator('#submit-btn:not(.hidden)').count();
+                            if (submitVisible > 0) break;
+
+                            // Otherwise advance to next question.
+                            await page.click('#next-btn');
+                            // Tiny wait for re-render of next question.
+                            await page.waitForTimeout(150);
                         }
 
                         await page.click('#submit-btn');
-                        await page.waitForSelector('#final-score-percent', { state: 'visible', timeout: 10000 });
-                        const score = await page.innerText('#final-score-percent');
+
+                        // Score appears in #score-display (format "X/Y").
+                        await page.waitForSelector('#score-display', { state: 'visible', timeout: 10000 });
+                        const score = (await page.innerText('#score-display')).trim();
 
                         report += `| ${student.email} | ${student.grade} | ${subject} | ${topic} | ${tier} | ✅ Success | ${score} |\n`;
                     } catch (e) {
                         const isLocked = await page.isVisible('text=LOCKED').catch(() => false);
+                        const isPaywall = await page.locator('#paywall-screen:not(.hidden)').count().catch(() => 0);
                         if (isLocked) {
                             report += `| ${student.email} | ${student.grade} | ${subject} | ${topic} | ${tier} | 🔒 Locked | N/A |\n`;
+                        } else if (isPaywall > 0) {
+                            report += `| ${student.email} | ${student.grade} | ${subject} | ${topic} | ${tier} | 🔐 Paywall | N/A |\n`;
                         } else {
-                            report += `| ${student.email} | ${student.grade} | ${subject} | ${topic} | ${tier} | ❌ Error | ${e.message.substring(0, 40)}... |\n`;
+                            report += `| ${student.email} | ${student.grade} | ${subject} | ${topic} | ${tier} | ❌ Error | ${e.message.substring(0, 60).replace(/\|/g, '/')}... |\n`;
                         }
                     }
                 }
             }
         } catch (err) {
             console.error(`[ERROR] Execution failed for ${student.email}: ${err.message}`);
-            report += `| ${student.email} | ${student.grade} | — | — | — | ❌ Auth Failed | ${err.message.substring(0, 40)}... |\n`;
+            report += `| ${student.email} | ${student.grade} | — | — | — | ❌ Auth Failed | ${err.message.substring(0, 60).replace(/\|/g, '/')}... |\n`;
         } finally {
-            // Close context instead of clicking logout — works whether or not
-            // login succeeded, and fully clears all cookies/storage.
             await context.close();
         }
     }
