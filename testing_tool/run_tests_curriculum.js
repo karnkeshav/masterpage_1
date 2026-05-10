@@ -3,7 +3,9 @@ const http = require('http');
 const { runPerformanceTests } = require('./performance_test.js');
 const { runOutageTest } = require('./outage_test.js');
 const { runStressTest } = require('./stress_test.js');
-const { runCurriculumAgent } = require('./curriculum_agent.js');
+
+// DIRECT IMPORT (Matches the direct export in curriculum_agent.js)
+const runCurriculumAgent = require('./curriculum_agent.js');
 
 const BASE_URL = 'http://localhost:8080';
 
@@ -36,13 +38,21 @@ async function main() {
         await runStressTest();
 
         console.log("\n[PHASE 2] Starting Curriculum Agent (Class 10 Flow)...");
-        await runCurriculumAgent();
+        
+        // Double-check before calling to prevent crash
+        if (typeof runCurriculumAgent === 'function') {
+            await runCurriculumAgent();
+        } else {
+            throw new Error("Import failed: runCurriculumAgent is not a function. Check exports.");
+        }
 
     } catch (err) {
         console.error("\n[FATAL] Test suite aborted:", err.message);
         fs.appendFileSync(reportPath, `\n## Fatal Error\n\`\`\`\n${err.stack}\n\`\`\`\n`);
     } finally {
-        if (ownedServer) ownedServer.close(() => console.log("[SERVER] Shut down."));
+        if (ownedServer) {
+            ownedServer.close(() => console.log("[SERVER] Shut down."));
+        }
     }
     console.log("\n--- ALL TASKS COMPLETE ---");
 }
