@@ -1205,12 +1205,15 @@ window.handleCSVUpload = async (event) => {
 
                     const curriculumData = await loadCurriculum(targetGrade);
                     let hasMapping = false;
-                    if (curriculumData["Science"] && curriculumData["Science"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["Social Science"] && curriculumData["Social Science"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["Mathematics"] && curriculumData["Mathematics"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["English"] && curriculumData["English"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["Hindi"] && curriculumData["Hindi"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["Sanskrit"] && curriculumData["Sanskrit"][targetDiscipline]) hasMapping = true;
+                    // Direct top-level match (e.g. "Mathematics", "Science", "Accountancy")
+                    if (curriculumData[targetDiscipline]) hasMapping = true;
+                    // Sub-key match (e.g. "Physics" / "Chemistry" / "Biology" under "Science")
+                    if (!hasMapping && curriculumData["Science"] && curriculumData["Science"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["Social Science"] && curriculumData["Social Science"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["Mathematics"] && curriculumData["Mathematics"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["English"] && curriculumData["English"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["Hindi"] && curriculumData["Hindi"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["Sanskrit"] && curriculumData["Sanskrit"][targetDiscipline]) hasMapping = true;
 
                     if(hasMapping) {
                         await updateDoc(doc(db, "users", userId), {
