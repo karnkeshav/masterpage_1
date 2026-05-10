@@ -10,6 +10,7 @@ const MIME = {
     '.png':  'image/png',
     '.jpg':  'image/jpeg',
     '.svg':  'image/svg+xml',
+    '.woff2':'font/woff2',
 };
 
 const ROOT = path.join(__dirname, '..');
@@ -27,7 +28,7 @@ const server = http.createServer((req, res) => {
     fs.readFile(filePath, (err, data) => {
         if (err) {
             res.writeHead(404);
-            res.end(`404 Not Found: ${urlPath}`);
+            res.end(`404: Not Found ${urlPath}`);
             return;
         }
         const ext = path.extname(filePath).toLowerCase();
