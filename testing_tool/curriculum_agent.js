@@ -9,13 +9,13 @@ const REPORT_PATH = 'report.md';
 const SUBJECTS = ['Mathematics', 'Science', 'Social Science'];
 
 async function runCurriculumAgent() {
-    console.log("\n[SYSTEM] 🛡️ Initializing Class 10 Sovereign Audit (High-Fidelity)...");
+    console.log("\n[SYSTEM] 🛡️ Initializing Sovereign Audit for Class 10...");
     
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
     
-    // Set global timeout for slow Firestore/Firebase operations
+    // Set global timeout for Firebase/Firestore handshake
     page.setDefaultTimeout(60000); 
 
     let report = '\n## Class 10 Curriculum Integrity Report\n\n';
@@ -23,21 +23,23 @@ async function runCurriculumAgent() {
     report += '| :--- | :--- | :--- | :--- | :--- |\n';
 
     try {
-        // --- 1. SMART AUTHENTICATION ---
-        console.log(`[AUTH] 🔑 Accessing Portal...`);
+        // --- AUTHENTICATION PHASE ---
+        console.log(`[AUTH] 🔑 Navigating to ${BASE_URL}...`);
         await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 
-        // STABILITY GUARD: Wait for index-auth.js 200ms "field killer" to finish
-        console.log("[AUTH] ⏳ Waiting for application stabilization...");
+        // STABILITY GUARD: Wait specifically for the "Autofill Killer" in index-auth.js to finish
+        // The app clears fields 200ms after DOMContentLoaded. We wait 1000ms for safety.
+        console.log("[AUTH] ⏳ Waiting for application timers to stabilize...");
         await page.waitForTimeout(1000); 
 
+        console.log(`[AUTH] ✍️ Typing hardcoded credentials: ${HARDCODED_USER}`);
         await page.fill('#username', HARDCODED_USER);
         await page.fill('#password', HARDCODED_PASS);
         
-        console.log("[AUTH] 🚀 Submitting Sovereign Credentials...");
+        console.log("[AUTH] 🚀 Submitting Gateway Form...");
         await page.click('#sovereign-login-form button[type="submit"]');
 
-        // STATE MONITOR: Race between Redirect and Error Message
+        // STATE-AWARE MONITOR: Watch for Success OR Login Error
         await Promise.race([
             page.waitForURL('**/student.html', { timeout: 45000 }),
             page.waitForSelector('#login-error:not(.hidden)', { timeout: 45000 }).then(async () => {
@@ -46,11 +48,11 @@ async function runCurriculumAgent() {
             })
         ]);
         
-        console.log(`[AUTH] ✅ Session Established: Class 10 Hub.`);
+        console.log(`[AUTH] ✅ Handshake Successful. Hub Loaded.`);
 
-        // --- 2. CURRICULUM AUDIT ---
+        // --- CURRICULUM AUDIT ---
         for (const subject of SUBJECTS) {
-            console.log(`\n[SUBJECT] 📁 Auditing: ${subject}`);
+            console.log(`\n[SUBJECT] 📁 Processing: ${subject}`);
             
             await page.goto(`${BASE_URL}/app/consoles/student.html`);
             await page.click('#start-new-quiz-btn');
@@ -58,8 +60,7 @@ async function runCurriculumAgent() {
 
             const subjectCard = page.locator('#subject-grid > div', { hasText: subject }).first();
             if (await subjectCard.count() === 0) {
-                console.log(`   [WARN] ${subject} missing from grid.`);
-                report += `| ${subject} | — | — | ❌ Missing | Card not found |\n`;
+                report += `| ${subject} | — | — | ❌ Missing | Subject not found in grid |\n`;
                 continue;
             }
             await subjectCard.click();
@@ -78,12 +79,12 @@ async function runCurriculumAgent() {
                 };
             }));
 
-            console.log(`   [FLOW] Found ${chapters.length} chapters. Running 'Simple' attempts...`);
+            console.log(`   [FLOW] Found ${chapters.length} chapters. Starting 'Simple' attempts...`);
 
             for (const chapter of chapters) {
                 process.stdout.write(`      > ${chapter.title.padEnd(42)} `);
                 try {
-                    await page.goto(page.url()); 
+                    await page.goto(page.url(), { waitUntil: 'load' }); 
                     await chapterCards.nth(chapter.index).click();
                     
                     const modal = page.locator('#symmetric-difficulty-modal');
@@ -91,9 +92,9 @@ async function runCurriculumAgent() {
                     await modal.getByRole('button', { name: /Simple/i }).click();
                     
                     await page.waitForURL('**/quiz-engine.html');
-                    await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 30000 });
+                    await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 25000 });
 
-                    // Auto-take logic
+                    // Quiz Simulation logic
                     let quizActive = true;
                     while (quizActive) {
                         await page.locator('#question-list label').first().click();
@@ -101,7 +102,7 @@ async function runCurriculumAgent() {
                             quizActive = false;
                         } else {
                             await page.click('#next-btn');
-                            await page.waitForTimeout(100);
+                            await page.waitForTimeout(50);
                         }
                     }
 
@@ -115,18 +116,18 @@ async function runCurriculumAgent() {
                     report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ✅ Pass | ${score} |\n`;
 
                 } catch (quizErr) {
-                    process.stdout.write(`❌ FAIL\n`);
+                    process.stdout.write(`❌ ERROR\n`);
                     report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Fail | ${quizErr.message.substring(0, 30)} |\n`;
                 }
             }
         }
     } catch (fatal) {
         console.error(`\n[FATAL] 🛑 Audit Halted: ${fatal.message}`);
-        report += `\n**Audit Crash:** ${fatal.message}\n`;
+        report += `\n**Critical Failure:** ${fatal.message}\n`;
     } finally {
         fs.appendFileSync(REPORT_PATH, report);
         await browser.close();
-        console.log("\n[SYSTEM] 🏁 Audit cycle finished. See report.md.");
+        console.log("\n[SYSTEM] 🏁 Audit cycle finished. Matrix updated in report.md.");
     }
 }
 
