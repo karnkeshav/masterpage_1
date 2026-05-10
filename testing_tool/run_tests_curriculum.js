@@ -10,40 +10,20 @@ const BASE_URL = 'http://localhost:8080';
 async function ensureServer() {
     return new Promise((resolve) => {
         const req = http.get(BASE_URL, (res) => {
-            console.log(`[SERVER] 📡 Active server detected. Reusing session.`);
+            console.log(`[SERVER] 🛰️ Active listener detected at ${BASE_URL}.`);
             resolve(null);
         });
         req.on('error', () => {
-            console.log(`[SERVER] 🛠️ Deploying local environment...`);
+            console.log(`[SERVER] 🛠️ No listener found. Deploying environment...`);
             const { server } = require('./server.js');
-            server.listen(8080, () => {
-                console.log("[SERVER] 🚀 Live at http://localhost:8080");
-                resolve(server);
-            });
-        });
-    });
-}
-
-async function warmUpPage() {
-    console.log("[WARM-UP] ☕ Pre-loading page to stabilize Lighthouse...");
-    return new Promise((resolve) => {
-        http.get(BASE_URL, (res) => {
-            let data = '';
-            res.on('data', (chunk) => { data += chunk; });
-            res.on('end', () => {
-                // Wait 2 seconds for server-side FS operations to settle
-                setTimeout(resolve, 2000);
-            });
-        }).on('error', (err) => {
-            console.error("[WARM-UP] Failed:", err.message);
-            resolve();
+            server.listen(8080, () => resolve(server));
         });
     });
 }
 
 async function main() {
     console.log("====================================================");
-    console.log("READY4EXAM: CLASS 10 INTEGRATED PIPELINE");
+    console.log("READY4EXAM: CLASS 10 INTEGRITY PIPELINE");
     console.log("====================================================");
 
     const reportPath = 'report.md';
@@ -52,9 +32,10 @@ async function main() {
     let ownedServer = null;
     try {
         ownedServer = await ensureServer();
-        
-        // Stabilize Lighthouse audits
-        await warmUpPage();
+
+        // WARM-UP: Ensure page paints before Lighthouse hits it
+        console.log("[WARM-UP] ☕ Pre-loading application to stabilize Lighthouse...");
+        await new Promise(r => setTimeout(r, 2000));
 
         console.log("\n[1/2] RESILIENCE AUDITS");
         await runPerformanceTests();
@@ -65,7 +46,7 @@ async function main() {
         await runCurriculumAgent();
 
     } catch (err) {
-        console.error("\n[FATAL] Pipeline Aborted:", err.message);
+        console.error("\n[CRITICAL] Pipeline Failed:", err.message);
     } finally {
         if (ownedServer) {
             ownedServer.close(() => console.log("\n[SERVER] 🏁 Decommissioned."));
