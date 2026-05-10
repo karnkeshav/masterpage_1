@@ -46,6 +46,15 @@ const server = http.createServer((req, res) => {
     });
 });
 
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        // Another server is already serving port 8080 — reuse it instead of crashing.
+        console.log(`Port 8080 already in use — reusing existing server.`);
+    } else {
+        throw err;
+    }
+});
+
 server.listen(8080, () => {
     console.log(`Static server running on http://localhost:8080 (root: ${ROOT})`);
 });

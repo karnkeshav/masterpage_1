@@ -77,7 +77,10 @@ async function main() {
         console.error("\n[FATAL] Test suite aborted:", err.message);
         fs.appendFileSync(reportPath, `\n## Fatal Error\n\`\`\`\n${err.stack}\n\`\`\`\n`);
     } finally {
-        server.close(() => console.log("\n[SERVER] Shut down."));
+        // Only close the server if we actually own it (not reusing an external one).
+        if (server.listening) {
+            server.close(() => console.log("\n[SERVER] Shut down."));
+        }
     }
 
     console.log("\n--- ALL TASKS COMPLETE. CHECK report.md ---");
