@@ -584,19 +584,21 @@ function renderSectionHeatmap() {
                 s.user_id === uid && scoreMatchesChapter(s, selectedChapterId)
             );
             const colorClass = hasScore
-                ? 'bg-success-green shadow-[0_0_12px_rgba(5,150,105,0.4)] border border-green-400 text-white'
+                ? 'bg-success-green shadow-[0_0_8px_rgba(5,150,105,0.35)] border border-green-400 text-white'
                 : 'bg-slate-200 border border-slate-300 text-slate-500';
             const name = students.names[uid] || `Student ${i + 1}`;
+            const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || String(i + 1);
 
             gridHtml += `
                 <button title="${esc(name)}" onclick="window.showStudentDetail('${uid}')"
-                    class="w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center font-black text-xs ${colorClass}">
-                    ${i + 1}
+                    class="w-10 h-10 rounded-lg transition-all duration-200 hover:scale-110 flex flex-col items-center justify-center font-black ${colorClass}"
+                    style="font-size:9px;line-height:1.1;">
+                    <span style="font-size:11px;font-weight:900;">${initials}</span>
+                    <span style="font-size:8px;opacity:0.75;">${i + 1}</span>
                 </button>
             `;
         });
     }
-    const cols = Math.max(1, Math.min(10, Math.ceil(Math.sqrt(studentCount))));
 
     let syncText = heatmapTaughtDate && heatmapTaughtDate.toDate ? `Sync Activated: ${heatmapTaughtDate.toDate().toLocaleDateString()}` : "Sync Not Activated";
 
@@ -652,7 +654,7 @@ function renderSectionHeatmap() {
                     </div>
                 </div>
 
-                <div class="grid gap-3 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner" style="grid-template-columns: repeat(${cols}, 1fr);">
+                <div class="grid gap-2 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner overflow-y-auto" style="grid-template-columns: repeat(auto-fill, minmax(40px, 44px)); max-height: calc(100vh - 320px);">
                     ${gridHtml}
                 </div>
 
