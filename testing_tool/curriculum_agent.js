@@ -5,58 +5,70 @@ const BASE_URL = 'http://localhost:8080';
 const DEFAULT_PASSWORD = 'Ready4Exam@2026';
 const REPORT_PATH = 'report.md';
 
+// Strict Scope: Class 10, Simple Difficulty, Specific Subjects
 const STUDENT = { email: 'ready4urexam+s.10.a@gmail.com', grade: '10' };
 const SUBJECTS = ['Mathematics', 'Science', 'Social Science'];
 
 async function runCurriculumAgent() {
-    console.log("\n[AGENT] 🚀 Initializing Class 10 Integrity Scan...");
+    console.log("\n[SYSTEM] 🛡️ Starting Class 10 High-Fidelity Audit...");
     
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
-    page.setDefaultTimeout(40000);
+    
+    // Set a generous timeout for Firebase profile-sync operations
+    page.setDefaultTimeout(60000); 
 
     let report = '\n## Class 10 Curriculum Integrity Report\n\n';
-    report += '| Subject | Chapter | Table ID | Status | Outcome |\n';
+    report += '| Subject | Chapter | Table ID | Status | Performance |\n';
     report += '| :--- | :--- | :--- | :--- | :--- |\n';
 
     try {
-        // --- AUTHENTICATION ---
-        console.log(`[AUTH] 🔑 Attempting login for ${STUDENT.email}...`);
+        // --- AUTHENTICATION WITH STABILITY GUARD ---
+        console.log(`[AUTH] 🔑 Accessing Portal for ${STUDENT.email}...`);
         await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+        
+        // WAIT for the 200ms "Autofill Killer" in index-auth.js to settle
+        await page.waitForTimeout(500); 
+
         await page.fill('#username', STUDENT.email);
         await page.fill('#password', DEFAULT_PASSWORD);
         
+        console.log("[AUTH] 🚀 Submitting Credentials...");
         await Promise.all([
             page.waitForURL('**/student.html', { timeout: 60000 }),
             page.click('#sovereign-login-form button[type="submit"]')
         ]).catch(async () => {
-            if (await page.isVisible('#login-error')) {
+            const errorVisible = await page.isVisible('#login-error');
+            if (errorVisible) {
                 const msg = await page.innerText('#login-error');
                 throw new Error(`Auth Rejected: ${msg}`);
             }
-            throw new Error("Auth Timeout: Student hub did not load.");
+            throw new Error("Navigation Timeout: Check if routeUser() is hanging.");
         });
-        console.log(`[AUTH] ✅ Success. Entered Class 10 Hub.`);
+        
+        console.log(`[AUTH] ✅ Session Established: Class 10 Hub.`);
 
-        for (const subject of SUBJECTS) {
-            console.log(`\n[SUBJECT] 📁 Processing: ${subject}`);
+        for (let i = 0; i < SUBJECTS.length; i++) {
+            const subject = SUBJECTS[i];
+            const progress = Math.round((i / SUBJECTS.length) * 100);
+            console.log(`\n[${progress}%] 📁 Scanning Subject: ${subject}`);
             
-            // Navigate to subject curriculum
+            // Navigate via the "Knowledge Hub" flow
             await page.goto(`${BASE_URL}/app/consoles/student.html`);
             await page.click('#start-new-quiz-btn');
             await page.waitForURL('**/curriculum.html');
 
             const subjectCard = page.locator('#subject-grid > div', { hasText: subject }).first();
             if (await subjectCard.count() === 0) {
-                console.log(`[WARN] Subject ${subject} not found in grid.`);
-                report += `| ${subject} | — | — | ⚠️ Missing | Subject not available in hub |\n`;
+                console.log(`   [WARN] ${subject} missing from grid.`);
+                report += `| ${subject} | — | — | ❌ Missing | Card not found in Hub |\n`;
                 continue;
             }
             await subjectCard.click();
             await page.waitForURL('**/chapter-selection.html');
 
-            // Discover all chapters
+            // Discover Chapters (Smart Locator)
             const chapterCards = page.locator('[onclick^="startQuiz"]');
             await chapterCards.first().waitFor({ state: 'visible' });
             
@@ -70,12 +82,12 @@ async function runCurriculumAgent() {
                 };
             }));
 
-            console.log(`[FLOW] 📍 Found ${chapters.length} chapters in ${subject}. Starting Simple attempts...`);
+            console.log(`   [FLOW] Found ${chapters.length} chapters. Running 'Simple' attempts...`);
 
             for (const chapter of chapters) {
-                process.stdout.write(`   > ${chapter.title}... `);
+                process.stdout.write(`      > ${chapter.title.padEnd(40)} `);
                 try {
-                    await page.goto(page.url()); // Ensure modal state reset
+                    await page.goto(page.url()); // Clear modal state
                     await chapterCards.nth(chapter.index).click();
                     
                     const modal = page.locator('#symmetric-difficulty-modal');
@@ -83,47 +95,42 @@ async function runCurriculumAgent() {
                     await modal.getByRole('button', { name: /Simple/i }).click();
                     
                     await page.waitForURL('**/quiz-engine.html');
-                    await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 25000 });
+                    await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 30000 });
 
-                    // Simulate Quiz interaction
-                    let isQuizActive = true;
-                    let qCount = 0;
-                    while (isQuizActive) {
-                        qCount++;
+                    // Automated Taker
+                    let quizActive = true;
+                    while (quizActive) {
                         await page.locator('#question-list label').first().click();
-                        
                         if (await page.locator('#submit-btn:not(.hidden)').count() > 0) {
-                            isQuizActive = false;
+                            quizActive = false;
                         } else {
                             await page.click('#next-btn');
-                            await page.waitForTimeout(100);
+                            await page.waitForTimeout(50);
                         }
                     }
 
-                    // Handle native "Are you sure?" confirmation
                     page.once('dialog', d => d.accept().catch(() => {}));
                     await page.click('#submit-btn');
                     
-                    await page.waitForSelector('#score-display', { state: 'visible' });
+                    await page.waitForSelector('#score-display', { state: 'visible', timeout: 15000 });
                     const score = await page.innerText('#score-display');
                     
-                    process.stdout.write(`✅ Completed (${score})\n`);
-                    report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ✅ Pass | Score: ${score} |\n`;
+                    process.stdout.write(`✅ [${score}]\n`);
+                    report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ✅ Pass | ${score} |\n`;
 
                 } catch (quizErr) {
-                    process.stdout.write(`❌ Failed\n`);
-                    console.log(`      [ERR] ${quizErr.message}`);
-                    report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Error | ${quizErr.message.substring(0, 50)} |\n`;
+                    process.stdout.write(`❌ ERROR\n`);
+                    report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Fail | ${quizErr.message.substring(0, 30)} |\n`;
                 }
             }
         }
     } catch (fatal) {
-        console.error(`\n[FATAL] 🛑 Agent Crashed: ${fatal.message}`);
-        report += `\n**Critical Failure:** ${fatal.message}\n`;
+        console.error(`\n[FATAL] 🛑 Audit Interrupted: ${fatal.message}`);
+        report += `\n**Audit Crash:** ${fatal.message}\n`;
     } finally {
         fs.appendFileSync(REPORT_PATH, report);
         await browser.close();
-        console.log("\n[AGENT] 🏁 Integrity scan finished. Findings saved to report.md.");
+        console.log("\n[SYSTEM] 🏁 Class 10 Audit Complete. Results in report.md.");
     }
 }
 
