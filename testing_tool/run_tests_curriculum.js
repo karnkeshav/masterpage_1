@@ -10,7 +10,7 @@ const BASE_URL = 'http://localhost:8080';
 async function ensureServer() {
     return new Promise((resolve) => {
         const req = http.get(BASE_URL, (res) => {
-            console.log(`[SERVER] 🛰️ Active listener detected at ${BASE_URL}.`);
+            console.log(`[SERVER] 📡 Active listener detected at ${BASE_URL}.`);
             resolve(null);
         });
         req.on('error', () => {
@@ -23,7 +23,7 @@ async function ensureServer() {
 
 async function main() {
     console.log("====================================================");
-    console.log("READY4EXAM: CLASS 10 INTEGRITY PIPELINE");
+    console.log("READY4EXAM: CLASS 10 INTEGRATED PIPELINE");
     console.log("====================================================");
 
     const reportPath = 'report.md';
@@ -33,7 +33,7 @@ async function main() {
     try {
         ownedServer = await ensureServer();
 
-        // WARM-UP: Ensure page paints before Lighthouse hits it
+        // WARM-UP: Ensure page paints before Lighthouse starts to avoid NO_FCP
         console.log("[WARM-UP] ☕ Pre-loading application to stabilize Lighthouse...");
         await new Promise(r => setTimeout(r, 2000));
 
