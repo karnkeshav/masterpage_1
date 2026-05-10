@@ -803,18 +803,24 @@ function calculateRemedialQueue() {
         return { B: 0, strugglers: [], top10: [] };
     }
 
-    // Calculate Benchmark (B) at P70
-    const sortedAttempts = realStudents.map(s => s.attempts).sort((a, b) => a - b);
-    const p70Index = Math.min(Math.floor(realStudents.length * 0.70), sortedAttempts.length - 1);
-    const B = sortedAttempts[p70Index] ?? 1;
+    // Benchmark (B) = passing threshold. Anyone below this needs remediation.
+    // Use 40% (CBSE pass mark) as the floor; if class median is lower, raise B to median
+    // so the bottom half is always flagged when a class is broadly struggling.
+    const sortedScores = realStudents.map(s => s.score).sort((a, b) => a - b);
+    const median = sortedScores[Math.floor(sortedScores.length / 2)] ?? 0;
+    const B = Math.max(40, median);
 
-    // Filter Strugglers (B+1)
+    // Strugglers: scored below benchmark — these are the kids needing help.
     const strugglers = realStudents
-        .filter(s => s.attempts > B)
+        .filter(s => s.score < B)
         .sort((a, b) => a.score - b.score)
         .slice(0, 20);
 
-    const top10 = [...realStudents]
+    // Top 10: must have cleared a minimum mastery bar (60%) to count as "advanced".
+    // Without this floor, a class with only failing attempts produces fake leaders.
+    const TOP_FLOOR = 60;
+    const top10 = realStudents
+        .filter(s => s.score >= TOP_FLOOR)
         .sort((a, b) => b.score - a.score || a.attempts - b.attempts)
         .slice(0, 10);
 
@@ -884,12 +890,12 @@ function renderRemedialQueue() {
                                 <i class="fas fa-ambulance"></i> Remedial Attention List
                             </h3>
                             <p class="text-xs font-medium text-red-100 mt-1 opacity-90">
-                                Bottom Strugglers (breached the <i>B+1</i> threshold).
+                                Students scoring below the benchmark — need intervention.
                             </p>
                         </div>
                         <div class="text-right">
-                            <div class="text-3xl font-black">${B}</div>
-                            <div class="text-[9px] uppercase tracking-widest font-bold opacity-80">Current Benchmark (B)</div>
+                            <div class="text-3xl font-black">${B}%</div>
+                            <div class="text-[9px] uppercase tracking-widest font-bold opacity-80">Pass Benchmark</div>
                         </div>
                     </div>
                     <div class="p-0 overflow-y-auto max-h-[500px]">
