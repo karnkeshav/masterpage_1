@@ -26,15 +26,11 @@ function fetchText(url) {
 async function ensureServer() {
     const rootCheck = await fetchText(BASE_URL);
     if (rootCheck.ok) {
-        const routeCheck = await fetchText(`${BASE_URL}/app/consoles/student.html`);
-        if (routeCheck.ok && routeCheck.body.includes('start-new-quiz-btn')) {
-            console.log(`[SERVER] Reusing existing static server at ${BASE_URL}`);
-            return null;
-        }
-        throw new Error(
-            `${BASE_URL} is already in use, but it is not serving app/ routes correctly. ` +
-            'Stop the conflicting process and rerun this command.'
-        );
+        // Something is serving on port 8080 — trust it and proceed.
+        // If the server is misconfigured, the actual tests will surface
+        // clearer errors than a generic content-probe failure here.
+        console.log(`[SERVER] Reusing existing server at ${BASE_URL}`);
+        return null;
     }
 
     console.log(`[SERVER] No server detected — starting bundled static server at ${BASE_URL}`);
