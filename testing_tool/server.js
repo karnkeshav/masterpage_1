@@ -16,7 +16,6 @@ const server = http.createServer((req, res) => {
     });
 });
 
-// START LISTENING IF RUN DIRECTLY (npm start)
 if (require.main === module) {
     server.listen(8080, () => console.log('🚀 Server live at http://localhost:8080'));
 }
