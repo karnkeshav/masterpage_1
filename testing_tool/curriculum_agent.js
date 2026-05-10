@@ -5,48 +5,58 @@ const BASE_URL = 'http://localhost:8080';
 const DEFAULT_PASSWORD = 'Ready4Exam@2026';
 const REPORT_PATH = 'report.md';
 
-// Target only Class 10 and Simple difficulty
 const STUDENT = { email: 'ready4urexam+s.10.a@gmail.com', grade: '10' };
 const SUBJECTS = ['Mathematics', 'Science', 'Social Science'];
 
 async function runCurriculumAgent() {
-    console.log("🚀 Starting Class 10 Curriculum Integrity Agent...");
+    console.log("\n[AGENT] 🚀 Initializing Class 10 Integrity Scan...");
     
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
+    page.setDefaultTimeout(40000);
 
-    let report = '\n## Class 10 Curriculum Health Matrix\n\n';
-    report += '| Subject | Chapter | Table ID | Status | Detail |\n';
+    let report = '\n## Class 10 Curriculum Integrity Report\n\n';
+    report += '| Subject | Chapter | Table ID | Status | Outcome |\n';
     report += '| :--- | :--- | :--- | :--- | :--- |\n';
 
     try {
-        // 1. Authentication
-        await page.goto(BASE_URL);
+        // --- AUTHENTICATION ---
+        console.log(`[AUTH] 🔑 Attempting login for ${STUDENT.email}...`);
+        await page.goto(BASE_URL, { waitUntil: 'networkidle' });
         await page.fill('#username', STUDENT.email);
         await page.fill('#password', DEFAULT_PASSWORD);
-        await page.click('#sovereign-login-form button[type="submit"]');
-        await page.waitForURL('**/student.html');
-        console.log(`[AUTH] Logged in as Class 10 student.`);
+        
+        await Promise.all([
+            page.waitForURL('**/student.html', { timeout: 60000 }),
+            page.click('#sovereign-login-form button[type="submit"]')
+        ]).catch(async () => {
+            if (await page.isVisible('#login-error')) {
+                const msg = await page.innerText('#login-error');
+                throw new Error(`Auth Rejected: ${msg}`);
+            }
+            throw new Error("Auth Timeout: Student hub did not load.");
+        });
+        console.log(`[AUTH] ✅ Success. Entered Class 10 Hub.`);
 
         for (const subject of SUBJECTS) {
-            console.log(`\n[SUBJECT] Entering ${subject}...`);
+            console.log(`\n[SUBJECT] 📁 Processing: ${subject}`);
             
-            // 2. Open Curriculum Page
+            // Navigate to subject curriculum
             await page.goto(`${BASE_URL}/app/consoles/student.html`);
             await page.click('#start-new-quiz-btn');
             await page.waitForURL('**/curriculum.html');
 
-            // 3. Select Subject
             const subjectCard = page.locator('#subject-grid > div', { hasText: subject }).first();
             if (await subjectCard.count() === 0) {
-                report += `| ${subject} | — | — | ❌ Missing | Subject card not found |\n`;
+                console.log(`[WARN] Subject ${subject} not found in grid.`);
+                report += `| ${subject} | — | — | ⚠️ Missing | Subject not available in hub |\n`;
                 continue;
             }
             await subjectCard.click();
             await page.waitForURL('**/chapter-selection.html');
 
-            // 4. Discover Chapters
+            // Discover all chapters
             const chapterCards = page.locator('[onclick^="startQuiz"]');
             await chapterCards.first().waitFor({ state: 'visible' });
             
@@ -60,63 +70,61 @@ async function runCurriculumAgent() {
                 };
             }));
 
-            console.log(`[FLOW] Found ${chapters.length} chapters in ${subject}.`);
+            console.log(`[FLOW] 📍 Found ${chapters.length} chapters in ${subject}. Starting Simple attempts...`);
 
             for (const chapter of chapters) {
-                console.log(`   > Testing: ${chapter.title} [Simple]`);
+                process.stdout.write(`   > ${chapter.title}... `);
                 try {
-                    // Navigate back to chapter list for each attempt
-                    await page.goto(page.url(), { waitUntil: 'load' }); 
-                    
-                    // Trigger Modal
+                    await page.goto(page.url()); // Ensure modal state reset
                     await chapterCards.nth(chapter.index).click();
+                    
                     const modal = page.locator('#symmetric-difficulty-modal');
                     await modal.waitFor({ state: 'visible' });
-                    
-                    // Select Simple
                     await modal.getByRole('button', { name: /Simple/i }).click();
-                    await page.waitForURL('**/quiz-engine.html');
-
-                    // 5. Take Quiz
-                    await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 15000 });
                     
-                    let questionsFinished = false;
-                    let safetyCounter = 0;
-                    while (!questionsFinished && safetyCounter < 50) {
-                        safetyCounter++;
+                    await page.waitForURL('**/quiz-engine.html');
+                    await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 25000 });
+
+                    // Simulate Quiz interaction
+                    let isQuizActive = true;
+                    let qCount = 0;
+                    while (isQuizActive) {
+                        qCount++;
                         await page.locator('#question-list label').first().click();
                         
                         if (await page.locator('#submit-btn:not(.hidden)').count() > 0) {
-                            questionsFinished = true;
+                            isQuizActive = false;
                         } else {
                             await page.click('#next-btn');
-                            await page.waitForTimeout(200);
+                            await page.waitForTimeout(100);
                         }
                     }
 
-                    // Submit
+                    // Handle native "Are you sure?" confirmation
                     page.once('dialog', d => d.accept().catch(() => {}));
                     await page.click('#submit-btn');
-                    await page.waitForSelector('#score-display', { state: 'visible', timeout: 10000 });
                     
+                    await page.waitForSelector('#score-display', { state: 'visible' });
                     const score = await page.innerText('#score-display');
+                    
+                    process.stdout.write(`✅ Completed (${score})\n`);
                     report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ✅ Pass | Score: ${score} |\n`;
 
-                } catch (err) {
-                    console.error(`[ERROR] Chapter ${chapter.title} failed: ${err.message}`);
-                    report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Error | ${err.message.substring(0, 50)} |\n`;
+                } catch (quizErr) {
+                    process.stdout.write(`❌ Failed\n`);
+                    console.log(`      [ERR] ${quizErr.message}`);
+                    report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Error | ${quizErr.message.substring(0, 50)} |\n`;
                 }
             }
         }
     } catch (fatal) {
-        console.error(`[FATAL] Agent crashed: ${fatal.message}`);
-        report += `\n**Fatal Error:** ${fatal.message}\n`;
+        console.error(`\n[FATAL] 🛑 Agent Crashed: ${fatal.message}`);
+        report += `\n**Critical Failure:** ${fatal.message}\n`;
     } finally {
         fs.appendFileSync(REPORT_PATH, report);
         await browser.close();
-        console.log("\n🏁 Agent Simulation Complete. Check report.md");
+        console.log("\n[AGENT] 🏁 Integrity scan finished. Findings saved to report.md.");
     }
 }
 
-// DIRECT EXPORT
 module.exports = runCurriculumAgent;
