@@ -10,43 +10,48 @@ const SUBJECTS = ['Mathematics', 'Science', 'Social Science'];
 
 async function runCurriculumAgent() {
     console.log("\n[SYSTEM] 🛡️ Initializing Class 10 Sovereign Audit...");
-    console.log(`[CONFIG] Identity: ${HARDCODED_USER} | Scope: Simple Difficulty`);
+    console.log(`[CONFIG] Identity: ${HARDCODED_USER} | Difficulty: Simple`);
     
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
-    page.setDefaultTimeout(45000); 
+    page.setDefaultTimeout(60000); // 60s to handle Firebase sync latency
 
     let report = '\n## Class 10 Curriculum Integrity Report\n\n';
-    report += '| Subject | Chapter | Table ID | Status | Outcome |\n';
+    report += '| Subject | Chapter | Table ID | Status | Score |\n';
     report += '| :--- | :--- | :--- | :--- | :--- |\n';
 
     try {
-        // --- AUTHENTICATION PHASE ---
+        // --- 1. AUTHENTICATION & SESSION SYNC ---
         console.log(`[AUTH] 🔑 Accessing Portal...`);
         await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-        
-        // CRITICAL: Stability Guard for index-auth.js (Wait for 200ms autofill-clear to finish)
-        await page.waitForTimeout(600); 
 
-        await page.fill('#username', HARDCODED_USER);
-        await page.fill('#password', HARDCODED_PASS);
-        
-        console.log("[AUTH] 🚀 Submitting Sovereign Credentials...");
-        await Promise.all([
-            page.waitForURL('**/student.html', { timeout: 60000 }),
-            page.click('#sovereign-login-form button[type="submit"]')
-        ]).catch(async () => {
-            const errorVisible = await page.isVisible('#login-error');
-            if (errorVisible) {
-                const msg = await page.innerText('#login-error');
-                throw new Error(`Auth Rejected: ${msg}`);
-            }
-            throw new Error("Navigation Timeout: Check Firebase profile-sync latency.");
-        });
-        
+        // Check if we are already auto-routing (session persistence)
+        if (page.url().includes('student.html')) {
+            console.log("[AUTH] ⚡ Session pre-active. Auto-routing to Hub.");
+        } else {
+            // Wait for index-auth.js to finish its 200ms clear-field timeout
+            await page.waitForTimeout(1000); 
+
+            await page.fill('#username', HARDCODED_USER);
+            await page.fill('#password', HARDCODED_PASS);
+            
+            console.log("[AUTH] 🚀 Submitting Sovereign Credentials...");
+            await Promise.all([
+                page.waitForURL('**/student.html', { timeout: 60000 }),
+                page.click('#sovereign-login-form button[type="submit"]')
+            ]).catch(async () => {
+                const errorVisible = await page.isVisible('#login-error');
+                if (errorVisible) {
+                    const msg = await page.innerText('#login-error');
+                    throw new Error(`Auth Rejected: ${msg}`);
+                }
+                throw new Error("Navigation Timeout: Student Hub failed to load.");
+            });
+        }
         console.log(`[AUTH] ✅ Success. Class 10 session established.`);
 
+        // --- 2. CURRICULUM SCAN ---
         for (const subject of SUBJECTS) {
             console.log(`\n[SUBJECT] 📁 Auditing: ${subject}`);
             
@@ -76,12 +81,12 @@ async function runCurriculumAgent() {
                 };
             }));
 
-            console.log(`   [FLOW] ${chapters.length} chapters found. Starting automated attempts...`);
+            console.log(`   [FLOW] ${chapters.length} chapters detected. Starting Simple attempts...`);
 
             for (const chapter of chapters) {
                 process.stdout.write(`      > ${chapter.title.padEnd(42)} `);
                 try {
-                    await page.goto(page.url()); 
+                    await page.goto(page.url()); // Modal reset
                     await chapterCards.nth(chapter.index).click();
                     
                     const modal = page.locator('#symmetric-difficulty-modal');
@@ -91,6 +96,7 @@ async function runCurriculumAgent() {
                     await page.waitForURL('**/quiz-engine.html');
                     await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 30000 });
 
+                    // Quiz Automation
                     let quizActive = true;
                     while (quizActive) {
                         await page.locator('#question-list label').first().click();
@@ -105,7 +111,7 @@ async function runCurriculumAgent() {
                     page.once('dialog', d => d.accept().catch(() => {}));
                     await page.click('#submit-btn');
                     
-                    await page.waitForSelector('#score-display', { state: 'visible', timeout: 15000 });
+                    await page.waitForSelector('#score-display', { state: 'visible' });
                     const score = await page.innerText('#score-display');
                     
                     process.stdout.write(`✅ [${score}]\n`);
@@ -113,7 +119,7 @@ async function runCurriculumAgent() {
 
                 } catch (quizErr) {
                     process.stdout.write(`❌ ERROR\n`);
-                    report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Fail | ${quizErr.message.substring(0, 35)} |\n`;
+                    report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Fail | ${quizErr.message.substring(0, 30)} |\n`;
                 }
             }
         }
