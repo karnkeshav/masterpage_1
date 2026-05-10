@@ -8,63 +8,65 @@ const REPORT_PATH = 'report.md';
 const SUBJECTS = ['Mathematics', 'Science', 'Social Science'];
 
 async function runCurriculumAgent() {
-    console.log("\n[SYSTEM] 🛡️ Starting Class 10 Module-Injection Audit...");
+    console.log("\n[SYSTEM] 🛡️ Starting Class 10 High-Fidelity Audit...");
     
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     page.setDefaultTimeout(60000);
 
-    let report = '\n## Class 10 Curriculum Integrity Matrix\n\n';
+    let report = '\n## Class 10 Curriculum Integrity Report\n\n';
     report += '| Subject | Chapter | Table ID | Status | Outcome |\n';
     report += '| :--- | :--- | :--- | :--- | :--- |\n';
 
     try {
-        // --- STEP 1: LOAD ENVIRONMENT ---
-        console.log(`[INIT] 🌐 Loading Application Environment...`);
+        // --- 1. HARDENED LOGIN (Double-Fill Strategy) ---
+        console.log(`[AUTH] 🔑 Navigating to ${BASE_URL}...`);
         await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 
-        // --- STEP 2 & 3: INJECT AUTH LOGIC ---
-        console.log(`[AUTH] 💉 Injecting Sovereign Identity: ${USER}...`);
-        
-        const loginResult = await page.evaluate(async ({ u, p }) => {
-            // Dynamically import the app's internal auth module
-            const authModule = await import('/js/auth-paywall.js');
-            const configModule = await import('/js/config.js');
-            
-            try {
-                // Call the internal auth bridge directly (bypasses the HTML form)
-                await authModule.authenticateWithCredentials(u, p);
-                
-                // Get the initialized client to verify state
-                const { auth } = await configModule.getInitializedClients();
-                if (auth.currentUser) {
-                    // Manually trigger the app's routing logic
-                    await authModule.routeUser(auth.currentUser);
-                    return { success: true };
-                }
-                return { success: false, error: "Firebase session not established." };
-            } catch (err) {
-                return { success: false, error: err.message };
-            }
-        }, { u: USER, p: PASS });
+        // Wait for the app's 200ms "field-killer" script in index-auth.js to finish
+        console.log("[AUTH] ⏳ Waiting for application script stabilization...");
+        await page.waitForTimeout(1000); 
 
-        if (!loginResult.success) {
-            throw new Error(`Injection Failed: ${loginResult.error}`);
+        console.log(`[AUTH] ✍️ Entering credentials for: ${USER}`);
+        await page.fill('#username', USER);
+        await page.fill('#password', PASS);
+
+        // STABILITY CHECK: Verify if the app's setTimeout cleared the values
+        const currentVal = await page.inputValue('#username');
+        if (!currentVal) {
+            console.log("[AUTH] 🔄 Fields were cleared by app script. Re-filling...");
+            await page.fill('#username', USER);
+            await page.fill('#password', PASS);
         }
+        
+        console.log("[AUTH] 🚀 Submitting Sovereign Credentials...");
+        await Promise.all([
+            page.waitForURL('**/student.html', { timeout: 60000 }),
+            page.click('#sovereign-login-form button[type="submit"]')
+        ]).catch(async () => {
+            const errorVisible = await page.isVisible('#login-error');
+            if (errorVisible) {
+                const msg = await page.innerText('#login-error');
+                throw new Error(`Auth Rejected: ${msg}`);
+            }
+            throw new Error("Navigation Timeout: Student Hub failed to load.");
+        });
+        
+        console.log(`[AUTH] ✅ Session Established: Class 10.`);
 
-        // --- STEP 4: VERIFY REDIRECTION ---
-        console.log("[AUTH] 🚀 Waiting for internal routeUser redirect...");
-        await page.waitForURL('**/student.html', { timeout: 45000 });
-        console.log(`[AUTH] ✅ Dashbaord Verified. Identity: Class 10.`);
-
-        // --- STEP 5: CURRICULUM AUDIT ---
+        // --- 2. CURRICULUM SCAN ---
         for (const subject of SUBJECTS) {
-            console.log(`\n[SUBJECT] 📁 Auditing: ${subject}`);
+            console.log(`\n[SUBJECT] 📁 Processing: ${subject}`);
             await page.goto(`${BASE_URL}/app/consoles/student.html`);
             await page.click('#start-new-quiz-btn');
             await page.waitForURL('**/curriculum.html');
 
             const subjectCard = page.locator('#subject-grid > div', { hasText: subject }).first();
+            if (await subjectCard.count() === 0) {
+                console.log(`   [WARN] ${subject} missing from grid.`);
+                report += `| ${subject} | — | — | ❌ Missing | Card not found |\n`;
+                continue;
+            }
             await subjectCard.click();
             await page.waitForURL('**/chapter-selection.html');
 
@@ -81,7 +83,7 @@ async function runCurriculumAgent() {
                 };
             }));
 
-            console.log(`   [FLOW] Found ${chapters.length} chapters. Running scans...`);
+            console.log(`   [FLOW] Found ${chapters.length} chapters. Starting attempts...`);
 
             for (const chapter of chapters) {
                 process.stdout.write(`      > ${chapter.title.padEnd(42)} `);
@@ -96,7 +98,6 @@ async function runCurriculumAgent() {
                     await page.waitForURL('**/quiz-engine.html');
                     await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 30000 });
 
-                    // Quiz Taker Logic
                     let quizActive = true;
                     while (quizActive) {
                         await page.locator('#question-list label').first().click();
@@ -104,7 +105,7 @@ async function runCurriculumAgent() {
                             quizActive = false;
                         } else {
                             await page.click('#next-btn');
-                            await page.waitForTimeout(100);
+                            await page.waitForTimeout(50);
                         }
                     }
 
@@ -118,7 +119,7 @@ async function runCurriculumAgent() {
                     report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ✅ Pass | ${score} |\n`;
 
                 } catch (quizErr) {
-                    process.stdout.write(`❌ FAIL\n`);
+                    process.stdout.write(`❌ ERROR\n`);
                     report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Fail | ${quizErr.message.substring(0, 30)} |\n`;
                 }
             }
@@ -129,7 +130,7 @@ async function runCurriculumAgent() {
     } finally {
         fs.appendFileSync(REPORT_PATH, report);
         await browser.close();
-        console.log("\n[SYSTEM] 🏁 Audit cycle finished. Report updated.");
+        console.log("\n[SYSTEM] 🏁 Audit finished. Matrix saved to report.md.");
     }
 }
 
