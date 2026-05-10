@@ -10,11 +10,11 @@ const BASE_URL = 'http://localhost:8080';
 async function ensureServer() {
     return new Promise((resolve) => {
         const req = http.get(BASE_URL, (res) => {
-            console.log(`[SERVER] 📡 Active listener detected at ${BASE_URL}. Reusing session.`);
+            console.log(`[SERVER] 📡 Active server detected. Reusing session.`);
             resolve(null);
         });
         req.on('error', () => {
-            console.log(`[SERVER] 🛠️ No listener found. Deploying static environment...`);
+            console.log(`[SERVER] 🛠️ No server found. Booting local environment...`);
             const { server } = require('./server.js');
             server.listen(8080, () => resolve(server));
         });
@@ -23,7 +23,7 @@ async function ensureServer() {
 
 async function main() {
     console.log("====================================================");
-    console.log("READY4EXAM: CLASS 10 INTEGRITY PIPELINE");
+    console.log("CLASS 10 CURRICULUM INTEGRITY PIPELINE");
     console.log("====================================================");
 
     const reportPath = 'report.md';
@@ -33,27 +33,27 @@ async function main() {
     try {
         ownedServer = await ensureServer();
 
-        console.log("\n[1/2] RESILIENCE AUDITS");
+        console.log("\n[PHASE 1] RESILIENCE AUDITS...");
         await runPerformanceTests();
         await runOutageTest();
         await runStressTest();
 
-        console.log("\n[2/2] CURRICULUM INTEGRITY");
+        console.log("\n[PHASE 2] CLASS 10 AGENT SCAN...");
         if (typeof runCurriculumAgent === 'function') {
             await runCurriculumAgent();
         } else {
-            throw new Error("Export Disconnect: curriculum_agent.js failed to export function.");
+            throw new Error("Module Failure: runCurriculumAgent function not correctly imported.");
         }
 
     } catch (err) {
-        console.error("\n[CRITICAL] Pipeline Failed:", err.message);
+        console.error("\n[FATAL] Pipeline Aborted:", err.message);
         fs.appendFileSync(reportPath, `\n## Fatal Pipeline Error\n\`\`\`\n${err.stack}\n\`\`\`\n`);
     } finally {
         if (ownedServer) {
-            ownedServer.close(() => console.log("\n[SERVER] 🏁 Environment safely decommissioned."));
+            ownedServer.close(() => console.log("\n[SERVER] 🏁 Shutdown complete."));
         }
     }
-    console.log("\n--- PIPELINE EXECUTION FINISHED ---");
+    console.log("\n--- PIPELINE EXECUTION COMPLETE ---");
 }
 
 main();
