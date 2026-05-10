@@ -2,7 +2,14 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
+const MIME = { 
+    '.html': 'text/html', 
+    '.js': 'application/javascript', 
+    '.css': 'text/css', 
+    '.json': 'application/json', 
+    '.png': 'image/png' 
+};
+
 const ROOT = path.join(__dirname, '..');
 
 const server = http.createServer((req, res) => {
