@@ -9,49 +9,46 @@ const REPORT_PATH = 'report.md';
 const SUBJECTS = ['Mathematics', 'Science', 'Social Science'];
 
 async function runCurriculumAgent() {
-    console.log("\n[SYSTEM] 🛡️ Initializing Class 10 Sovereign Audit...");
-    console.log(`[CONFIG] Identity: ${HARDCODED_USER} | Difficulty: Simple`);
+    console.log("\n[SYSTEM] 🛡️ Initializing Class 10 Sovereign Audit (High-Fidelity)...");
     
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
-    page.setDefaultTimeout(60000); // 60s to handle Firebase sync latency
+    
+    // Set global timeout for slow Firestore/Firebase operations
+    page.setDefaultTimeout(60000); 
 
     let report = '\n## Class 10 Curriculum Integrity Report\n\n';
-    report += '| Subject | Chapter | Table ID | Status | Score |\n';
+    report += '| Subject | Chapter | Table ID | Status | Outcome |\n';
     report += '| :--- | :--- | :--- | :--- | :--- |\n';
 
     try {
-        // --- 1. AUTHENTICATION & SESSION SYNC ---
+        // --- 1. SMART AUTHENTICATION ---
         console.log(`[AUTH] 🔑 Accessing Portal...`);
         await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 
-        // Check if we are already auto-routing (session persistence)
-        if (page.url().includes('student.html')) {
-            console.log("[AUTH] ⚡ Session pre-active. Auto-routing to Hub.");
-        } else {
-            // Wait for index-auth.js to finish its 200ms clear-field timeout
-            await page.waitForTimeout(1000); 
+        // STABILITY GUARD: Wait for index-auth.js 200ms "field killer" to finish
+        console.log("[AUTH] ⏳ Waiting for application stabilization...");
+        await page.waitForTimeout(1000); 
 
-            await page.fill('#username', HARDCODED_USER);
-            await page.fill('#password', HARDCODED_PASS);
-            
-            console.log("[AUTH] 🚀 Submitting Sovereign Credentials...");
-            await Promise.all([
-                page.waitForURL('**/student.html', { timeout: 60000 }),
-                page.click('#sovereign-login-form button[type="submit"]')
-            ]).catch(async () => {
-                const errorVisible = await page.isVisible('#login-error');
-                if (errorVisible) {
-                    const msg = await page.innerText('#login-error');
-                    throw new Error(`Auth Rejected: ${msg}`);
-                }
-                throw new Error("Navigation Timeout: Student Hub failed to load.");
-            });
-        }
-        console.log(`[AUTH] ✅ Success. Class 10 session established.`);
+        await page.fill('#username', HARDCODED_USER);
+        await page.fill('#password', HARDCODED_PASS);
+        
+        console.log("[AUTH] 🚀 Submitting Sovereign Credentials...");
+        await page.click('#sovereign-login-form button[type="submit"]');
 
-        // --- 2. CURRICULUM SCAN ---
+        // STATE MONITOR: Race between Redirect and Error Message
+        await Promise.race([
+            page.waitForURL('**/student.html', { timeout: 45000 }),
+            page.waitForSelector('#login-error:not(.hidden)', { timeout: 45000 }).then(async () => {
+                const msg = await page.innerText('#login-error');
+                throw new Error(`Login Rejected by App: "${msg}"`);
+            })
+        ]);
+        
+        console.log(`[AUTH] ✅ Session Established: Class 10 Hub.`);
+
+        // --- 2. CURRICULUM AUDIT ---
         for (const subject of SUBJECTS) {
             console.log(`\n[SUBJECT] 📁 Auditing: ${subject}`);
             
@@ -61,7 +58,7 @@ async function runCurriculumAgent() {
 
             const subjectCard = page.locator('#subject-grid > div', { hasText: subject }).first();
             if (await subjectCard.count() === 0) {
-                console.log(`   [WARN] ${subject} missing from Knowledge Hub.`);
+                console.log(`   [WARN] ${subject} missing from grid.`);
                 report += `| ${subject} | — | — | ❌ Missing | Card not found |\n`;
                 continue;
             }
@@ -81,12 +78,12 @@ async function runCurriculumAgent() {
                 };
             }));
 
-            console.log(`   [FLOW] ${chapters.length} chapters detected. Starting Simple attempts...`);
+            console.log(`   [FLOW] Found ${chapters.length} chapters. Running 'Simple' attempts...`);
 
             for (const chapter of chapters) {
                 process.stdout.write(`      > ${chapter.title.padEnd(42)} `);
                 try {
-                    await page.goto(page.url()); // Modal reset
+                    await page.goto(page.url()); 
                     await chapterCards.nth(chapter.index).click();
                     
                     const modal = page.locator('#symmetric-difficulty-modal');
@@ -96,7 +93,7 @@ async function runCurriculumAgent() {
                     await page.waitForURL('**/quiz-engine.html');
                     await page.waitForSelector('#quiz-content:not(.hidden)', { timeout: 30000 });
 
-                    // Quiz Automation
+                    // Auto-take logic
                     let quizActive = true;
                     while (quizActive) {
                         await page.locator('#question-list label').first().click();
@@ -118,7 +115,7 @@ async function runCurriculumAgent() {
                     report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ✅ Pass | ${score} |\n`;
 
                 } catch (quizErr) {
-                    process.stdout.write(`❌ ERROR\n`);
+                    process.stdout.write(`❌ FAIL\n`);
                     report += `| ${subject} | ${chapter.title} | ${chapter.tableId} | ❌ Fail | ${quizErr.message.substring(0, 30)} |\n`;
                 }
             }
@@ -129,7 +126,7 @@ async function runCurriculumAgent() {
     } finally {
         fs.appendFileSync(REPORT_PATH, report);
         await browser.close();
-        console.log("\n[SYSTEM] 🏁 Audit cycle finished. Matrix saved to report.md.");
+        console.log("\n[SYSTEM] 🏁 Audit cycle finished. See report.md.");
     }
 }
 
