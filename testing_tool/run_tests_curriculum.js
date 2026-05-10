@@ -1,5 +1,5 @@
 const fs = require('fs');
-const http = require('http');
+const { server } = require('./server.js');
 const { runPerformanceTests } = require('./performance_test.js');
 const { runOutageTest } = require('./outage_test.js');
 const { runStressTest } = require('./stress_test.js');
@@ -50,35 +50,37 @@ async function ensureServer() {
 }
 
 async function main() {
-  console.log('--- STARTING INTEGRATED TEST SUITE ---');
+    console.log("--- STARTING INTEGRATED TEST SUITE ---");
 
-  const reportPath = 'report.md';
-  if (fs.existsSync(reportPath)) {
-    fs.unlinkSync(reportPath);
-  }
+    const reportPath = 'report.md';
+    if (fs.existsSync(reportPath)) fs.unlinkSync(reportPath);
 
-  const server = await ensureServer();
+    // Give the server a moment to bind before tests hit it.
+    await new Promise(r => setTimeout(r, 500));
 
-  try {
-    // Phase 1: Site Audits
-    await runPerformanceTests();
-    await runOutageTest();
-    await runStressTest();
+    try {
+        // Phase 1: Site Audits
+        console.log("\n[PHASE 1] Performance audit...");
+        await runPerformanceTests();
 
-    // Phase 2: Curriculum Simulation
-    await runCurriculumAgent();
+        console.log("\n[PHASE 1] Outage test...");
+        await runOutageTest();
 
-    console.log('--- ALL TASKS COMPLETE. CHECK report.md ---');
-  } finally {
-    if (server) {
-      await new Promise((resolve) => server.close(resolve));
-      console.log('[SERVER] Local static server stopped.');
+        console.log("\n[PHASE 1] Stress test...");
+        await runStressTest();
+
+        // Phase 2: Curriculum Simulation
+        console.log("\n[PHASE 2] Curriculum integrity agent...");
+        await runCurriculumAgent();
+
+    } catch (err) {
+        console.error("\n[FATAL] Test suite aborted:", err.message);
+        fs.appendFileSync(reportPath, `\n## Fatal Error\n\`\`\`\n${err.stack}\n\`\`\`\n`);
+    } finally {
+        server.close(() => console.log("\n[SERVER] Shut down."));
     }
-  }
+
+    console.log("\n--- ALL TASKS COMPLETE. CHECK report.md ---");
 }
 
-main().catch((error) => {
-  console.error('--- TEST SUITE FAILED ---');
-  console.error(error);
-  process.exitCode = 1;
-});
+main();

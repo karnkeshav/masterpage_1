@@ -2,70 +2,52 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const ROOT_DIR = path.resolve(__dirname, '..');
-const PORT = Number(process.env.PORT || 8080);
-
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.webp': 'image/webp',
-  '.csv': 'text/csv; charset=utf-8',
-  '.txt': 'text/plain; charset=utf-8',
+const MIME = {
+    '.html': 'text/html',
+    '.js':   'application/javascript',
+    '.css':  'text/css',
+    '.json': 'application/json',
+    '.png':  'image/png',
+    '.jpg':  'image/jpeg',
+    '.svg':  'image/svg+xml',
+    '.ico':  'image/x-icon',
+    '.woff2':'font/woff2',
+    '.woff': 'font/woff',
 };
 
-function resolveRequestPath(reqUrl) {
-  const url = new URL(reqUrl, `http://localhost:${PORT}`);
-  const decodedPath = decodeURIComponent(url.pathname);
-  const normalizedPath = path.normalize(decodedPath).replace(/^([/\\])+/, '');
-  let filePath = path.join(ROOT_DIR, normalizedPath || 'index.html');
-
-  if (!filePath.startsWith(ROOT_DIR)) {
-    return null;
-  }
-
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(filePath, 'index.html');
-  }
-
-  return filePath;
-}
+// Serve the entire repo root as a static site.
+// The repo root is one level up from this testing_tool directory.
+const ROOT = path.join(__dirname, '..');
 
 const server = http.createServer((req, res) => {
-  const filePath = resolveRequestPath(req.url);
+    // Strip query strings and decode URI
+    const urlPath = decodeURIComponent(req.url.split('?')[0]);
 
-  if (!filePath) {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Forbidden');
-    return;
-  }
+    // Default to index.html for root
+    const filePath = path.join(ROOT, urlPath === '/' ? 'index.html' : urlPath);
 
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(err.code === 'ENOENT' ? 404 : 500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end(err.code === 'ENOENT' ? 'Not found' : 'Server error');
-      return;
+    // Security: prevent path traversal outside ROOT
+    if (!filePath.startsWith(ROOT)) {
+        res.writeHead(403);
+        res.end('Forbidden');
+        return;
     }
 
-    const contentType = MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Cache-Control': 'no-store',
+    fs.readFile(filePath, (err, data) => {
+        if (err) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end(`404 Not Found: ${urlPath}`);
+            return;
+        }
+        const ext = path.extname(filePath).toLowerCase();
+        const contentType = MIME[ext] || 'application/octet-stream';
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
     });
-    res.end(data);
-  });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}, serving ${ROOT_DIR}`);
+server.listen(8080, () => {
+    console.log(`Static server running on http://localhost:8080 (root: ${ROOT})`);
 });
 
-module.exports = server;
+module.exports = { server };

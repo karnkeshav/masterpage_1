@@ -12,15 +12,15 @@ const DIFFICULTIES = (process.env.DIFFICULTIES || 'Simple,Medium,Advanced')
     .filter(Boolean);
 
 const STUDENTS = [
-    { email: 'ready4urexam+s.6.a@gmail.com', grade: '6', subjects: ['Science', 'Mathematics'] },
-    { email: 'ready4urexam+s.7.a@gmail.com', grade: '7', subjects: ['Science', 'Mathematics'] },
-    { email: 'ready4urexam+s.8.a@gmail.com', grade: '8', subjects: ['Science', 'Mathematics'] },
-    { email: 'ready4urexam+s.9.a@gmail.com', grade: '9', subjects: ['Science', 'Mathematics'] },
-    { email: 'ready4urexam+s.10.a@gmail.com', grade: '10', subjects: ['Science', 'Mathematics'] },
+    { email: 'ready4urexam+s.6.a@gmail.com',    grade: '6',  subjects: ['Science', 'Mathematics'] },
+    { email: 'ready4urexam+s.7.a@gmail.com',    grade: '7',  subjects: ['Science', 'Mathematics'] },
+    { email: 'ready4urexam+s.8.a@gmail.com',    grade: '8',  subjects: ['Science', 'Mathematics'] },
+    { email: 'ready4urexam+s.9.a@gmail.com',    grade: '9',  subjects: ['Science', 'Mathematics'] },
+    { email: 'ready4urexam+s.10.a@gmail.com',   grade: '10', subjects: ['Science', 'Mathematics'] },
     { email: 'ready4urexam+s.11.pcm@gmail.com', grade: '11', subjects: ['Physics', 'Chemistry', 'Mathematics'] },
-    { email: 'ready4urexam+s.11.pcb1@gmail.com', grade: '11', subjects: ['Physics', 'Chemistry', 'Biology'] },
+    { email: 'ready4urexam+s.11.pcb1@gmail.com',grade: '11', subjects: ['Physics', 'Chemistry', 'Biology'] },
     { email: 'ready4urexam+s.12.pcm@gmail.com', grade: '12', subjects: ['Physics', 'Chemistry', 'Mathematics'] },
-    { email: 'ready4urexam+s.12.pcb1@gmail.com', grade: '12', subjects: ['Physics', 'Chemistry', 'Biology'] },
+    { email: 'ready4urexam+s.12.pcb1@gmail.com',grade: '12', subjects: ['Physics', 'Chemistry', 'Biology'] },
 ];
 
 function sanitizeCell(value) {
@@ -200,9 +200,9 @@ async function runCurriculumAgent() {
                                 const result = await answerAndSubmitQuiz(page);
                                 report += `| ${student.email} | ${student.grade} | ${sanitizeCell(subject)} | ${sanitizeCell(chapter.title)} | ${sanitizeCell(chapter.tableId)} | ${tier} | ${result.status} | ${sanitizeCell(result.score)} |\n`;
                             } catch (error) {
-                                const locked = await page.locator('text=/LOCKED|Mastery Alert/i').count().catch(() => 0);
+                                const locked  = await page.locator('text=/LOCKED|Mastery Alert/i').count().catch(() => 0);
                                 const paywall = await page.locator('#paywall-screen:not(.hidden)').count().catch(() => 0);
-                                const status = locked ? '🔒 Locked' : paywall ? '🔐 Paywall' : '❌ Error';
+                                const status  = locked ? '🔒 Locked' : paywall ? '🔐 Paywall' : '❌ Error';
                                 report += `| ${student.email} | ${student.grade} | ${sanitizeCell(subject)} | ${sanitizeCell(chapter.title)} | ${sanitizeCell(chapter.tableId)} | ${tier} | ${status} | ${sanitizeCell(error.message)} |\n`;
                             }
                         }
