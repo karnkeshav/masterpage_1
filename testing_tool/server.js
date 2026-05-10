@@ -10,23 +10,14 @@ const MIME = {
     '.png':  'image/png',
     '.jpg':  'image/jpeg',
     '.svg':  'image/svg+xml',
-    '.ico':  'image/x-icon',
-    '.woff2':'font/woff2',
-    '.woff': 'font/woff',
 };
 
-// Serve the entire repo root as a static site.
-// The repo root is one level up from this testing_tool directory.
 const ROOT = path.join(__dirname, '..');
 
 const server = http.createServer((req, res) => {
-    // Strip query strings and decode URI
     const urlPath = decodeURIComponent(req.url.split('?')[0]);
-
-    // Default to index.html for root
     const filePath = path.join(ROOT, urlPath === '/' ? 'index.html' : urlPath);
 
-    // Security: prevent path traversal outside ROOT
     if (!filePath.startsWith(ROOT)) {
         res.writeHead(403);
         res.end('Forbidden');
@@ -35,31 +26,14 @@ const server = http.createServer((req, res) => {
 
     fs.readFile(filePath, (err, data) => {
         if (err) {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.writeHead(404);
             res.end(`404 Not Found: ${urlPath}`);
             return;
         }
         const ext = path.extname(filePath).toLowerCase();
-        const contentType = MIME[ext] || 'application/octet-stream';
-        res.writeHead(200, { 'Content-Type': contentType });
+        res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
         res.end(data);
     });
 });
-
-// Auto-start ONLY when this file is run directly (node server.js).
-// When required by run_tests_curriculum.js, ensureServer() controls the lifecycle
-// to avoid double-binding when an external dev server is already on port 8080.
-if (require.main === module) {
-    server.on('error', (err) => {
-        if (err.code === 'EADDRINUSE') {
-            console.log(`Port 8080 already in use — assuming external server is serving.`);
-        } else {
-            throw err;
-        }
-    });
-    server.listen(8080, () => {
-        console.log(`Static server running on http://localhost:8080 (root: ${ROOT})`);
-    });
-}
 
 module.exports = { server };
