@@ -14,9 +14,29 @@ async function ensureServer() {
             resolve(null);
         });
         req.on('error', () => {
-            console.log(`[SERVER] 🛠️ Deploying local environment for audit...`);
+            console.log(`[SERVER] 🛠️ Deploying local environment...`);
             const { server } = require('./server.js');
-            server.listen(8080, () => resolve(server));
+            server.listen(8080, () => {
+                console.log("[SERVER] 🚀 Live at http://localhost:8080");
+                resolve(server);
+            });
+        });
+    });
+}
+
+async function warmUpPage() {
+    console.log("[WARM-UP] ☕ Pre-loading page to stabilize Lighthouse...");
+    return new Promise((resolve) => {
+        http.get(BASE_URL, (res) => {
+            let data = '';
+            res.on('data', (chunk) => { data += chunk; });
+            res.on('end', () => {
+                // Wait 2 seconds for server-side FS operations to settle
+                setTimeout(resolve, 2000);
+            });
+        }).on('error', (err) => {
+            console.error("[WARM-UP] Failed:", err.message);
+            resolve();
         });
     });
 }
@@ -32,8 +52,11 @@ async function main() {
     let ownedServer = null;
     try {
         ownedServer = await ensureServer();
+        
+        // Stabilize Lighthouse audits
+        await warmUpPage();
 
-        console.log("\n[1/2] RESILIENCE AUDITS...");
+        console.log("\n[1/2] RESILIENCE AUDITS");
         await runPerformanceTests();
         await runOutageTest();
         await runStressTest();
