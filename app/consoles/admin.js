@@ -1194,13 +1194,23 @@ window.handleCSVUpload = async (event) => {
 
                 if (role === 'teacher') {
                     const targetGrade = row[2] || '9';
-                    const targetSection = row[3];
+                    let targetSection = row[3];
                     const targetDiscipline = row[5];
 
                     if (!targetSection || !targetDiscipline) {
                         window.logMessage(`Skipped ${email}: Missing target section or discipline for teacher assignment.`, true);
                         errorCount++;
                         continue; // Skip this row
+                    }
+
+                    // Normalize section: must be a single letter A-Z. CSVs sometimes put a
+                    // second grade number (e.g. "10" for "Science teacher 8-10") — default
+                    // those to "A" so we never write malformed sections like "810".
+                    if (!/^[A-Z]$/i.test(String(targetSection).trim())) {
+                        window.logMessage(`Section '${targetSection}' for ${email} is not a letter — defaulting to 'A'.`, true);
+                        targetSection = 'A';
+                    } else {
+                        targetSection = String(targetSection).trim().toUpperCase();
                     }
 
                     const curriculumData = await loadCurriculum(targetGrade);

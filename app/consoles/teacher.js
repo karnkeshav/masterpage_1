@@ -157,31 +157,54 @@ async function init(user) {
     window.teacherProfile = user;
 
     // Populate dropdowns from teacher profile
-    const sections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || 'Unassigned'}${user.mapped_section}`] : []);
+    const rawSections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || 'Unassigned'}${user.mapped_section}`] : []);
+    // Filter to only well-formed sections: digits 6-12 + a single uppercase letter (e.g. "9A", "10B")
+    // CSV teachers occasionally have garbage values like "98" or "912" when admins put a number
+    // in the Section column. Skip those instead of crashing later in loadCurriculum.
+    const sections = rawSections.filter(s => /^(6|7|8|9|10|11|12)[A-Z]$/.test(String(s)));
+    if (rawSections.length > 0 && sections.length === 0) {
+        console.warn("[teacher.js] All sections in profile are malformed:", rawSections);
+    }
     const disciplines = user?.mapped_disciplines || (user?.mapped_discipline ? [user.mapped_discipline] : []);
 
     const sectionSelect = document.getElementById('section-select');
-    sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('');
+    sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('') || '<option value="Unassigned">Unassigned</option>';
 
     const discSelect = document.getElementById('discipline-select');
-    discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${trSubject(d)}</option>`).join('');
+    discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${trSubject(d)}</option>`).join('') || '<option value="Unassigned">Unassigned</option>';
 
-    // Derive grades from sections (e.g., "9A" -> "9")
+    // Derive grades from valid sections (e.g., "9A" -> "9")
     const grades = [...new Set(sections.map(s => s.replace(/[A-Z]/g, '')))];
     const gradeSelect = document.getElementById('grade-select');
-    gradeSelect.innerHTML = grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('');
+    gradeSelect.innerHTML = grades.length > 0
+        ? grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('')
+        : '<option value="">Unassigned</option>';
 
     // Set initial context
-    currentContext.grade = document.getElementById('grade-select').value || grades[0] || 'Unassigned';
+    currentContext.grade = document.getElementById('grade-select').value || grades[0] || '';
     currentContext.section = document.getElementById('section-select').value || sections[0] || 'Unassigned';
     currentContext.discipline = document.getElementById('discipline-select').value || disciplines[0] || 'Unassigned';
 
-    document.getElementById('header-class').innerText = `${currentContext.grade}-${currentContext.section}`;
+    document.getElementById('header-class').innerText = `${currentContext.grade || '—'}-${currentContext.section}`;
     document.getElementById('header-discipline').innerText = trSubject(currentContext.discipline);
 
 
     const viewport = document.getElementById('tab-viewport');
     UI.showSkeleton(viewport, 3);
+
+    // If teacher has no valid section assigned, show a helpful message instead of crashing
+    if (!currentContext.grade || !sections.length) {
+        viewport.innerHTML = `
+            <div class="p-12 text-center">
+                <i class="fas fa-user-shield text-5xl text-slate-300 mb-4"></i>
+                <h2 class="text-xl font-black text-slate-700 mb-2">No Section Assigned</h2>
+                <p class="text-sm text-slate-500 max-w-md mx-auto">
+                    Your teacher profile doesn't have a valid section assigned yet.
+                    Please contact your school admin to assign you a grade-section like "9A", "10B", etc.
+                </p>
+            </div>`;
+        return;
+    }
 
     try {
         // Step A: Await clients
