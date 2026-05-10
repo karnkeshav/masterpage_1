@@ -1,4 +1,23 @@
 {
+  "name": "masterpage_1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "data.js",
+  "type": "module",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node testing_tool/run_tests_curriculum.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karnkeshav/masterpage_1.git"
+  },
+  "homepage": "https://github.com/karnkeshav/masterpage_1#readme",
+  "bugs": {
+    "url": "https://github.com/karnkeshav/masterpage_1/issues"
+  },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "autoprefixer": "^10.4.27",
@@ -6,28 +25,6 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19"
   },
-  "name": "masterpage_1",
-  "version": "1.0.0",
-  "description": "",
-  "main": "data.js",
-  "directories": {
-    "test": "tests"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/karnkeshav/masterpage_1.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
-  "bugs": {
-    "url": "https://github.com/karnkeshav/masterpage_1/issues"
-  },
-  "homepage": "https://github.com/karnkeshav/masterpage_1#readme",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",

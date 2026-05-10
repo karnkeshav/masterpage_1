@@ -157,8 +157,8 @@ function getSubjectIcon(subject) {
         "Psychology": "fa-brain",
         "Hindi": "fa-om",
         "English": "fa-language",
-        "Science": "fa-microscope",
-        "Social Science": "fa-users-cog"
+        "Science": "fa-flask",
+        "Social Science": "fa-landmark"
     };
     return icons[subject] || "fa-book";
 }
@@ -608,8 +608,8 @@ window.loadStudentStats = async (uid, grade) => {
         let diagnosticRows = "";
         const subjectConfigs = [
             { key: "Mathematics", label: "M", icon: "fa-calculator", bg: "bg-blue-50", text: "text-success-green", border: "border-blue-100", bar: "bg-success-green" },
-            { key: "Science", label: "S", icon: "fa-atom", bg: "bg-purple-50", text: "text-cbse-blue", border: "border-purple-100", bar: "bg-cbse-blue" },
-            { key: "Social Science", label: "SS", icon: "fa-globe-americas", bg: "bg-amber-50", text: "text-accent-gold", border: "border-amber-100", bar: "bg-accent-gold" }
+            { key: "Science", label: "S", icon: "fa-flask", bg: "bg-purple-50", text: "text-cbse-blue", border: "border-purple-100", bar: "bg-cbse-blue" },
+            { key: "Social Science", label: "SS", icon: "fa-landmark", bg: "bg-amber-50", text: "text-accent-gold", border: "border-amber-100", bar: "bg-accent-gold" }
         ];
 
         subjectConfigs.forEach(cfg => {
