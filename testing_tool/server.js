@@ -46,8 +46,20 @@ const server = http.createServer((req, res) => {
     });
 });
 
-server.listen(8080, () => {
-    console.log(`Static server running on http://localhost:8080 (root: ${ROOT})`);
-});
+// Auto-start ONLY when this file is run directly (node server.js).
+// When required by run_tests_curriculum.js, ensureServer() controls the lifecycle
+// to avoid double-binding when an external dev server is already on port 8080.
+if (require.main === module) {
+    server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`Port 8080 already in use — assuming external server is serving.`);
+        } else {
+            throw err;
+        }
+    });
+    server.listen(8080, () => {
+        console.log(`Static server running on http://localhost:8080 (root: ${ROOT})`);
+    });
+}
 
 module.exports = { server };
