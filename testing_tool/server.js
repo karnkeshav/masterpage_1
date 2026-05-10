@@ -28,7 +28,7 @@ const server = http.createServer((req, res) => {
     fs.readFile(filePath, (err, data) => {
         if (err) {
             res.writeHead(404);
-            res.end(`404: Not Found ${urlPath}`);
+            res.end(`404: ${urlPath}`);
             return;
         }
         const ext = path.extname(filePath).toLowerCase();
