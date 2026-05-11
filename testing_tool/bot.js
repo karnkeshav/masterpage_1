@@ -271,15 +271,8 @@ async function answerAllQuestions(page, chapterTitle) {
       log(`    Submitting quiz…`);
       mark('sub');
 
-      // ── Handle the native alert() that may appear after submit ─────────────
-      // quiz-engine.js fires: alert("⚠️ Mastery Alert: Score below 85%...")
-      // with a 300 ms setTimeout AFTER submission.
-      // We register a one-time handler BEFORE clicking Submit so we never miss it.
-      page.once('dialog', async dialog => {
-        log(`    Alert: "${dialog.message().split('\n')[0]}" — dismissing`);
-        await dialog.accept();
-      });
-
+      // The global page.on('dialog') handler in main() accepts any alert.
+      // Do NOT add a local handler here — double-handling crashes the process.
       await page.click('#submit-btn');
 
       // Wait for results screen
@@ -468,6 +461,11 @@ function buildReport() {
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
+// Prevent dialog race ("already handled") from killing the process
+process.on('unhandledRejection', reason => {
+  console.log(`[${new Date().toISOString().replace('T',' ').split('.')[0]}]  ⚠️  [unhandledRejection] ${reason} — continuing`);
+});
+
 async function main() {
   log('Quiz Bot starting', '🤖');
   log(`Subjects : ${CFG.subjects.join(', ')}`);
