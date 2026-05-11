@@ -4,3 +4,22 @@ __pycache__/
 .env
 .env.local
 server_output.log
+
+# Android
+.gradle/
+build/
+app/build/
+
+# IDE
+.idea/
+*.iml
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Nested repo
+masterpage_1/
