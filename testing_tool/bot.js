@@ -274,15 +274,45 @@ async function runChapter(page, chapter, subject, num, total) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DETECT USER'S GRADE AFTER LOGIN
+// Clicks "New Quiz" and extracts the grade from the curriculum.html URL
+// ─────────────────────────────────────────────────────────────────────────────
+async function detectGradeAfterLogin(page) {
+  log('Detecting user grade…', '🔍');
+  try {
+    // Wait for the "New Quiz" button to have a valid href
+    await page.waitForFunction(() => {
+      const btn = document.getElementById('start-new-quiz-btn');
+      return btn && btn.href && !btn.href.endsWith('#');
+    }, { timeout: CFG.pageTimeout });
+
+    // Click it to navigate to curriculum.html?grade=X
+    await page.click('#start-new-quiz-btn');
+    await page.waitForURL('**/curriculum.html**', { timeout: CFG.pageTimeout });
+
+    // Extract grade from URL
+    const url = page.url();
+    const gradeMatch = url.match(/grade=(\d+)/);
+    const detectedGrade = gradeMatch ? gradeMatch[1] : '?';
+    
+    log(`Detected grade: ${detectedGrade}`, '✓');
+    return detectedGrade;
+  } catch (err) {
+    log(`Grade detection failed: ${err.message} — defaulting to '10'`, '⚠️');
+    return '10';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // RUN ALL CHAPTERS FOR ONE SUBJECT
 // ─────────────────────────────────────────────────────────────────────────────
-async function runSubject(page, subject) {
+async function runSubject(page, subject, userGrade) {
   log(`\n${'='.repeat(60)}`);
   log(`  SUBJECT: ${subject.toUpperCase()}`);
   log(`${'='.repeat(60)}`);
   mark(`subj_${subject}`);
 
-  await goToChapterSelection(page, subject, '10');
+  await goToChapterSelection(page, subject, userGrade);
   const initialList = await scrapeChapters(page);
 
   if (initialList.length === 0) {
@@ -468,24 +498,24 @@ async function main() {
     try {
       await login(page, username, password);
 
+      // Detect the user's actual grade (e.g., s.6.a → grade 6, not hardcoded 10)
+      const detectedGrade = await detectGradeAfterLogin(page);
+      grade = detectedGrade;
+
       for (const subject of CFG.subjects) {
         try {
-          await runSubject(page, subject);
+          await runSubject(page, subject, detectedGrade);
         } catch (err) {
           log(`Subject crash (${subject}): ${err.message}`, '❌');
           console.error(err.stack);
           allResults.push({
-            subject, chapter: 'ALL', tableId: '', grade: '?',
+            subject, chapter: 'ALL', tableId: '', grade: detectedGrade,
             status: 'failed', totalQ: 0, durationMs: 0,
             quizLoadMs: 0, avgAnswerMs: 0,
             error: `Subject crash: ${err.message}`, screenshot: null,
           });
         }
       }
-
-      // Infer grade from results
-      const gradeFromResults = allResults.find(r => r.grade !== '?');
-      if (gradeFromResults) grade = gradeFromResults.grade;
 
     } catch (err) {
       log(`Account error (${username}): ${err.message}`, '❌');
