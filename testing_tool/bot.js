@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 /**
  * Ready4Exam Quiz Bot — testing_tool/bot.js
+ *
+ * Flow per subject:
+ *   curriculum.html → click subject → chapter-selection.html
+ *   Count N chapters, then loop i = 0..N-1:
+ *     chapter-selection.html → click chapter[i]
+ *     → difficulty modal → Simple
+ *     → quiz-engine.html → answer all questions → submit
+ *     → dismiss alert → navigate directly back to chapter-selection.html
+ *   When all chapters done → back to curriculum.html → next subject
+ *
  * Usage:
  *   node bot.js
  *   HEADLESS=true node bot.js
@@ -42,22 +52,25 @@ function measure(label, id) {
   return ms;
 }
 
-// ── Random answer selection ───────────────────────────────────────────────────
-const OPTIONS = ['A', 'B', 'C', 'D'];
-function randomOption() {
-  return OPTIONS[Math.floor(Math.random() * OPTIONS.length)];
-}
+// Prevent a dialog-race unhandled rejection from killing the process
+process.on('unhandledRejection', reason => {
+  log(`[unhandledRejection] ${reason} — continuing`, '⚠️');
+});
 
-// ── Radio wait helper ─────────────────────────────────────────────────────────
-// Radio inputs have class="hidden" — use state:'attached', NOT 'visible'
-async function waitForRadios(page, timeout) {
+// Random A / B / C / D
+const OPTIONS = ['A', 'B', 'C', 'D'];
+function rnd() { return OPTIONS[Math.floor(Math.random() * 4)]; }
+
+// Radio inputs are class="hidden" — use state:'attached', never 'visible'
+async function waitForRadios(page) {
   await page.waitForSelector('#question-list input[type="radio"]', {
-    state  : 'attached',
-    timeout: timeout ?? CFG.quizTimeout,
+    state: 'attached', timeout: CFG.quizTimeout,
   });
 }
 
-// ── LOGIN ─────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// LOGIN
+// ─────────────────────────────────────────────────────────────────────────────
 async function login(page) {
   log('Opening homepage…', '🔗');
   mark('home');
@@ -68,8 +81,7 @@ async function login(page) {
 
   await page.evaluate(() => {
     ['username', 'password'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
+      const el = document.getElementById(id); if (el) el.value = '';
     });
   });
   await sleep(300);
@@ -85,47 +97,29 @@ async function login(page) {
   log('Student console ready.');
 }
 
-// ── CLICK "NEW QUIZ" ──────────────────────────────────────────────────────────
-async function clickNewQuiz(page) {
-  log('Clicking "New Quiz"…', '🔗');
-  await page.waitForFunction(() => {
-    const btn = document.getElementById('start-new-quiz-btn');
-    return btn && btn.href && !btn.href.endsWith('#');
-  }, { timeout: CFG.pageTimeout });
-  mark('curr');
-  await page.click('#start-new-quiz-btn');
-  await page.waitForURL('**/curriculum.html**', { timeout: CFG.pageTimeout });
-  measure('New Quiz → curriculum.html', 'curr');
-  await page.waitForFunction(() => {
-    const g = document.getElementById('subject-grid');
-    return g && g.querySelectorAll('div[onclick]').length > 0;
-  }, { timeout: CFG.pageTimeout });
-  log('curriculum.html ready.');
-}
-
-// ── CLICK SUBJECT CARD ────────────────────────────────────────────────────────
-async function clickSubject(page, subject) {
-  log(`Clicking subject: "${subject}"`, '📚');
+// ─────────────────────────────────────────────────────────────────────────────
+// NAVIGATE TO CHAPTER-SELECTION FOR A SUBJECT
+// Called at the START of each subject AND before each chapter in the loop.
+// Direct page.goto — no dependency on any back button.
+// ─────────────────────────────────────────────────────────────────────────────
+async function goToChapterSelection(page, subject, grade) {
   mark('chapsel');
-  const clicked = await page.evaluate(target => {
-    for (const c of document.querySelectorAll('#subject-grid div[onclick]')) {
-      if (c.textContent.includes(target)) { c.click(); return true; }
-    }
-    return false;
-  }, subject);
-  if (!clicked) throw new Error(`Subject card not found: "${subject}"`);
-  await page.waitForURL('**/chapter-selection.html**', { timeout: CFG.pageTimeout });
-  measure(`curriculum → chapter-selection (${subject})`, 'chapsel');
+  const url = `${CFG.baseUrl}/app/chapter-selection.html`
+            + `?subject=${encodeURIComponent(subject)}&grade=${grade}`;
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: CFG.pageTimeout });
+  // Wait until chapter cards are in the DOM
   await page.waitForFunction(() => {
     const area = document.getElementById('content-area');
     return area && area.querySelectorAll('div[onclick^="startQuiz"]').length > 0;
   }, { timeout: CFG.pageTimeout });
-  log('chapter-selection.html ready.');
+  measure(`→ chapter-selection (${subject})`, 'chapsel');
 }
 
-// ── SCRAPE CHAPTERS ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SCRAPE CHAPTER LIST  (called once per subject to count + store metadata)
+// ─────────────────────────────────────────────────────────────────────────────
 async function scrapeChapters(page) {
-  const chapters = await page.evaluate(() =>
+  return await page.evaluate(() =>
     Array.from(document.querySelectorAll('#content-area div[onclick^="startQuiz"]'))
       .map((card, index) => {
         const m = card.getAttribute('onclick')
@@ -133,31 +127,106 @@ async function scrapeChapters(page) {
         return m ? { tableId: m[1], title: m[2], grade: m[3], index } : null;
       }).filter(Boolean)
   );
-  log(`Found ${chapters.length} chapters`);
-  return chapters;
 }
 
-// ── RUN ONE CHAPTER ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// ANSWER ALL QUESTIONS AND SUBMIT
+// Returns once the results screen is visible and the alert has been dismissed.
+// Does NOT navigate anywhere — navigation is the caller's job.
+// ─────────────────────────────────────────────────────────────────────────────
+async function answerAndSubmit(page, chapterTitle) {
+  let total  = 0;
+  const qMs  = [];
+  const MAX  = 200;
+
+  for (let safety = 0; safety < MAX; safety++) {
+
+    // Wait for radio buttons to be attached in the DOM
+    await waitForRadios(page);
+
+    const t0 = Date.now();
+
+    // Read counter  "N / Total"
+    const counter = await page
+      .$eval('#question-counter', el => el.textContent.trim())
+      .catch(() => '1/1');
+    const [curStr, totStr] = counter.split('/');
+    const current = parseInt(curStr) || safety + 1;
+    total         = parseInt(totStr) || 1;
+
+    const choice = rnd();
+    log(`    Q${current}/${total}  →  option ${choice}`);
+
+    // Click via the <label> wrapper (the visible element around the hidden radio)
+    await page.evaluate(preferred => {
+      const radios = Array.from(
+        document.querySelectorAll('#question-list input[type="radio"]')
+      );
+      if (!radios.length) return;
+      const target = radios.find(r => r.value === preferred) || radios[0];
+      const label  = target.closest('label');
+      if (label) label.click(); else target.click();
+    }, choice);
+
+    qMs.push(Date.now() - t0);
+    await sleep(250);
+
+    // ── Submit button visible? ─────────────────────────────────────────────
+    const canSubmit = await page.evaluate(() => {
+      const b = document.getElementById('submit-btn');
+      return b && !b.classList.contains('hidden');
+    });
+
+    if (canSubmit) {
+      log(`    Submitting "${chapterTitle}"…`);
+      mark('sub');
+      await page.click('#submit-btn');
+
+      // Wait for results screen
+      await page.waitForSelector('#results-screen:not(.hidden)', {
+        timeout: CFG.pageTimeout,
+      });
+      measure(`Submit → results (${chapterTitle})`, 'sub');
+
+      // Allow time for the alert to fire (quiz-engine uses a 300 ms setTimeout)
+      await sleep(800);
+
+      const avgMs = qMs.length
+        ? Math.round(qMs.reduce((a, b) => a + b, 0) / qMs.length) : 0;
+      return { total, avgMs };
+    }
+
+    // ── Next button ────────────────────────────────────────────────────────
+    const canNext = await page.evaluate(() => {
+      const b = document.getElementById('next-btn');
+      return b && !b.classList.contains('hidden');
+    });
+    if (canNext) {
+      await page.click('#next-btn');
+      await sleep(200);
+    } else {
+      await sleep(400); // briefly wait for UI to settle
+    }
+  }
+
+  throw new Error(`Safety cap: no Submit after ${MAX} iterations`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RUN ONE CHAPTER
+// ─────────────────────────────────────────────────────────────────────────────
 async function runChapter(page, chapter, subject, num, total) {
   log(`\n  [${num}/${total}] "${chapter.title}" (${chapter.tableId})`);
 
   const entry = {
-    subject,
-    chapter    : chapter.title,
-    tableId    : chapter.tableId,
-    grade      : chapter.grade,
-    status     : 'pending',
-    totalQ     : 0,
-    durationMs : 0,
-    quizLoadMs : 0,
-    avgAnswerMs: 0,
-    error      : null,
-    screenshot : null,
+    subject, chapter: chapter.title, tableId: chapter.tableId, grade: chapter.grade,
+    status: 'pending', totalQ: 0, durationMs: 0,
+    quizLoadMs: 0, avgAnswerMs: 0, error: null, screenshot: null,
   };
   const t0 = Date.now();
 
   try {
-    // Click chapter card by DOM index
+    // ── Click chapter card by DOM index ──────────────────────────────────────
     mark('ch');
     const clicked = await page.evaluate(idx => {
       const card = document.querySelectorAll(
@@ -168,12 +237,12 @@ async function runChapter(page, chapter, subject, num, total) {
     }, chapter.index);
     if (!clicked) throw new Error('Chapter card not found at index ' + chapter.index);
 
-    // Wait for difficulty modal
+    // ── Difficulty modal ──────────────────────────────────────────────────────
     await page.waitForSelector('#symmetric-difficulty-modal', { timeout: 12_000 });
     measure(`Chapter → modal (${chapter.title})`, 'ch');
-    log('    Modal appeared');
+    log('    Difficulty modal appeared');
 
-    // Click Simple
+    // ── Click Simple ──────────────────────────────────────────────────────────
     mark('simple');
     await page.evaluate(() => {
       const modal = document.getElementById('symmetric-difficulty-modal');
@@ -184,21 +253,21 @@ async function runChapter(page, chapter, subject, num, total) {
       if (typeof window.launchQuiz === 'function') window.launchQuiz('Simple');
     });
 
-    // Wait for quiz-engine URL
+    // ── Wait for quiz-engine URL ──────────────────────────────────────────────
     await page.waitForURL('**/quiz-engine.html**', { timeout: CFG.pageTimeout });
 
-    // Wait for first radio to be attached in DOM
-    log('    Waiting for questions to load…');
-    await waitForRadios(page, CFG.quizTimeout);
+    // ── Wait for first question ───────────────────────────────────────────────
+    log('    Waiting for questions…');
+    await waitForRadios(page);
     entry.quizLoadMs = measure(`Simple → first question (${chapter.title})`, 'simple');
     log(`    Questions ready in ${entry.quizLoadMs} ms`);
 
-    // Answer every question and submit
-    const qResult = await answerAllQuestions(page, chapter.title);
-    entry.totalQ      = qResult.total;
-    entry.avgAnswerMs = qResult.avgMs;
+    // ── Answer + submit ───────────────────────────────────────────────────────
+    const qr = await answerAndSubmit(page, chapter.title);
+    entry.totalQ      = qr.total;
+    entry.avgAnswerMs = qr.avgMs;
     entry.status      = 'success';
-    log(`    ✅ ${qResult.total} questions done (avg ${qResult.avgMs} ms/q)`);
+    log(`    ✅ ${qr.total} questions done (avg ${qr.avgMs} ms/q)`);
 
   } catch (err) {
     entry.status = 'failed';
@@ -217,146 +286,27 @@ async function runChapter(page, chapter, subject, num, total) {
   return entry;
 }
 
-// ── ANSWER ALL QUESTIONS → SUBMIT → HANDLE ALERT → BACK ──────────────────────
-async function answerAllQuestions(page, chapterTitle) {
-  let total  = 0;
-  const qMs  = [];
-  const MAX  = 200;
-  let safety = 0;
-
-  while (safety < MAX) {
-    safety++;
-
-    // Wait for radios (attached, not visible — they have class="hidden")
-    await waitForRadios(page, CFG.quizTimeout);
-
-    const t0 = Date.now();
-
-    // Read counter "N / Total"
-    const counter = await page
-      .$eval('#question-counter', el => el.textContent.trim())
-      .catch(() => `${safety}/1`);
-    const [curStr, totStr] = counter.split('/');
-    const current = parseInt(curStr) || safety;
-    total         = parseInt(totStr) || 1;
-
-    // Pick a random option (A / B / C / D)
-    const choice = randomOption();
-    log(`    Q${current}/${total} → selecting option ${choice}`);
-
-    // Click via label (the visible element) using page.evaluate to bypass
-    // Playwright's visibility check on the hidden radio input
-    await page.evaluate(preferred => {
-      const radios = Array.from(
-        document.querySelectorAll('#question-list input[type="radio"]')
-      );
-      if (radios.length === 0) return;
-      // Try preferred option first; fall back to first radio in DOM
-      const target = radios.find(r => r.value === preferred) || radios[0];
-      const label  = target.closest('label');
-      if (label) label.click();
-      else target.click();
-    }, choice);
-
-    qMs.push(Date.now() - t0);
-    await sleep(250);
-
-    // ── Check Submit ──────────────────────────────────────────────────────────
-    const submitVisible = await page.evaluate(() => {
-      const b = document.getElementById('submit-btn');
-      return b && !b.classList.contains('hidden');
-    });
-
-    if (submitVisible) {
-      log(`    Submitting quiz…`);
-      mark('sub');
-
-      // The global page.on('dialog') handler in main() accepts any alert.
-      // Do NOT add a local handler here — double-handling crashes the process.
-      await page.click('#submit-btn');
-
-      // Wait for results screen
-      await page.waitForSelector('#results-screen:not(.hidden)', {
-        timeout: CFG.pageTimeout,
-      });
-      measure(`Submit → results (${chapterTitle})`, 'sub');
-
-      // Small pause so any delayed alert can fire and be caught by the handler
-      await sleep(800);
-
-      // ── Click "Back to Chapter Selection" ─────────────────────────────────
-      // This button navigates cleanly back without needing page.goto()
-      const backBtn = await page.$('#back-to-chapters-btn');
-      if (backBtn) {
-        log('    Clicking "Back to Chapter Selection"…');
-        mark('back_btn');
-        await backBtn.click();
-        await page.waitForURL('**/chapter-selection.html**', { timeout: CFG.pageTimeout });
-        measure(`Back to chapter-selection (${chapterTitle})`, 'back_btn');
-
-        // Wait for chapter cards to re-render
-        await page.waitForFunction(() => {
-          const area = document.getElementById('content-area');
-          return area && area.querySelectorAll('div[onclick^="startQuiz"]').length > 0;
-        }, { timeout: CFG.pageTimeout });
-        log('    chapter-selection.html ready.');
-      } else {
-        log('    #back-to-chapters-btn not found — will navigate directly', '⚠️');
-      }
-
-      const avgMs = qMs.length
-        ? Math.round(qMs.reduce((a, b) => a + b, 0) / qMs.length)
-        : 0;
-      return { total, avgMs };
-    }
-
-    // ── Click Next ────────────────────────────────────────────────────────────
-    const nextVisible = await page.evaluate(() => {
-      const b = document.getElementById('next-btn');
-      return b && !b.classList.contains('hidden');
-    });
-
-    if (nextVisible) {
-      await page.click('#next-btn');
-      await sleep(200);
-    } else {
-      await sleep(400); // neither button visible yet — wait and retry
-    }
-  }
-
-  throw new Error(`Safety cap: no Submit after ${MAX} iterations`);
-}
-
-// ── NAVIGATE BACK (fallback if back button didn't navigate) ───────────────────
-async function goBackIfNeeded(page, subject, grade) {
-  // If we're already on chapter-selection (back button worked), this is a no-op
-  if (page.url().includes('chapter-selection')) {
-    return;
-  }
-  log('    → navigating directly to chapter-selection');
-  mark('back_direct');
-  const url = `${CFG.baseUrl}/app/chapter-selection.html`
-            + `?subject=${encodeURIComponent(subject)}&grade=${grade}`;
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: CFG.pageTimeout });
-  await page.waitForFunction(() => {
-    const area = document.getElementById('content-area');
-    return area && area.querySelectorAll('div[onclick^="startQuiz"]').length > 0;
-  }, { timeout: CFG.pageTimeout });
-  measure('Direct back → chapter-selection', 'back_direct');
-}
-
-// ── RUN ALL CHAPTERS FOR ONE SUBJECT ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// RUN ALL CHAPTERS FOR ONE SUBJECT
+//
+// Key design:
+//   1. Navigate to chapter-selection once to COUNT chapters (N).
+//   2. Loop i = 0 .. N-1:
+//        a. Navigate directly to chapter-selection (fresh page load every time)
+//        b. Re-scrape so DOM index[i] matches the correct card
+//        c. Run that chapter
+// ─────────────────────────────────────────────────────────────────────────────
 async function runSubject(page, subject) {
   log(`\n${'='.repeat(60)}`);
   log(`  SUBJECT: ${subject.toUpperCase()}`);
   log(`${'='.repeat(60)}`);
   mark(`subj_${subject}`);
 
-  await clickNewQuiz(page);
-  await clickSubject(page, subject);
-  const chapters = await scrapeChapters(page);
+  // ── First visit: count chapters ───────────────────────────────────────────
+  await goToChapterSelection(page, subject, '10');    // grade will be confirmed below
+  const initialList = await scrapeChapters(page);
 
-  if (chapters.length === 0) {
+  if (initialList.length === 0) {
     log('  No chapters — skipping', '⏭️');
     results.push({
       subject, chapter: '(none)', tableId: '', grade: '?',
@@ -366,29 +316,51 @@ async function runSubject(page, subject) {
     return;
   }
 
-  const grade = chapters[0].grade;
+  const grade     = initialList[0].grade;
+  const N         = initialList.length;
+  // Store a stable ordered list of { tableId, title, grade } for the loop
+  const chapterList = initialList.map(c => ({ tableId: c.tableId, title: c.title, grade: c.grade }));
 
-  for (let i = 0; i < chapters.length; i++) {
-    const result = await runChapter(page, chapters[i], subject, i + 1, chapters.length);
+  log(`  ${N} chapters found for ${subject} (grade ${grade})`);
+
+  // ── Loop: one chapter per iteration ──────────────────────────────────────
+  for (let i = 0; i < N; i++) {
+    const ch = chapterList[i];
+
+    // Navigate directly to chapter-selection for this subject
+    // (fresh load every iteration — avoids stale DOM, avoids needing the back button)
+    log(`\n  Navigating to chapter-selection for chapter ${i + 1}/${N}…`);
+    await goToChapterSelection(page, subject, grade);
+
+    // Re-scrape to get current DOM index for this chapter
+    const fresh = await scrapeChapters(page);
+    const target = fresh.find(c => c.tableId === ch.tableId);
+    if (!target) {
+      log(`  ⚠️  Chapter "${ch.title}" not found on page — skipping`, '⚠️');
+      results.push({
+        subject, chapter: ch.title, tableId: ch.tableId, grade,
+        status: 'failed', totalQ: 0, durationMs: 0,
+        quizLoadMs: 0, avgAnswerMs: 0,
+        error: 'Chapter card not found after re-scrape', screenshot: null,
+      });
+      continue;
+    }
+
+    const result = await runChapter(page, target, subject, i + 1, N);
     results.push(result);
 
-    if (i < chapters.length - 1) {
-      // Ensure we're on chapter-selection before next iteration
-      await goBackIfNeeded(page, subject, grade);
-
-      // Re-scrape so DOM indexes stay accurate
-      const fresh = await scrapeChapters(page);
-      for (let j = i + 1; j < chapters.length; j++) {
-        const match = fresh.find(c => c.tableId === chapters[j].tableId);
-        if (match) chapters[j].index = match.index;
-      }
-    }
+    // After the quiz, the page is on quiz-engine.html (results screen).
+    // The next iteration starts with goToChapterSelection() — no back button needed.
+    log(`  Chapter ${i + 1}/${N} done. Moving to next…`);
   }
 
   measure(`Subject total: ${subject}`, `subj_${subject}`);
+  log(`\n  ✅ ${subject} complete — all ${N} chapters processed.`);
 }
 
-// ── MARKDOWN REPORT ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// MARKDOWN REPORT
+// ─────────────────────────────────────────────────────────────────────────────
 function buildReport() {
   const now     = new Date();
   const totalMs = Date.now() - botStart;
@@ -406,7 +378,7 @@ function buildReport() {
   md += `| ✅ Completed | **${ok}** |\n`;
   md += `| ❌ Failed | **${bad}** |\n`;
   md += `| ⏭️ Skipped | **${skip}** |\n`;
-  md += `| ⏱ Total runtime | **${(totalMs / 60000).toFixed(1)} min** |\n\n`;
+  md += `| ⏱ Runtime | **${(totalMs / 60000).toFixed(1)} min** |\n\n`;
 
   md += `## Latency Log\n\n`;
   md += `> 🟢 <1 s  🟡 1–3 s  🔴 >3 s\n\n`;
@@ -420,12 +392,11 @@ function buildReport() {
   for (const subject of CFG.subjects) {
     const rows = results.filter(r => r.subject === subject);
     if (!rows.length) continue;
-    const subOk  = rows.filter(r => r.status === 'success').length;
-    const subBad = rows.filter(r => r.status === 'failed').length;
     md += `## ${subject}\n\n`;
-    md += `> ✅ ${subOk} completed  ❌ ${subBad} failed\n\n`;
-    md += `| # | Chapter | Table ID | Status | Questions | Load ms | Duration s |\n`;
-    md += `|---|---------|----------|--------|-----------|---------|------------|\n`;
+    md += `> ✅ ${rows.filter(r => r.status === 'success').length} `
+        + `  ❌ ${rows.filter(r => r.status === 'failed').length}\n\n`;
+    md += `| # | Chapter | Table ID | Status | Q count | Load ms | Duration s |\n`;
+    md += `|---|---------|----------|--------|---------|---------|------------|\n`;
     rows.forEach((r, i) => {
       const icon = { success: '✅', failed: '❌', skipped: '⏭️' }[r.status] ?? '?';
       md += `| ${i + 1} | ${r.chapter} | \`${r.tableId}\` | ${icon} `
@@ -434,38 +405,31 @@ function buildReport() {
     md += '\n';
   }
 
-  const failedRows = results.filter(r => r.status === 'failed');
-  if (failedRows.length) {
+  const failed = results.filter(r => r.status === 'failed');
+  if (failed.length) {
     md += `## ❌ Failed Chapters\n\n`;
-    md += `| Subject | Chapter | Table ID | Error | Likely Fix |\n`;
-    md += `|---------|---------|----------|-------|------------|\n`;
-    failedRows.forEach(r => {
+    md += `| Subject | Chapter | Table ID | Error | Fix |\n`;
+    md += `|---------|---------|----------|-------|-----|\n`;
+    failed.forEach(r => {
       let fix = 'Review screenshot';
-      if (/timeout/i.test(r.error))
-        fix = 'Quiz never rendered — check Supabase table has Simple rows';
-      else if (/modal/i.test(r.error))
-        fix = 'Difficulty modal did not appear';
-      else if (/safety cap/i.test(r.error))
-        fix = 'Submit never appeared — possible UI bug';
+      if (/timeout/i.test(r.error))   fix = 'Quiz never rendered — check Supabase table';
+      if (/safety cap/i.test(r.error)) fix = 'Submit never appeared — UI bug';
+      if (/modal/i.test(r.error))      fix = 'Difficulty modal did not appear';
       md += `| ${r.subject} | ${r.chapter} | \`${r.tableId}\` | ${r.error} | ${fix} |\n`;
     });
-    if (failedRows.some(r => r.screenshot))
-      md += `\nScreenshots saved in \`bot_screenshots/\`\n`;
+    if (failed.some(r => r.screenshot)) md += `\nScreenshots in \`bot_screenshots/\`\n`;
     md += '\n';
   } else {
-    md += `## ✅ All Chapters Completed\n\nEvery quiz loaded and submitted successfully.\n\n`;
+    md += `## ✅ All Chapters Completed Successfully\n\n`;
   }
 
   md += `\n---\n*Ready4Exam Quiz Bot — ${now.toUTCString()}*\n`;
   return md;
 }
 
-// ── MAIN ──────────────────────────────────────────────────────────────────────
-// Prevent dialog race ("already handled") from killing the process
-process.on('unhandledRejection', reason => {
-  console.log(`[${new Date().toISOString().replace('T',' ').split('.')[0]}]  ⚠️  [unhandledRejection] ${reason} — continuing`);
-});
-
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN
+// ─────────────────────────────────────────────────────────────────────────────
 async function main() {
   log('Quiz Bot starting', '🤖');
   log(`Subjects : ${CFG.subjects.join(', ')}`);
@@ -484,9 +448,9 @@ async function main() {
   const page = await context.newPage();
   page.setDefaultTimeout(CFG.pageTimeout);
 
-  // Global fallback: catch any unexpected alert/confirm/prompt that slips through
+  // Auto-dismiss every native alert/confirm/prompt
   page.on('dialog', async dialog => {
-    log(`    [global dialog] "${dialog.message().split('\n')[0]}" — auto-accepting`);
+    log(`    [dialog] "${dialog.message().split('\n')[0]}" — accepted`);
     await dialog.accept();
   });
 
@@ -498,6 +462,7 @@ async function main() {
         await runSubject(page, subject);
       } catch (err) {
         log(`Subject crash (${subject}): ${err.message}`, '❌');
+        console.error(err.stack);
         results.push({
           subject, chapter: 'ALL', tableId: '', grade: '?',
           status: 'failed', totalQ: 0, durationMs: 0,
@@ -516,9 +481,7 @@ async function main() {
   } finally {
     fs.writeFileSync(CFG.reportPath, buildReport(), 'utf8');
     log(`Report → ${CFG.reportPath}`, '📄');
-    const ok  = results.filter(r => r.status === 'success').length;
-    const bad = results.filter(r => r.status === 'failed').length;
-    log(`Chapters: ${results.length} total | ✅ ${ok} | ❌ ${bad}`);
+    log(`Chapters: ${results.length} | ✅ ${results.filter(r => r.status === 'success').length} | ❌ ${results.filter(r => r.status === 'failed').length}`);
     log(`Runtime : ${((Date.now() - botStart) / 60000).toFixed(1)} min`);
     await browser.close();
     log('Done.', '🤖');
