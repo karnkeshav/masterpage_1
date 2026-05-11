@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Ready4Exam Quiz Bot (Correct Answers) — testing_tool/bot_rit.js
+ * Ready4Exam Quiz Bot (Correct Answers) — testing_tool/bot_rit.js [FIXED]
  *
  * ENHANCED:
  *   - Multi-account mode: prompt for username + password repeatedly
@@ -31,7 +31,6 @@ const CFG = {
   reportsDir      : path.join(__dirname, 'reports'),
 };
 
-// Global state: correct answers intercepted from Supabase, results across all accounts
 const answerCache = new Map();
 const allResults  = [];
 const runMetadata = [];
@@ -62,9 +61,6 @@ async function waitForRadios(page, timeout) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// INTERACTIVE PROMPT
-// ─────────────────────────────────────────────────────────────────────────────
 async function promptUser(question) {
   return new Promise(resolve => {
     const rl = readline.createInterface({
@@ -78,9 +74,6 @@ async function promptUser(question) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SUBABASE INTERCEPTION — harvest correct_answer_key
-// ─────────────────────────────────────────────────────────────────────────────
 async function setupInterception(page) {
   await page.route('**supabase.co/rest/**', async route => {
     mark('sb');
@@ -115,9 +108,6 @@ async function setupInterception(page) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LOGIN
-// ─────────────────────────────────────────────────────────────────────────────
 async function login(page, username, password) {
   log('Opening homepage…', '🔗');
   mark('home');
@@ -144,9 +134,6 @@ async function login(page, username, password) {
   log(`Student console ready for ${username}.`);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DETECT USER'S GRADE AFTER LOGIN
-// ─────────────────────────────────────────────────────────────────────────────
 async function detectGradeAfterLogin(page) {
   log('Detecting user grade…', '🔍');
   try {
@@ -170,9 +157,6 @@ async function detectGradeAfterLogin(page) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// NAVIGATE TO CHAPTER-SELECTION
-// ─────────────────────────────────────────────────────────────────────────────
 async function goToChapterSelection(page, subject, grade) {
   mark('chapsel');
   const url = `${CFG.baseUrl}/app/chapter-selection.html`
@@ -185,9 +169,6 @@ async function goToChapterSelection(page, subject, grade) {
   measure(`→ chapter-selection (${subject})`, 'chapsel');
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SCRAPE CHAPTERS
-// ─────────────────────────────────────────────────────────────────────────────
 async function scrapeChapters(page) {
   return await page.evaluate(() =>
     Array.from(document.querySelectorAll('#content-area div[onclick^="startQuiz"]'))
@@ -199,9 +180,6 @@ async function scrapeChapters(page) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ANSWER ALL QUESTIONS WITH CORRECT ANSWERS → SUBMIT
-// ─────────────────────────────────────────────────────────────────────────────
 async function answerAndSubmit(page, chapterTitle) {
   let total  = 0;
   const qMs  = [];
@@ -218,7 +196,6 @@ async function answerAndSubmit(page, chapterTitle) {
     const current = parseInt(curStr) || safety + 1;
     total         = parseInt(totStr) || 1;
 
-    // Get question ID and look up cached correct answer
     const qId = await page.evaluate(() => {
       const r = document.querySelector('#question-list input[type="radio"]');
       return r ? r.dataset.id : null;
@@ -230,9 +207,10 @@ async function answerAndSubmit(page, chapterTitle) {
 
     log(`    Q${current}/${total}  →  ${choice}  [${source}]`);
 
-    const clicked = await page.evaluate((preferred, id) => {
-      let radio = id
-        ? document.querySelector(`#question-list input[type="radio"][data-id="${id}"][value="${preferred}"]`)
+    // FIX: Pass arguments as object to page.evaluate()
+    const clicked = await page.evaluate(({ preferred, qid }) => {
+      let radio = qid
+        ? document.querySelector(`#question-list input[type="radio"][data-id="${qid}"][value="${preferred}"]`)
         : null;
       if (!radio) {
         const all = document.querySelectorAll('#question-list input[type="radio"]');
@@ -242,7 +220,7 @@ async function answerAndSubmit(page, chapterTitle) {
       const label = radio.closest('label');
       if (label) label.click(); else radio.click();
       return true;
-    }, choice, qId);
+    }, { preferred: choice, qid: qId });
 
     if (!clicked) log(`    Q${current}: no radio found — skipping`, '⚠️');
 
@@ -284,9 +262,6 @@ async function answerAndSubmit(page, chapterTitle) {
   throw new Error(`Safety cap: no Submit after ${MAX} iterations`);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// RUN ONE CHAPTER
-// ─────────────────────────────────────────────────────────────────────────────
 async function runChapter(page, chapter, subject, num, total) {
   log(`\n  [${num}/${total}] "${chapter.title}" (${chapter.tableId})`);
 
@@ -302,7 +277,7 @@ async function runChapter(page, chapter, subject, num, total) {
 
   try {
     mark('ch');
-    const clicked = await page.evaluate(idx => {
+    const clicked = await page.evaluate((idx) => {
       const card = document.querySelectorAll(
         '#content-area div[onclick^="startQuiz"]'
       )[idx];
@@ -357,9 +332,6 @@ async function runChapter(page, chapter, subject, num, total) {
   return entry;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// RUN ALL CHAPTERS FOR ONE SUBJECT
-// ─────────────────────────────────────────────────────────────────────────────
 async function runSubject(page, subject, userGrade) {
   log(`\n${'='.repeat(60)}`);
   log(`  SUBJECT: ${subject.toUpperCase()}`);
@@ -421,9 +393,6 @@ async function runSubject(page, subject, userGrade) {
   log(`\n  ✅ ${subject} complete — all ${N} chapters processed.`);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONSOLIDATED REPORT
-// ─────────────────────────────────────────────────────────────────────────────
 function buildConsolidatedReport() {
   const now = new Date();
   const timestamp = now.toISOString().replace(/[:.]/g, '-').split('-').slice(0, 4).join('-');
@@ -488,9 +457,6 @@ function buildConsolidatedReport() {
   return { md, timestamp };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN
-// ─────────────────────────────────────────────────────────────────────────────
 async function main() {
   log('Ready4Exam Quiz Bot (Correct Answers — Multi-Account Mode)', '🤖');
   log(`Subjects : ${CFG.subjects.join(', ')}`);
