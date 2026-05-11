@@ -1,42 +1,40 @@
 #!/usr/bin/env node
 /**
- * Ready4Exam Quiz Bot — testing_tool/bot_rit.js
+ * Ready4Exam Quiz Bot (Correct Answers) — testing_tool/bot_rit.js
  *
- * Same flow as bot.js with ONE key difference:
- *   correct_answer_key is harvested from the Supabase REST response
- *   and used to select the right option for every question.
- *   Falls back to a random pick only if no cached answer is found.
+ * ENHANCED:
+ *   - Multi-account mode: prompt for username + password repeatedly
+ *   - Grade detection: automatically detects user's actual grade
+ *   - Correct answers: harvests correct_answer_key from Supabase
+ *   - Consolidated report: saves to testing_tool/reports/report_<timestamp>.md
  *
  * Usage:
- *   node bot_rit.js
- *   HEADLESS=true node bot_rit.js
+ *   npm run bot_rit
+ *   npm run bot_rit:headless
  */
 'use strict';
 
 const { chromium } = require('playwright');
 const fs   = require('fs');
 const path = require('path');
+const readline = require('readline');
 
 const CFG = {
   baseUrl         : 'https://karnkeshav.github.io/masterpage_1',
-  username        : 's.10.a',
-  password        : 'Ready4Exam@2026',
   subjects        : ['Science', 'Mathematics', 'Social Science'],
   headless        : process.env.HEADLESS === 'true',
   slowMo          : 80,
   pageTimeout     : 60_000,
-  quizLoadTimeout : 45_000,   // max wait for first question to appear
-  quizTimeout     : 120_000,  // max wait per question while answering
+  quizLoadTimeout : 45_000,
+  quizTimeout     : 120_000,
   screenshotDir   : path.join(__dirname, 'bot_screenshots_rit'),
-  reportPath      : path.join(__dirname, 'quiz_bot_rit_report.md'),
+  reportsDir      : path.join(__dirname, 'reports'),
 };
 
-// correct_answer_key values intercepted from Supabase: questionId → "A"|"B"|"C"|"D"
+// Global state: correct answers intercepted from Supabase, results across all accounts
 const answerCache = new Map();
-
-const latency  = [];
-const results  = [];
-const botStart = Date.now();
+const allResults  = [];
+const runMetadata = [];
 
 const iso = () => new Date().toISOString().replace('T', ' ').split('.')[0];
 function log(msg, icon = '  ') { console.log(`[${iso()}] ${icon} ${msg}`); }
@@ -47,21 +45,17 @@ const _m = {};
 function mark(id)  { _m[id] = Date.now(); }
 function measure(label, id) {
   const ms = Date.now() - (_m[id] ?? Date.now());
-  latency.push({ label, ms, ts: iso() });
   log(`⏱  ${label}: ${ms} ms`);
   return ms;
 }
 
-// Prevent dialog-race unhandled rejections from killing the process
 process.on('unhandledRejection', reason => {
   log(`[unhandledRejection] ${reason} — continuing`, '⚠️');
 });
 
-// Fallback when no cached answer exists
 const OPTIONS = ['A', 'B', 'C', 'D'];
 function rnd() { return OPTIONS[Math.floor(Math.random() * 4)]; }
 
-// Radio inputs are class="hidden" — use state:'attached', never 'visible'
 async function waitForRadios(page, timeout) {
   await page.waitForSelector('#question-list input[type="radio"]', {
     state: 'attached', timeout: timeout ?? CFG.quizTimeout,
@@ -69,7 +63,23 @@ async function waitForRadios(page, timeout) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SUPABASE INTERCEPTION — harvest correct_answer_key before questions render
+// INTERACTIVE PROMPT
+// ─────────────────────────────────────────────────────────────────────────────
+async function promptUser(question) {
+  return new Promise(resolve => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    rl.question(question, answer => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUBABASE INTERCEPTION — harvest correct_answer_key
 // ─────────────────────────────────────────────────────────────────────────────
 async function setupInterception(page) {
   await page.route('**supabase.co/rest/**', async route => {
@@ -98,11 +108,8 @@ async function setupInterception(page) {
           }
         });
         if (n > 0) log(`  📥 Cached ${n} correct answers from ${table}`);
-        else       log(`  ⚠️  ${table} returned ${body.length} rows but no valid correct_answer_key`, '⚠️');
-      } else if (Array.isArray(body) && body.length === 0) {
-        log(`  ⚠️  ${table}: 0 rows (table empty or wrong difficulty)`, '⚠️');
       }
-    } catch (_) { /* non-JSON endpoint — pass through */ }
+    } catch (_) { /* non-JSON endpoint */ }
 
     await route.fulfill({ response });
   });
@@ -111,7 +118,7 @@ async function setupInterception(page) {
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGIN
 // ─────────────────────────────────────────────────────────────────────────────
-async function login(page) {
+async function login(page, username, password) {
   log('Opening homepage…', '🔗');
   mark('home');
   await page.goto(CFG.baseUrl + '/index.html', {
@@ -125,20 +132,46 @@ async function login(page) {
     });
   });
   await sleep(300);
-  await page.fill('#username', CFG.username);
-  await page.fill('#password', CFG.password);
+  await page.fill('#username', username);
+  await page.fill('#password', password);
 
-  log('Logging in…', '🔐');
+  log(`Logging in as ${username}…`, '🔐');
   mark('login');
   await page.click('#sovereign-login-form button');
   await page.waitForURL('**/consoles/student.html**', { timeout: CFG.pageTimeout });
-  measure('Login → student console', 'login');
+  measure(`Login → student console (${username})`, 'login');
   await page.waitForSelector('#app:not(.hidden)', { timeout: CFG.pageTimeout });
-  log('Student console ready.');
+  log(`Student console ready for ${username}.`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NAVIGATE DIRECTLY TO CHAPTER-SELECTION
+// DETECT USER'S GRADE AFTER LOGIN
+// ─────────────────────────────────────────────────────────────────────────────
+async function detectGradeAfterLogin(page) {
+  log('Detecting user grade…', '🔍');
+  try {
+    await page.waitForFunction(() => {
+      const btn = document.getElementById('start-new-quiz-btn');
+      return btn && btn.href && !btn.href.endsWith('#');
+    }, { timeout: CFG.pageTimeout });
+
+    await page.click('#start-new-quiz-btn');
+    await page.waitForURL('**/curriculum.html**', { timeout: CFG.pageTimeout });
+
+    const url = page.url();
+    const gradeMatch = url.match(/grade=(\d+)/);
+    const detectedGrade = gradeMatch ? gradeMatch[1] : '?';
+    
+    log(`Detected grade: ${detectedGrade}`, '✓');
+    return detectedGrade;
+  } catch (err) {
+    log(`Grade detection failed: ${err.message} — defaulting to '10'`, '⚠️');
+    return '10';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAVIGATE TO CHAPTER-SELECTION
 // ─────────────────────────────────────────────────────────────────────────────
 async function goToChapterSelection(page, subject, grade) {
   mark('chapsel');
@@ -153,7 +186,7 @@ async function goToChapterSelection(page, subject, grade) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCRAPE CHAPTER LIST
+// SCRAPE CHAPTERS
 // ─────────────────────────────────────────────────────────────────────────────
 async function scrapeChapters(page) {
   return await page.evaluate(() =>
@@ -175,13 +208,9 @@ async function answerAndSubmit(page, chapterTitle) {
   const MAX  = 200;
 
   for (let safety = 0; safety < MAX; safety++) {
-
-    // Wait for radios (attached, not visible)
     await waitForRadios(page, CFG.quizTimeout);
-
     const t0 = Date.now();
 
-    // Read counter "N / Total"
     const counter = await page
       .$eval('#question-counter', el => el.textContent.trim())
       .catch(() => '1/1');
@@ -189,26 +218,22 @@ async function answerAndSubmit(page, chapterTitle) {
     const current = parseInt(curStr) || safety + 1;
     total         = parseInt(totStr) || 1;
 
-    // ── Get the question id from the first radio ──────────────────────────────
+    // Get question ID and look up cached correct answer
     const qId = await page.evaluate(() => {
       const r = document.querySelector('#question-list input[type="radio"]');
       return r ? r.dataset.id : null;
     });
 
-    // ── Look up cached correct answer; fall back to random ────────────────────
     const correctAns = qId ? (answerCache.get(String(qId)) ?? null) : null;
     const choice     = correctAns ?? rnd();
     const source     = correctAns ? '✓ correct' : '? random (no cache)';
 
     log(`    Q${current}/${total}  →  ${choice}  [${source}]`);
 
-    // ── Click the correct option via its <label> wrapper ─────────────────────
     const clicked = await page.evaluate((preferred, id) => {
-      // Try the exact option (correct answer)
       let radio = id
         ? document.querySelector(`#question-list input[type="radio"][data-id="${id}"][value="${preferred}"]`)
         : null;
-      // Fallback: first radio in the list
       if (!radio) {
         const all = document.querySelectorAll('#question-list input[type="radio"]');
         radio = Array.from(all).find(r => r.value === preferred) || all[0];
@@ -219,12 +244,11 @@ async function answerAndSubmit(page, chapterTitle) {
       return true;
     }, choice, qId);
 
-    if (!clicked) log(`    Q${current}: no radio found — skipping selection`, '⚠️');
+    if (!clicked) log(`    Q${current}: no radio found — skipping`, '⚠️');
 
     qMs.push(Date.now() - t0);
     await sleep(250);
 
-    // ── Submit ────────────────────────────────────────────────────────────────
     const canSubmit = await page.evaluate(() => {
       const b = document.getElementById('submit-btn');
       return b && !b.classList.contains('hidden');
@@ -238,14 +262,13 @@ async function answerAndSubmit(page, chapterTitle) {
         timeout: CFG.pageTimeout,
       });
       measure(`Submit → results (${chapterTitle})`, 'sub');
-      // Allow time for the post-submit alert (300 ms setTimeout in quiz-engine)
       await sleep(800);
+
       const avgMs = qMs.length
         ? Math.round(qMs.reduce((a, b) => a + b, 0) / qMs.length) : 0;
       return { total, avgMs };
     }
 
-    // ── Next ──────────────────────────────────────────────────────────────────
     const canNext = await page.evaluate(() => {
       const b = document.getElementById('next-btn');
       return b && !b.classList.contains('hidden');
@@ -274,12 +297,10 @@ async function runChapter(page, chapter, subject, num, total) {
   };
   const t0 = Date.now();
 
-  // Clear cache so stale answers from the previous chapter don't bleed in
   answerCache.clear();
   log('    Answer cache cleared for this chapter');
 
   try {
-    // Click chapter card
     mark('ch');
     const clicked = await page.evaluate(idx => {
       const card = document.querySelectorAll(
@@ -290,12 +311,10 @@ async function runChapter(page, chapter, subject, num, total) {
     }, chapter.index);
     if (!clicked) throw new Error('Chapter card not found at index ' + chapter.index);
 
-    // Difficulty modal
     await page.waitForSelector('#symmetric-difficulty-modal', { timeout: 12_000 });
     measure(`Chapter → modal (${chapter.title})`, 'ch');
     log('    Difficulty modal appeared');
 
-    // Click Simple
     mark('simple');
     await page.evaluate(() => {
       const modal = document.getElementById('symmetric-difficulty-modal');
@@ -306,19 +325,15 @@ async function runChapter(page, chapter, subject, num, total) {
       if (typeof window.launchQuiz === 'function') window.launchQuiz('Simple');
     });
 
-    // Wait for quiz-engine URL
     await page.waitForURL('**/quiz-engine.html**', { timeout: CFG.pageTimeout });
 
-    // Wait for first question (45 s timeout — fast-fail for broken quizzes)
     log('    Waiting for questions…');
     await waitForRadios(page, CFG.quizLoadTimeout);
     entry.quizLoadMs = measure(`Simple → first question (${chapter.title})`, 'simple');
     log(`    Questions ready in ${entry.quizLoadMs} ms`);
 
-    // Log cache status
     log(`    Answer cache has ${answerCache.size} entries for this quiz`);
 
-    // Answer every question and submit
     const qr = await answerAndSubmit(page, chapter.title);
     entry.totalQ      = qr.total;
     entry.avgAnswerMs = qr.avgMs;
@@ -345,19 +360,18 @@ async function runChapter(page, chapter, subject, num, total) {
 // ─────────────────────────────────────────────────────────────────────────────
 // RUN ALL CHAPTERS FOR ONE SUBJECT
 // ─────────────────────────────────────────────────────────────────────────────
-async function runSubject(page, subject) {
+async function runSubject(page, subject, userGrade) {
   log(`\n${'='.repeat(60)}`);
   log(`  SUBJECT: ${subject.toUpperCase()}`);
   log(`${'='.repeat(60)}`);
   mark(`subj_${subject}`);
 
-  // First visit: count chapters
-  await goToChapterSelection(page, subject, '10');
+  await goToChapterSelection(page, subject, userGrade);
   const initialList = await scrapeChapters(page);
 
   if (initialList.length === 0) {
     log('  No chapters — skipping', '⏭️');
-    results.push({
+    allResults.push({
       subject, chapter: '(none)', tableId: '', grade: '?',
       status: 'skipped', totalQ: 0, durationMs: 0,
       quizLoadMs: 0, avgAnswerMs: 0, error: 'No chapters found', screenshot: null,
@@ -379,13 +393,12 @@ async function runSubject(page, subject) {
     log(`\n  Navigating to chapter-selection for chapter ${i + 1}/${N}…`);
     await goToChapterSelection(page, subject, grade);
 
-    // Re-scrape to get current DOM index
     const fresh  = await scrapeChapters(page);
     const target = fresh.find(c => c.tableId === ch.tableId);
 
     if (!target) {
       log(`  ⚠️  "${ch.title}" not found on page — skipping`, '⚠️');
-      results.push({
+      allResults.push({
         subject, chapter: ch.title, tableId: ch.tableId, grade,
         status: 'failed', totalQ: 0, durationMs: 0,
         quizLoadMs: 0, avgAnswerMs: 0,
@@ -395,7 +408,7 @@ async function runSubject(page, subject) {
     }
 
     const result = await runChapter(page, target, subject, i + 1, N);
-    results.push(result);
+    allResults.push(result);
 
     if (result.status === 'failed') {
       log(`  ⏭️  Chapter ${i + 1}/${N} FAILED — skipping to next chapter`, '⏭️');
@@ -409,137 +422,192 @@ async function runSubject(page, subject) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MARKDOWN REPORT
+// CONSOLIDATED REPORT
 // ─────────────────────────────────────────────────────────────────────────────
-function buildReport() {
-  const now     = new Date();
-  const totalMs = Date.now() - botStart;
-  const ok      = results.filter(r => r.status === 'success').length;
-  const bad     = results.filter(r => r.status === 'failed').length;
-  const skip    = results.filter(r => r.status === 'skipped').length;
+function buildConsolidatedReport() {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[:.]/g, '-').split('-').slice(0, 4).join('-');
+  
+  const ok   = allResults.filter(r => r.status === 'success').length;
+  const bad  = allResults.filter(r => r.status === 'failed').length;
+  const skip = allResults.filter(r => r.status === 'skipped').length;
 
-  let md = `# Ready4Exam Quiz Bot (Correct Answers) — Audit Report\n\n`;
+  let md = `# Ready4Exam Quiz Bot (Correct Answers) — Consolidated Report\n\n`;
   md += `> **Generated:** ${now.toUTCString()}  \n`;
-  md += `> **Account:** \`${CFG.username}\` | **Difficulty:** Simple  \n`;
-  md += `> **Mode:** Correct answers from Supabase \`correct_answer_key\`\n\n---\n\n`;
+  md += `> **Mode:** Correct answers from Supabase \`correct_answer_key\`  \n`;
+  md += `> **Accounts tested:** ${runMetadata.length}\n`;
+  md += `> **Total chapters:** ${allResults.length}\n`;
+  md += `> **✅ Completed:** ${ok} | **❌ Failed:** ${bad} | **⏭️ Skipped:** ${skip}\n\n---\n\n`;
 
-  md += `## Summary\n\n`;
-  md += `| Metric | Value |\n|--------|-------|\n`;
-  md += `| Total chapters | **${results.length}** |\n`;
-  md += `| ✅ Completed | **${ok}** |\n`;
-  md += `| ❌ Failed | **${bad}** |\n`;
-  md += `| ⏭️ Skipped | **${skip}** |\n`;
-  md += `| ⏱ Runtime | **${(totalMs / 60000).toFixed(1)} min** |\n\n`;
-
-  md += `## Latency Log\n\n`;
-  md += `> 🟢 <1 s  🟡 1–3 s  🔴 >3 s\n\n`;
-  md += `| Timestamp | Event | ms |\n|-----------|-------|----|\n`;
-  latency.forEach(({ ts, label, ms }) => {
-    const d = ms < 1000 ? '🟢' : ms < 3000 ? '🟡' : '🔴';
-    md += `| ${ts} | ${label} | ${d} ${ms} |\n`;
+  const byGrade = {};
+  runMetadata.forEach(meta => {
+    const key = `Grade ${meta.grade} — ${meta.username}`;
+    byGrade[key] = { meta, results: allResults.filter(r => r.grade === meta.grade || r.grade === '?') };
   });
-  md += '\n';
 
-  for (const subject of CFG.subjects) {
-    const rows = results.filter(r => r.subject === subject);
-    if (!rows.length) continue;
-    md += `## ${subject}\n\n`;
-    md += `> ✅ ${rows.filter(r => r.status === 'success').length} completed  `
-        + `❌ ${rows.filter(r => r.status === 'failed').length} failed\n\n`;
-    md += `| # | Chapter | Table ID | Status | Questions | Load ms | Duration s |\n`;
-    md += `|---|---------|----------|--------|-----------|---------|------------|\n`;
-    rows.forEach((r, i) => {
-      const icon = { success: '✅', failed: '❌', skipped: '⏭️' }[r.status] ?? '?';
-      md += `| ${i + 1} | ${r.chapter} | \`${r.tableId}\` | ${icon} `
-          + `| ${r.totalQ || '—'} | ${r.quizLoadMs || '—'} | ${(r.durationMs / 1000).toFixed(1)} |\n`;
+  Object.entries(byGrade).forEach(([gradeKey, { meta, results: resPerGrade }]) => {
+    if (!resPerGrade.length) return;
+    md += `## ${gradeKey}\n\n`;
+    const subjects = [...new Set(resPerGrade.map(r => r.subject))];
+    
+    subjects.forEach(subject => {
+      const subRows = resPerGrade.filter(r => r.subject === subject);
+      const subOk   = subRows.filter(r => r.status === 'success').length;
+      const subBad  = subRows.filter(r => r.status === 'failed').length;
+      
+      md += `### ${subject}\n\n`;
+      md += `> ✅ ${subOk} completed  |  ❌ ${subBad} failed\n\n`;
+      md += `| Chapter | Status | Q | Duration |\n`;
+      md += `|---------|--------|---|----------|\n`;
+      
+      subRows.forEach(r => {
+        const icon = { success: '✅', failed: '❌', skipped: '⏭️' }[r.status] ?? '?';
+        md += `| ${r.chapter} | ${icon} | ${r.totalQ || '—'} | ${(r.durationMs / 1000).toFixed(1)}s |\n`;
+      });
+      md += '\n';
     });
-    md += '\n';
-  }
+  });
 
-  const failed = results.filter(r => r.status === 'failed');
+  const failed = allResults.filter(r => r.status === 'failed');
   if (failed.length) {
-    md += `## ❌ Failed Chapters\n\n`;
-    md += `| Subject | Chapter | Table ID | Error | Fix |\n`;
-    md += `|---------|---------|----------|-------|-----|\n`;
+    md += `## ❌ Failed Chapters Summary\n\n`;
+    md += `> **Total failed:** ${failed.length}\n\n`;
+    md += `| Grade | Subject | Chapter | Error |\n`;
+    md += `|-------|---------|---------|-------|\n`;
     failed.forEach(r => {
-      let fix = 'Review screenshot';
-      if (/timeout/i.test(r.error))    fix = 'Quiz never rendered — check Supabase table has Simple rows';
-      if (/safety cap/i.test(r.error)) fix = 'Submit never appeared — UI bug';
-      if (/modal/i.test(r.error))      fix = 'Difficulty modal did not appear';
-      md += `| ${r.subject} | ${r.chapter} | \`${r.tableId}\` | ${r.error} | ${fix} |\n`;
+      let shortError = r.error;
+      if (r.error.length > 40) shortError = r.error.substring(0, 37) + '...';
+      md += `| ${r.grade} | ${r.subject} | ${r.chapter} | ${shortError} |\n`;
     });
-    if (failed.some(r => r.screenshot)) md += `\nScreenshots in \`bot_screenshots_rit/\`\n`;
     md += '\n';
   } else {
     md += `## ✅ All Chapters Completed Successfully\n\n`;
   }
 
   md += `\n---\n*Ready4Exam Quiz Bot (Correct Answers) — ${now.toUTCString()}*\n`;
-  return md;
+  return { md, timestamp };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN
 // ─────────────────────────────────────────────────────────────────────────────
 async function main() {
-  log('Quiz Bot (Correct Answers) starting', '🤖');
+  log('Ready4Exam Quiz Bot (Correct Answers — Multi-Account Mode)', '🤖');
   log(`Subjects : ${CFG.subjects.join(', ')}`);
-  log(`Headless : ${CFG.headless}`);
+  log(`Headless : ${CFG.headless}\n`);
 
   const browser = await chromium.launch({
     headless: CFG.headless,
     slowMo  : CFG.slowMo,
     args    : ['--disable-blink-features=AutomationControlled'],
   });
-  const context = await browser.newContext({
-    viewport : { width: 1280, height: 900 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-             + '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  });
-  const page = await context.newPage();
-  page.setDefaultTimeout(CFG.pageTimeout);
 
-  // Intercept Supabase BEFORE any navigation so no question data is missed
-  await setupInterception(page);
+  let accountNum = 0;
 
-  // Auto-dismiss every native alert/confirm/prompt
-  page.on('dialog', async dialog => {
-    log(`    [dialog] "${dialog.message().split('\n')[0]}" — accepted`);
-    await dialog.accept();
-  });
+  while (true) {
+    accountNum++;
+    log(`\n${'='.repeat(70)}`);
+    log(`ACCOUNT ${accountNum}`);
+    log(`${'='.repeat(70)}\n`);
 
-  try {
-    await login(page);
+    const username = await promptUser(`[Account ${accountNum}] Username (or 'exit' to finish): `);
+    if (username.toLowerCase() === 'exit') {
+      log('Exiting account loop.', '👋');
+      break;
+    }
 
-    for (const subject of CFG.subjects) {
-      try {
-        await runSubject(page, subject);
-      } catch (err) {
-        log(`Subject crash (${subject}): ${err.message}`, '❌');
-        console.error(err.stack);
-        results.push({
-          subject, chapter: 'ALL', tableId: '', grade: '?',
-          status: 'failed', totalQ: 0, durationMs: 0,
-          quizLoadMs: 0, avgAnswerMs: 0,
-          error: `Subject crash: ${err.message}`, screenshot: null,
-        });
+    const password = await promptUser(`[Account ${accountNum}] Password: `);
+    const accountStart = Date.now();
+
+    const context = await browser.newContext({
+      viewport : { width: 1280, height: 900 },
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+               + '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    });
+    const page = await context.newPage();
+    page.setDefaultTimeout(CFG.pageTimeout);
+
+    await setupInterception(page);
+
+    page.on('dialog', async dialog => {
+      log(`    [dialog] "${dialog.message().split('\n')[0]}" — accepted`);
+      await dialog.accept();
+    });
+
+    let grade = '?';
+    try {
+      await login(page, username, password);
+
+      const detectedGrade = await detectGradeAfterLogin(page);
+      grade = detectedGrade;
+
+      for (const subject of CFG.subjects) {
+        try {
+          await runSubject(page, subject, detectedGrade);
+        } catch (err) {
+          log(`Subject crash (${subject}): ${err.message}`, '❌');
+          console.error(err.stack);
+          allResults.push({
+            subject, chapter: 'ALL', tableId: '', grade: detectedGrade,
+            status: 'failed', totalQ: 0, durationMs: 0,
+            quizLoadMs: 0, avgAnswerMs: 0,
+            error: `Subject crash: ${err.message}`, screenshot: null,
+          });
+        }
       }
+
+    } catch (err) {
+      log(`Account error (${username}): ${err.message}`, '❌');
+      console.error(err.stack);
+    } finally {
+      await context.close();
+    }
+
+    const failedChapters = allResults.filter(r => r.status === 'failed');
+    const passedChapters = allResults.filter(r => r.status === 'success');
+
+    log(`\nAccount ${accountNum} Summary:`);
+    log(`  Username: ${username}`);
+    log(`  Grade: ${grade}`);
+    log(`  ✅ Passed: ${passedChapters.length}`);
+    log(`  ❌ Failed: ${failedChapters.length}`);
+
+    runMetadata.push({
+      accountNum, username, grade,
+      startTime: accountStart, endTime: Date.now(),
+    });
+  }
+
+  await browser.close();
+
+  log(`\n${'='.repeat(70)}`);
+  log('GENERATING CONSOLIDATED REPORT', '📄');
+  log(`${'='.repeat(70)}\n`);
+
+  ensureDir(CFG.reportsDir);
+  const { md, timestamp } = buildConsolidatedReport();
+  const reportFile = path.join(CFG.reportsDir, `report_${timestamp}.md`);
+  
+  try {
+    fs.writeFileSync(reportFile, md, 'utf8');
+    const absPath = path.resolve(reportFile);
+    log(`📄 Report saved: ${reportFile}`, '✅');
+    log(`   Absolute path: ${absPath}`, '  ');
+    if (fs.existsSync(reportFile)) {
+      const stats = fs.statSync(reportFile);
+      log(`   Size: ${stats.size} bytes`, '  ');
     }
   } catch (err) {
-    log(`Fatal: ${err.message}`, '❌');
-    console.error(err.stack);
-    ensureDir(CFG.screenshotDir);
-    await page.screenshot({
-      path: path.join(CFG.screenshotDir, 'FATAL.png'), fullPage: true,
-    }).catch(() => {});
-  } finally {
-    fs.writeFileSync(CFG.reportPath, buildReport(), 'utf8');
-    log(`Report → ${CFG.reportPath}`, '📄');
-    log(`Chapters: ${results.length} | ✅ ${results.filter(r => r.status === 'success').length} | ❌ ${results.filter(r => r.status === 'failed').length}`);
-    log(`Runtime : ${((Date.now() - botStart) / 60000).toFixed(1)} min`);
-    await browser.close();
-    log('Done.', '🤖');
+    log(`❌ Failed to write report: ${err.message}`, '❌');
+    log(`   Attempted path: ${path.resolve(reportFile)}`, '  ');
   }
+  log(`\nSummary:`);
+  log(`  Total accounts: ${runMetadata.length}`);
+  log(`  Total chapters: ${allResults.length}`);
+  log(`  Passed: ${allResults.filter(r => r.status === 'success').length}`);
+  log(`  Failed: ${allResults.filter(r => r.status === 'failed').length}`);
+
+  log('\nDone.', '🤖');
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
