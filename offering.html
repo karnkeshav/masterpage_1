@@ -33,7 +33,7 @@
 }
 .asymmetric-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 2rem;
 }
 @media (min-width: 1280px) {
@@ -64,7 +64,7 @@
     <section class="mb-20 text-center md:text-left md:flex md:items-end md:justify-between">
         <div class="max-w-2xl">
             <span class="inline-block px-4 py-1.5 rounded-full bg-green-100 text-success-green font-bold text-xs uppercase tracking-widest mb-6">Subscription Plans</span>
-            <h1 class="text-5xl md:text-7xl font-black tracking-tight text-cbse-blue mb-6 leading-[1.1]">
+            <h1 class="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-cbse-blue mb-6 leading-[1.1]">
                 Invest in your <br/><span class="text-success-green">Intellectual Growth.</span>
             </h1>
             <p class="text-slate-600 text-lg md:text-xl leading-relaxed max-w-xl">
@@ -227,7 +227,7 @@
         </div>
 
         <!-- Tier E: The Legacy Plan -->
-        <div class="legacy-row group relative overflow-hidden bg-slate-900 text-white p-12 rounded-3xl flex flex-col md:flex-row gap-12 transition-all duration-300 shadow-2xl">
+        <div class="legacy-row group relative overflow-hidden bg-slate-900 text-white p-6 sm:p-12 rounded-3xl flex flex-col md:flex-row gap-8 md:gap-12 transition-all duration-300 shadow-2xl">
             <div class="absolute top-0 right-0 w-64 h-64 bg-success-green/20 rounded-full blur-[100px] -mr-32 -mt-32"></div>
             <div class="flex-1 z-10">
                 <div class="flex items-center gap-4 mb-8">
@@ -259,7 +259,7 @@
                     </div>
                 </div>
             </div>
-            <div class="md:w-72 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 flex flex-col justify-between z-10">
+            <div class="w-full md:w-72 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col justify-between z-10">
                 <div class="text-center md:text-left">
                     <span class="text-slate-400 text-xs font-bold uppercase tracking-widest">36 Months Full Access</span>
                     <div class="mt-4 mb-6">
