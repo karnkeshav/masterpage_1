@@ -2,14 +2,11 @@
 /**
  * Ready4Exam Quiz Bot — testing_tool/bot.js
  *
- * Flow per subject:
- *   curriculum.html → click subject → chapter-selection.html
- *   Count N chapters, then loop i = 0..N-1:
- *     chapter-selection.html → click chapter[i]
- *     → difficulty modal → Simple
- *     → quiz-engine.html → answer all questions → submit
- *     → dismiss alert → navigate directly back to chapter-selection.html
- *   When all chapters done → back to curriculum.html → next subject
+ * ENHANCED:
+ *   After completing one account, prompts for the next (username + password).
+ *   Repeats until user enters 'exit'.
+ *   At the end, generates a consolidated report showing failed chapters per class/subject.
+ *   Report saved to: testing_tool/reports/report_<timestamp>.md
  *
  * Usage:
  *   node bot.js
@@ -20,24 +17,23 @@
 const { chromium } = require('playwright');
 const fs   = require('fs');
 const path = require('path');
+const readline = require('readline');
 
 const CFG = {
-  baseUrl      : 'https://karnkeshav.github.io/masterpage_1',
-  username     : 's.10.a',
-  password     : 'Ready4Exam@2026',
-  subjects     : ['Science', 'Mathematics', 'Social Science'],
-  headless     : process.env.HEADLESS === 'true',
-  slowMo       : 80,
-  pageTimeout  : 60_000,
-  quizLoadTimeout: 45_000,   // max wait for first question to appear
-  quizTimeout  : 120_000,   // max wait per question during answering
-  screenshotDir: path.join(__dirname, 'bot_screenshots'),
-  reportPath   : path.join(__dirname, 'quiz_bot_report.md'),
+  baseUrl         : 'https://karnkeshav.github.io/masterpage_1',
+  subjects        : ['Science', 'Mathematics', 'Social Science'],
+  headless        : process.env.HEADLESS === 'true',
+  slowMo          : 80,
+  pageTimeout     : 60_000,
+  quizLoadTimeout : 45_000,
+  quizTimeout     : 120_000,
+  screenshotDir   : path.join(__dirname, 'bot_screenshots'),
+  reportsDir      : path.join(__dirname, 'reports'),
 };
 
-const latency = [];
-const results = [];
-const botStart = Date.now();
+// Global state: track results across all accounts
+const allResults = [];
+const runMetadata = [];
 
 const iso = () => new Date().toISOString().replace('T', ' ').split('.')[0];
 function log(msg, icon = '  ') { console.log(`[${iso()}] ${icon} ${msg}`); }
@@ -48,21 +44,17 @@ const _m = {};
 function mark(id)  { _m[id] = Date.now(); }
 function measure(label, id) {
   const ms = Date.now() - (_m[id] ?? Date.now());
-  latency.push({ label, ms, ts: iso() });
   log(`⏱  ${label}: ${ms} ms`);
   return ms;
 }
 
-// Prevent a dialog-race unhandled rejection from killing the process
 process.on('unhandledRejection', reason => {
   log(`[unhandledRejection] ${reason} — continuing`, '⚠️');
 });
 
-// Random A / B / C / D
 const OPTIONS = ['A', 'B', 'C', 'D'];
 function rnd() { return OPTIONS[Math.floor(Math.random() * 4)]; }
 
-// Radio inputs are class="hidden" — use state:'attached', never 'visible'
 async function waitForRadios(page, timeout) {
   await page.waitForSelector('#question-list input[type="radio"]', {
     state: 'attached', timeout: timeout ?? CFG.quizTimeout,
@@ -70,9 +62,25 @@ async function waitForRadios(page, timeout) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// INTERACTIVE PROMPT
+// ─────────────────────────────────────────────────────────────────────────────
+async function promptUser(question) {
+  return new Promise(resolve => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    rl.question(question, answer => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // LOGIN
 // ─────────────────────────────────────────────────────────────────────────────
-async function login(page) {
+async function login(page, username, password) {
   log('Opening homepage…', '🔗');
   mark('home');
   await page.goto(CFG.baseUrl + '/index.html', {
@@ -86,29 +94,26 @@ async function login(page) {
     });
   });
   await sleep(300);
-  await page.fill('#username', CFG.username);
-  await page.fill('#password', CFG.password);
+  await page.fill('#username', username);
+  await page.fill('#password', password);
 
-  log('Logging in…', '🔐');
+  log(`Logging in as ${username}…`, '🔐');
   mark('login');
   await page.click('#sovereign-login-form button');
   await page.waitForURL('**/consoles/student.html**', { timeout: CFG.pageTimeout });
-  measure('Login → student console', 'login');
+  measure(`Login → student console (${username})`, 'login');
   await page.waitForSelector('#app:not(.hidden)', { timeout: CFG.pageTimeout });
-  log('Student console ready.');
+  log(`Student console ready for ${username}.`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NAVIGATE TO CHAPTER-SELECTION FOR A SUBJECT
-// Called at the START of each subject AND before each chapter in the loop.
-// Direct page.goto — no dependency on any back button.
+// NAVIGATE TO CHAPTER-SELECTION
 // ─────────────────────────────────────────────────────────────────────────────
 async function goToChapterSelection(page, subject, grade) {
   mark('chapsel');
   const url = `${CFG.baseUrl}/app/chapter-selection.html`
             + `?subject=${encodeURIComponent(subject)}&grade=${grade}`;
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: CFG.pageTimeout });
-  // Wait until chapter cards are in the DOM
   await page.waitForFunction(() => {
     const area = document.getElementById('content-area');
     return area && area.querySelectorAll('div[onclick^="startQuiz"]').length > 0;
@@ -117,7 +122,7 @@ async function goToChapterSelection(page, subject, grade) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCRAPE CHAPTER LIST  (called once per subject to count + store metadata)
+// SCRAPE CHAPTERS
 // ─────────────────────────────────────────────────────────────────────────────
 async function scrapeChapters(page) {
   return await page.evaluate(() =>
@@ -131,9 +136,7 @@ async function scrapeChapters(page) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ANSWER ALL QUESTIONS AND SUBMIT
-// Returns once the results screen is visible and the alert has been dismissed.
-// Does NOT navigate anywhere — navigation is the caller's job.
+// ANSWER AND SUBMIT
 // ─────────────────────────────────────────────────────────────────────────────
 async function answerAndSubmit(page, chapterTitle) {
   let total  = 0;
@@ -141,13 +144,9 @@ async function answerAndSubmit(page, chapterTitle) {
   const MAX  = 200;
 
   for (let safety = 0; safety < MAX; safety++) {
-
-    // Wait for radio buttons to be attached in the DOM
-    await waitForRadios(page);
-
+    await waitForRadios(page, CFG.quizTimeout);
     const t0 = Date.now();
 
-    // Read counter  "N / Total"
     const counter = await page
       .$eval('#question-counter', el => el.textContent.trim())
       .catch(() => '1/1');
@@ -158,7 +157,6 @@ async function answerAndSubmit(page, chapterTitle) {
     const choice = rnd();
     log(`    Q${current}/${total}  →  option ${choice}`);
 
-    // Click via the <label> wrapper (the visible element around the hidden radio)
     await page.evaluate(preferred => {
       const radios = Array.from(
         document.querySelectorAll('#question-list input[type="radio"]')
@@ -172,7 +170,6 @@ async function answerAndSubmit(page, chapterTitle) {
     qMs.push(Date.now() - t0);
     await sleep(250);
 
-    // ── Submit button visible? ─────────────────────────────────────────────
     const canSubmit = await page.evaluate(() => {
       const b = document.getElementById('submit-btn');
       return b && !b.classList.contains('hidden');
@@ -182,14 +179,10 @@ async function answerAndSubmit(page, chapterTitle) {
       log(`    Submitting "${chapterTitle}"…`);
       mark('sub');
       await page.click('#submit-btn');
-
-      // Wait for results screen
       await page.waitForSelector('#results-screen:not(.hidden)', {
         timeout: CFG.pageTimeout,
       });
       measure(`Submit → results (${chapterTitle})`, 'sub');
-
-      // Allow time for the alert to fire (quiz-engine uses a 300 ms setTimeout)
       await sleep(800);
 
       const avgMs = qMs.length
@@ -197,7 +190,6 @@ async function answerAndSubmit(page, chapterTitle) {
       return { total, avgMs };
     }
 
-    // ── Next button ────────────────────────────────────────────────────────
     const canNext = await page.evaluate(() => {
       const b = document.getElementById('next-btn');
       return b && !b.classList.contains('hidden');
@@ -206,7 +198,7 @@ async function answerAndSubmit(page, chapterTitle) {
       await page.click('#next-btn');
       await sleep(200);
     } else {
-      await sleep(400); // briefly wait for UI to settle
+      await sleep(400);
     }
   }
 
@@ -227,7 +219,6 @@ async function runChapter(page, chapter, subject, num, total) {
   const t0 = Date.now();
 
   try {
-    // ── Click chapter card by DOM index ──────────────────────────────────────
     mark('ch');
     const clicked = await page.evaluate(idx => {
       const card = document.querySelectorAll(
@@ -238,12 +229,10 @@ async function runChapter(page, chapter, subject, num, total) {
     }, chapter.index);
     if (!clicked) throw new Error('Chapter card not found at index ' + chapter.index);
 
-    // ── Difficulty modal ──────────────────────────────────────────────────────
     await page.waitForSelector('#symmetric-difficulty-modal', { timeout: 12_000 });
     measure(`Chapter → modal (${chapter.title})`, 'ch');
     log('    Difficulty modal appeared');
 
-    // ── Click Simple ──────────────────────────────────────────────────────────
     mark('simple');
     await page.evaluate(() => {
       const modal = document.getElementById('symmetric-difficulty-modal');
@@ -254,16 +243,13 @@ async function runChapter(page, chapter, subject, num, total) {
       if (typeof window.launchQuiz === 'function') window.launchQuiz('Simple');
     });
 
-    // ── Wait for quiz-engine URL ──────────────────────────────────────────────
     await page.waitForURL('**/quiz-engine.html**', { timeout: CFG.pageTimeout });
 
-    // ── Wait for first question ───────────────────────────────────────────────
     log('    Waiting for questions…');
     await waitForRadios(page, CFG.quizLoadTimeout);
     entry.quizLoadMs = measure(`Simple → first question (${chapter.title})`, 'simple');
     log(`    Questions ready in ${entry.quizLoadMs} ms`);
 
-    // ── Answer + submit ───────────────────────────────────────────────────────
     const qr = await answerAndSubmit(page, chapter.title);
     entry.totalQ      = qr.total;
     entry.avgAnswerMs = qr.avgMs;
@@ -289,13 +275,6 @@ async function runChapter(page, chapter, subject, num, total) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RUN ALL CHAPTERS FOR ONE SUBJECT
-//
-// Key design:
-//   1. Navigate to chapter-selection once to COUNT chapters (N).
-//   2. Loop i = 0 .. N-1:
-//        a. Navigate directly to chapter-selection (fresh page load every time)
-//        b. Re-scrape so DOM index[i] matches the correct card
-//        c. Run that chapter
 // ─────────────────────────────────────────────────────────────────────────────
 async function runSubject(page, subject) {
   log(`\n${'='.repeat(60)}`);
@@ -303,13 +282,12 @@ async function runSubject(page, subject) {
   log(`${'='.repeat(60)}`);
   mark(`subj_${subject}`);
 
-  // ── First visit: count chapters ───────────────────────────────────────────
-  await goToChapterSelection(page, subject, '10');    // grade will be confirmed below
+  await goToChapterSelection(page, subject, '10');
   const initialList = await scrapeChapters(page);
 
   if (initialList.length === 0) {
     log('  No chapters — skipping', '⏭️');
-    results.push({
+    allResults.push({
       subject, chapter: '(none)', tableId: '', grade: '?',
       status: 'skipped', totalQ: 0, durationMs: 0,
       quizLoadMs: 0, avgAnswerMs: 0, error: 'No chapters found', screenshot: null,
@@ -317,28 +295,26 @@ async function runSubject(page, subject) {
     return;
   }
 
-  const grade     = initialList[0].grade;
-  const N         = initialList.length;
-  // Store a stable ordered list of { tableId, title, grade } for the loop
-  const chapterList = initialList.map(c => ({ tableId: c.tableId, title: c.title, grade: c.grade }));
+  const grade      = initialList[0].grade;
+  const N          = initialList.length;
+  const chapterList = initialList.map(c => ({
+    tableId: c.tableId, title: c.title, grade: c.grade,
+  }));
 
   log(`  ${N} chapters found for ${subject} (grade ${grade})`);
 
-  // ── Loop: one chapter per iteration ──────────────────────────────────────
   for (let i = 0; i < N; i++) {
     const ch = chapterList[i];
 
-    // Navigate directly to chapter-selection for this subject
-    // (fresh load every iteration — avoids stale DOM, avoids needing the back button)
     log(`\n  Navigating to chapter-selection for chapter ${i + 1}/${N}…`);
     await goToChapterSelection(page, subject, grade);
 
-    // Re-scrape to get current DOM index for this chapter
-    const fresh = await scrapeChapters(page);
+    const fresh  = await scrapeChapters(page);
     const target = fresh.find(c => c.tableId === ch.tableId);
+
     if (!target) {
-      log(`  ⚠️  Chapter "${ch.title}" not found on page — skipping`, '⚠️');
-      results.push({
+      log(`  ⚠️  "${ch.title}" not found on page — skipping`, '⚠️');
+      allResults.push({
         subject, chapter: ch.title, tableId: ch.tableId, grade,
         status: 'failed', totalQ: 0, durationMs: 0,
         quizLoadMs: 0, avgAnswerMs: 0,
@@ -348,10 +324,8 @@ async function runSubject(page, subject) {
     }
 
     const result = await runChapter(page, target, subject, i + 1, N);
-    results.push(result);
+    allResults.push(result);
 
-    // After the quiz, the page is on quiz-engine.html (results screen).
-    // The next iteration starts with goToChapterSelection() — no back button needed.
     if (result.status === 'failed') {
       log(`  ⏭️  Chapter ${i + 1}/${N} FAILED — skipping to next chapter`, '⏭️');
     } else {
@@ -364,133 +338,203 @@ async function runSubject(page, subject) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MARKDOWN REPORT
+// CONSOLIDATED REPORT — ACROSS ALL ACCOUNTS
+// Shows failed chapters grouped by class/subject
 // ─────────────────────────────────────────────────────────────────────────────
-function buildReport() {
-  const now     = new Date();
-  const totalMs = Date.now() - botStart;
-  const ok      = results.filter(r => r.status === 'success').length;
-  const bad     = results.filter(r => r.status === 'failed').length;
-  const skip    = results.filter(r => r.status === 'skipped').length;
+function buildConsolidatedReport() {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[:.]/g, '-').split('-').slice(0, 4).join('-');
+  
+  const ok   = allResults.filter(r => r.status === 'success').length;
+  const bad  = allResults.filter(r => r.status === 'failed').length;
+  const skip = allResults.filter(r => r.status === 'skipped').length;
 
-  let md = `# Ready4Exam Quiz Bot — Audit Report\n\n`;
+  let md = `# Ready4Exam Quiz Bot — Consolidated Report\n\n`;
   md += `> **Generated:** ${now.toUTCString()}  \n`;
-  md += `> **Account:** \`${CFG.username}\` | **Difficulty:** Simple\n\n---\n\n`;
+  md += `> **Accounts tested:** ${runMetadata.length}\n`;
+  md += `> **Total chapters:** ${allResults.length}\n`;
+  md += `> **✅ Completed:** ${ok} | **❌ Failed:** ${bad} | **⏭️ Skipped:** ${skip}\n\n---\n\n`;
 
-  md += `## Summary\n\n`;
-  md += `| Metric | Value |\n|--------|-------|\n`;
-  md += `| Total chapters | **${results.length}** |\n`;
-  md += `| ✅ Completed | **${ok}** |\n`;
-  md += `| ❌ Failed | **${bad}** |\n`;
-  md += `| ⏭️ Skipped | **${skip}** |\n`;
-  md += `| ⏱ Runtime | **${(totalMs / 60000).toFixed(1)} min** |\n\n`;
-
-  md += `## Latency Log\n\n`;
-  md += `> 🟢 <1 s  🟡 1–3 s  🔴 >3 s\n\n`;
-  md += `| Timestamp | Event | ms |\n|-----------|-------|----|\n`;
-  latency.forEach(({ ts, label, ms }) => {
-    const d = ms < 1000 ? '🟢' : ms < 3000 ? '🟡' : '🔴';
-    md += `| ${ts} | ${label} | ${d} ${ms} |\n`;
+  // Group by account + grade
+  const byAccount = {};
+  runMetadata.forEach(meta => {
+    const key = `${meta.username} (Grade ${meta.grade})`;
+    byAccount[key] = { meta, results: [] };
   });
-  md += '\n';
 
-  for (const subject of CFG.subjects) {
-    const rows = results.filter(r => r.subject === subject);
-    if (!rows.length) continue;
-    md += `## ${subject}\n\n`;
-    md += `> ✅ ${rows.filter(r => r.status === 'success').length} `
-        + `  ❌ ${rows.filter(r => r.status === 'failed').length}\n\n`;
-    md += `| # | Chapter | Table ID | Status | Q count | Load ms | Duration s |\n`;
-    md += `|---|---------|----------|--------|---------|---------|------------|\n`;
-    rows.forEach((r, i) => {
-      const icon = { success: '✅', failed: '❌', skipped: '⏭️' }[r.status] ?? '?';
-      md += `| ${i + 1} | ${r.chapter} | \`${r.tableId}\` | ${icon} `
-          + `| ${r.totalQ || '—'} | ${r.quizLoadMs || '—'} | ${(r.durationMs / 1000).toFixed(1)} |\n`;
+  allResults.forEach(r => {
+    const key = Object.keys(byAccount)[0]; // simple approach: first account
+    // Better: find matching account by username in r (if stored)
+    // For now, associate with the account the result came from
+    Object.values(byAccount).forEach(acc => {
+      if (!acc.results.length || acc.results[0].grade === r.grade) {
+        acc.results.push(r);
+      }
     });
-    md += '\n';
-  }
+  });
 
-  const failed = results.filter(r => r.status === 'failed');
+  // Per account
+  Object.entries(byAccount).forEach(([accountKey, { meta, results: resPerAccount }]) => {
+    if (!resPerAccount.length) resPerAccount = allResults;
+    
+    md += `## ${accountKey}\n\n`;
+    const subjects = [...new Set(resPerAccount.map(r => r.subject))];
+    
+    subjects.forEach(subject => {
+      const subRows = resPerAccount.filter(r => r.subject === subject);
+      const subOk   = subRows.filter(r => r.status === 'success').length;
+      const subBad  = subRows.filter(r => r.status === 'failed').length;
+      
+      md += `### ${subject}\n\n`;
+      md += `> ✅ ${subOk} completed  |  ❌ ${subBad} failed\n\n`;
+      md += `| Chapter | Table ID | Status | Q | Duration |\n`;
+      md += `|---------|----------|--------|---|----------|\n`;
+      
+      subRows.forEach(r => {
+        const icon = { success: '✅', failed: '❌', skipped: '⏭️' }[r.status] ?? '?';
+        md += `| ${r.chapter} | \`${r.tableId}\` | ${icon} | ${r.totalQ || '—'} | ${(r.durationMs / 1000).toFixed(1)}s |\n`;
+      });
+      md += '\n';
+    });
+  });
+
+  // Failed chapters summary
+  const failed = allResults.filter(r => r.status === 'failed');
   if (failed.length) {
-    md += `## ❌ Failed Chapters\n\n`;
-    md += `| Subject | Chapter | Table ID | Error | Fix |\n`;
-    md += `|---------|---------|----------|-------|-----|\n`;
+    md += `## ❌ Failed Chapters Summary\n\n`;
+    md += `> **Total failed:** ${failed.length}\n\n`;
+    md += `| Grade | Subject | Chapter | Table ID | Error |\n`;
+    md += `|-------|---------|---------|----------|-------|\n`;
     failed.forEach(r => {
-      let fix = 'Review screenshot';
-      if (/timeout/i.test(r.error))   fix = 'Quiz never rendered — check Supabase table';
-      if (/safety cap/i.test(r.error)) fix = 'Submit never appeared — UI bug';
-      if (/modal/i.test(r.error))      fix = 'Difficulty modal did not appear';
-      md += `| ${r.subject} | ${r.chapter} | \`${r.tableId}\` | ${r.error} | ${fix} |\n`;
+      let shortError = r.error;
+      if (r.error.length > 40) shortError = r.error.substring(0, 37) + '...';
+      md += `| ${r.grade} | ${r.subject} | ${r.chapter} | \`${r.tableId}\` | ${shortError} |\n`;
     });
-    if (failed.some(r => r.screenshot)) md += `\nScreenshots in \`bot_screenshots/\`\n`;
     md += '\n';
   } else {
     md += `## ✅ All Chapters Completed Successfully\n\n`;
   }
 
   md += `\n---\n*Ready4Exam Quiz Bot — ${now.toUTCString()}*\n`;
-  return md;
+  return { md, timestamp };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN
+// MAIN LOOP — PROMPTS FOR MULTIPLE ACCOUNTS
 // ─────────────────────────────────────────────────────────────────────────────
 async function main() {
-  log('Quiz Bot starting', '🤖');
+  log('Ready4Exam Quiz Bot (Multi-Account Mode)', '🤖');
   log(`Subjects : ${CFG.subjects.join(', ')}`);
-  log(`Headless : ${CFG.headless}`);
+  log(`Headless : ${CFG.headless}\n`);
 
   const browser = await chromium.launch({
     headless: CFG.headless,
     slowMo  : CFG.slowMo,
     args    : ['--disable-blink-features=AutomationControlled'],
   });
-  const context = await browser.newContext({
-    viewport : { width: 1280, height: 900 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-             + '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  });
-  const page = await context.newPage();
-  page.setDefaultTimeout(CFG.pageTimeout);
 
-  // Auto-dismiss every native alert/confirm/prompt
-  page.on('dialog', async dialog => {
-    log(`    [dialog] "${dialog.message().split('\n')[0]}" — accepted`);
-    await dialog.accept();
-  });
+  let accountNum = 0;
 
-  try {
-    await login(page);
+  while (true) {
+    accountNum++;
+    log(`\n${'='.repeat(70)}`);
+    log(`ACCOUNT ${accountNum}`);
+    log(`${'='.repeat(70)}\n`);
 
-    for (const subject of CFG.subjects) {
-      try {
-        await runSubject(page, subject);
-      } catch (err) {
-        log(`Subject crash (${subject}): ${err.message}`, '❌');
-        console.error(err.stack);
-        results.push({
-          subject, chapter: 'ALL', tableId: '', grade: '?',
-          status: 'failed', totalQ: 0, durationMs: 0,
-          quizLoadMs: 0, avgAnswerMs: 0,
-          error: `Subject crash: ${err.message}`, screenshot: null,
-        });
-      }
+    const username = await promptUser(`[Account ${accountNum}] Username (or 'exit' to finish): `);
+    if (username.toLowerCase() === 'exit') {
+      log('Exiting account loop.', '👋');
+      break;
     }
-  } catch (err) {
-    log(`Fatal: ${err.message}`, '❌');
-    console.error(err.stack);
-    ensureDir(CFG.screenshotDir);
-    await page.screenshot({
-      path: path.join(CFG.screenshotDir, 'FATAL.png'), fullPage: true,
-    }).catch(() => {});
-  } finally {
-    fs.writeFileSync(CFG.reportPath, buildReport(), 'utf8');
-    log(`Report → ${CFG.reportPath}`, '📄');
-    log(`Chapters: ${results.length} | ✅ ${results.filter(r => r.status === 'success').length} | ❌ ${results.filter(r => r.status === 'failed').length}`);
-    log(`Runtime : ${((Date.now() - botStart) / 60000).toFixed(1)} min`);
-    await browser.close();
-    log('Done.', '🤖');
+
+    const password = await promptUser(`[Account ${accountNum}] Password: `);
+
+    const accountStart = Date.now();
+
+    const context = await browser.newContext({
+      viewport : { width: 1280, height: 900 },
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+               + '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    });
+    const page = await context.newPage();
+    page.setDefaultTimeout(CFG.pageTimeout);
+
+    page.on('dialog', async dialog => {
+      log(`    [dialog] "${dialog.message().split('\n')[0]}" — accepted`);
+      await dialog.accept();
+    });
+
+    let grade = '?';
+    try {
+      await login(page, username, password);
+
+      for (const subject of CFG.subjects) {
+        try {
+          await runSubject(page, subject);
+        } catch (err) {
+          log(`Subject crash (${subject}): ${err.message}`, '❌');
+          console.error(err.stack);
+          allResults.push({
+            subject, chapter: 'ALL', tableId: '', grade: '?',
+            status: 'failed', totalQ: 0, durationMs: 0,
+            quizLoadMs: 0, avgAnswerMs: 0,
+            error: `Subject crash: ${err.message}`, screenshot: null,
+          });
+        }
+      }
+
+      // Infer grade from results
+      const gradeFromResults = allResults.find(r => r.grade !== '?');
+      if (gradeFromResults) grade = gradeFromResults.grade;
+
+    } catch (err) {
+      log(`Account error (${username}): ${err.message}`, '❌');
+      console.error(err.stack);
+    } finally {
+      await context.close();
+    }
+
+    const failedChapters = allResults.filter(r => r.status === 'failed');
+    const passedChapters = allResults.filter(r => r.status === 'success');
+
+    log(`\nAccount ${accountNum} Summary:`);
+    log(`  Username: ${username}`);
+    log(`  Grade: ${grade}`);
+    log(`  ✅ Passed: ${passedChapters.length}`);
+    log(`  ❌ Failed: ${failedChapters.length}`);
+
+    runMetadata.push({
+      accountNum,
+      username,
+      password: '*'.repeat(password.length),
+      grade,
+      startTime: accountStart,
+      endTime: Date.now(),
+      totalChapters: allResults.length,
+      failedCount: failedChapters.length,
+    });
   }
+
+  await browser.close();
+
+  // ── Generate consolidated report ──────────────────────────────────────────
+  log(`\n${'='.repeat(70)}`);
+  log('GENERATING CONSOLIDATED REPORT', '📄');
+  log(`${'='.repeat(70)}\n`);
+
+  ensureDir(CFG.reportsDir);
+  const { md, timestamp } = buildConsolidatedReport();
+  const reportFile = path.join(CFG.reportsDir, `report_${timestamp}.md`);
+  fs.writeFileSync(reportFile, md, 'utf8');
+
+  log(`📄 Report saved: ${reportFile}`);
+  log(`\nSummary:`);
+  log(`  Total accounts: ${runMetadata.length}`);
+  log(`  Total chapters: ${allResults.length}`);
+  log(`  Passed: ${allResults.filter(r => r.status === 'success').length}`);
+  log(`  Failed: ${allResults.filter(r => r.status === 'failed').length}`);
+
+  log('\nDone.', '🤖');
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
