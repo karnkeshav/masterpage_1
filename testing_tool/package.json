@@ -9,7 +9,7 @@
     "start": "node server.js",
     "audit": "node exhaustive_playwright_audit.js",
      "bot":     "node bot.js",
-    "bot_rit": "node bot_rit.js"
+    "bot_rit": "node bot_rit.js",
     "bot:headless": "HEADLESS=true node bot.js"
   },
   "keywords": [],
