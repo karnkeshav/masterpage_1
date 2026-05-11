@@ -658,10 +658,27 @@ window.loadStudentStats = async (uid, grade) => {
             </div>
         `;
 
-        // 5. Chapter Health Grid
+       // 5. Chapter Health Grid — Last 5 Unique Chapters Attempted
+        const recentChaptersSet = new Set();
+        const last5Chapters = [];
+        
+        // Collect last 5 unique chapters (snapshot.docs already ordered by timestamp DESC)
+        snapshot.docs.forEach((docSnap) => {
+            const data = docSnap.data();
+            const cleanChapter = formatChapterName(data.topicSlug || data.topic || data.chapter);
+            
+            if (!recentChaptersSet.has(cleanChapter)) {
+                recentChaptersSet.add(cleanChapter);
+                last5Chapters.push(cleanChapter);
+                if (last5Chapters.length >= 5) return;
+            }
+        });
+        
         const healthContainer = document.getElementById("chapter-health-grid");
         if (healthContainer) {
-            healthContainer.innerHTML = Object.entries(chapterStats).map(([chap, stats]) => {
+            healthContainer.innerHTML = last5Chapters.map(chap => {
+                const stats = chapterStats[chap];
+                if (!stats) return "";
                 const colorClass = getScoreColor(stats.highest);
                 return `
                     <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition">
@@ -678,6 +695,10 @@ window.loadStudentStats = async (uid, grade) => {
                 `;
             }).join("");
         }
+ 
+=================================================================================
+END OF student.js CHANGES
+==============================================================================
 
         // 6. Recent Activity List
         const columns = [
