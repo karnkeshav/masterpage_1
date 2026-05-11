@@ -33,6 +33,34 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        
+            /* Recent Activity Container — Scrollable with Last 10 Items */
+    #grid-container {
+        max-height: 600px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 8px;
+        scroll-behavior: smooth;
+    }
+ 
+    /* Custom Scrollbar Styling */
+    #grid-container::-webkit-scrollbar {
+        width: 6px;
+    }
+ 
+    #grid-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+ 
+    #grid-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+ 
+    #grid-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
     </style>
 
     <script src="../../js/firebase-master-config.js"></script>
