@@ -34,33 +34,30 @@
             font-family: 'Inter', sans-serif;
         }
         
-            /* Recent Activity Container — Scrollable with Last 10 Items */
+    /* Recent Activity Container — Fixed height with Scroll */
     #grid-container {
-        max-height: 600px;
+        max-height: 520px; /* Adjusted for better fit */
         overflow-y: auto;
         overflow-x: hidden;
-        padding-right: 8px;
+        padding-right: 12px;
         scroll-behavior: smooth;
     }
- 
-    /* Custom Scrollbar Styling */
+
+    /* Custom Scrollbar */
     #grid-container::-webkit-scrollbar {
-        width: 6px;
+        width: 4px;
     }
- 
     #grid-container::-webkit-scrollbar-track {
-        background: transparent;
+        background: #f1f5f9;
+        border-radius: 10px;
     }
- 
     #grid-container::-webkit-scrollbar-thumb {
         background: #cbd5e1;
-        border-radius: 3px;
+        border-radius: 10px;
     }
- 
     #grid-container::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+        background: #1a3e6a;
     }
-
     </style>
 
     <script src="../../js/firebase-master-config.js"></script>
@@ -314,8 +311,11 @@
 
             <!-- Recent Activity -->
             <div class="lg:col-span-2">
-                <h3 class="font-bold text-slate-900 text-lg mb-6">Recent Activity</h3>
-                <div id="grid-container">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="font-bold text-slate-900 text-lg">Recent Performance</h3>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Scroll for history</span>
+                </div>
+                <div id="grid-container" class="pr-2">
                     <!-- Injected -->
                 </div>
             </div>

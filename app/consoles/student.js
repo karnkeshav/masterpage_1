@@ -658,72 +658,54 @@ window.loadStudentStats = async (uid, grade) => {
             </div>
         `;
 
-       // 5. Chapter Health Grid — Last 5 Unique Chapters Attempted
-        const recentChaptersSet = new Set();
-        const last5Chapters = [];
-        
-        // Collect last 5 unique chapters (snapshot.docs already ordered by timestamp DESC)
-        snapshot.docs.forEach((docSnap) => {
-            const data = docSnap.data();
-            const cleanChapter = formatChapterName(data.topicSlug || data.topic || data.chapter);
-            
-            if (!recentChaptersSet.has(cleanChapter)) {
-                recentChaptersSet.add(cleanChapter);
-                last5Chapters.push(cleanChapter);
-                if (last5Chapters.length >= 5) return;
-            }
-        });
-        
+        // 5. UPDATED: Chapter Health Grid (Top 5 by Highest Score)
         const healthContainer = document.getElementById("chapter-health-grid");
         if (healthContainer) {
-            healthContainer.innerHTML = last5Chapters.map(chap => {
-                const stats = chapterStats[chap];
-                if (!stats) return "";
-                const colorClass = getScoreColor(stats.highest);
+            const topPerformers = Object.entries(chapterStats)
+                .map(([name, stats]) => ({ name, ...stats }))
+                .sort((a, b) => b.highest - a.highest) // Sort by Score DESC
+                .slice(0, 5); // Take only Top 5
+
+            healthContainer.innerHTML = topPerformers.map(chap => {
+                const colorClass = getScoreColor(chap.highest);
                 return `
                     <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition">
                         <div>
-                            <h4 class="font-bold text-slate-800 text-sm truncate" title="${sanitize(chap)}">${sanitize(chap)}</h4>
-                            <div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Highest Score</div>
-                            <div class="text-2xl font-black ${colorClass}">${stats.highest}%</div>
+                            <h4 class="font-bold text-slate-800 text-sm truncate" title="${sanitize(chap.name)}">${sanitize(chap.name)}</h4>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Personal Best</div>
+                            <div class="text-2xl font-black ${colorClass}">${chap.highest}%</div>
                         </div>
                         <div class="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
                             <span class="text-xs text-slate-500 font-medium">Grit (Attempts)</span>
-                            <span class="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">${stats.attempts}</span>
+                            <span class="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">${chap.attempts}</span>
                         </div>
                     </div>
                 `;
             }).join("");
         }
- 
-//=================================================================================
-//END OF student.js CHANGES
-//==============================================================================
 
-        // 6. Recent Activity List
+        // 6. Recent Activity List (Increased to 30 items to utilize the scroll)
         const columns = [
             { key: 'subject', header: 'Subject', cell: (item) => `<span class="font-bold text-cbse-blue">${item.subject}</span>` },
             { key: 'chapter', header: 'Chapter', cell: (item) => `<span class="text-sm font-medium text-slate-600">${item.chapter}</span>` },
-            { key: 'difficulty', header: 'Difficulty', cell: (item) => `<span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500">${item.difficulty}</span>` },
-            { key: 'percentage', header: 'Score', cell: (item) => `<span class="font-mono font-bold ${getScoreColor(item.percentage)}">${item.percentage}%</span>` },
-            { key: 'date', header: 'Date', cell: (item) => `<span class="text-xs text-slate-400">${item.date}</span>` }
+            { key: 'date', header: 'Date', cell: (item) => `<span class="text-xs text-slate-400">${item.date}</span>` },
+            { key: 'percentage', header: 'Score', cell: (item) => `<span class="font-mono font-bold ${getScoreColor(item.percentage)}">${item.percentage}%</span>` }
         ];
 
-        const cardRenderer = (item) => `
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center mb-2">
-                <div>
-                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">${item.subject}</div>
-                    <div class="font-bold text-slate-800">${item.chapter}</div>
-                    <div class="text-xs text-slate-500 mt-1">${item.date}</div>
-                </div>
-                <div class="text-right">
+        UI.renderResponsiveGrid(
+            document.getElementById("grid-container"),
+            gridData.slice(0, 30), // Show more items
+            columns,
+            (item) => `
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center mb-2">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">${item.subject} • ${item.date}</div>
+                        <div class="font-bold text-slate-800">${item.chapter}</div>
+                    </div>
                     <div class="text-xl font-black ${getScoreColor(item.percentage)}">${item.percentage}%</div>
-                    <div class="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded mt-1">${item.difficulty}</div>
                 </div>
-            </div>
-        `;
-
-        UI.renderResponsiveGrid(document.getElementById("grid-container"), gridData.slice(0, 10), columns, cardRenderer);
+            `
+        );
 
     } catch (e) {
         console.error("Dashboard Sync Failed:", e);
