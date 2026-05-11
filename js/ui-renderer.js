@@ -147,7 +147,7 @@ function generateOptionHtml(q, opt, selected, submitted, labelText) {
                 ${isSel ? "checked" : ""} ${submitted ? "disabled" : ""}>
             <div class="flex items-start p-4 border-2 rounded-xl transition-colors ${cls}">
                 <span class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-gray-100 font-bold mr-4">${opt}</span>
-                <span class="font-medium">${cleanKatexMarkers(text)}</span>
+                <span class="font-medium break-words min-w-0">${cleanKatexMarkers(text)}</span>
             </div>
         </label>`;
 }
@@ -162,7 +162,7 @@ export function renderQuestion(q, idx, selected, submitted) {
     if (type.includes("ar") || type.includes("assertion")) {
         els.list.innerHTML = `
             <div class="space-y-6">
-                <div class="text-xl font-extrabold text-slate-900">Q${idx}. Assertion (A): ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
+                <div class="text-xl font-extrabold text-slate-900 break-words">Q${idx}. Assertion (A): ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
                 <div class="bg-blue-50 p-6 rounded-2xl border-l-4 border-blue-600">
                     <span class="text-xs font-black uppercase tracking-widest text-blue-600">Reason (R)</span>
                     <div class="text-lg font-bold text-slate-800">${cleanKatexMarkers(localizedValue(q, "scenario_reason"))}</div>
@@ -179,7 +179,7 @@ export function renderQuestion(q, idx, selected, submitted) {
         els.list.innerHTML = `
             <div class="grid md:grid-cols-2 gap-8">
                 <div class="order-2 md:order-1">
-                    <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
+                    <div class="text-xl font-extrabold break-words">Q${idx}: ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
                     <div class="grid gap-3 mt-4">
                         ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted)).join("")}
                     </div>
@@ -193,7 +193,7 @@ export function renderQuestion(q, idx, selected, submitted) {
 
     els.list.innerHTML = `
         <div class="space-y-6">
-            <div class="text-xl font-extrabold">Q${idx}: ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
+            <div class="text-xl font-extrabold break-words">Q${idx}: ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
             <div class="grid gap-3">
                 ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted)).join("")}
             </div>
