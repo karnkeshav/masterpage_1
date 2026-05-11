@@ -29,7 +29,8 @@ const CFG = {
   headless     : process.env.HEADLESS === 'true',
   slowMo       : 80,
   pageTimeout  : 60_000,
-  quizTimeout  : 120_000,
+  quizLoadTimeout: 45_000,   // max wait for first question to appear
+  quizTimeout  : 120_000,   // max wait per question during answering
   screenshotDir: path.join(__dirname, 'bot_screenshots'),
   reportPath   : path.join(__dirname, 'quiz_bot_report.md'),
 };
@@ -62,9 +63,9 @@ const OPTIONS = ['A', 'B', 'C', 'D'];
 function rnd() { return OPTIONS[Math.floor(Math.random() * 4)]; }
 
 // Radio inputs are class="hidden" — use state:'attached', never 'visible'
-async function waitForRadios(page) {
+async function waitForRadios(page, timeout) {
   await page.waitForSelector('#question-list input[type="radio"]', {
-    state: 'attached', timeout: CFG.quizTimeout,
+    state: 'attached', timeout: timeout ?? CFG.quizTimeout,
   });
 }
 
@@ -258,7 +259,7 @@ async function runChapter(page, chapter, subject, num, total) {
 
     // ── Wait for first question ───────────────────────────────────────────────
     log('    Waiting for questions…');
-    await waitForRadios(page);
+    await waitForRadios(page, CFG.quizLoadTimeout);
     entry.quizLoadMs = measure(`Simple → first question (${chapter.title})`, 'simple');
     log(`    Questions ready in ${entry.quizLoadMs} ms`);
 
@@ -351,7 +352,11 @@ async function runSubject(page, subject) {
 
     // After the quiz, the page is on quiz-engine.html (results screen).
     // The next iteration starts with goToChapterSelection() — no back button needed.
-    log(`  Chapter ${i + 1}/${N} done. Moving to next…`);
+    if (result.status === 'failed') {
+      log(`  ⏭️  Chapter ${i + 1}/${N} FAILED — skipping to next chapter`, '⏭️');
+    } else {
+      log(`  Chapter ${i + 1}/${N} done. Moving to next…`);
+    }
   }
 
   measure(`Subject total: ${subject}`, `subj_${subject}`);
