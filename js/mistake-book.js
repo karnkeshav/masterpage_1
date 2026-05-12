@@ -173,15 +173,21 @@ function getQuestionType(id) {
 function processData(scoreDocs) {
     const subjectScores = {};
     const topicHistory = {};
+
     scoreDocs.forEach(d => {
         const data = d.data();
         const topic = data.topic || data.topicSlug || data.chapter_slug;
         if (!topic) return;
+
         const { subject, chapterName } = getSubjectContext(topic);
         const score = parseFloat(data.percentage || data.score_percent || data.score || 0);
         const diff = (data.difficulty || 'simple').toLowerCase();
+
+        // 1. Handle Subject Stats for Bar Charts
         if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
         if (subjectScores[subject][diff]) subjectScores[subject][diff].push(score);
+
+        // 2. Map Proficiency (Overall Stats)
         (data.mistakes || []).forEach(m => {
             const type = getQuestionType(m.id || m.question_id || m.question || m.question_text);
             state.proficiency[type].mistakes++;
@@ -189,46 +195,74 @@ function processData(scoreDocs) {
         state.proficiency.MCQ.total += 6;
         state.proficiency.AR.total += 2;
         state.proficiency.CB.total += 2;
+
+        // 3. Group attempts by topic and difficulty to find "Fixes"
         if (!topicHistory[topic]) topicHistory[topic] = {};
         if (!topicHistory[topic][diff]) topicHistory[topic][diff] = [];
-        topicHistory[topic][diff].push({ mistakes: data.mistakes || [], timestamp: data.timestamp ? data.timestamp.toDate() : new Date() });
+        
+        topicHistory[topic][diff].push({ 
+            mistakes: data.mistakes || [], 
+            timestamp: data.timestamp ? data.timestamp.toDate() : new Date() 
+        });
     });
 
+    // Calculate Averages for Charts
     Object.keys(subjectScores).forEach(subj => {
         const s = subjectScores[subj];
         const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
         state.subjectStats[subj] = { simple: avg(s.simple), medium: avg(s.medium), advanced: avg(s.advanced) };
     });
 
+    // 4. Determine Friction vs Victory per Chapter
     Object.entries(topicHistory).forEach(([topic, difficulties]) => {
         const { subject, chapterName } = getSubjectContext(topic);
+
         Object.entries(difficulties).forEach(([diff, attempts]) => {
+            // Sort by date descending (latest first)
             attempts.sort((a, b) => b.timestamp - a.timestamp);
-            const allMistakes = new Map();
-            if (!state.friction[subject]) state.friction[subject] = {};
-            if (!state.friction[subject][chapterName]) state.friction[subject][chapterName] = [];
-            let hasRealMistakes = false;
+
+            const latestAttempt = attempts[0];
+            const previousAttempts = attempts.slice(1);
+
+            // Set of IDs currently wrong
+            const currentMistakeIds = new Set(
+                latestAttempt.mistakes.map(m => m.id || m.question_id || m.question || m.question_text)
+            );
+
+            // Map of all unique questions ever failed in this chapter
+            const allFailedQuestions = new Map();
             attempts.forEach(att => {
-                if (att.mistakes?.length > 0) hasRealMistakes = true;
-                (att.mistakes || []).forEach(m => {
-                    const mId = m.id || m.question_id || m.question || m.question_text;
-                    if (!mId) return;
-                    if (!allMistakes.has(mId)) {
-                        allMistakes.set(mId, { id: mId, text: m.question || m.question_text || "Unavailable", type: getQuestionType(mId), dates: [], topic, difficulty: diff });
+                att.mistakes.forEach(m => {
+                    const id = m.id || m.question_id || m.question || m.question_text;
+                    if (!allFailedQuestions.has(id)) {
+                        allFailedQuestions.set(id, {
+                            id: id,
+                            text: m.question || m.question_text || "Unavailable",
+                            type: getQuestionType(id),
+                            dates: [],
+                            topic,
+                            difficulty: diff
+                        });
                     }
-                    allMistakes.get(mId).dates.push(att.timestamp);
+                    allFailedQuestions.get(id).dates.push(att.timestamp);
                 });
             });
-            if (!hasRealMistakes) return;
-            const latestIds = new Set((attempts[0].mistakes || []).map(m => m.id || m.question_id || m.question || m.question_text).filter(Boolean));
-            const prevIds = new Set();
-            attempts.slice(1).forEach(att => att.mistakes?.forEach(m => prevIds.add(m.id || m.question_id || m.question || m.question_text)));
-            allMistakes.forEach((data, id) => {
-                if (prevIds.has(id) && !latestIds.has(id)) {
-                    addToState('victory', subject, chapterName, { ...data, masteryDate: attempts[0].timestamp.toDateString() });
-                    state.victoryCount++;
+
+            // DISTRIBUTE TO STATE
+            allFailedQuestions.forEach((qData, id) => {
+                if (currentMistakeIds.has(id)) {
+                    // It is still wrong in the latest attempt -> FRICTION
+                    addToState('friction', subject, chapterName, qData);
                 } else {
-                    addToState('friction', subject, chapterName, data);
+                    // It was wrong before, but NOT in the latest attempt -> VICTORY
+                    const masteryDate = latestAttempt.timestamp.toLocaleDateString('en-US', { 
+                        month: 'short', day: 'numeric', year: 'numeric' 
+                    });
+                    addToState('victory', subject, chapterName, { 
+                        ...qData, 
+                        masteryDate: masteryDate 
+                    });
+                    state.victoryCount++;
                 }
             });
         });
