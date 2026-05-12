@@ -168,6 +168,11 @@ export async function routeUser(user) {
             }
             return;
         }
+        if (!data.school_id) {
+            console.error(LOG, `School user role="${data.role}" has no school_id — signing out`);
+            await signOut();
+            return;
+        }
         window.location.href = `app/consoles/${data.role}.html?schoolId=${data.school_id}`;
         return;
     }

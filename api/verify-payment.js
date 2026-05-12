@@ -55,6 +55,10 @@ module.exports = async (req, res) => {
 
         // 2. VERIFY SIGNATURE
         const secret = process.env.RAZORPAY_KEY_SECRET;
+        if (!secret) {
+            console.error("RAZORPAY_KEY_SECRET env var is not set.");
+            return res.status(500).json({ error: 'Payment gateway misconfigured. Contact support.' });
+        }
         const generatedSignature = crypto
             .createHmac('sha256', secret)
             .update(razorpay_order_id + '|' + razorpay_payment_id)
@@ -105,7 +109,11 @@ module.exports = async (req, res) => {
                 userRecord = await auth.getUser(stableUid);
             }
         } catch (err) {
-            await pendingRef.update({ status: 'pending' }); 
+            // Mark as 'failed' — NOT back to 'pending'. Rolling back to 'pending'
+            // creates a race window where a concurrent retry could create a duplicate
+            // Firebase Auth account for the same payment. 'failed' is a terminal state;
+            // the admin must manually investigate before re-processing.
+            await pendingRef.update({ status: 'failed', failReason: err.message }).catch(() => {});
             throw err;
         }
 

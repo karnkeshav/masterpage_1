@@ -1,54 +1,41 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Ready4Exam — Board-Aligned Academic Portal</title>
+    <title>Ready4Exam — Board-Aligned Academic Portal</title>
 
-<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
+    </script>
 
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <link href="./css/global.css" rel="stylesheet">
+    <script src="js/firebase-master-config.js"></script>
 
-</script>
+    <style>
+        .whatsapp-float {
+            position: fixed; bottom: 80px; right: 20px;
+            background-color: #25d366; color: white;
+            width: 55px; height: 55px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            z-index: 90; transition: transform 0.3s;
+            text-decoration: none;
+        }
+        .whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
+        @media(min-width:1024px){ .whatsapp-float{ bottom: 30px; right: 30px; } }
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-<script src="./js/tailwind-config.js"></script>
-<link href="./css/global.css" rel="stylesheet">
-<script src="js/firebase-master-config.js"></script>
-
-
-
-<style>
-/* --- BASE & UTILS --- */
-
-
-
-
-.whatsapp-float {
-  position: fixed; bottom: 80px; right: 20px;
-  background-color: #25d366; color: white;
-  width: 55px; height: 55px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
-  z-index: 90; transition: transform 0.3s;
-  text-decoration: none;
-}
-.whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
-@media(min-width:1024px){ .whatsapp-float{ bottom: 30px; right: 30px; } }
-
-/* Hide scrollbar for horizontal scroll */
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
         .animate-marquee { animation: marquee 60s linear infinite; }
         @keyframes marquee {
@@ -60,7 +47,6 @@
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen">
 
-<!-- Header -->
 <div id="app-header"></div>
 <script>R4E.renderHeader({
     title: 'Ready4<span class="text-white">Exam</span>',
@@ -69,7 +55,6 @@
     showInbox: false
 });</script>
 
-<!-- Section 1: Hero & Login -->
 <section class="bg-hero-grad text-white py-12 lg:py-20 px-4 relative overflow-hidden">
   <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10">
     <div class="flex-1 text-center lg:text-left">
@@ -105,7 +90,6 @@
           </button>
       </form>
 
-      <!-- Forgot Password Modal -->
       <div id="forgot-password-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div class="bg-slate-900 border border-white/10 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
               <button id="close-forgot-modal" class="absolute top-4 right-4 text-white/50 hover:text-white transition">
@@ -137,12 +121,10 @@
   </div>
 </section>
 
-<!-- Section 2: Quiz + Request Side-by-Side -->
 <section class="py-16 px-4 bg-white border-b border-slate-200">
   <div class="max-w-7xl mx-auto">
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
 
-      <!-- LEFT: Try a Quiz Now (60%) -->
       <div class="lg:col-span-3">
         <div class="text-center mb-10">
           <h2 class="text-3xl font-black text-cbse-blue mb-2">Try a Quiz Now</h2>
@@ -151,8 +133,6 @@
 
         <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
-            <!-- Board -->
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
               <div class="flex gap-2">
@@ -161,7 +141,6 @@
               </div>
             </div>
 
-            <!-- Class -->
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
               <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadSubjects()">
@@ -169,7 +148,6 @@
               </select>
             </div>
 
-            <!-- Subject -->
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
               <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadChapters()">
@@ -177,17 +155,14 @@
               </select>
             </div>
 
-            <!-- Chapter -->
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
               <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="checkChapter()">
                 <option value="">Select Subject first...</option>
               </select>
             </div>
-
           </div>
 
-          <!-- Difficulty & Start -->
           <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
             <div class="flex-1 w-full">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
@@ -197,28 +172,25 @@
                 <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Advanced" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Advanced</button>
               </div>
             </div>
-            <div class="flex-1 w-full">
-              <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" onclick="startQuiz()">
-                <i class="fas fa-play-circle"></i> Start Quiz
-              </button>
-              <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
+            <div class="flex shrink-0 justify-center md:justify-end">
+              <div class="w-full flex flex-col items-center md:items-end">
+                <button id="start-quiz-btn" class="bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]" disabled="">
+                  <i class="fas fa-play-circle"></i> Start Quiz
+                </button>
+                <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
+              </div>
             </div>
           </div>
 
-          <!-- Other Board Fallback -->
           <div id="other-board-msg" class="hidden mt-6 text-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
             <p class="text-sm text-cbse-blue font-medium mb-2">We are actively building for more boards!</p>
             <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding ↓</a>
           </div>
-
         </div>
       </div>
 
-      <!-- RIGHT: Don't see your board? (40%) -->
       <div id="request-section" class="lg:col-span-2">
         <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm h-full flex flex-col justify-center">
-
-          <!-- Heading -->
           <div class="text-center mb-6">
             <div class="bg-gold/20 text-gold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">🚀</div>
             <h2 class="text-2xl font-black text-heading mb-2">Don't see your board?</h2>
@@ -227,7 +199,6 @@
             </p>
           </div>
 
-          <!-- Form -->
           <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
             <div>
               <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Board</label>
@@ -246,11 +217,9 @@
             </button>
           </form>
 
-          <!-- WhatsApp fallback -->
           <p class="text-center mt-4 text-[11px] text-slate-400">
             or <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20want%20to%20request%20a%20new%20board." class="text-green-600 font-bold hover:underline"><i class="fab fa-whatsapp"></i> message us on WhatsApp</a>
           </p>
-
         </div>
       </div>
 
@@ -258,7 +227,6 @@
   </div>
 </section>
 
-<!-- Section 3: Platform Features -->
 <section id="get-started" class="py-16 px-4 bg-slate-50 border-b border-slate-200">
   <div class="max-w-6xl mx-auto">
     <div class="text-center mb-12">
@@ -267,8 +235,6 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-      <!-- Knowledge Hub -->
       <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-center gap-3 mb-4 text-cbse-blue">
           <div class="bg-blue-50 p-2 rounded-lg"><i class="fas fa-chart-pie text-xl"></i></div>
@@ -278,13 +244,11 @@
         <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
           <img src="images/dashboard-subject-navigator.png" alt="Subject Navigator Dashboard" class="w-full h-auto rounded-xl">
         </div>
-
-      <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
+        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
+        </div>
       </div>
-    </div>
 
-      <!-- Parent Dashboard -->
       <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-center gap-3 mb-4 text-indigo-600">
           <div class="bg-indigo-50 p-2 rounded-lg"><i class="fas fa-user-friends text-xl"></i></div>
@@ -294,13 +258,11 @@
         <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
           <img src="images/dashboard-parent-console.png" alt="Parent Console Dashboard" class="w-full h-auto rounded-xl">
         </div>
-
-      <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after subscription</span>
+        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after subscription</span>
+        </div>
       </div>
-    </div>
 
-      <!-- Mistake Notebook -->
       <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-center gap-3 mb-4 text-purple-600">
           <div class="bg-purple-50 p-2 rounded-lg"><i class="fas fa-book-open text-xl"></i></div>
@@ -315,7 +277,6 @@
         </div>
       </div>
 
-      <!-- Student Dashboard -->
       <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
         <div class="flex items-center gap-3 mb-4 text-red-600">
           <div class="bg-red-50 p-2 rounded-lg"><i class="fas fa-book-dead text-xl"></i></div>
@@ -329,18 +290,16 @@
           <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
         </div>
       </div>
-
     </div>
-      <div class="text-center mt-10">
-        <a href="offering.html" class="inline-flex items-center gap-2 bg-slate-900 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:bg-slate-800 transition transform hover:scale-105">
-          <i class="fas fa-user-plus"></i> Get Started — Subscribe Today
-        </a>
-      </div>
 
+    <div class="text-center mt-10">
+      <a href="offering.html" class="inline-flex items-center gap-2 bg-slate-900 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:bg-slate-800 transition transform hover:scale-105">
+        <i class="fas fa-user-plus"></i> Get Started — Subscribe Today
+      </a>
+    </div>
   </div>
 </section>
 
-<!-- Section 4: Testimonials -->
 <section class="py-16 px-4 bg-white border-b border-slate-200 overflow-hidden">
   <div class="max-w-6xl mx-auto overflow-hidden relative">
     <div class="text-center mb-10">
@@ -348,7 +307,6 @@
       <h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2>
     </div>
 
-    <!-- Horizontal scroll container -->
     <div class="flex gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 animate-marquee hover:[animation-play-state:paused]">
       <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
         <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
@@ -421,82 +379,9 @@
           <div><p class="text-xs font-bold text-heading uppercase">- School Principal</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
         </div>
       </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 10</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The instant feedback and mistake notebook are game-changers. I don't repeat the same errors in exams anymore."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 9</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The advanced questions mirror the actual board exams perfectly. This is the ultimate prep tool for final revisions."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 12</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The parent console gives me peace of mind. I can see exactly where my daughter needs help without constantly asking her."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍👧</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Tracking progress has never been easier. The platform clearly identifies weak areas so we know what to focus on."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍👦</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The curriculum alignment is spot-on. I use the platform's case-based questions directly in my classroom discussions."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Science Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The quality of questions is outstanding. It challenges the top students while providing a foundational path for those struggling."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Math Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Adopting Ready4Exam has transformed our institutional approach. The heatmap analytics allow us to target interventions effectively."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- School Principal</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
     </div>
   </div>
 </section>
-
 
 <div id="app-footer"></div>
 <script>R4E.renderFooter();</script>
@@ -505,21 +390,17 @@
   <i class="fab fa-whatsapp"></i>
 </a>
 
-<!-- AUTH LOGIC -->
 <script type="module" src="./js/index-auth.js"></script>
-
-<!-- WIDGET LOGIC -->
 <script type="module" src="./js/index-quiz-widget.js"></script>
-
-<!-- GUEST TEASERS: Wire Medium/Advanced locked buttons -->
 <script type="module">
     import { wireIndexDifficultyTeasers } from './js/guest-teasers.js';
-    // Wait for DOM so the buttons exist
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', wireIndexDifficultyTeasers);
     } else {
         wireIndexDifficultyTeasers();
     }
 </script>
+<script type="module" src="./js/guest-google-auth.js"></script>
 
-</body></html>
+</body>
+</html>

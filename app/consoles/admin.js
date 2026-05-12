@@ -911,7 +911,7 @@ window.submitAddModal = async (role) => {
                     const chapterQuery = query(
                         collection(db, "chapter_control"),
                         where("grade", "==", studentGrade),
-                        where("section", "==", studentGrade + studentSection),
+                        where("section", "==", `${studentGrade}-${studentSection}`),
                         where("school_id", "==", studentSchoolId),
                         where("status", "==", "finished")
                     );
@@ -1028,6 +1028,7 @@ window.handleCSVUpload = async (event) => {
                         // Auto-create student account
                         const csvGrade = row[2] || '9';
                         const csvSection = row[3] || 'A';
+                        const csvParentEmail = (row[4] || '').trim();
                         if (!secondaryAuth) {
                             window.logMessage(`Skipped ${email}: Secondary auth not initialized.`, true);
                             errorCount++;
@@ -1053,6 +1054,52 @@ window.handleCSVUpload = async (event) => {
                             });
                             window.logMessage(`Created student ${email} in ${csvGrade}-${csvSection}`);
 
+                            // --- Parent Verification / Creation ---
+                            let parentId = null;
+                            if (csvParentEmail) {
+                                try {
+                                    const parentQuery = query(collection(db, "users"), where("email", "==", csvParentEmail), where("role", "==", "parent"));
+                                    const parentSnap = await getDocs(parentQuery);
+
+                                    if (parentSnap.empty) {
+                                        try {
+                                            const parentCred = await createUserWithEmailAndPassword(secondaryAuth, csvParentEmail, "Ready4Exam@2026");
+                                            parentId = parentCred.user.uid;
+                                            await signOut(secondaryAuth);
+                                            await setDoc(doc(db, "users", parentId), {
+                                                displayName: "Parent User",
+                                                email: csvParentEmail,
+                                                uid: parentId,
+                                                role: "parent",
+                                                school_id: currentSchoolId,
+                                                tenantType: "school",
+                                                setupComplete: false,
+                                                created_at: serverTimestamp(),
+                                                updated_at: serverTimestamp()
+                                            }, { merge: true });
+                                            window.logMessage(`Created parent account for ${csvParentEmail}`);
+                                        } catch (parentAuthErr) {
+                                            if (parentAuthErr.code === 'auth/email-already-in-use') {
+                                                window.logMessage(`Parent auth exists but no profile for ${csvParentEmail} — skipping parent link.`, true);
+                                            } else {
+                                                throw parentAuthErr;
+                                            }
+                                        }
+                                    } else {
+                                        parentId = parentSnap.docs[0].id;
+                                        window.logMessage(`Linked existing parent ${csvParentEmail}`);
+                                    }
+                                } catch (parentErr) {
+                                    window.logMessage(`Failed to link parent ${csvParentEmail}: ${parentErr.message}`, true);
+                                }
+                            }
+
+                            // --- Atomic Linking ---
+                            if (parentId) {
+                                await updateDoc(doc(db, "users", userId), { parent_id: parentId });
+                                await updateDoc(doc(db, "users", parentId), { linked_children: arrayUnion(userId) });
+                            }
+
                             // GAP 1 FIX: Retroactive notifications for CSV-created student
                             try {
                                 const chapterQuery = query(
@@ -1068,7 +1115,7 @@ window.handleCSVUpload = async (event) => {
                                     const ch = chDoc.data();
                                     retroNotifs.push(addDoc(collection(db, "student_notifications"), {
                                         student_id: userId,
-                                        parent_id: null,
+                                        parent_id: parentId,
                                         type: "TEST_ASSIGNED",
                                         topicSlug: ch.chapter_slug,
                                         chapter_title: ch.chapter_title,
@@ -1097,6 +1144,44 @@ window.handleCSVUpload = async (event) => {
                             errorCount++;
                             continue;
                         }
+                    } else if (role === 'teacher') {
+                        // Auto-provision new teacher account
+                        const csvDiscipline = (row[5] || '').trim();
+                        if (!csvDiscipline) {
+                            window.logMessage(`Skipped ${email}: Missing Discipline column for new teacher.`, true);
+                            errorCount++;
+                            continue;
+                        }
+                        if (!secondaryAuth) {
+                            window.logMessage(`Skipped ${email}: Secondary auth not initialized.`, true);
+                            errorCount++;
+                            continue;
+                        }
+                        try {
+                            const teacherCred = await createUserWithEmailAndPassword(secondaryAuth, email, "Ready4Exam@2026");
+                            userId = teacherCred.user.uid;
+                            await signOut(secondaryAuth);
+                            await setDoc(doc(db, "users", userId), {
+                                displayName: email.split('+')[1]?.split('@')[0] || email.split('@')[0],
+                                email: email,
+                                uid: userId,
+                                role: 'teacher',
+                                school_id: currentSchoolId,
+                                tenantType: "school",
+                                setupComplete: false,
+                                created_at: serverTimestamp()
+                            });
+                            window.logMessage(`Created teacher ${email}`);
+                            // Falls through to teacher mapping block below
+                        } catch (createErr) {
+                            if (createErr.code === 'auth/email-already-in-use') {
+                                window.logMessage(`Skipped ${email}: Auth account exists outside this school. Add manually.`, true);
+                            } else {
+                                window.logMessage(`Failed to create teacher ${email}: ${createErr.message}`, true);
+                            }
+                            errorCount++;
+                            continue;
+                        }
                     } else {
                         window.logMessage(`Skipped ${email}: User not found in school.`, true);
                         errorCount++;
@@ -1108,8 +1193,8 @@ window.handleCSVUpload = async (event) => {
                 }
 
                 if (role === 'teacher') {
-                    const targetGrade = row[3] || '9';
-                    const targetSection = row[4];
+                    const targetGrade = row[2] || '9';
+                    let targetSection = row[3];
                     const targetDiscipline = row[5];
 
                     if (!targetSection || !targetDiscipline) {
@@ -1118,14 +1203,27 @@ window.handleCSVUpload = async (event) => {
                         continue; // Skip this row
                     }
 
+                    // Normalize section: must be a single letter A-Z. CSVs sometimes put a
+                    // second grade number (e.g. "10" for "Science teacher 8-10") — default
+                    // those to "A" so we never write malformed sections like "810".
+                    if (!/^[A-Z]$/i.test(String(targetSection).trim())) {
+                        window.logMessage(`Section '${targetSection}' for ${email} is not a letter — defaulting to 'A'.`, true);
+                        targetSection = 'A';
+                    } else {
+                        targetSection = String(targetSection).trim().toUpperCase();
+                    }
+
                     const curriculumData = await loadCurriculum(targetGrade);
                     let hasMapping = false;
-                    if (curriculumData["Science"] && curriculumData["Science"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["Social Science"] && curriculumData["Social Science"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["Mathematics"] && curriculumData["Mathematics"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["English"] && curriculumData["English"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["Hindi"] && curriculumData["Hindi"][targetDiscipline]) hasMapping = true;
-                    if (curriculumData["Sanskrit"] && curriculumData["Sanskrit"][targetDiscipline]) hasMapping = true;
+                    // Direct top-level match (e.g. "Mathematics", "Science", "Accountancy")
+                    if (curriculumData[targetDiscipline]) hasMapping = true;
+                    // Sub-key match (e.g. "Physics" / "Chemistry" / "Biology" under "Science")
+                    if (!hasMapping && curriculumData["Science"] && curriculumData["Science"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["Social Science"] && curriculumData["Social Science"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["Mathematics"] && curriculumData["Mathematics"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["English"] && curriculumData["English"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["Hindi"] && curriculumData["Hindi"][targetDiscipline]) hasMapping = true;
+                    if (!hasMapping && curriculumData["Sanskrit"] && curriculumData["Sanskrit"][targetDiscipline]) hasMapping = true;
 
                     if(hasMapping) {
                         await updateDoc(doc(db, "users", userId), {
@@ -1141,12 +1239,26 @@ window.handleCSVUpload = async (event) => {
                     }
 
                 } else if (role === 'parent') {
-                    const studentId = row[2];
-                    if(!studentId) {
-                        window.logMessage(`Skipped ${email}: No student ID provided.`, true);
+                    const studentEmail = (row[2] || '').trim();
+                    if (!studentEmail) {
+                        window.logMessage(`Skipped ${email}: No student email provided in column 3.`, true);
                         errorCount++;
                         continue;
                     }
+
+                    // row[2] is the student EMAIL, not their Firestore doc ID.
+                    // Look up the student by email to get their Firebase UID.
+                    const studentLookup = await getDocs(query(
+                        collection(db, "users"),
+                        where("email", "==", studentEmail),
+                        where("role", "==", "student")
+                    ));
+                    if (studentLookup.empty) {
+                        window.logMessage(`Skipped ${email}: Student ${studentEmail} not found — create student first.`, true);
+                        errorCount++;
+                        continue;
+                    }
+                    const studentId = studentLookup.docs[0].id; // Firebase UID
 
                     // Double-Link: Map parent -> student AND student -> parent
                     await updateDoc(doc(db, "users", studentId), {
@@ -1158,7 +1270,7 @@ window.handleCSVUpload = async (event) => {
                         updated_at: serverTimestamp()
                     });
 
-                    window.logMessage(`Double-Bridged Parent ${email} and Student ${studentId}`);
+                    window.logMessage(`Linked Parent ${email} ↔ Student ${studentEmail}`);
                     successCount++;
                 }
             } catch (err) {

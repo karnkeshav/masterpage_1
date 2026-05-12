@@ -112,18 +112,45 @@ async function fetchChildData(parentProfile) {
 
         // Step 1: Use linked_children from parent profile
         if (parentProfile.linked_children && parentProfile.linked_children.length > 0) {
-            targetUid = parentProfile.linked_children[0]; // First linked child
-            // Fetch child's display name using direct document read (document ID = UID)
+            const children = parentProfile.linked_children;
+
+            // Build child switcher if multiple children are linked
+            if (children.length > 1) {
+                const switcher = document.getElementById("child-switcher");
+                if (switcher) {
+                    const childProfiles = await Promise.all(
+                        children.map(uid => getDoc(doc(db, "users", uid)).catch(() => null))
+                    );
+                    switcher.innerHTML = childProfiles.map((snap, i) => {
+                        const name = snap?.exists() ? (snap.data().displayName || `Child ${i + 1}`) : `Child ${i + 1}`;
+                        return `<button onclick="window._switchChild('${children[i]}')"
+                            class="px-3 py-1.5 text-xs font-bold rounded-xl border transition ${i === 0 ? 'bg-cbse-blue text-white border-cbse-blue' : 'bg-white text-slate-600 border-slate-200 hover:border-cbse-blue'}">${name}</button>`;
+                    }).join('');
+                    switcher.classList.remove('hidden');
+                }
+            }
+
+            targetUid = children[0];
             try {
                 const childSnap = await getDoc(doc(db, "users", targetUid));
-                if (childSnap.exists()) {
-                    const childData = childSnap.data();
-                    childName = childData.displayName || "Student";
-                }
+                if (childSnap.exists()) childName = childSnap.data().displayName || "Student";
             } catch (e) {
                 console.warn("Could not fetch child profile:", e);
             }
         }
+
+        // Allow switching between children from the switcher UI
+        window._switchChild = async (uid) => {
+            targetUid = uid;
+            const snap = await getDoc(doc(db, "users", uid)).catch(() => null);
+            childName = snap?.exists() ? (snap.data().displayName || "Student") : "Student";
+            const contextBadge = document.getElementById("context-badge");
+            if (contextBadge) contextBadge.innerHTML = `<i class="fas fa-child mr-1"></i> ${childName}`;
+            // Re-fetch data for newly selected child
+            const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
+            const snap2 = await getDocs(q).catch(() => null);
+            if (snap2) await renderSyncWallAndInbox(db, uid, {});
+        };
 
 
 

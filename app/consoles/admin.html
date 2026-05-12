@@ -68,8 +68,21 @@
             </nav>
         </aside>
 
+        <!-- Mobile Tab Bar -->
+        <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around py-2 z-40 shadow-lg">
+            <button onclick="window.switchTab('inventory')" class="flex flex-col items-center text-xs font-bold text-slate-500 hover:text-cbse-blue">
+                <i class="fas fa-address-book text-lg mb-1"></i> Inventory
+            </button>
+            <button onclick="window.switchTab('observability')" class="flex flex-col items-center text-xs font-bold text-slate-500 hover:text-cbse-blue">
+                <i class="fas fa-tachometer-alt text-lg mb-1"></i> Observability
+            </button>
+            <button onclick="window.switchTab('messaging')" class="flex flex-col items-center text-xs font-bold text-slate-500 hover:text-cbse-blue">
+                <i class="fas fa-broadcast-tower text-lg mb-1"></i> Intercom
+            </button>
+        </nav>
+
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto bg-slate-50/50 p-6">
+        <main class="flex-1 overflow-y-auto bg-slate-50/50 p-4 md:p-6 pb-16 lg:pb-6">
             <div id="loading" class="flex flex-col items-center justify-center h-full text-slate-400">
                 <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
                 <div class="animate-pulse font-bold">Verifying Admin Privileges...</div>

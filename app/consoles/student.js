@@ -127,8 +127,8 @@ function getSubjectTheme(subject) {
     if (s.includes("biology")) return { icon: "fas fa-dna", borderColor: "border-green-500", bgColor: "bg-green-50", textColor: "text-green-600", hoverColor: "text-green-500", tagline: "The science of life." };
     if (s.includes("chemistry")) return { icon: "fas fa-flask", borderColor: "border-teal-500", bgColor: "bg-teal-50", textColor: "text-teal-600", hoverColor: "text-teal-500", tagline: "Matter and its interactions." };
     if (s.includes("math")) return { icon: "fas fa-calculator", borderColor: "border-blue-500", bgColor: "bg-blue-50", textColor: "text-blue-600", hoverColor: "text-blue-500", tagline: "Build your foundation." };
-    if (s.includes("science")) return { icon: "fas fa-atom", borderColor: "border-purple-500", bgColor: "bg-purple-50", textColor: "text-purple-600", hoverColor: "text-purple-500", tagline: "Explore the universe." };
-    if (s.includes("social")) return { icon: "fas fa-globe-americas", borderColor: "border-amber-500", bgColor: "bg-amber-50", textColor: "text-amber-600", hoverColor: "text-amber-500", tagline: "Understand the world." };
+    if (s.includes("social")) return { icon: "fas fa-landmark", borderColor: "border-amber-500", bgColor: "bg-amber-50", textColor: "text-amber-600", hoverColor: "text-amber-500", tagline: "Understand the world." };
+    if (s.includes("science")) return { icon: "fas fa-flask", borderColor: "border-purple-500", bgColor: "bg-purple-50", textColor: "text-purple-600", hoverColor: "text-purple-500", tagline: "Explore the universe." };
     if (s.includes("english")) return { icon: "fas fa-book", borderColor: "border-indigo-500", bgColor: "bg-indigo-50", textColor: "text-indigo-600", hoverColor: "text-indigo-500", tagline: "Master the language." };
 
     return { icon: "fas fa-book-open", borderColor: "border-slate-500", bgColor: "bg-slate-50", textColor: "text-slate-600", hoverColor: "text-slate-500", tagline: "Explore knowledge." };
@@ -157,8 +157,8 @@ function getSubjectIcon(subject) {
         "Psychology": "fa-brain",
         "Hindi": "fa-om",
         "English": "fa-language",
-        "Science": "fa-microscope",
-        "Social Science": "fa-users-cog"
+        "Science": "fa-flask",
+        "Social Science": "fa-landmark"
     };
     return icons[subject] || "fa-book";
 }
@@ -608,8 +608,8 @@ window.loadStudentStats = async (uid, grade) => {
         let diagnosticRows = "";
         const subjectConfigs = [
             { key: "Mathematics", label: "M", icon: "fa-calculator", bg: "bg-blue-50", text: "text-success-green", border: "border-blue-100", bar: "bg-success-green" },
-            { key: "Science", label: "S", icon: "fa-atom", bg: "bg-purple-50", text: "text-cbse-blue", border: "border-purple-100", bar: "bg-cbse-blue" },
-            { key: "Social Science", label: "SS", icon: "fa-globe-americas", bg: "bg-amber-50", text: "text-accent-gold", border: "border-amber-100", bar: "bg-accent-gold" }
+            { key: "Science", label: "S", icon: "fa-flask", bg: "bg-purple-50", text: "text-cbse-blue", border: "border-purple-100", bar: "bg-cbse-blue" },
+            { key: "Social Science", label: "SS", icon: "fa-landmark", bg: "bg-amber-50", text: "text-accent-gold", border: "border-amber-100", bar: "bg-accent-gold" }
         ];
 
         subjectConfigs.forEach(cfg => {
@@ -658,51 +658,54 @@ window.loadStudentStats = async (uid, grade) => {
             </div>
         `;
 
-        // 5. Chapter Health Grid
+        // 5. UPDATED: Chapter Health Grid (Top 5 by Highest Score)
         const healthContainer = document.getElementById("chapter-health-grid");
         if (healthContainer) {
-            healthContainer.innerHTML = Object.entries(chapterStats).map(([chap, stats]) => {
-                const colorClass = getScoreColor(stats.highest);
+            const topPerformers = Object.entries(chapterStats)
+                .map(([name, stats]) => ({ name, ...stats }))
+                .sort((a, b) => b.highest - a.highest) // Sort by Score DESC
+                .slice(0, 5); // Take only Top 5
+
+            healthContainer.innerHTML = topPerformers.map(chap => {
+                const colorClass = getScoreColor(chap.highest);
                 return `
                     <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition">
                         <div>
-                            <h4 class="font-bold text-slate-800 text-sm truncate" title="${sanitize(chap)}">${sanitize(chap)}</h4>
-                            <div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Highest Score</div>
-                            <div class="text-2xl font-black ${colorClass}">${stats.highest}%</div>
+                            <h4 class="font-bold text-slate-800 text-sm truncate" title="${sanitize(chap.name)}">${sanitize(chap.name)}</h4>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Personal Best</div>
+                            <div class="text-2xl font-black ${colorClass}">${chap.highest}%</div>
                         </div>
                         <div class="mt-3 pt-3 border-t border-slate-50 flex justify-between items-center">
                             <span class="text-xs text-slate-500 font-medium">Grit (Attempts)</span>
-                            <span class="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">${stats.attempts}</span>
+                            <span class="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">${chap.attempts}</span>
                         </div>
                     </div>
                 `;
             }).join("");
         }
 
-        // 6. Recent Activity List
+        // 6. Recent Activity List (Increased to 30 items to utilize the scroll)
         const columns = [
             { key: 'subject', header: 'Subject', cell: (item) => `<span class="font-bold text-cbse-blue">${item.subject}</span>` },
             { key: 'chapter', header: 'Chapter', cell: (item) => `<span class="text-sm font-medium text-slate-600">${item.chapter}</span>` },
-            { key: 'difficulty', header: 'Difficulty', cell: (item) => `<span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500">${item.difficulty}</span>` },
-            { key: 'percentage', header: 'Score', cell: (item) => `<span class="font-mono font-bold ${getScoreColor(item.percentage)}">${item.percentage}%</span>` },
-            { key: 'date', header: 'Date', cell: (item) => `<span class="text-xs text-slate-400">${item.date}</span>` }
+            { key: 'date', header: 'Date', cell: (item) => `<span class="text-xs text-slate-400">${item.date}</span>` },
+            { key: 'percentage', header: 'Score', cell: (item) => `<span class="font-mono font-bold ${getScoreColor(item.percentage)}">${item.percentage}%</span>` }
         ];
 
-        const cardRenderer = (item) => `
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center mb-2">
-                <div>
-                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">${item.subject}</div>
-                    <div class="font-bold text-slate-800">${item.chapter}</div>
-                    <div class="text-xs text-slate-500 mt-1">${item.date}</div>
-                </div>
-                <div class="text-right">
+        UI.renderResponsiveGrid(
+            document.getElementById("grid-container"),
+            gridData.slice(0, 30), // Show more items
+            columns,
+            (item) => `
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center mb-2">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">${item.subject} • ${item.date}</div>
+                        <div class="font-bold text-slate-800">${item.chapter}</div>
+                    </div>
                     <div class="text-xl font-black ${getScoreColor(item.percentage)}">${item.percentage}%</div>
-                    <div class="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded mt-1">${item.difficulty}</div>
                 </div>
-            </div>
-        `;
-
-        UI.renderResponsiveGrid(document.getElementById("grid-container"), gridData.slice(0, 10), columns, cardRenderer);
+            `
+        );
 
     } catch (e) {
         console.error("Dashboard Sync Failed:", e);
@@ -897,3 +900,8 @@ async function renderInbox() {
         console.warn("Inbox listener error:", error.message);
     });
 }
+
+window.addEventListener('pagehide', () => {
+    if (unsubInbox) { unsubInbox(); unsubInbox = null; }
+    if (unsubIntercom) { unsubIntercom(); unsubIntercom = null; }
+});

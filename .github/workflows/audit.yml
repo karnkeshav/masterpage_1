@@ -1,0 +1,45 @@
+name: Repository Audit
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: 
+
+# Setting the environment variable globally to opt-in to Node 24
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  run-audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24' # Updated to the latest stable version
+
+      - name: Install dependencies
+        run: |
+          cd testing_tool
+          npm install
+
+      - name: Run Audit
+        id: audit_step
+        # continue-on-error ensures the workflow keeps running 
+        # even if the audit finds broken links (exit code 1)
+        continue-on-error: true 
+        run: |
+          cd testing_tool
+          npm run audit
+
+      - name: Commit and Push Results
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update automated audit results"
+          file_pattern: 'testing_tool/test-results/playwright-audit/*'

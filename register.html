@@ -23,7 +23,7 @@
     <div id="app-header"></div>
     <script src="./js/shell.js"></script>
     <script>
-        R4E.renderHeader({ title: 'Ready4<span class="text-white">Exam</span>', glass: true });
+        R4E.renderHeader({ title: 'Ready4<span class="text-white">Exam</span>', titleHref: 'index.html', glass: true });
     </script>
 
     <!-- Loading Overlay -->
@@ -36,6 +36,9 @@
     <main class="flex-grow flex items-center justify-center px-6 py-24">
         <div class="w-full max-w-2xl bg-glass border-glass p-8 md:p-12 rounded-3xl shadow-2xl">
             
+            <a href="offering.html" class="inline-flex items-center gap-1 text-slate-400 hover:text-white text-xs font-bold mb-4 transition">
+                <i class="fas fa-arrow-left text-[10px]"></i> Back to Plans
+            </a>
             <div id="plan-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success-green/20 text-success-green text-[10px] font-black uppercase tracking-widest mb-6">
                 <i class="fas fa-crown"></i> <span id="selected-plan-text">Loading Plan...</span>
             </div>
