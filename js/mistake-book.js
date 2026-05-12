@@ -376,83 +376,86 @@ function renderSubjectNavigator(subject) {
 }
 
 window.toggleList = (subject, type) => {
-    const container = document.getElementById(`list-${subject.replace(/\s+/g, '-')}`);
-    if (!container) return;
+    const container = document.getElementById(`list-${subject}`);
     const chapters = state[type][subject] || {};
-    
-    if (container.dataset.type === type && !container.classList.contains('hidden')) { 
-        container.classList.add('hidden'); 
-        return; 
-    }
-    
-    container.dataset.type = type; 
-    container.classList.remove('hidden');
-    
     const names = Object.keys(chapters).sort();
-    if (!names.length) { 
-        container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Clean list!</div>`; 
-        return; 
-    }
-    
-    container.innerHTML = names.map(ch => {
-        let count = 0; 
-        const chapterData = chapters[ch] || {};
-        Object.values(chapterData).forEach(arr => count += (Array.isArray(arr) ? arr.length : 0));
-        return `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700 hover:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
-    }).join('');
-
+    if (container.dataset.type === type && !container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
+    container.dataset.type = type;
+    container.classList.remove('hidden');
+    if (names.length === 0) { container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`; return; }
+    let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
+    names.forEach(ch => {
+        let count = 0;
+        Object.values(chapters[ch]).forEach(arr => count += arr.length);
+        html += `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
+    });
+    container.innerHTML = html + `</div>`;
     container.querySelectorAll('.chapter-item').forEach(el => {
-        el.addEventListener('mouseenter', () => window.inspectChapter(el.dataset.subject, el.dataset.chapter, el.dataset.type));
-        el.addEventListener('click', () => window.inspectChapter(el.dataset.subject, el.dataset.chapter, el.dataset.type, true));
+        const s = el.getAttribute('data-subject');
+        const ch = el.getAttribute('data-chapter');
+        const t = el.getAttribute('data-type');
+        el.addEventListener('mouseenter', () => window.inspectChapter(s, ch, t));
+        el.addEventListener('click', () => window.inspectChapter(s, ch, t, true));
     });
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CORRECTED: Inspector properly handles nested difficulty structure
-// ═══════════════════════════════════════════════════════════════════════════
+// Fix #2 & #4: Complete rewrite of inspectChapter to show questions properly
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
-    const difficultiesObj = state[type]?.[subject]?.[chapter];
+    const difficultiesObj = state[type][subject]?.[chapter];
     if (!difficultiesObj) return;
     const isFriction = type === 'friction';
-    let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100">
-        <span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span>
-        <h3 class="text-xl font-black text-slate-800">${chapter}</h3>
-    </div>`;
+    let html = `<div class="animate-fade-in text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Persistent Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800 leading-tight">${chapter}</h3></div>`;
 
-    // Iterate through difficulty levels (simple, medium, advanced)
-    Object.keys(difficultiesObj).sort().forEach(level => {
-        const mistakes = difficultiesObj[level];
-        if (!Array.isArray(mistakes) || !mistakes.length) return;
-        
-        html += `<div class="mt-4 mb-3"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded text-slate-600">${level.charAt(0).toUpperCase() + level.slice(1)} Level (${mistakes.length})</span></div>`;
-        
-        mistakes.forEach(m => {
-            const failCount = m.dates ? m.dates.length : 0;
-            html += `<div class="bg-white rounded-xl p-4 border border-slate-200 mb-3 shadow-sm relative overflow-hidden">
-                <div class="absolute left-0 top-0 bottom-0 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'}"></div>
-                <p class="text-xs font-medium text-slate-700 mb-3 leading-relaxed pl-2">${cleanKatexMarkers(m.text || "Question unavailable")}</p>
-                <div class="flex justify-between items-center pt-2 border-t border-slate-50 pl-2">
-                    ${isFriction ? 
-                        `<span class="text-[9px] font-bold text-red-500 uppercase">Failed ${failCount}x</span>
-                         <a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded hover:bg-red-100">Review</a>` : 
-                        `<span class="text-[9px] font-bold text-green-600 uppercase">✅ Mastered: ${m.masteryDate}</span>
-                         <span class="text-[9px] font-bold text-green-600 bg-green-50 border border-green-100 px-2 py-1 rounded">Type: ${m.type}</span>`
-                    }
-                </div>
-            </div>`;
+    Object.keys(difficultiesObj).sort().forEach(diff => {
+        const items = difficultiesObj[diff];
+        if (!items?.length) return;
+
+        const colors = { simple: 'text-blue-500', medium: 'text-amber-500', advanced: 'text-purple-500' };
+        const bgs = { simple: 'bg-blue-50', medium: 'bg-amber-50', advanced: 'bg-purple-50' };
+        html += `<div class="mt-6 mb-3 flex items-center"><span class="text-xs font-black uppercase tracking-widest ${colors[diff] || 'text-slate-500'} px-2 py-1 ${bgs[diff] || 'bg-slate-100'} rounded">${diff} Level</span></div>`;
+
+        items.forEach(m => {
+            const dateStr = (m.dates || [])
+                .map(d => (d instanceof Date ? d : d.toDate?.() || new Date(d)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
+                .join(', ');
+            const count = (m.dates || []).length;
+
+            if (isFriction) {
+                html += `<div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-3 relative">
+                    <div class="absolute left-0 top-4 bottom-4 w-1 bg-red-400 rounded-r-full"></div>
+                    ${count > 1 ? `<div class="mb-2"><span class="text-[9px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200 uppercase tracking-wider shadow-sm">⚠️ Failed ${count} Times</span></div>` : ''}
+                    <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
+                    <div class="pl-3 pt-2 border-t border-slate-200/50 flex justify-between items-center">
+                        <span class="text-[9px] font-bold text-red-500 uppercase">Trend: ${dateStr}</span>
+                        <a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-white border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 uppercase shadow-sm">Master Concept</a>
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="bg-green-50 rounded-xl p-4 border border-green-100 mb-3 relative">
+                    <div class="absolute left-0 top-4 bottom-4 w-1 bg-green-400 rounded-r-full"></div>
+                    <div class="mb-2">
+                        <span class="text-[9px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 uppercase tracking-wider">✅ Mastered</span>
+                    </div>
+                    <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
+                    <div class="pl-3 pt-2 border-t border-green-200/50 flex justify-between items-center">
+                        <span class="text-[9px] font-bold text-green-600 uppercase">🏆 Since: ${m.masteryDate}</span>
+                        <span class="text-[9px] font-bold text-green-600 bg-white border border-green-100 px-2 py-1 rounded">Type: ${m.type || 'MCQ'}</span>
+                    </div>
+                </div>`;
+            }
         });
     });
+
     const inspector = document.getElementById('inspector-panel');
     if (inspector) {
         inspector.innerHTML = html + `</div>`;
-        inspector.className = 'glass-panel rounded-3xl p-5 border border-slate-200 shadow-sm bg-white/80 overflow-y-auto text-left';
-        inspector.style.maxHeight = '75vh';
+        inspector.classList.replace('items-center', 'items-start');
+        inspector.classList.replace('justify-center', 'justify-start');
+        inspector.classList.remove('text-center');
     }
     if (window.innerWidth < 1024 && isClick) {
-        const mob = document.getElementById('mobile-inspector-content');
-        const mobPanel = document.getElementById('mobile-inspector');
-        if (mob) mob.innerHTML = html + `</div>`;
-        if (mobPanel) mobPanel.classList.remove('hidden');
+        document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`;
+        document.getElementById('mobile-inspector').classList.remove('hidden');
     }
 };
 
