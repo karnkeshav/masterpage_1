@@ -21,7 +21,7 @@ const state = {
         CB: { total: 0, mistakes: 0 }
     },
     victoryCount: 0,
-    activeChapterCount: 0 // Track chapters instead of subjects
+    activeChapterCount: 0
 };
 
 const THEMES = {
@@ -57,7 +57,6 @@ async function init(user, profile) {
             return;
         }
 
-        // STEP 1: Map mistakes into scores
         const scoreDocs = scoresSnap.docs.map(d => {
             const data = d.data();
             const topic = data.topic || data.topicSlug || data.chapter_slug || "";
@@ -72,7 +71,6 @@ async function init(user, profile) {
             return { data: () => data };
         });
 
-        // STEP 2: Restore missing logic - Add standalone mistakes that didn't match a score
         mistakesSnap.docs.forEach(md => {
             const mData = md.data();
             const sid = mData.session_id;
@@ -99,7 +97,10 @@ async function init(user, profile) {
 function getSubjectContext(topicSlug) {
     const s = topicSlug.toLowerCase();
     let subject = "General";
+    
+    // Try to match from curriculum
     for (const [subj, sections] of Object.entries(curriculumData)) {
+        if (!sections || typeof sections !== 'object') continue;
         for (const chapters of Object.values(sections)) {
             if (!Array.isArray(chapters)) continue;
             for (const ch of chapters) {
@@ -110,12 +111,16 @@ function getSubjectContext(topicSlug) {
             }
         }
     }
+    
+    // Fallback: clean the slug
     let cleaned = topicSlug.replace(/^(science|mathematics|social_science|math)_/i, "")
-                          .replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "");
+                           .replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "");
     const chapterName = cleaned.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+    
     if (s.includes("math")) subject = "Mathematics";
     else if (s.includes("social")) subject = "Social Science";
     else if (s.includes("science")) subject = "Science";
+    
     return { subject, chapterName };
 }
 
@@ -126,10 +131,14 @@ function classifyQuestionType(m) {
     return "MCQ";
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CORRECTED: Proper friction/victory logic
+// ═══════════════════════════════════════════════════════════════════════════
 function processData(scoreDocs) {
     const topicHistory = {};
     const subjectScores = {};
 
+    // PASS 1: Build topic history and subject scores
     scoreDocs.forEach(d => {
         const data = d.data();
         const topic = data.topic || data.topicSlug || data.chapter_slug;
@@ -150,6 +159,7 @@ function processData(scoreDocs) {
         const historyKey = `${subject}|${chapterName}`;
         if (!topicHistory[historyKey]) topicHistory[historyKey] = {};
         if (!topicHistory[historyKey][diff]) topicHistory[historyKey][diff] = [];
+        
         topicHistory[historyKey][diff].push({
             mistakes: data.mistakes || [],
             timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
@@ -157,49 +167,82 @@ function processData(scoreDocs) {
         });
     });
 
+    // Calculate subject averages
     Object.keys(subjectScores).forEach(subj => {
         const s = subjectScores[subj];
         const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
         state.subjectStats[subj] = { simple: avg(s.simple), medium: avg(s.medium), advanced: avg(s.advanced) };
     });
 
+    // PASS 2: Extract friction and victory
     Object.entries(topicHistory).forEach(([historyKey, difficulties]) => {
         const [subject, chapterName] = historyKey.split('|');
 
         Object.entries(difficulties).forEach(([diff, attempts]) => {
+            if (!attempts || !attempts.length) return;
+            
+            // Sort by timestamp DESC to get latest first
             attempts.sort((a, b) => b.timestamp - a.timestamp);
             const latestAttempt = attempts[0];
-            const latestIds = new Set(latestAttempt.mistakes.map(m => m.id || m.question_id));
             
+            // Get all unique mistake IDs from latest attempt
+            const latestIds = new Set((latestAttempt.mistakes || []).map(m => m.id || m.question_id || m.question));
+            
+            // Get all unique mistake IDs from previous attempts
+            const prevIds = new Set();
+            attempts.slice(1).forEach(att => {
+                (att.mistakes || []).forEach(m => {
+                    prevIds.add(m.id || m.question_id || m.question);
+                });
+            });
+
+            // Build map of all unique mistakes with their history
             const allMistakesMap = new Map();
             attempts.forEach(att => {
-                att.mistakes.forEach(m => {
-                    const id = m.id || m.question_id;
+                (att.mistakes || []).forEach(m => {
+                    const id = m.id || m.question_id || m.question;
+                    if (!id) return;
+                    
                     if (!allMistakesMap.has(id)) {
                         allMistakesMap.set(id, {
-                            id, text: m.question_text || m.question, 
-                            type: classifyQuestionType(m), topic: subject, 
-                            difficulty: diff, dates: []
+                            id, 
+                            text: m.question_text || m.question || "Question unavailable",
+                            type: classifyQuestionType(m), 
+                            topic: subject, 
+                            difficulty: diff, 
+                            dates: []
                         });
                     }
                     allMistakesMap.get(id).dates.push(att.timestamp);
                 });
             });
 
+            // FRICTION: Questions that are STILL WRONG in latest attempt
             allMistakesMap.forEach((m, id) => {
                 if (latestIds.has(id)) {
                     if (!state.friction[subject]) state.friction[subject] = {};
                     if (!state.friction[subject][chapterName]) {
-                         state.friction[subject][chapterName] = {};
-                         state.activeChapterCount++; // Incremented for unique active chapters
+                        state.friction[subject][chapterName] = {};
+                        state.activeChapterCount++;
                     }
-                    if (!state.friction[subject][chapterName][diff]) state.friction[subject][chapterName][diff] = [];
+                    if (!state.friction[subject][chapterName][diff]) {
+                        state.friction[subject][chapterName][diff] = [];
+                    }
                     state.friction[subject][chapterName][diff].push(m);
-                } else {
+                }
+            });
+
+            // VICTORY: Questions that WERE WRONG but are NOW CORRECT (in prev but not in latest)
+            allMistakesMap.forEach((m, id) => {
+                if (prevIds.has(id) && !latestIds.has(id)) {
                     if (!state.victory[subject]) state.victory[subject] = {};
                     if (!state.victory[subject][chapterName]) state.victory[subject][chapterName] = {};
                     if (!state.victory[subject][chapterName][diff]) state.victory[subject][chapterName][diff] = [];
-                    state.victory[subject][chapterName][diff].push({ ...m, masteryDate: latestAttempt.timestamp.toDateString() });
+                    
+                    state.victory[subject][chapterName][diff].push({
+                        ...m,
+                        masteryDate: latestAttempt.timestamp.toDateString()
+                    });
                     state.victoryCount++;
                 }
             });
@@ -231,7 +274,7 @@ function renderConsole(container) {
         <div class="grid lg:grid-cols-3 gap-8 items-start relative min-h-[500px]">
             <div class="lg:col-span-2 space-y-6">${sortedSubjects.map(s => renderSubjectNavigator(s)).join('')}</div>
             <div class="lg:col-span-1 hidden lg:block sticky top-24">
-                <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm bg-white/50">
+                <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm bg-white/50 overflow-y-auto">
                     <div class="text-4xl mb-4 text-slate-300 animate-pulse">📡</div>
                     <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Inspector Active</h4>
                     <p class="text-xs text-slate-500 max-w-[200px]">Hover over any chapter on the left to analyze friction points.</p>
@@ -239,13 +282,14 @@ function renderConsole(container) {
             </div>
         </div>
         <div id="mobile-inspector" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-end justify-center lg:hidden p-4 pb-8" onclick="closeMobileInspector()">
-            <div class="bg-white w-full max-w-md rounded-3xl p-6 relative shadow-2xl" onclick="event.stopPropagation()"><div id="mobile-inspector-content"></div></div>
+            <div class="bg-white w-full max-w-md rounded-3xl p-6 relative shadow-2xl overflow-y-auto max-h-[80vh]" onclick="event.stopPropagation()"><div id="mobile-inspector-content"></div></div>
         </div>`;
     container.innerHTML = tier1 + tier2;
 }
 
 function renderProficiencyPill(type, label, stats) {
-    const errorRate = stats.total > 0 ? (stats.mistakes / stats.total) * 100 : 0;
+    if (stats.total === 0) return `<div class="p-3 rounded-xl bg-slate-100 text-slate-500 text-xs font-bold">No data for ${label}</div>`;
+    const errorRate = (stats.mistakes / stats.total) * 100;
     let color = "bg-green-100 text-green-700", dot = "bg-green-500", status = "Strong";
     if (errorRate > 30) { color = "bg-red-100 text-red-700"; dot = "bg-red-500"; status = "Needs Focus"; }
     else if (errorRate > 15) { color = "bg-yellow-100 text-yellow-700"; dot = "bg-yellow-500"; status = "Review"; }
@@ -275,20 +319,32 @@ function renderSubjectNavigator(subject) {
                     <button onclick="toggleList('${subject}', 'friction')" class="text-xs font-bold text-red-500 hover:underline">Friction (${fCount})</button>
                     <button onclick="toggleList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:underline">Victory (${vCount})</button>
                 </div>
-            </div><div id="list-${subject}" class="hidden bg-white divide-y divide-slate-100"></div></div>`;
+            </div><div id="list-${subject}" class="hidden bg-white divide-y divide-slate-100 max-h-96 overflow-y-auto"></div></div>`;
 }
 
 window.toggleList = (subject, type) => {
     const container = document.getElementById(`list-${subject}`);
     const chapters = state[type][subject] || {};
-    if (container.dataset.type === type && !container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
-    container.dataset.type = type; container.classList.remove('hidden');
+    
+    if (container.dataset.type === type && !container.classList.contains('hidden')) { 
+        container.classList.add('hidden'); 
+        return; 
+    }
+    
+    container.dataset.type = type; 
+    container.classList.remove('hidden');
+    
     const names = Object.keys(chapters).sort();
-    if (!names.length) { container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Clean list!</div>`; return; }
+    if (!names.length) { 
+        container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Clean list!</div>`; 
+        return; 
+    }
     
     container.innerHTML = names.map(ch => {
-        let count = 0; Object.values(chapters[ch]).forEach(arr => count += arr.length);
-        return `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
+        let count = 0; 
+        const chapterData = chapters[ch] || {};
+        Object.values(chapterData).forEach(arr => count += (Array.isArray(arr) ? arr.length : 0));
+        return `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700 hover:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
     }).join('');
 
     container.querySelectorAll('.chapter-item').forEach(el => {
@@ -297,21 +353,43 @@ window.toggleList = (subject, type) => {
     });
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CORRECTED: Inspector properly handles nested difficulty structure
+// ═══════════════════════════════════════════════════════════════════════════
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
-    const data = state[type][subject]?.[chapter];
-    if (!data) return;
+    console.log(`Inspecting: ${type} / ${subject} / ${chapter}`);
+    
+    const chapterData = state[type]?.[subject]?.[chapter];
+    if (!chapterData || typeof chapterData !== 'object') {
+        console.warn(`No data found for ${subject}/${chapter}`);
+        return;
+    }
+    
     const isFriction = type === 'friction';
-    let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800">${chapter}</h3></div>`;
+    let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100">
+        <span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span>
+        <h3 class="text-xl font-black text-slate-800">${chapter}</h3>
+    </div>`;
 
-    Object.keys(data).sort().forEach(level => {
-        html += `<div class="mt-4 mb-2"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded">${level} Level</span></div>`;
-        data[level].forEach(m => {
+    // Iterate through difficulty levels (simple, medium, advanced)
+    Object.keys(chapterData).sort().forEach(level => {
+        const mistakes = chapterData[level];
+        if (!Array.isArray(mistakes) || !mistakes.length) return;
+        
+        html += `<div class="mt-4 mb-3"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded text-slate-600">${level.charAt(0).toUpperCase() + level.slice(1)} Level (${mistakes.length})</span></div>`;
+        
+        mistakes.forEach(m => {
+            const failCount = m.dates ? m.dates.length : 0;
             html += `<div class="bg-white rounded-xl p-4 border border-slate-200 mb-3 shadow-sm relative overflow-hidden">
                 <div class="absolute left-0 top-0 bottom-0 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'}"></div>
-                <p class="text-xs font-medium text-slate-700 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
-                <div class="flex justify-between items-center pt-2 border-t border-slate-50">
-                    <span class="text-[9px] font-bold text-slate-400 uppercase">${isFriction ? `Failed ${m.dates.length}x` : `Mastered: ${m.masteryDate}`}</span>
-                    ${isFriction ? `<a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-cbse-blue uppercase hover:underline">Review concept</a>` : ''}
+                <p class="text-xs font-medium text-slate-700 mb-3 leading-relaxed pl-2">${cleanKatexMarkers(m.text || "Question unavailable")}</p>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-50 pl-2">
+                    ${isFriction ? 
+                        `<span class="text-[9px] font-bold text-red-500 uppercase">Failed ${failCount}x</span>
+                         <a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded hover:bg-red-100">Review</a>` : 
+                        `<span class="text-[9px] font-bold text-green-600 uppercase">✅ Mastered: ${m.masteryDate}</span>
+                         <span class="text-[9px] font-bold text-green-600 bg-green-50 border border-green-100 px-2 py-1 rounded">Type: ${m.type}</span>`
+                    }
                 </div>
             </div>`;
         });
@@ -323,6 +401,7 @@ window.inspectChapter = (subject, chapter, type, isClick = false) => {
         panel.classList.remove('items-center', 'justify-center', 'text-center');
         panel.classList.add('items-start', 'justify-start');
     }
+    
     if (window.innerWidth < 1024 && isClick) {
         document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`;
         document.getElementById('mobile-inspector').classList.remove('hidden');
