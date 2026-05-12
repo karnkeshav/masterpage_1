@@ -2,6 +2,7 @@ import { authenticateWithCredentials, routeUser, initializeAuthListener } from "
 import { getInitializedClients } from "./config.js";
 import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
+// 1. SESSION LISTENER: Checks if user is already logged in
 initializeAuthListener(async (user, profile) => {
     if (user && profile) {
         console.log("User already logged in, routing...");
@@ -12,6 +13,7 @@ initializeAuthListener(async (user, profile) => {
 const loginForm = document.getElementById("sovereign-login-form");
 const errorBox = document.getElementById("login-error");
 
+// 2. LOGIN HANDLER: Preserves standard Ready4Exam credentials check
 loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const u = document.getElementById("username").value.trim();
@@ -37,6 +39,7 @@ loginForm.addEventListener("submit", async (e) => {
     }
 });
 
+// 3. FORGOT PASSWORD MODAL LOGIC
 const forgotModal = document.getElementById("forgot-password-modal");
 const closeForgotModalBtn = document.getElementById("close-forgot-modal");
 const submitResetBtn = document.getElementById("submit-reset-btn");
@@ -53,6 +56,7 @@ closeForgotModalBtn.addEventListener("click", () => {
     document.getElementById("reset-student-name").value = "";
 });
 
+// 4. SECURE RESET API CALL
 submitResetBtn.addEventListener("click", async () => {
     const email = document.getElementById("reset-email").value.trim();
     const studentName = document.getElementById("reset-student-name").value.trim();
@@ -103,7 +107,7 @@ submitResetBtn.addEventListener("click", async () => {
     }
 });
 
-// Clear login fields on page load
+// 5. ANTI-AUTOFILL: Clears fields on load for security
 window.addEventListener('DOMContentLoaded', () => {
     const u = document.getElementById('username');
     const p = document.getElementById('password');
@@ -115,21 +119,17 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 200);
 });
 
-/**
- * PASSWORD TOGGLE FUNCTIONALITY
- * Handles the visibility of the password field using the eye icon
- */
+// 6. PASSWORD VISIBILITY TOGGLE (NEW ADDITION)
 const pToggleBtn = document.getElementById('togglePassword');
 const pInput = document.getElementById('password');
 const pEyeIcon = document.getElementById('eyeIcon');
 
 if (pToggleBtn && pInput && pEyeIcon) {
     pToggleBtn.addEventListener('click', function () {
-        // Toggle the input type between password and text
-        const type = pInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        pInput.setAttribute('type', type);
+        const isPassword = pInput.getAttribute('type') === 'password';
+        pInput.setAttribute('type', isPassword ? 'text' : 'password');
         
-        // Toggle FontAwesome classes for the eye icon
+        // Toggle icon visual
         pEyeIcon.classList.toggle('fa-eye');
         pEyeIcon.classList.toggle('fa-eye-slash');
     });
