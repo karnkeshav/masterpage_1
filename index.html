@@ -39,12 +39,12 @@
             100% { transform: translateX(-50%); }
         }
 
-        /* 60:40 Layout & Color Bleed */
+        /* 60:40 Layout & Seamless Color Bleed */
         .hero-split-grid { display: grid; grid-template-columns: 1fr; }
         @media(min-width:1024px) {
             .hero-split-grid { 
                 grid-template-columns: 6fr 4fr; 
-                background-color: #f1f4f9; /* Seamless bleed color */
+                background-color: #f1f4f9; 
             }
         }
         .hero-image-side { position: relative; min-height: 450px; }
@@ -68,7 +68,6 @@
 <!-- 1. HERO SECTION: 60/40 WITH ASSETS -->
 <section class="hero-split-grid overflow-hidden border-b border-slate-200">
     <div class="hero-image-side pt-12 lg:pt-20">
-        <!-- Replaced with high-quality student asset -->
         <img src="images/hero-bg.png" alt="Students Mastering Exams" class="w-full h-full object-cover object-center lg:object-right">
         <div class="absolute inset-0 bg-slate-900/40 lg:bg-transparent flex items-center px-6 lg:hidden">
             <h1 class="text-3xl font-black text-white leading-tight">Master Your Exams <br><span class="text-gold">With Precision</span></h1>
@@ -78,7 +77,7 @@
     <div class="flex flex-col justify-center items-center lg:items-start p-8 lg:p-12 lg:bg-[#f1f4f9]">
         <div class="hidden lg:block mb-8">
             <h1 class="text-5xl font-black text-cbse-blue mb-4 leading-tight">Master Your Exams <br><span class="text-gold">With Precision</span></h1>
-            <p class="text-slate-600 text-lg max-w-md">Access premium exam preparation tools tailored for your success. For registered schools & students.</p>
+            <p class="text-slate-600 text-lg max-w-md">Access premium exam preparation tools tailored for your success.</p>
         </div>
 
         <div class="w-full max-w-sm bg-white border border-slate-200 p-8 rounded-3xl shadow-xl">
@@ -93,7 +92,12 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-                    <input type="password" id="password" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:border-gold transition" placeholder="••••••••" required>
+                    <div class="relative">
+                        <input type="password" id="password" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:border-gold transition pr-10" placeholder="••••••••" required>
+                        <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cbse-blue transition focus:outline-none">
+                            <i class="fas fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
                 </div>
                 <div id="login-error" class="hidden text-red-600 text-xs font-bold text-center p-2"></div>
                 <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-slate-900 hover:text-white transition shadow-lg mt-2">Log In</button>
@@ -117,7 +121,6 @@
                     </div>
                 </div>
                 <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm">
-                    <!-- Functionality Preserved: selectBoard, loadSubjects, loadChapters -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div class="flex flex-col gap-2">
                             <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
@@ -144,7 +147,6 @@
                         <div class="flex-1 w-full">
                             <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
                             <div class="flex gap-2">
-                                <!-- PREMIUM EMERALD FREE BUTTON -->
                                 <button class="diff-btn relative flex-1 py-3 px-2 rounded-xl border-2 border-emerald-500/30 bg-emerald-50 text-sm font-bold text-emerald-800 transition-all data-[selected=true]:bg-emerald-600 data-[selected=true]:text-white data-[selected=true]:border-emerald-600" 
                                         data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">
                                     Simple <span class="absolute -top-2.5 -right-1 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md border border-white">FREE</span>
@@ -169,7 +171,6 @@
                     <div class="mb-6 bg-white p-4 rounded-xl border border-slate-200">
                         <div class="flex justify-between text-[10px] font-bold mb-1"><span>Karnataka State Board</span><span class="text-cbse-blue">7/10 Students</span></div>
                         <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div class="bg-gold h-full" style="width: 70%"></div></div>
-                        <p class="text-[9px] mt-2 text-slate-400 italic">3 more requests needed to unlock this board.</p>
                     </div>
                     <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
                         <input type="text" id="reqBoard" placeholder="Board Name" required class="w-full rounded-xl border-slate-200 text-sm">
@@ -183,7 +184,7 @@
     </div>
 </section>
 
-<!-- 3. RESTORED DASHBOARD GRID -->
+<!-- 3. DASHBOARD GRID -->
 <section id="get-started" class="py-16 px-4 bg-slate-50 border-b border-slate-200">
     <div class="max-w-6xl mx-auto">
         <div class="text-center mb-12">
@@ -218,7 +219,7 @@
     </div>
 </section>
 
-<!-- 4. RESTORED TESTIMONIALS -->
+<!-- 4. TESTIMONIALS -->
 <section class="py-16 px-4 bg-white border-b border-slate-200 overflow-hidden">
     <div class="max-w-6xl mx-auto">
         <div class="text-center mb-10"><span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Community Love</span><h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2></div>
@@ -245,6 +246,18 @@
 <div id="app-footer"></div>
 <script>R4E.renderFooter();</script>
 <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam" class="whatsapp-float" target="_blank"><i class="fab fa-whatsapp"></i></a>
+
+<script>
+    // Password Toggle Logic
+    document.getElementById('togglePassword').addEventListener('click', function () {
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        eyeIcon.classList.toggle('fa-eye');
+        eyeIcon.classList.toggle('fa-eye-slash');
+    });
+</script>
 
 <script type="module" src="./js/index-auth.js"></script>
 <script type="module" src="./js/index-quiz-widget.js"></script>
