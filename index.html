@@ -39,16 +39,25 @@
             100% { transform: translateX(-50%); }
         }
 
-        /* 60:40 Layout & Seamless Color Bleed */
+        /* Hero 60:40 Split & Seamless Color Bleed */
         .hero-split-grid { display: grid; grid-template-columns: 1fr; }
+        
+        .hero-image-side { 
+            position: relative; 
+            width: 100%; 
+            height: 65vw; /* Optimized for mobile visibility */
+            overflow: hidden;
+        }
+
         @media(min-width:1024px) {
             .hero-split-grid { 
                 grid-template-columns: 6fr 4fr; 
                 background-color: #f1f4f9; 
             }
-        }
-        .hero-image-side { position: relative; min-height: 450px; }
-        @media(min-width:1024px) {
+            .hero-image-side { 
+                height: auto; 
+                min-height: 500px; 
+            }
             .hero-image-side::after {
                 content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 150px;
                 background: linear-gradient(to right, transparent, #f1f4f9);
@@ -65,19 +74,29 @@
     showUserWelcome: false, showLogout: false, showInbox: false
 });</script>
 
-<!-- 1. HERO SECTION: 60/40 WITH ASSETS -->
+<!-- HERO SECTION: 60/40 WITH FULL-WIDTH MOBILE IMAGE -->
 <section class="hero-split-grid overflow-hidden border-b border-slate-200">
-    <div class="hero-image-side pt-12 lg:pt-20">
-        <img src="images/hero-bg.png" alt="Students Mastering Exams" class="w-full h-full object-cover object-center lg:object-right">
+    <!-- Left 60%: High-Quality Visual -->
+    <div class="hero-image-side pt-0 lg:pt-20">
+        <img src="images/hero-bg.png" alt="Ready4Exam Students" class="w-full h-full object-cover object-center lg:object-right block">
+        
+        <!-- Mobile Overlay Headline -->
         <div class="absolute inset-0 bg-slate-900/40 lg:bg-transparent flex items-center px-6 lg:hidden">
-            <h1 class="text-3xl font-black text-white leading-tight">Master Your Exams <br><span class="text-gold">With Precision</span></h1>
+            <h1 class="text-3xl font-black text-white leading-tight">
+                Master Your Exams <br><span class="text-gold">With Precision</span>
+            </h1>
         </div>
     </div>
     
+    <!-- Right 40%: Portal & Login Card -->
     <div class="flex flex-col justify-center items-center lg:items-start p-8 lg:p-12 lg:bg-[#f1f4f9]">
         <div class="hidden lg:block mb-8">
-            <h1 class="text-5xl font-black text-cbse-blue mb-4 leading-tight">Master Your Exams <br><span class="text-gold">With Precision</span></h1>
-            <p class="text-slate-600 text-lg max-w-md">Access premium exam preparation tools tailored for your success.</p>
+            <h1 class="text-5xl font-black text-cbse-blue mb-4 leading-tight">
+                Master Your Exams <br><span class="text-gold">With Precision</span>
+            </h1>
+            <p class="text-slate-600 text-lg max-w-md">
+                Access premium exam preparation tools tailored for your success.
+            </p>
         </div>
 
         <div class="w-full max-w-sm bg-white border border-slate-200 p-8 rounded-3xl shadow-xl">
@@ -102,12 +121,14 @@
                 <div id="login-error" class="hidden text-red-600 text-xs font-bold text-center p-2"></div>
                 <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-slate-900 hover:text-white transition shadow-lg mt-2">Log In</button>
             </form>
-            <a href="#quiz-section" class="text-xs text-cbse-blue font-bold hover:underline mt-4 block text-center uppercase tracking-widest"><i class="fas fa-bolt mr-1"></i> Try Guest Quiz</a>
+            <a href="#quiz-section" class="text-xs text-cbse-blue font-bold hover:underline mt-4 block text-center uppercase tracking-widest">
+                <i class="fas fa-bolt mr-1"></i> Try Guest Quiz
+            </a>
         </div>
     </div>
 </section>
 
-<!-- 2. QUIZ & REQUEST SECTION -->
+<!-- QUIZ SECTION: INSTANT PRACTICE -->
 <section id="quiz-section" class="py-16 px-4 bg-white border-b border-slate-200">
     <div class="max-w-7xl mx-auto">
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
@@ -142,12 +163,11 @@
                             <select id="chapter-select" class="w-full rounded-lg border-slate-300 h-[46px] disabled:opacity-50" disabled onchange="checkChapter()"><option value="">Select Subject first...</option></select>
                         </div>
                     </div>
-
                     <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
                         <div class="flex-1 w-full">
                             <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
                             <div class="flex gap-2">
-                                <button class="diff-btn relative flex-1 py-3 px-2 rounded-xl border-2 border-emerald-500/30 bg-emerald-50 text-sm font-bold text-emerald-800 transition-all data-[selected=true]:bg-emerald-600 data-[selected=true]:text-white data-[selected=true]:border-emerald-600" 
+                                <button class="diff-btn relative flex-1 py-3 px-2 rounded-xl border-2 border-emerald-500/30 bg-emerald-50 text-sm font-bold text-emerald-800 transition-all data-[selected=true]:bg-emerald-600 data-[selected=true]:text-white" 
                                         data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">
                                     Simple <span class="absolute -top-2.5 -right-1 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md border border-white">FREE</span>
                                 </button>
@@ -162,10 +182,10 @@
                 </div>
             </div>
 
-            <!-- REQUEST SECTION: GROWTH LOOP -->
+            <!-- REQUEST SECTION -->
             <div id="request-section" class="lg:col-span-2">
                 <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl h-full">
-                    <div class="bg-blue-600 text-white text-[10px] font-bold py-1 px-3 rounded-full mb-4 inline-block animate-pulse">LIVE: ICSE Class 10 deployed via request!</div>
+                    <div class="bg-blue-600 text-white text-[10px] font-bold py-1 px-3 rounded-full mb-4 inline-block animate-pulse">LIVE: ICSE Class 10 deployed!</div>
                     <h2 class="text-2xl font-black text-cbse-blue mb-2">Request Your Board</h2>
                     <p class="text-sm text-slate-500 mb-6">Gather 10 students and we'll deploy in 24 hours.</p>
                     <div class="mb-6 bg-white p-4 rounded-xl border border-slate-200">
@@ -184,45 +204,41 @@
     </div>
 </section>
 
-<!-- 3. DASHBOARD GRID -->
+<!-- DASHBOARD GRID -->
 <section id="get-started" class="py-16 px-4 bg-slate-50 border-b border-slate-200">
     <div class="max-w-6xl mx-auto">
         <div class="text-center mb-12">
             <h2 class="text-3xl font-black text-cbse-blue mb-2">Unlock Your Full Dashboard</h2>
-            <p class="text-slate-500">What Awaits After Registration & Subscription.</p>
+            <p class="text-slate-500">Professional tracking available after subscription.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div class="flex items-center gap-3 mb-4 text-cbse-blue"><i class="fas fa-chart-pie text-xl"></i><h3 class="text-lg font-bold">Knowledge Hub</h3></div>
-                <p class="text-sm text-slate-600 mb-6">Track average mastery and subject progress.</p>
                 <img src="images/dashboard-subject-navigator.png" alt="Knowledge Hub" class="w-full rounded-xl border">
             </div>
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div class="flex items-center gap-3 mb-4 text-indigo-600"><i class="fas fa-user-friends text-xl"></i><h3 class="text-lg font-bold">Parent Dashboard</h3></div>
-                <p class="text-sm text-slate-600 mb-6">Real-time tracking via the Sync Wall.</p>
                 <img src="images/dashboard-parent-console.png" alt="Parent Dashboard" class="w-full rounded-xl border">
             </div>
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div class="flex items-center gap-3 mb-4 text-purple-600"><i class="fas fa-book-open text-xl"></i><h3 class="text-lg font-bold">Mistake Notebook</h3></div>
-                <p class="text-sm text-slate-600 mb-6">Structured navigation through curriculums.</p>
                 <img src="images/dashboard-study-guide.png" alt="Mistake Notebook" class="w-full rounded-xl border">
             </div>
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div class="flex items-center gap-3 mb-4 text-red-600"><i class="fas fa-book-dead text-xl"></i><h3 class="text-lg font-bold">Student Dashboard</h3></div>
-                <p class="text-sm text-slate-600 mb-6">Diagnostic Console to analyze error patterns.</p>
                 <img src="images/dashboard-performance.png" alt="Student Dashboard" class="w-full rounded-xl border">
             </div>
         </div>
         <div class="text-center mt-10">
-            <a href="offering.html" class="inline-flex items-center gap-2 bg-slate-900 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:scale-105 transition"><i class="fas fa-user-plus"></i> Get Started — Subscribe Today</a>
+            <a href="offering.html" class="inline-flex items-center gap-2 bg-slate-900 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:scale-105 transition"><i class="fas fa-user-plus"></i> Subscribe Today</a>
         </div>
     </div>
 </section>
 
-<!-- 4. TESTIMONIALS -->
+<!-- TESTIMONIALS -->
 <section class="py-16 px-4 bg-white border-b border-slate-200 overflow-hidden">
     <div class="max-w-6xl mx-auto">
-        <div class="text-center mb-10"><span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Community Love</span><h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2></div>
+        <div class="text-center mb-10"><h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2></div>
         <div class="flex gap-6 pb-8 animate-marquee hover:[animation-play-state:paused]">
             <div class="min-w-[300px] bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
                 <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
@@ -246,18 +262,6 @@
 <div id="app-footer"></div>
 <script>R4E.renderFooter();</script>
 <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam" class="whatsapp-float" target="_blank"><i class="fab fa-whatsapp"></i></a>
-
-<script>
-    // Password Toggle Logic
-    document.getElementById('togglePassword').addEventListener('click', function () {
-        const passwordInput = document.getElementById('password');
-        const eyeIcon = document.getElementById('eyeIcon');
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        eyeIcon.classList.toggle('fa-eye');
-        eyeIcon.classList.toggle('fa-eye-slash');
-    });
-</script>
 
 <script type="module" src="./js/index-auth.js"></script>
 <script type="module" src="./js/index-quiz-widget.js"></script>
