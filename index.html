@@ -42,6 +42,12 @@
             0% { transform: translateX(0%); }
             100% { transform: translateX(-50%); }
         }
+
+        .animate-marquee-fast { animation: marquee-fast 15s linear infinite; }
+        @keyframes marquee-fast {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
     </style>
     <script src="./js/shell.js"></script>
 </head>
@@ -55,7 +61,7 @@
     showInbox: false
 });</script>
 
-<section class="bg-[url('images/hero-bg.png')] bg-cover bg-[center_top_4rem] md:bg-center text-white py-20 lg:py-28 px-4 relative overflow-hidden mt-8 lg:mt-12">
+<section class="bg-[url('images/hero-bg.png')] bg-cover bg-top text-white py-20 lg:py-28 px-4 relative overflow-hidden pt-32 lg:pt-40">
   <!-- Overlay to ensure text readability against the image -->
   <div class="absolute inset-0 bg-slate-900/60 lg:bg-slate-900/40 z-0"></div>
 
