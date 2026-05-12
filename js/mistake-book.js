@@ -219,6 +219,7 @@ function processData(scoreDocs) {
         const score = getScore(data);
         const mistakes = Array.isArray(data.mistakes) ? data.mistakes : [];
 
+        const score = parseFloat(data.percentage || data.score_percent || data.score || 0);
         if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
         if (score !== null) {
             if (!subjectScores[subject][diff]) subjectScores[subject][diff] = [];
@@ -376,8 +377,7 @@ function renderSubjectNavigator(subject) {
 }
 
 window.toggleList = (subject, type) => {
-    const container = document.getElementById(`list-${subject.replace(/\s+/g, '-')}`);
-    if (!container) return;
+    const container = document.getElementById(`list-${subject}`);
     const chapters = state[type][subject] || {};
     
     if (container.dataset.type === type && !container.classList.contains('hidden')) { 
@@ -411,7 +411,7 @@ window.toggleList = (subject, type) => {
 // CORRECTED: Inspector properly handles nested difficulty structure
 // ═══════════════════════════════════════════════════════════════════════════
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
-    const difficultiesObj = state[type]?.[subject]?.[chapter];
+    const difficultiesObj = state[type][subject]?.[chapter];
     if (!difficultiesObj) return;
     const isFriction = type === 'friction';
     let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100">
@@ -442,17 +442,17 @@ window.inspectChapter = (subject, chapter, type, isClick = false) => {
             </div>`;
         });
     });
+
     const inspector = document.getElementById('inspector-panel');
     if (inspector) {
         inspector.innerHTML = html + `</div>`;
-        inspector.className = 'glass-panel rounded-3xl p-5 border border-slate-200 shadow-sm bg-white/80 overflow-y-auto text-left';
-        inspector.style.maxHeight = '75vh';
+        inspector.classList.replace('items-center', 'items-start');
+        inspector.classList.replace('justify-center', 'justify-start');
+        inspector.classList.remove('text-center');
     }
     if (window.innerWidth < 1024 && isClick) {
-        const mob = document.getElementById('mobile-inspector-content');
-        const mobPanel = document.getElementById('mobile-inspector');
-        if (mob) mob.innerHTML = html + `</div>`;
-        if (mobPanel) mobPanel.classList.remove('hidden');
+        document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`;
+        document.getElementById('mobile-inspector').classList.remove('hidden');
     }
 };
 
