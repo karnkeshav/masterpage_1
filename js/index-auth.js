@@ -37,7 +37,6 @@ loginForm.addEventListener("submit", async (e) => {
     }
 });
 
-
 const forgotModal = document.getElementById("forgot-password-modal");
 const closeForgotModalBtn = document.getElementById("close-forgot-modal");
 const submitResetBtn = document.getElementById("submit-reset-btn");
@@ -104,15 +103,34 @@ submitResetBtn.addEventListener("click", async () => {
     }
 });
 
-// Clear login fields on page load to prevent prefilled text
+// Clear login fields on page load
 window.addEventListener('DOMContentLoaded', () => {
     const u = document.getElementById('username');
     const p = document.getElementById('password');
     if (u) u.value = '';
     if (p) p.value = '';
-    // Also clear after a short delay to beat browser autofill timing
     setTimeout(() => {
         if (u) u.value = '';
         if (p) p.value = '';
     }, 200);
 });
+
+/**
+ * PASSWORD TOGGLE FUNCTIONALITY
+ * Handles the visibility of the password field using the eye icon
+ */
+const pToggleBtn = document.getElementById('togglePassword');
+const pInput = document.getElementById('password');
+const pEyeIcon = document.getElementById('eyeIcon');
+
+if (pToggleBtn && pInput && pEyeIcon) {
+    pToggleBtn.addEventListener('click', function () {
+        // Toggle the input type between password and text
+        const type = pInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        pInput.setAttribute('type', type);
+        
+        // Toggle FontAwesome classes for the eye icon
+        pEyeIcon.classList.toggle('fa-eye');
+        pEyeIcon.classList.toggle('fa-eye-slash');
+    });
+}
