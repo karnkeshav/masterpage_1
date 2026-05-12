@@ -93,9 +93,12 @@ async function init(user, profile) {
                     const data = d.data();
                     const topic = data.topic || data.topicSlug || data.chapter_slug || "";
                     const t1 = data.timestamp ? data.timestamp.seconds : 0;
+                    const sid = data.session_id;
                     const matchingNotebookEntry = mistakesSnap.docs.find(md => {
                         const mData = md.data();
-                        return (mData.topic === topic || mData.chapter_slug === topic) && (Math.abs((mData.timestamp?.seconds || 0) - t1) < 5);
+                        if (sid && mData.session_id) return mData.session_id === sid;
+                        return (mData.topic === topic || mData.chapter_slug === topic) &&
+                               (Math.abs((mData.timestamp?.seconds || 0) - t1) < 5);
                     });
                     data.mistakes = matchingNotebookEntry ? (matchingNotebookEntry.data().mistakes || []) : [];
                     data.difficulty = data.difficulty || 'simple';
@@ -108,10 +111,12 @@ async function init(user, profile) {
                     const mTime = mData.timestamp ? mData.timestamp.seconds : 0;
                     const alreadyMapped = scoreDocs.some(sd => {
                         const sData = sd.data();
-                        return (sData.topic === topic || sData.topicSlug === topic || sData.chapter_slug === topic) && (Math.abs((sData.timestamp?.seconds || 0) - mTime) < 5);
+                        if (mData.session_id && sData.session_id) return mData.session_id === sData.session_id;
+                        return (sData.topic === topic || sData.topicSlug === topic || sData.chapter_slug === topic) &&
+                               (Math.abs((sData.timestamp?.seconds || 0) - mTime) < 5);
                     });
                     if (!alreadyMapped) {
-                        scoreDocs.push({ data: () => ({ topic, timestamp: mData.timestamp, percentage: 0, difficulty: mData.difficulty || 'simple', mistakes: mData.mistakes || [] })});
+                        scoreDocs.push({ data: () => ({ topic, timestamp: mData.timestamp, percentage: 0, difficulty: mData.difficulty || 'simple', mistakes: mData.mistakes || [], session_id: mData.session_id || null })});
                     }
                 });
 
@@ -141,16 +146,23 @@ function getSubjectContext(topicSlug) {
     const s = topicSlug.toLowerCase();
     let subject = "General";
     let chapterName = topicSlug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-    for (const [subj, sections] of Object.entries(curriculumData)) {
+    for (const [subj, sections] of Object.entries(curriculumData || {})) {
+        if (!sections || typeof sections !== 'object') continue;
         for (const [sec, chapters] of Object.entries(sections)) {
+            if (!Array.isArray(chapters)) continue;
             for (const ch of chapters) {
-                const title = ch.chapter_title.toLowerCase();
+                const title = (ch.chapter_title || "").toLowerCase();
+                if (!title) continue;
                 if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
                     return { subject: subj, chapterName: ch.chapter_title };
                 }
             }
         }
     }
+    let cleaned = topicSlug;
+    cleaned = cleaned.replace(/^(science|mathematics|social_science|math)_/i, "");
+    cleaned = cleaned.replace(/_\d+_quiz$|_grade_\d+_quiz$|_quiz$/i, "");
+    chapterName = cleaned.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
     const prefix = s.split('_')[0];
     if (["math", "mathematics"].includes(prefix)) subject = "Mathematics";
     else if (prefix === "social") subject = "Social Science";
