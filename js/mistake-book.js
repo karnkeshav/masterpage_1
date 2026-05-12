@@ -32,13 +32,19 @@ const THEMES = {
 
 function removeSkeleton(container) {
     if (!container) return;
+
+    // Remove all known skeleton elements
     container.querySelectorAll('.skeleton, .loading, .animate-pulse').forEach(el => el.remove());
+
+    // Remove overlay divs (safety)
     container.querySelectorAll('div').forEach(el => {
         const style = window.getComputedStyle(el);
         if (style.position === 'absolute' || style.position === 'fixed') {
             el.remove();
         }
     });
+
+    // Reset container completely (final guarantee)
     container.innerHTML = "";
 }
 
@@ -72,6 +78,7 @@ async function init(user, profile) {
 
         console.log("📊 Scores count:", scoresSnap.size);
         console.log("📝 Mistakes count:", mistakesSnap.size);
+        console.log("🔍 Both empty?", scoresSnap.empty && mistakesSnap.empty);
 
         if (scoresSnap.empty && mistakesSnap.empty) {
             removeSkeleton(container);
@@ -82,78 +89,77 @@ async function init(user, profile) {
             return;
         }
 
-        const scoreDocs = scoresSnap.docs.map(d => {
-            const data = d.data();
-            const topic = data.topic || data.topicSlug || data.chapter_slug || "";
-            const t1 = data.timestamp ? data.timestamp.seconds : 0;
-            const sid = data.session_id;
-            const matchingNotebookEntry = mistakesSnap.docs.find(md => {
-                const mData = md.data();
-                if (sid && mData.session_id) return mData.session_id === sid;
-                return (mData.topic === topic || mData.chapter_slug === topic) && (Math.abs((mData.timestamp?.seconds || 0) - t1) < 5);
-            });
-            data.mistakes = matchingNotebookEntry ? (matchingNotebookEntry.data().mistakes || []) : [];
-            data.difficulty = data.difficulty || 'simple';
-            return { data: () => data };
-        });
+                const scoreDocs = scoresSnap.docs.map(d => {
+                    const data = d.data();
+                    const topic = data.topic || data.topicSlug || data.chapter_slug || "";
+                    const t1 = data.timestamp ? data.timestamp.seconds : 0;
+                    const sid = data.session_id;
+                    const matchingNotebookEntry = mistakesSnap.docs.find(md => {
+                        const mData = md.data();
+                        // Prefer exact session_id match; fall back to topic+timestamp proximity
+                        if (sid && mData.session_id) return mData.session_id === sid;
+                        return (mData.topic === topic || mData.chapter_slug === topic) && (Math.abs((mData.timestamp?.seconds || 0) - t1) < 5);
+                    });
+                    data.mistakes = matchingNotebookEntry ? (matchingNotebookEntry.data().mistakes || []) : [];
+                    data.difficulty = data.difficulty || 'simple';
+                    return { data: () => data };
+                });
 
-        mistakesSnap.docs.forEach(md => {
-            const mData = md.data();
-            const topic = mData.topic || mData.chapter_slug || "";
-            const mTime = mData.timestamp ? mData.timestamp.seconds : 0;
-            const alreadyMapped = scoreDocs.some(sd => {
-                const sData = sd.data();
-                if (mData.session_id && sData.session_id) return mData.session_id === sData.session_id;
-                return (sData.topic === topic || sData.topicSlug === topic || sData.chapter_slug === topic) && (Math.abs((sData.timestamp?.seconds || 0) - mTime) < 5);
-            });
-            if (!alreadyMapped) {
-                scoreDocs.push({ data: () => ({ topic, timestamp: mData.timestamp, percentage: 0, difficulty: mData.difficulty || 'simple', mistakes: mData.mistakes || [], session_id: mData.session_id || null })});
+                mistakesSnap.docs.forEach(md => {
+                    const mData = md.data();
+                    const topic = mData.topic || mData.chapter_slug || "";
+                    const mTime = mData.timestamp ? mData.timestamp.seconds : 0;
+                    const alreadyMapped = scoreDocs.some(sd => {
+                        const sData = sd.data();
+                        // Prefer exact session_id match; fall back to topic+timestamp proximity
+                        if (mData.session_id && sData.session_id) return mData.session_id === sData.session_id;
+                        return (sData.topic === topic || sData.topicSlug === topic || sData.chapter_slug === topic) && (Math.abs((sData.timestamp?.seconds || 0) - mTime) < 5);
+                    });
+                    if (!alreadyMapped) {
+                        scoreDocs.push({ data: () => ({ topic, timestamp: mData.timestamp, percentage: 0, difficulty: mData.difficulty || 'simple', mistakes: mData.mistakes || [], session_id: mData.session_id || null })});
+                    }
+                });
+
+                
+               processData(scoreDocs);
+
+                // ✅ Step 1: remove skeleton COMPLETELY
+                removeSkeleton(container);
+
+                // ✅ Step 2: verify container is clean
+                console.log("After skeleton removal:", container);
+
+                // ✅ Step 3: render ONCE
+                renderConsole(container); 
+
+                container.style.opacity = "1";
+                container.style.visibility = "visible";
+                container.style.zIndex = "1";
+               
+            } catch (e) {
+                console.error("Mistake Book Error:", e);
+                if (container) container.innerHTML = `<div class="text-center text-red-500 font-bold p-8">Failed to load data. Please refresh.</div>`;
             }
-        });
+        }
 
-        processData(scoreDocs);
-        removeSkeleton(container);
-        renderConsole(container);
-        container.style.opacity = "1";
-        container.style.visibility = "visible";
-        container.style.zIndex = "1";
-
-    } catch (e) {
-        console.error("Mistake Book Error:", e);
-        if (container) container.innerHTML = `<div class="text-center text-red-500 font-bold p-8">Failed to load data. Please refresh.</div>`;
-    }
-}
-
-// Fix #1: Proper chapter name extraction (remove subject prefix)
 function getSubjectContext(topicSlug) {
     const s = topicSlug.toLowerCase();
     let subject = "General";
-
-    // Try curriculum match first (most reliable)
+    let chapterName = topicSlug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
     for (const [subj, sections] of Object.entries(curriculumData)) {
-        if (!sections || typeof sections !== 'object') continue;
         for (const [sec, chapters] of Object.entries(sections)) {
-            if (!Array.isArray(chapters)) continue;
             for (const ch of chapters) {
-                const title = (ch.chapter_title || "").toLowerCase();
-                if (title && (s.includes(title) || title.includes(s.replace(/_/g, " ")))) {
+                const title = ch.chapter_title.toLowerCase();
+                if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
                     return { subject: subj, chapterName: ch.chapter_title };
                 }
             }
         }
     }
-
-    // Fallback: clean slug-based name
-    let cleaned = topicSlug;
-    cleaned = cleaned.replace(/^(science|mathematics|social_science|math)_/i, "");
-    cleaned = cleaned.replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "");
-    const chapterName = cleaned.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-
     const prefix = s.split('_')[0];
     if (["math", "mathematics"].includes(prefix)) subject = "Mathematics";
     else if (prefix === "social") subject = "Social Science";
     else if (prefix === "science") subject = "Science";
-
     return { subject, chapterName };
 }
 
@@ -164,131 +170,77 @@ function getQuestionType(id) {
     return "MCQ";
 }
 
-// Fix #2, #3, #4: Complete rewrite of processData
 function processData(scoreDocs) {
     const subjectScores = {};
     const topicHistory = {};
-
-    // Pass 1: Aggregate by subject and build topic history
     scoreDocs.forEach(d => {
         const data = d.data();
         const topic = data.topic || data.topicSlug || data.chapter_slug;
         if (!topic) return;
-
         const { subject, chapterName } = getSubjectContext(topic);
         const score = parseFloat(data.percentage || data.score_percent || data.score || 0);
         const diff = (data.difficulty || 'simple').toLowerCase();
-
-        if (!subjectScores[subject]) {
-            subjectScores[subject] = { simple: [], medium: [], advanced: [] };
-        }
-        if (subjectScores[subject][diff]) {
-            subjectScores[subject][diff].push(score);
-        }
-
-        // Fix #3: Count ACTUAL mistakes, not fixed numbers
+        if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
+        if (subjectScores[subject][diff]) subjectScores[subject][diff].push(score);
         (data.mistakes || []).forEach(m => {
-            const type = getQuestionType(m.id || m.question_id);
+            const type = getQuestionType(m.id || m.question_id || m.question || m.question_text);
             state.proficiency[type].mistakes++;
-            state.proficiency[type].total++;
         });
-
-        // If no mistakes, count all questions as attempted
-        if ((!data.mistakes || data.mistakes.length === 0) && data.totalQuestions) {
-            state.proficiency.MCQ.total += Math.ceil(data.totalQuestions * 0.6);
-            state.proficiency.AR.total += Math.ceil(data.totalQuestions * 0.2);
-            state.proficiency.CB.total += Math.ceil(data.totalQuestions * 0.2);
-        }
-
-        const historyKey = `${subject}|${chapterName}`;
-        if (!topicHistory[historyKey]) topicHistory[historyKey] = {};
-        if (!topicHistory[historyKey][diff]) topicHistory[historyKey][diff] = [];
-
-        topicHistory[historyKey][diff].push({
-            mistakes: data.mistakes || [],
-            timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
-            sessionId: data.session_id || data.sessionId,
-            percentage: score
-        });
+        state.proficiency.MCQ.total += 6;
+        state.proficiency.AR.total += 2;
+        state.proficiency.CB.total += 2;
+        if (!topicHistory[topic]) topicHistory[topic] = {};
+        if (!topicHistory[topic][diff]) topicHistory[topic][diff] = [];
+        topicHistory[topic][diff].push({ mistakes: data.mistakes || [], timestamp: data.timestamp ? data.timestamp.toDate() : new Date() });
     });
 
     Object.keys(subjectScores).forEach(subj => {
         const s = subjectScores[subj];
         const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
-        state.subjectStats[subj] = {
-            simple: avg(s.simple) || 0,
-            medium: avg(s.medium) || 0,
-            advanced: avg(s.advanced) || 0
-        };
+        state.subjectStats[subj] = { simple: avg(s.simple), medium: avg(s.medium), advanced: avg(s.advanced) };
     });
 
-    // Pass 2: Extract friction and victory
-    Object.entries(topicHistory).forEach(([historyKey, difficulties]) => {
-        const [subject, chapterName] = historyKey.split('|');
-
+    Object.entries(topicHistory).forEach(([topic, difficulties]) => {
+        const { subject, chapterName } = getSubjectContext(topic);
         Object.entries(difficulties).forEach(([diff, attempts]) => {
-            if (!attempts || !attempts.length) return;
             attempts.sort((a, b) => b.timestamp - a.timestamp);
-
             const allMistakes = new Map();
             if (!state.friction[subject]) state.friction[subject] = {};
-            if (!state.friction[subject][chapterName]) state.friction[subject][chapterName] = {};
-            if (!state.friction[subject][chapterName][diff]) state.friction[subject][chapterName][diff] = [];
-
-            if (!state.victory[subject]) state.victory[subject] = {};
-            if (!state.victory[subject][chapterName]) state.victory[subject][chapterName] = {};
-            if (!state.victory[subject][chapterName][diff]) state.victory[subject][chapterName][diff] = [];
-
+            if (!state.friction[subject][chapterName]) state.friction[subject][chapterName] = [];
             let hasRealMistakes = false;
-
             attempts.forEach(att => {
-                if (att.mistakes && att.mistakes.length > 0) hasRealMistakes = true;
+                if (att.mistakes?.length > 0) hasRealMistakes = true;
                 (att.mistakes || []).forEach(m => {
-                    const mId = m.id || m.question_id;
+                    const mId = m.id || m.question_id || m.question || m.question_text;
                     if (!mId) return;
-
-                    // Fix #2: Store complete question data
                     if (!allMistakes.has(mId)) {
-                        allMistakes.set(mId, {
-                            id: mId,
-                            text: m.question || m.question_text || "Question unavailable",
-                            type: getQuestionType(mId),
-                            topic: subject,
-                            difficulty: diff,
-                            dates: [],
-                            percentage: att.percentage
-                        });
+                        allMistakes.set(mId, { id: mId, text: m.question || m.question_text || "Unavailable", type: getQuestionType(mId), dates: [], topic, difficulty: diff });
                     }
                     allMistakes.get(mId).dates.push(att.timestamp);
                 });
             });
-
             if (!hasRealMistakes) return;
-
-            allMistakes.forEach((mistakeData) => {
-                state.friction[subject][chapterName][diff].push({...mistakeData});
-            });
-
-            const latestAttempt = attempts[0];
-            const latestIds = new Set((latestAttempt.mistakes || []).map(m => m.id || m.question_id).filter(Boolean));
+            const latestIds = new Set((attempts[0].mistakes || []).map(m => m.id || m.question_id || m.question || m.question_text).filter(Boolean));
             const prevIds = new Set();
-
-            attempts.slice(1).forEach(att => {
-                (att.mistakes || []).forEach(m => prevIds.add(m.id || m.question_id));
-            });
-
-            allMistakes.forEach((mistakeData, id) => {
+            attempts.slice(1).forEach(att => att.mistakes?.forEach(m => prevIds.add(m.id || m.question_id || m.question || m.question_text)));
+            allMistakes.forEach((data, id) => {
                 if (prevIds.has(id) && !latestIds.has(id)) {
-                    state.victory[subject][chapterName][diff].push({
-                        ...mistakeData,
-                        masteryDate: latestAttempt.timestamp.toDateString(),
-                        masteredOn: latestAttempt.timestamp
-                    });
+                    addToState('victory', subject, chapterName, { ...data, masteryDate: attempts[0].timestamp.toDateString() });
                     state.victoryCount++;
+                } else {
+                    addToState('friction', subject, chapterName, data);
                 }
             });
         });
     });
+}
+
+function addToState(type, subject, chapter, item) {
+    if (!state[type][subject]) state[type][subject] = {};
+    if (!state[type][subject][chapter]) state[type][subject][chapter] = {};
+    const diff = item.difficulty || 'simple';
+    if (!state[type][subject][chapter][diff]) state[type][subject][chapter][diff] = [];
+    state[type][subject][chapter][diff].push(item);
 }
 
 function renderConsole(container) {
@@ -331,7 +283,7 @@ function renderConsole(container) {
 function renderProficiencyPill(type, label, stats) {
     const { total, mistakes } = stats;
     if (total === 0) return `<div class="flex items-center justify-between p-3 rounded-xl bg-slate-100 text-slate-500"><div class="flex items-center space-x-3"><span class="w-2 h-2 rounded-full bg-slate-300"></span><div><span class="block text-xs font-black uppercase tracking-wide">${label}</span><span class="text-[10px] opacity-80 font-bold">No Data</span></div></div><span class="text-lg font-black opacity-30">${type}</span></div>`;
-    const errorRate = total > 0 ? (mistakes / total) * 100 : 0;
+    const errorRate = (mistakes / total) * 100;
     let color = "bg-green-100 text-green-700", dot = "bg-green-500", status = "Strong";
     if (errorRate > 30) { color = "bg-red-100 text-red-700"; dot = "bg-red-500"; status = "Needs Focus"; }
     else if (errorRate > 15) { color = "bg-yellow-100 text-yellow-700"; dot = "bg-yellow-500"; status = "Review"; }
@@ -372,79 +324,42 @@ window.toggleList = (subject, type) => {
     if (names.length === 0) { container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`; return; }
     let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
     names.forEach(ch => {
+        const escapedCh = ch.replace(/"/g, '&quot;').replace(/'/g, "\\'");
         let count = 0;
         Object.values(chapters[ch]).forEach(arr => count += arr.length);
-        html += `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
+        html += `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item chapter-item" data-subject="${subject}" data-chapter="${escapedCh}" data-type="${type}"><span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
     });
     container.innerHTML = html + `</div>`;
     container.querySelectorAll('.chapter-item').forEach(el => {
-        const s = el.getAttribute('data-subject');
-        const ch = el.getAttribute('data-chapter');
-        const t = el.getAttribute('data-type');
-        el.addEventListener('mouseenter', () => window.inspectChapter(s, ch, t));
-        el.addEventListener('click', () => window.inspectChapter(s, ch, t, true));
+        const s = el.getAttribute('data-subject'), t = el.getAttribute('data-type');
+        const decoded = el.getAttribute('data-chapter').replace(/&quot;/g, '"').replace(/\\'/g, "'");
+        el.addEventListener('mouseenter', () => window.inspectChapter(s, decoded, t));
+        el.addEventListener('click', () => window.inspectChapter(s, decoded, t, true));
     });
 };
 
-// Fix #2 & #4: Complete rewrite of inspectChapter to show questions properly
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
-    const difficultiesObj = state[type][subject]?.[chapter];
-    if (!difficultiesObj) return;
-
+    const difficultiesObj = state[type][subject][chapter];
     const isFriction = type === 'friction';
     let html = `<div class="animate-fade-in text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Persistent Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800 leading-tight">${chapter}</h3></div>`;
-
     Object.keys(difficultiesObj).sort().forEach(diff => {
         const items = difficultiesObj[diff];
         if (!items?.length) return;
-
         const colors = { simple: 'text-blue-500', medium: 'text-amber-500', advanced: 'text-purple-500' };
         const bgs = { simple: 'bg-blue-50', medium: 'bg-amber-50', advanced: 'bg-purple-50' };
         html += `<div class="mt-6 mb-3 flex items-center"><span class="text-xs font-black uppercase tracking-widest ${colors[diff] || 'text-slate-500'} px-2 py-1 ${bgs[diff] || 'bg-slate-100'} rounded">${diff} Level</span></div>`;
-
         items.forEach(m => {
-            const dateStr = (m.dates || [])
-                .map(d => (d instanceof Date ? d : d.toDate?.() || new Date(d)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
-                .join(', ');
+            const dateStr = (m.dates || []).map(d => (d instanceof Date ? d : d.toDate?.() || new Date(d)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })).join(', ');
             const count = (m.dates || []).length;
-
-            if (isFriction) {
-                html += `<div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-3 relative">
-                    <div class="absolute left-0 top-4 bottom-4 w-1 bg-red-400 rounded-r-full"></div>
-                    ${count > 1 ? `<div class="mb-2"><span class="text-[9px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200 uppercase tracking-wider shadow-sm">⚠️ Failed ${count} Times</span></div>` : ''}
+            html += `<div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-3 relative"><div class="absolute left-0 top-4 bottom-4 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'} rounded-r-full"></div>
+                    ${isFriction && count > 1 ? `<div class="mb-2"><span class="text-[9px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200 uppercase tracking-wider shadow-sm">⚠️ Failed ${count} Times</span></div>` : ''}
                     <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
-                    <div class="pl-3 pt-2 border-t border-slate-200/50 flex justify-between items-center">
-                        <span class="text-[9px] font-bold text-red-500 uppercase">Trend: ${dateStr}</span>
-                        <a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-white border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 uppercase shadow-sm">Master Concept</a>
-                    </div>
-                </div>`;
-            } else {
-                html += `<div class="bg-green-50 rounded-xl p-4 border border-green-100 mb-3 relative">
-                    <div class="absolute left-0 top-4 bottom-4 w-1 bg-green-400 rounded-r-full"></div>
-                    <div class="mb-2">
-                        <span class="text-[9px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 uppercase tracking-wider">✅ Mastered</span>
-                    </div>
-                    <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
-                    <div class="pl-3 pt-2 border-t border-green-200/50 flex justify-between items-center">
-                        <span class="text-[9px] font-bold text-green-600 uppercase">🏆 Since: ${m.masteryDate}</span>
-                        <span class="text-[9px] font-bold text-green-600 bg-white border border-green-100 px-2 py-1 rounded">Type: ${m.type || 'MCQ'}</span>
-                    </div>
-                </div>`;
-            }
+                    <div class="pl-3 pt-2 border-t border-slate-200/50 flex justify-between items-center">${isFriction ? `<span class="text-[9px] font-bold text-red-500 uppercase">Trend: ${dateStr}</span><a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-white border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 uppercase shadow-sm">Master Concept</a>` : `<span class="text-[9px] font-bold text-green-600 uppercase">🏆 Mastered: ${m.masteryDate}</span>`}</div></div>`;
         });
     });
-
     const inspector = document.getElementById('inspector-panel');
-    if (inspector) {
-        inspector.innerHTML = html + `</div>`;
-        inspector.classList.replace('items-center', 'items-start');
-        inspector.classList.replace('justify-center', 'justify-start');
-        inspector.classList.remove('text-center');
-    }
-    if (window.innerWidth < 1024 && isClick) {
-        document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`;
-        document.getElementById('mobile-inspector').classList.remove('hidden');
-    }
+    if (inspector) { inspector.innerHTML = html + `</div>`; inspector.classList.replace('items-center', 'items-start'); inspector.classList.replace('justify-center', 'justify-start'); inspector.classList.remove('text-center'); }
+    if (window.innerWidth < 1024 && isClick) { document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`; document.getElementById('mobile-inspector').classList.remove('hidden'); }
 };
 
 window.closeMobileInspector = () => document.getElementById('mobile-inspector').classList.add('hidden');
