@@ -61,26 +61,37 @@
     showInbox: false
 });</script>
 
-<section class="bg-[url('images/hero-bg.png')] bg-cover bg-top text-white py-20 lg:py-28 px-4 relative overflow-hidden pt-32 lg:pt-40">
-  <!-- Overlay to ensure text readability against the image -->
-  <div class="absolute inset-0 bg-slate-900/60 lg:bg-slate-900/40 z-0"></div>
+<section class="bg-slate-900 text-white relative overflow-hidden w-full">
+  <div class="grid grid-cols-1 lg:grid-cols-[6fr_4fr] w-full min-h-[600px] lg:min-h-screen">
 
-  <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10 pt-12">
-    <div class="w-full lg:w-[60%] text-center lg:text-left">
-      <h1 class="text-4xl lg:text-6xl font-black mb-4 leading-tight fade-in drop-shadow-lg">
-        Master Your Exams <br><span class="text-gold">With Precision</span>
-      </h1>
-      <p class="text-white/90 text-lg mb-8 max-w-xl mx-auto lg:mx-0 fade-in drop-shadow" style="animation-delay: 0.2s;">
-        Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.
-      </p>
-      <div class="flex justify-center lg:justify-start fade-in" style="animation-delay: 0.3s;">
-        <a href="#quiz-section" class="bg-white text-cbse-blue font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-slate-100 transition transform hover:scale-105">
-          Try Guest Quiz
-        </a>
+    <!-- 60% Left Column -->
+    <div class="relative w-full h-[50vh] lg:h-auto pt-12 lg:pt-[3rem]">
+      <img src="images/hero-bg.png" alt="Students" class="absolute inset-0 w-full h-full object-cover object-center z-0 aspect-[16/9] lg:aspect-auto">
+
+      <!-- Color Bleed Overlay to seamlessly transition to right column (only visible on desktop where they sit side-by-side) -->
+      <div class="hidden lg:block absolute inset-y-0 right-0 w-1/3 bg-gradient-to-r from-transparent to-slate-900 z-10"></div>
+
+      <!-- Overlay to ensure text readability -->
+      <div class="absolute inset-0 bg-slate-900/60 lg:bg-slate-900/40 z-10"></div>
+
+      <div class="relative z-20 flex flex-col justify-center h-full px-8 lg:pl-20 xl:pl-32 pb-12 pt-20 lg:pt-32 text-center lg:text-left">
+        <h1 class="text-4xl lg:text-6xl font-black mb-4 leading-tight fade-in drop-shadow-lg">
+          Master Your Exams <br><span class="text-gold">With Precision</span>
+        </h1>
+        <p class="text-white/90 text-lg mb-8 max-w-xl mx-auto lg:mx-0 fade-in drop-shadow" style="animation-delay: 0.2s;">
+          Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.
+        </p>
+        <div class="flex justify-center lg:justify-start fade-in" style="animation-delay: 0.3s;">
+          <a href="#quiz-section" class="bg-white text-cbse-blue font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-slate-100 transition transform hover:scale-105">
+            Try Guest Quiz
+          </a>
+        </div>
       </div>
     </div>
 
-    <div class="w-full lg:w-[40%] max-w-md bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl fade-in mt-8 lg:mt-0" style="animation-delay: 0.4s;">
+    <!-- 40% Right Column -->
+    <div class="bg-slate-900 w-full flex flex-col justify-center p-8 lg:pr-20 xl:pr-32 py-16 lg:py-32 relative z-30">
+      <div class="w-full max-w-md mx-auto bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl fade-in" style="animation-delay: 0.4s;">
       <div class="flex items-center justify-center gap-3 mb-6">
         <i class="fas fa-fingerprint text-gold text-2xl"></i>
         <h2 class="text-white font-bold text-xl">Login</h2>
@@ -186,7 +197,7 @@
                   <span class="absolute -top-2 -right-2 bg-green-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">FREE</span>
                 </button>
                 <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-gold bg-transparent text-sm font-semibold text-gold cursor-not-allowed opacity-80" data-diff="Medium" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Medium</button>
-                <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-gold bg-transparent text-sm font-semibold text-gold cursor-not-allowed opacity-80" data-diff="Advanced" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Advanced</button>
+                <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-sky-500 bg-transparent text-sm font-semibold text-sky-500 cursor-not-allowed opacity-80" data-diff="Advanced" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Advanced</button>
               </div>
             </div>
             <div class="flex shrink-0 justify-center md:justify-end">
