@@ -148,23 +148,17 @@ function processData(scoreDocs) {
         const diff = (data.difficulty || 'simple').toLowerCase();
 
         if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
-        subjectScores[subject][diff].push(parseFloat(data.percentage || 0));
-
+        if (subjectScores[subject][diff]) subjectScores[subject][diff].push(score);
         state.proficiency.MCQ.total += (data.mcq_total || 0);
-        state.proficiency.AR.total += (data.ar_total || 0);
-        state.proficiency.CB.total += (data.cb_total || 0);
-
-        (data.mistakes || []).forEach(m => state.proficiency[classifyQuestionType(m)].mistakes++);
-
-        const historyKey = `${subject}|${chapterName}`;
-        if (!topicHistory[historyKey]) topicHistory[historyKey] = {};
-        if (!topicHistory[historyKey][diff]) topicHistory[historyKey][diff] = [];
-        
-        topicHistory[historyKey][diff].push({
-            mistakes: data.mistakes || [],
-            timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
-            percentage: data.percentage || 0
+        state.proficiency.AR.total  += (data.ar_total  || 0);
+        state.proficiency.CB.total  += (data.cb_total  || 0);
+        (data.mistakes || []).forEach(m => {
+            const type = classifyQuestionType(m);
+            state.proficiency[type].mistakes++;
         });
+        if (!topicHistory[topic]) topicHistory[topic] = {};
+        if (!topicHistory[topic][diff]) topicHistory[topic][diff] = [];
+        topicHistory[topic][diff].push({ mistakes: data.mistakes || [], timestamp: data.timestamp ? data.timestamp.toDate() : new Date() });
     });
 
     // Calculate subject averages
@@ -183,67 +177,28 @@ function processData(scoreDocs) {
             
             // Sort by timestamp DESC to get latest first
             attempts.sort((a, b) => b.timestamp - a.timestamp);
-            const latestAttempt = attempts[0];
-            
-            // Get all unique mistake IDs from latest attempt
-            const latestIds = new Set((latestAttempt.mistakes || []).map(m => m.id || m.question_id || m.question));
-            
-            // Get all unique mistake IDs from previous attempts
-            const prevIds = new Set();
-            attempts.slice(1).forEach(att => {
-                (att.mistakes || []).forEach(m => {
-                    prevIds.add(m.id || m.question_id || m.question);
-                });
-            });
-
-            // Build map of all unique mistakes with their history
-            const allMistakesMap = new Map();
+            const allMistakes = new Map();
+            let hasRealMistakes = false;
             attempts.forEach(att => {
                 (att.mistakes || []).forEach(m => {
-                    const id = m.id || m.question_id || m.question;
-                    if (!id) return;
-                    
-                    if (!allMistakesMap.has(id)) {
-                        allMistakesMap.set(id, {
-                            id, 
-                            text: m.question_text || m.question || "Question unavailable",
-                            type: classifyQuestionType(m), 
-                            topic: subject, 
-                            difficulty: diff, 
-                            dates: []
-                        });
+                    const mId = m.id || m.question_id || m.question_text || m.question;
+                    if (!mId) return;
+                    if (!allMistakes.has(mId)) {
+                        allMistakes.set(mId, { id: mId, text: m.question_text || m.question || "Unavailable", type: classifyQuestionType(m), dates: [], topic, difficulty: diff });
                     }
                     allMistakesMap.get(id).dates.push(att.timestamp);
                 });
             });
-
-            // FRICTION: Questions that are STILL WRONG in latest attempt
-            allMistakesMap.forEach((m, id) => {
-                if (latestIds.has(id)) {
-                    if (!state.friction[subject]) state.friction[subject] = {};
-                    if (!state.friction[subject][chapterName]) {
-                        state.friction[subject][chapterName] = {};
-                        state.activeChapterCount++;
-                    }
-                    if (!state.friction[subject][chapterName][diff]) {
-                        state.friction[subject][chapterName][diff] = [];
-                    }
-                    state.friction[subject][chapterName][diff].push(m);
-                }
-            });
-
-            // VICTORY: Questions that WERE WRONG but are NOW CORRECT (in prev but not in latest)
-            allMistakesMap.forEach((m, id) => {
+            if (!hasRealMistakes) return;
+            const latestIds = new Set((attempts[0].mistakes || []).map(m => m.id || m.question_id || m.question_text || m.question).filter(Boolean));
+            const prevIds = new Set();
+            attempts.slice(1).forEach(att => att.mistakes?.forEach(m => prevIds.add(m.id || m.question_id || m.question_text || m.question)));
+            allMistakes.forEach((mistakeData, id) => {
                 if (prevIds.has(id) && !latestIds.has(id)) {
-                    if (!state.victory[subject]) state.victory[subject] = {};
-                    if (!state.victory[subject][chapterName]) state.victory[subject][chapterName] = {};
-                    if (!state.victory[subject][chapterName][diff]) state.victory[subject][chapterName][diff] = [];
-                    
-                    state.victory[subject][chapterName][diff].push({
-                        ...m,
-                        masteryDate: latestAttempt.timestamp.toDateString()
-                    });
+                    addToState('victory', subject, chapterName, { ...mistakeData, masteryDate: attempts[0].timestamp.toDateString() });
                     state.victoryCount++;
+                } else {
+                    addToState('friction', subject, chapterName, mistakeData);
                 }
             });
         });
@@ -310,20 +265,19 @@ function renderMasteryCard(subject) {
 
 function renderSubjectNavigator(subject) {
     const theme = THEMES[subject] || THEMES["General"];
-    const fCount = Object.keys(state.friction[subject] || {}).length;
-    const vCount = Object.keys(state.victory[subject] || {}).length;
-    return `<div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-            <div class="px-6 py-5 flex items-center justify-between ${theme.bg}">
-                <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center ${theme.text}"><i class="fas ${theme.icon}"></i></div><h3 class="text-lg font-black text-slate-700">${subject}</h3></div>
-                <div class="flex space-x-4">
-                    <button onclick="toggleList('${subject}', 'friction')" class="text-xs font-bold text-red-500 hover:underline">Friction (${fCount})</button>
-                    <button onclick="toggleList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:underline">Victory (${vCount})</button>
-                </div>
-            </div><div id="list-${subject}" class="hidden bg-white divide-y divide-slate-100 max-h-96 overflow-y-auto"></div></div>`;
+    const fChapters = Object.keys(state.friction[subject] || {}).length;
+    const vChapters = Object.keys(state.victory[subject] || {}).length;
+    return `<div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm transition group">
+            <div class="px-6 py-5 flex items-center justify-between border-b border-slate-50 ${theme.bg}">
+                <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text}"><i class="fas ${theme.icon}"></i></div><h3 class="text-lg font-black text-slate-700 tracking-tight">${subject}</h3></div>
+                <div class="flex space-x-4"><button onclick="toggleList('${subject}', 'friction')" class="text-xs font-bold text-red-500 hover:text-red-700 transition flex items-center"><span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span> Friction (${fChapters})</button>
+                <button onclick="toggleList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:text-green-700 transition flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Victory (${vChapters})</button></div>
+            </div><div id="list-${subject.replace(/\s+/g, '-')}" class="hidden bg-white"></div></div>`;
 }
 
 window.toggleList = (subject, type) => {
-    const container = document.getElementById(`list-${subject}`);
+    const container = document.getElementById(`list-${subject.replace(/\s+/g, '-')}`);
+    if (!container) return;
     const chapters = state[type][subject] || {};
     
     if (container.dataset.type === type && !container.classList.contains('hidden')) { 
@@ -357,14 +311,8 @@ window.toggleList = (subject, type) => {
 // CORRECTED: Inspector properly handles nested difficulty structure
 // ═══════════════════════════════════════════════════════════════════════════
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
-    console.log(`Inspecting: ${type} / ${subject} / ${chapter}`);
-    
-    const chapterData = state[type]?.[subject]?.[chapter];
-    if (!chapterData || typeof chapterData !== 'object') {
-        console.warn(`No data found for ${subject}/${chapter}`);
-        return;
-    }
-    
+    const difficultiesObj = state[type]?.[subject]?.[chapter];
+    if (!difficultiesObj) return;
     const isFriction = type === 'friction';
     let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100">
         <span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span>
@@ -394,17 +342,17 @@ window.inspectChapter = (subject, chapter, type, isClick = false) => {
             </div>`;
         });
     });
-
-    const panel = document.getElementById('inspector-panel');
-    if (panel) {
-        panel.innerHTML = html + `</div>`;
-        panel.classList.remove('items-center', 'justify-center', 'text-center');
-        panel.classList.add('items-start', 'justify-start');
+    const inspector = document.getElementById('inspector-panel');
+    if (inspector) {
+        inspector.innerHTML = html + `</div>`;
+        inspector.className = 'glass-panel rounded-3xl p-5 border border-slate-200 shadow-sm bg-white/80 overflow-y-auto text-left';
+        inspector.style.maxHeight = '75vh';
     }
-    
     if (window.innerWidth < 1024 && isClick) {
-        document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`;
-        document.getElementById('mobile-inspector').classList.remove('hidden');
+        const mob = document.getElementById('mobile-inspector-content');
+        const mobPanel = document.getElementById('mobile-inspector');
+        if (mob) mob.innerHTML = html + `</div>`;
+        if (mobPanel) mobPanel.classList.remove('hidden');
     }
 };
 
