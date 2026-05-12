@@ -125,6 +125,8 @@ module.exports = async (req, res) => {
     // ── CORS ─────────────────────────────────────────────────────────────────
     const origin = req.headers.origin;
     const allowedOrigins = [
+        'https://ready4exam.in',
+        'https://www.ready4exam.in',
         'https://karnkeshav.github.io',
         'https://masterpage-1.vercel.app',
         process.env.ALLOWED_ORIGIN
