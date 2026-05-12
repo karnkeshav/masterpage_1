@@ -66,7 +66,7 @@
         function getSubjectIcon(sub) {
             if (sub === "Science") return "fa-flask";
             if (sub === "Mathematics") return "fa-calculator";
-            if (sub === "Social Science") return "fa-globe-americas";
+            if (sub === "Social Science") return "fa-landmark";
             return "fa-book";
         }
 
@@ -153,6 +153,7 @@
     <div id="app-header"></div>
 <script>R4E.renderHeader({
     title: "Curriculum",
+    titleHref: "../consoles/student.html",
     userWelcomeDefault: "Student",
     roleBadge: "Grade --",
     roleBadgeId: "context-badge",
@@ -174,7 +175,7 @@
 
             <div id="milestone-dashboard" class="mb-12"></div>
 
-            <div id="subject-grid" class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div id="subject-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 </div>
 
             <div class="text-center mt-12">

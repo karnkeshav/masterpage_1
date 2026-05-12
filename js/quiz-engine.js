@@ -277,36 +277,44 @@ async function handleSubmit() {
         cb: stats.case.t
     };
 
-    if (percentage < 85) {
-        // Save to Mistake Notebook — now passes difficulty and session_id
-        saveMistakes(
-            quizState.questions,
-            quizState.userAnswers,
-            quizState.topicSlug,
-            quizState.classId,
-            quizState.difficulty,  // fixes: difficulty was never passed before
-            sessionId               // links to the quiz_scores document
-        );
+    // Await both saves before allowing navigation — fire-and-forget risks data loss
+    // if the browser navigates or goes to background before Firestore commits.
+    const saves = [];
 
-        // Trigger In-Page Review
-        setTimeout(() => {
-            alert("⚠️ Mastery Alert: Score below 85%.\nQuestions have been added to your Mistake Notebook.");
-            // VISUAL INTELLIGENCE: Focus Mode
-            UI.toggleFocusMode(true);
-            UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
-        }, 1000);
+    if (percentage < 85) {
+        saves.push(
+            saveMistakes(
+                quizState.questions,
+                quizState.userAnswers,
+                quizState.topicSlug,
+                quizState.classId,
+                quizState.difficulty,
+                sessionId
+            ).catch(e => console.warn("saveMistakes failed:", e))
+        );
     }
 
-    saveResult({
-        ...quizState,
-        score: stats.correct,
-        total: stats.total,
-        topic: quizState.topicSlug,
-        latency_vector: quizState.latency,
-        quiz_mode: quizState.quizMode,
-        session_id: sessionId,  // links to the mistake_notebook document
-        typeStats               // real per-type counts for proficiency profile
-    });
+    saves.push(
+            saveResult({
+            ...quizState,
+            score: stats.correct,
+            total: stats.total,
+            topic: quizState.topicSlug,
+            latency_vector: quizState.latency,
+            quiz_mode: quizState.quizMode,
+            session_id: sessionId,
+            typeStats
+        }).catch(e => console.warn("saveResult failed:", e))
+    );
+
+    await Promise.all(saves);
+
+    if (percentage < 85) {
+        setTimeout(() => {
+            alert("⚠️ Mastery Alert: Score below 85%.\nQuestions have been added to your Mistake Notebook.");
+            UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
+        }, 300);
+    }
 }
 
 /* -----------------------------------

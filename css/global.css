@@ -13,6 +13,7 @@ body {
   background-color: #f8fafc;
   color: #1f2937;
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
 
 /* Add this to your base section */

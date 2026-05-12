@@ -40,6 +40,18 @@ let chapterListeners = [];
 let heatmapTaughtDate = null;
 let selectedChapterId = "";
 
+// Returns true when a quiz_score doc matches the currently selected chapter.
+// Checks both the title-derived id AND the curriculum table_id (quiz slug format)
+// because quiz-engine saves topicSlug in table_id format (e.g. "science_light_refraction_10_quiz")
+// while selectedChapterId is derived from the chapter title.
+function scoreMatchesChapter(s, chapterId) {
+    const tableId = activeChapters.find(c => c.id === chapterId)?.tableId || null;
+    return (
+        s.topicSlug === chapterId || s.topic === chapterId || s.chapter === chapterId ||
+        (tableId && (s.topicSlug === tableId || s.topic === tableId))
+    );
+}
+
 // UI Event Handlers Exposure
 window.switchTab = switchTab;
 window.markChapterFinished = markChapterFinished;
@@ -48,7 +60,7 @@ window.revokeChapterFinished = revokeChapterFinished;
 window.showStudentDetail = (uid) => {
     const name = window.sectionStudents?.names[uid] || uid;
     const scores = studentScores.filter(s =>
-        s.user_id === uid && (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId)
+        s.user_id === uid && scoreMatchesChapter(s, selectedChapterId)
     );
 
     let detailHtml = '';
@@ -122,26 +134,13 @@ async function fetchSectionStudents() {
         if (batch.length === 0) continue;
 
             
-// 🔥 FIX: simplified query (no school_id filter)
-const scoresQuery = query(
-  collection(db, "quiz_scores"),
-  where("user_id", "in", batch)
-);
-        
-        let scoresSnap;
-
-try {
-  scoresSnap = await getDocs(scoresQuery);
-} catch (err) {
-  console.warn("⚠️ school_id query failed, retrying without filter");
-
-  const fallbackQuery = query(
-    collection(db, "quiz_scores"),
-    where("user_id", "in", batch)
-  );
-
-  scoresSnap = await getDocs(fallbackQuery);
-}
+        // UIDs in `batch` come from a school-scoped student query, so this
+        // is already implicitly school-isolated. No extra school_id filter
+        // needed (and it would require a composite Firestore index).
+        const scoresSnap = await getDocs(query(
+            collection(db, "quiz_scores"),
+            where("user_id", "in", batch)
+        ));
         scoresSnap.docs.forEach(d => studentScores.push({ id: d.id, ...d.data() }));
     }
 }
@@ -158,31 +157,54 @@ async function init(user) {
     window.teacherProfile = user;
 
     // Populate dropdowns from teacher profile
-    const sections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || 'Unassigned'}${user.mapped_section}`] : []);
+    const rawSections = user?.sections || (user?.mapped_section ? [`${user?.mapped_grade || 'Unassigned'}${user.mapped_section}`] : []);
+    // Filter to only well-formed sections: digits 6-12 + a single uppercase letter (e.g. "9A", "10B")
+    // CSV teachers occasionally have garbage values like "98" or "912" when admins put a number
+    // in the Section column. Skip those instead of crashing later in loadCurriculum.
+    const sections = rawSections.filter(s => /^(6|7|8|9|10|11|12)[A-Z]$/.test(String(s)));
+    if (rawSections.length > 0 && sections.length === 0) {
+        console.warn("[teacher.js] All sections in profile are malformed:", rawSections);
+    }
     const disciplines = user?.mapped_disciplines || (user?.mapped_discipline ? [user.mapped_discipline] : []);
 
     const sectionSelect = document.getElementById('section-select');
-    sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('');
+    sectionSelect.innerHTML = sections.map(s => `<option value="${s}" class="text-slate-800">${s}</option>`).join('') || '<option value="Unassigned">Unassigned</option>';
 
     const discSelect = document.getElementById('discipline-select');
-    discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${trSubject(d)}</option>`).join('');
+    discSelect.innerHTML = disciplines.map(d => `<option value="${d}" class="text-slate-800">${trSubject(d)}</option>`).join('') || '<option value="Unassigned">Unassigned</option>';
 
-    // Derive grades from sections (e.g., "9A" -> "9")
+    // Derive grades from valid sections (e.g., "9A" -> "9")
     const grades = [...new Set(sections.map(s => s.replace(/[A-Z]/g, '')))];
     const gradeSelect = document.getElementById('grade-select');
-    gradeSelect.innerHTML = grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('');
+    gradeSelect.innerHTML = grades.length > 0
+        ? grades.map(g => `<option value="${g}" class="text-slate-800">${g}th</option>`).join('')
+        : '<option value="">Unassigned</option>';
 
     // Set initial context
-    currentContext.grade = document.getElementById('grade-select').value || grades[0] || 'Unassigned';
+    currentContext.grade = document.getElementById('grade-select').value || grades[0] || '';
     currentContext.section = document.getElementById('section-select').value || sections[0] || 'Unassigned';
     currentContext.discipline = document.getElementById('discipline-select').value || disciplines[0] || 'Unassigned';
 
-    document.getElementById('header-class').innerText = `${currentContext.grade}-${currentContext.section}`;
+    document.getElementById('header-class').innerText = `${currentContext.grade || '—'}-${currentContext.section}`;
     document.getElementById('header-discipline').innerText = trSubject(currentContext.discipline);
 
 
     const viewport = document.getElementById('tab-viewport');
     UI.showSkeleton(viewport, 3);
+
+    // If teacher has no valid section assigned, show a helpful message instead of crashing
+    if (!currentContext.grade || !sections.length) {
+        viewport.innerHTML = `
+            <div class="p-12 text-center">
+                <i class="fas fa-user-shield text-5xl text-slate-300 mb-4"></i>
+                <h2 class="text-xl font-black text-slate-700 mb-2">No Section Assigned</h2>
+                <p class="text-sm text-slate-500 max-w-md mx-auto">
+                    Your teacher profile doesn't have a valid section assigned yet.
+                    Please contact your school admin to assign you a grade-section like "9A", "10B", etc.
+                </p>
+            </div>`;
+        return;
+    }
 
     try {
         // Step A: Await clients
@@ -275,6 +297,7 @@ function updateActiveChapters(curriculumData) {
 
     activeChapters = chaps.map(c => ({
         id: c.chapter_title.toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/(^-|-$)/g, ''),
+        tableId: c.table_id || null,
         title: c.chapter_title
     }));
 
@@ -558,22 +581,24 @@ function renderSectionHeatmap() {
     } else {
         students.uids.forEach((uid, i) => {
             const hasScore = studentScores.some(s =>
-                s.user_id === uid && (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId)
+                s.user_id === uid && scoreMatchesChapter(s, selectedChapterId)
             );
             const colorClass = hasScore
-                ? 'bg-success-green shadow-[0_0_12px_rgba(5,150,105,0.4)] border border-green-400 text-white'
+                ? 'bg-success-green shadow-[0_0_8px_rgba(5,150,105,0.35)] border border-green-400 text-white'
                 : 'bg-slate-200 border border-slate-300 text-slate-500';
             const name = students.names[uid] || `Student ${i + 1}`;
+            const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || String(i + 1);
 
             gridHtml += `
                 <button title="${esc(name)}" onclick="window.showStudentDetail('${uid}')"
-                    class="w-full aspect-square rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110 flex items-center justify-center font-black text-xs ${colorClass}">
-                    ${i + 1}
+                    class="w-10 h-10 rounded-lg transition-all duration-200 hover:scale-110 flex flex-col items-center justify-center font-black ${colorClass}"
+                    style="font-size:9px;line-height:1.1;">
+                    <span style="font-size:11px;font-weight:900;">${initials}</span>
+                    <span style="font-size:8px;opacity:0.75;">${i + 1}</span>
                 </button>
             `;
         });
     }
-    const cols = Math.max(1, Math.min(10, Math.ceil(Math.sqrt(studentCount))));
 
     let syncText = heatmapTaughtDate && heatmapTaughtDate.toDate ? `Sync Activated: ${heatmapTaughtDate.toDate().toLocaleDateString()}` : "Sync Not Activated";
 
@@ -629,7 +654,7 @@ function renderSectionHeatmap() {
                     </div>
                 </div>
 
-                <div class="grid gap-3 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner" style="grid-template-columns: repeat(${cols}, 1fr);">
+                <div class="grid gap-2 w-full max-w-4xl mx-auto p-4 bg-slate-50/50 rounded-2xl border border-slate-100 shadow-inner overflow-y-auto" style="grid-template-columns: repeat(auto-fill, minmax(40px, 44px)); max-height: calc(100vh - 320px);">
                     ${gridHtml}
                 </div>
 
@@ -679,7 +704,7 @@ function renderRoster() {
     } else {
         students.uids.forEach(uid => {
             const hasScore = studentScores.some(s =>
-                s.user_id === uid && (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId)
+                s.user_id === uid && scoreMatchesChapter(s, selectedChapterId)
             );
             const name = students.names[uid] || uid;
             const parentId = students.parentIds[uid];
@@ -752,7 +777,7 @@ function calculateRemedialQueue() {
     // Group scores by student for the selected chapter
     const studentMap = {};
     studentScores.forEach(s => {
-        const matchesChapter = (s.topicSlug === selectedChapterId || s.topic === selectedChapterId || s.chapter === selectedChapterId);
+        const matchesChapter = scoreMatchesChapter(s, selectedChapterId);
         if (!matchesChapter) return;
 
         const uid = s.user_id;
@@ -778,18 +803,24 @@ function calculateRemedialQueue() {
         return { B: 0, strugglers: [], top10: [] };
     }
 
-    // Calculate Benchmark (B) at P70
-    const sortedAttempts = realStudents.map(s => s.attempts).sort((a, b) => a - b);
-    const p70Index = Math.min(Math.floor(realStudents.length * 0.70), sortedAttempts.length - 1);
-    const B = sortedAttempts[p70Index] ?? 1;
+    // Benchmark (B) = passing threshold. Anyone below this needs remediation.
+    // Use 40% (CBSE pass mark) as the floor; if class median is lower, raise B to median
+    // so the bottom half is always flagged when a class is broadly struggling.
+    const sortedScores = realStudents.map(s => s.score).sort((a, b) => a - b);
+    const median = sortedScores[Math.floor(sortedScores.length / 2)] ?? 0;
+    const B = Math.max(40, median);
 
-    // Filter Strugglers (B+1)
+    // Strugglers: scored below benchmark — these are the kids needing help.
     const strugglers = realStudents
-        .filter(s => s.attempts > B)
+        .filter(s => s.score < B)
         .sort((a, b) => a.score - b.score)
         .slice(0, 20);
 
-    const top10 = [...realStudents]
+    // Top 10: must have cleared a minimum mastery bar (60%) to count as "advanced".
+    // Without this floor, a class with only failing attempts produces fake leaders.
+    const TOP_FLOOR = 60;
+    const top10 = realStudents
+        .filter(s => s.score >= TOP_FLOOR)
         .sort((a, b) => b.score - a.score || a.attempts - b.attempts)
         .slice(0, 10);
 
@@ -859,12 +890,12 @@ function renderRemedialQueue() {
                                 <i class="fas fa-ambulance"></i> Remedial Attention List
                             </h3>
                             <p class="text-xs font-medium text-red-100 mt-1 opacity-90">
-                                Bottom Strugglers (breached the <i>B+1</i> threshold).
+                                Students scoring below the benchmark — need intervention.
                             </p>
                         </div>
                         <div class="text-right">
-                            <div class="text-3xl font-black">${B}</div>
-                            <div class="text-[9px] uppercase tracking-widest font-bold opacity-80">Current Benchmark (B)</div>
+                            <div class="text-3xl font-black">${B}%</div>
+                            <div class="text-[9px] uppercase tracking-widest font-bold opacity-80">Pass Benchmark</div>
                         </div>
                     </div>
                     <div class="p-0 overflow-y-auto max-h-[500px]">
