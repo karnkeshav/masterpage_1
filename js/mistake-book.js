@@ -94,34 +94,53 @@ async function init(user, profile) {
     }
 }
 
-function getSubjectContext(topicSlug) {
-    const s = topicSlug.toLowerCase();
+function getSubjectContext(topicSlug = "") {
+    const raw = String(topicSlug || "");
+    const s = raw.toLowerCase();
     let subject = "General";
-    
-    // Try to match from curriculum
+
+    // Prefer exact curriculum table_id matches. Title-only matching can misclassify
+    // similar slugs (for example, Force and Laws of Motion vs Motion).
     for (const [subj, sections] of Object.entries(curriculumData)) {
         if (!sections || typeof sections !== 'object') continue;
         for (const chapters of Object.values(sections)) {
             if (!Array.isArray(chapters)) continue;
             for (const ch of chapters) {
-                const title = (ch.chapter_title || "").toLowerCase();
-                if (title && (s.includes(title) || title.includes(s.replace(/_/g, " ")))) {
+                const tableId = String(ch.table_id || "").toLowerCase();
+                if (tableId && tableId === s) {
+                    return { subject: subj, chapterName: ch.chapter_title || raw };
+                }
+            }
+        }
+    }
+
+    // Then fall back to title matching for legacy documents that stored a title
+    // instead of the table slug.
+    const slugWords = s.replace(/_/g, " ");
+    for (const [subj, sections] of Object.entries(curriculumData)) {
+        if (!sections || typeof sections !== 'object') continue;
+        for (const chapters of Object.values(sections)) {
+            if (!Array.isArray(chapters)) continue;
+            for (const ch of chapters) {
+                const title = String(ch.chapter_title || "").toLowerCase();
+                if (title && (slugWords.includes(title) || title.includes(slugWords))) {
                     return { subject: subj, chapterName: ch.chapter_title };
                 }
             }
         }
     }
-    
-    // Fallback: clean the slug
-    let cleaned = topicSlug.replace(/^(science|mathematics|social_science|math)_/i, "")
-                           .replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "");
+
+    // Fallback: clean the slug while preserving the subject prefix.
+    let cleaned = raw.replace(/^(science|mathematics|social_science|social|math)_/i, "")
+                     .replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "")
+                     .replace(/_quiz$/i, "");
     const chapterName = cleaned.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-    
+
     if (s.includes("math")) subject = "Mathematics";
     else if (s.includes("social")) subject = "Social Science";
     else if (s.includes("science")) subject = "Science";
-    
-    return { subject, chapterName };
+
+    return { subject, chapterName: chapterName || raw || "Unknown Chapter" };
 }
 
 function classifyQuestionType(m) {
@@ -134,75 +153,156 @@ function classifyQuestionType(m) {
 // ═══════════════════════════════════════════════════════════════════════════
 // CORRECTED: Proper friction/victory logic
 // ═══════════════════════════════════════════════════════════════════════════
+function normalizeDifficulty(value) {
+    return String(value || "simple").trim().toLowerCase();
+}
+
+function toDate(value) {
+    if (!value) return new Date(0);
+    if (value instanceof Date) return value;
+    if (typeof value.toDate === "function") return value.toDate();
+    if (typeof value.seconds === "number") return new Date(value.seconds * 1000);
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+}
+
+function getScore(data) {
+    const raw = data.percentage ?? data.score_percent ?? data.scorePercent;
+    if (typeof raw === "number" && Number.isFinite(raw)) return Math.round(raw);
+    if (typeof data.score === "number" && typeof data.total === "number" && data.total > 0) {
+        return Math.round((data.score / data.total) * 100);
+    }
+    return null;
+}
+
+function getMistakeId(m) {
+    return String(m.id || m.question_id || m.question_text || m.question || "").trim();
+}
+
+function addToState(type, subject, chapter, mistakeData) {
+    const diff = normalizeDifficulty(mistakeData.difficulty);
+    state[type][subject] ||= {};
+    state[type][subject][chapter] ||= {};
+    state[type][subject][chapter][diff] ||= [];
+    state[type][subject][chapter][diff].push(mistakeData);
+}
+
+function countChapters(group) {
+    return Object.values(group).reduce((total, chapters) => total + Object.keys(chapters || {}).length, 0);
+}
+
 function processData(scoreDocs) {
+    state.friction = {};
+    state.victory = {};
+    state.subjectStats = {};
+    state.proficiency = {
+        MCQ: { total: 0, mistakes: 0 },
+        AR: { total: 0, mistakes: 0 },
+        CB: { total: 0, mistakes: 0 }
+    };
+    state.victoryCount = 0;
+    state.activeChapterCount = 0;
+
     const topicHistory = {};
     const subjectScores = {};
 
-    // PASS 1: Build topic history and subject scores
+    // PASS 1: Build chapter-attempt history and subject scores from quiz_scores
+    // joined with mistake_notebook entries. Each attempt keeps the question IDs
+    // that were wrong for that submit event.
     scoreDocs.forEach(d => {
         const data = d.data();
         const topic = data.topic || data.topicSlug || data.chapter_slug;
         if (!topic) return;
 
         const { subject, chapterName } = getSubjectContext(topic);
-        const diff = (data.difficulty || 'simple').toLowerCase();
+        const diff = normalizeDifficulty(data.difficulty);
+        const attemptScorePercent = getScore(data);
+        const mistakes = Array.isArray(data.mistakes) ? data.mistakes : [];
 
         if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
-        if (subjectScores[subject][diff]) subjectScores[subject][diff].push(score);
+        if (attemptScorePercent !== null) {
+            if (!subjectScores[subject][diff]) subjectScores[subject][diff] = [];
+            subjectScores[subject][diff].push(attemptScorePercent);
+        }
+
         state.proficiency.MCQ.total += (data.mcq_total || 0);
-        state.proficiency.AR.total  += (data.ar_total  || 0);
-        state.proficiency.CB.total  += (data.cb_total  || 0);
-        (data.mistakes || []).forEach(m => {
+        state.proficiency.AR.total += (data.ar_total || 0);
+        state.proficiency.CB.total += (data.cb_total || 0);
+        mistakes.forEach(m => {
             const type = classifyQuestionType(m);
             state.proficiency[type].mistakes++;
         });
-        if (!topicHistory[topic]) topicHistory[topic] = {};
-        if (!topicHistory[topic][diff]) topicHistory[topic][diff] = [];
-        topicHistory[topic][diff].push({ mistakes: data.mistakes || [], timestamp: data.timestamp ? data.timestamp.toDate() : new Date() });
+
+        const historyKey = `${subject}|${chapterName}|${topic}`;
+        if (!topicHistory[historyKey]) topicHistory[historyKey] = { subject, chapterName, topic, difficulties: {} };
+        if (!topicHistory[historyKey].difficulties[diff]) topicHistory[historyKey].difficulties[diff] = [];
+        topicHistory[historyKey].difficulties[diff].push({
+            mistakes,
+            timestamp: toDate(data.timestamp),
+            topic
+        });
     });
 
-    // Calculate subject averages
+    // Calculate subject averages.
     Object.keys(subjectScores).forEach(subj => {
         const s = subjectScores[subj];
         const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
-        state.subjectStats[subj] = { simple: avg(s.simple), medium: avg(s.medium), advanced: avg(s.advanced) };
+        state.subjectStats[subj] = { simple: avg(s.simple || []), medium: avg(s.medium || []), advanced: avg(s.advanced || []) };
     });
 
-    // PASS 2: Extract friction and victory
-    Object.entries(topicHistory).forEach(([historyKey, difficulties]) => {
-        const [subject, chapterName] = historyKey.split('|');
-
+    // PASS 2: A question is active friction when it is still wrong in the
+    // latest attempt for that chapter/difficulty. If it was wrong before but
+    // absent from the latest attempt's wrong-question list, it moves to victory.
+    Object.values(topicHistory).forEach(({ subject, chapterName, topic, difficulties }) => {
         Object.entries(difficulties).forEach(([diff, attempts]) => {
-            if (!attempts || !attempts.length) return;
-            
-            // Sort by timestamp DESC to get latest first
+            if (!attempts?.length) return;
+
             attempts.sort((a, b) => b.timestamp - a.timestamp);
             const allMistakes = new Map();
-            let hasRealMistakes = false;
+
             attempts.forEach(att => {
-                (att.mistakes || []).forEach(m => {
-                    const mId = m.id || m.question_id || m.question_text || m.question;
-                    if (!mId) return;
-                    if (!allMistakes.has(mId)) {
-                        allMistakes.set(mId, { id: mId, text: m.question_text || m.question || "Unavailable", type: classifyQuestionType(m), dates: [], topic, difficulty: diff });
+                att.mistakes.forEach(m => {
+                    const id = getMistakeId(m);
+                    if (!id) return;
+                    if (!allMistakes.has(id)) {
+                        allMistakes.set(id, {
+                            id,
+                            text: m.question_text || m.question || "Question unavailable",
+                            type: classifyQuestionType(m),
+                            dates: [],
+                            topic,
+                            difficulty: diff
+                        });
                     }
-                    allMistakesMap.get(id).dates.push(att.timestamp);
+                    allMistakes.get(id).dates.push(att.timestamp);
                 });
             });
-            if (!hasRealMistakes) return;
-            const latestIds = new Set((attempts[0].mistakes || []).map(m => m.id || m.question_id || m.question_text || m.question).filter(Boolean));
-            const prevIds = new Set();
-            attempts.slice(1).forEach(att => att.mistakes?.forEach(m => prevIds.add(m.id || m.question_id || m.question_text || m.question)));
+
+            if (!allMistakes.size) return;
+
+            const latestIds = new Set(attempts[0].mistakes.map(getMistakeId).filter(Boolean));
             allMistakes.forEach((mistakeData, id) => {
-                if (prevIds.has(id) && !latestIds.has(id)) {
-                    addToState('victory', subject, chapterName, { ...mistakeData, masteryDate: attempts[0].timestamp.toDateString() });
-                    state.victoryCount++;
+                const sortedDates = mistakeData.dates.sort((a, b) => a - b);
+                const enriched = {
+                    ...mistakeData,
+                    dates: sortedDates,
+                    lastFailedDate: sortedDates[sortedDates.length - 1]?.toLocaleDateString() || "Recent"
+                };
+
+                if (latestIds.has(id)) {
+                    addToState('friction', subject, chapterName, enriched);
                 } else {
-                    addToState('friction', subject, chapterName, mistakeData);
+                    addToState('victory', subject, chapterName, {
+                        ...enriched,
+                        masteryDate: attempts[0].timestamp.toLocaleDateString()
+                    });
+                    state.victoryCount++;
                 }
             });
         });
     });
+
+    state.activeChapterCount = countChapters(state.friction);
 }
 
 function renderConsole(container) {
@@ -320,8 +420,8 @@ window.inspectChapter = (subject, chapter, type, isClick = false) => {
     </div>`;
 
     // Iterate through difficulty levels (simple, medium, advanced)
-    Object.keys(chapterData).sort().forEach(level => {
-        const mistakes = chapterData[level];
+    Object.keys(difficultiesObj).sort().forEach(level => {
+        const mistakes = difficultiesObj[level];
         if (!Array.isArray(mistakes) || !mistakes.length) return;
         
         html += `<div class="mt-4 mb-3"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded text-slate-600">${level.charAt(0).toUpperCase() + level.slice(1)} Level (${mistakes.length})</span></div>`;
