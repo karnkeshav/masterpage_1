@@ -158,10 +158,10 @@ function getSubjectContext(topicSlug) {
     return { subject, chapterName };
 }
 
-function getQuestionType(id) {
-    const strId = String(id || "");
-    if (strId.startsWith("ar_")) return "AR";
-    if (strId.startsWith("cb_")) return "CB";
+function classifyQuestionType(m) {
+    const raw = (m.question_type || "").toLowerCase();
+    if (raw.includes("ar") || raw.includes("assertion")) return "AR";
+    if (raw.includes("case") || raw.includes("cb")) return "CB";
     return "MCQ";
 }
 
@@ -177,13 +177,13 @@ function processData(scoreDocs) {
         const diff = (data.difficulty || 'simple').toLowerCase();
         if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
         if (subjectScores[subject][diff]) subjectScores[subject][diff].push(score);
+        state.proficiency.MCQ.total += (data.mcq_total || 0);
+        state.proficiency.AR.total  += (data.ar_total  || 0);
+        state.proficiency.CB.total  += (data.cb_total  || 0);
         (data.mistakes || []).forEach(m => {
-            const type = getQuestionType(m.id || m.question_id || m.question || m.question_text);
+            const type = classifyQuestionType(m);
             state.proficiency[type].mistakes++;
         });
-        state.proficiency.MCQ.total += 6;
-        state.proficiency.AR.total += 2;
-        state.proficiency.CB.total += 2;
         if (!topicHistory[topic]) topicHistory[topic] = {};
         if (!topicHistory[topic][diff]) topicHistory[topic][diff] = [];
         topicHistory[topic][diff].push({ mistakes: data.mistakes || [], timestamp: data.timestamp ? data.timestamp.toDate() : new Date() });
@@ -200,30 +200,28 @@ function processData(scoreDocs) {
         Object.entries(difficulties).forEach(([diff, attempts]) => {
             attempts.sort((a, b) => b.timestamp - a.timestamp);
             const allMistakes = new Map();
-            if (!state.friction[subject]) state.friction[subject] = {};
-            if (!state.friction[subject][chapterName]) state.friction[subject][chapterName] = [];
             let hasRealMistakes = false;
             attempts.forEach(att => {
                 if (att.mistakes?.length > 0) hasRealMistakes = true;
                 (att.mistakes || []).forEach(m => {
-                    const mId = m.id || m.question_id || m.question || m.question_text;
+                    const mId = m.id || m.question_id || m.question_text || m.question;
                     if (!mId) return;
                     if (!allMistakes.has(mId)) {
-                        allMistakes.set(mId, { id: mId, text: m.question || m.question_text || "Unavailable", type: getQuestionType(mId), dates: [], topic, difficulty: diff });
+                        allMistakes.set(mId, { id: mId, text: m.question_text || m.question || "Unavailable", type: classifyQuestionType(m), dates: [], topic, difficulty: diff });
                     }
                     allMistakes.get(mId).dates.push(att.timestamp);
                 });
             });
             if (!hasRealMistakes) return;
-            const latestIds = new Set((attempts[0].mistakes || []).map(m => m.id || m.question_id || m.question || m.question_text).filter(Boolean));
+            const latestIds = new Set((attempts[0].mistakes || []).map(m => m.id || m.question_id || m.question_text || m.question).filter(Boolean));
             const prevIds = new Set();
-            attempts.slice(1).forEach(att => att.mistakes?.forEach(m => prevIds.add(m.id || m.question_id || m.question || m.question_text)));
-            allMistakes.forEach((data, id) => {
+            attempts.slice(1).forEach(att => att.mistakes?.forEach(m => prevIds.add(m.id || m.question_id || m.question_text || m.question)));
+            allMistakes.forEach((mistakeData, id) => {
                 if (prevIds.has(id) && !latestIds.has(id)) {
-                    addToState('victory', subject, chapterName, { ...data, masteryDate: attempts[0].timestamp.toDateString() });
+                    addToState('victory', subject, chapterName, { ...mistakeData, masteryDate: attempts[0].timestamp.toDateString() });
                     state.victoryCount++;
                 } else {
-                    addToState('friction', subject, chapterName, data);
+                    addToState('friction', subject, chapterName, mistakeData);
                 }
             });
         });
@@ -306,11 +304,12 @@ function renderSubjectNavigator(subject) {
                 <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text}"><i class="fas ${theme.icon}"></i></div><h3 class="text-lg font-black text-slate-700 tracking-tight">${subject}</h3></div>
                 <div class="flex space-x-4"><button onclick="toggleList('${subject}', 'friction')" class="text-xs font-bold text-red-500 hover:text-red-700 transition flex items-center"><span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span> Friction (${fChapters})</button>
                 <button onclick="toggleList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:text-green-700 transition flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Victory (${vChapters})</button></div>
-            </div><div id="list-${subject}" class="hidden bg-white"></div></div>`;
+            </div><div id="list-${subject.replace(/\s+/g, '-')}" class="hidden bg-white"></div></div>`;
 }
 
 window.toggleList = (subject, type) => {
-    const container = document.getElementById(`list-${subject}`);
+    const container = document.getElementById(`list-${subject.replace(/\s+/g, '-')}`);
+    if (!container) return;
     const chapters = state[type][subject] || {};
     const names = Object.keys(chapters).sort();
     if (container.dataset.type === type && !container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
@@ -334,7 +333,8 @@ window.toggleList = (subject, type) => {
 };
 
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
-    const difficultiesObj = state[type][subject][chapter];
+    const difficultiesObj = state[type]?.[subject]?.[chapter];
+    if (!difficultiesObj) return;
     const isFriction = type === 'friction';
     let html = `<div class="animate-fade-in text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Persistent Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800 leading-tight">${chapter}</h3></div>`;
     Object.keys(difficultiesObj).sort().forEach(diff => {
@@ -353,8 +353,17 @@ window.inspectChapter = (subject, chapter, type, isClick = false) => {
         });
     });
     const inspector = document.getElementById('inspector-panel');
-    if (inspector) { inspector.innerHTML = html + `</div>`; inspector.classList.replace('items-center', 'items-start'); inspector.classList.replace('justify-center', 'justify-start'); inspector.classList.remove('text-center'); }
-    if (window.innerWidth < 1024 && isClick) { document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`; document.getElementById('mobile-inspector').classList.remove('hidden'); }
+    if (inspector) {
+        inspector.innerHTML = html + `</div>`;
+        inspector.className = 'glass-panel rounded-3xl p-5 border border-slate-200 shadow-sm bg-white/80 overflow-y-auto text-left';
+        inspector.style.maxHeight = '75vh';
+    }
+    if (window.innerWidth < 1024 && isClick) {
+        const mob = document.getElementById('mobile-inspector-content');
+        const mobPanel = document.getElementById('mobile-inspector');
+        if (mob) mob.innerHTML = html + `</div>`;
+        if (mobPanel) mobPanel.classList.remove('hidden');
+    }
 };
 
 window.closeMobileInspector = () => document.getElementById('mobile-inspector').classList.add('hidden');
