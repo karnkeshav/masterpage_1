@@ -21,7 +21,7 @@ const state = {
         CB: { total: 0, mistakes: 0 }
     },
     victoryCount: 0,
-    activeChapterCount: 0 // Track chapters instead of subjects
+    activeChapterCount: 0
 };
 
 const THEMES = {
@@ -57,7 +57,6 @@ async function init(user, profile) {
             return;
         }
 
-        // STEP 1: Map mistakes into scores
         const scoreDocs = scoresSnap.docs.map(d => {
             const data = d.data();
             const topic = data.topic || data.topicSlug || data.chapter_slug || "";
@@ -72,7 +71,6 @@ async function init(user, profile) {
             return { data: () => data };
         });
 
-        // STEP 2: Restore missing logic - Add standalone mistakes that didn't match a score
         mistakesSnap.docs.forEach(md => {
             const mData = md.data();
             const sid = mData.session_id;
@@ -96,53 +94,34 @@ async function init(user, profile) {
     }
 }
 
-function getSubjectContext(topicSlug = "") {
-    const raw = String(topicSlug || "");
-    const s = raw.toLowerCase();
+function getSubjectContext(topicSlug) {
+    const s = topicSlug.toLowerCase();
     let subject = "General";
-
-    // Prefer exact curriculum table_id matches. Title-only matching can misclassify
-    // similar slugs (for example, Force and Laws of Motion vs Motion).
+    
+    // Try to match from curriculum
     for (const [subj, sections] of Object.entries(curriculumData)) {
         if (!sections || typeof sections !== 'object') continue;
         for (const chapters of Object.values(sections)) {
             if (!Array.isArray(chapters)) continue;
             for (const ch of chapters) {
-                const tableId = String(ch.table_id || "").toLowerCase();
-                if (tableId && tableId === s) {
-                    return { subject: subj, chapterName: ch.chapter_title || raw };
-                }
-            }
-        }
-    }
-
-    // Then fall back to title matching for legacy documents that stored a title
-    // instead of the table slug.
-    const slugWords = s.replace(/_/g, " ");
-    for (const [subj, sections] of Object.entries(curriculumData)) {
-        if (!sections || typeof sections !== 'object') continue;
-        for (const chapters of Object.values(sections)) {
-            if (!Array.isArray(chapters)) continue;
-            for (const ch of chapters) {
-                const title = String(ch.chapter_title || "").toLowerCase();
-                if (title && (slugWords.includes(title) || title.includes(slugWords))) {
+                const title = (ch.chapter_title || "").toLowerCase();
+                if (title && (s.includes(title) || title.includes(s.replace(/_/g, " ")))) {
                     return { subject: subj, chapterName: ch.chapter_title };
                 }
             }
         }
     }
-
-    // Fallback: clean the slug while preserving the subject prefix.
-    let cleaned = raw.replace(/^(science|mathematics|social_science|social|math)_/i, "")
-                     .replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "")
-                     .replace(/_quiz$/i, "");
+    
+    // Fallback: clean the slug
+    let cleaned = topicSlug.replace(/^(science|mathematics|social_science|math)_/i, "")
+                           .replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "");
     const chapterName = cleaned.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-
+    
     if (s.includes("math")) subject = "Mathematics";
     else if (s.includes("social")) subject = "Social Science";
     else if (s.includes("science")) subject = "Science";
-
-    return { subject, chapterName: chapterName || raw || "Unknown Chapter" };
+    
+    return { subject, chapterName };
 }
 
 function classifyQuestionType(m) {
@@ -152,34 +131,23 @@ function classifyQuestionType(m) {
     return "MCQ";
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CORRECTED: Proper friction/victory logic
+// ═══════════════════════════════════════════════════════════════════════════
 function processData(scoreDocs) {
-    state.friction = {};
-    state.victory = {};
-    state.subjectStats = {};
-    state.proficiency = {
-        MCQ: { total: 0, mistakes: 0 },
-        AR: { total: 0, mistakes: 0 },
-        CB: { total: 0, mistakes: 0 }
-    };
-    state.victoryCount = 0;
-    state.activeChapterCount = 0;
-
     const topicHistory = {};
     const subjectScores = {};
 
-    // PASS 1: Build chapter-attempt history and subject scores from quiz_scores
-    // joined with mistake_notebook entries. Each attempt keeps the question IDs
-    // that were wrong for that submit event.
+    // PASS 1: Build topic history and subject scores
     scoreDocs.forEach(d => {
         const data = d.data();
         const topic = data.topic || data.topicSlug || data.chapter_slug;
         if (!topic) return;
 
         const { subject, chapterName } = getSubjectContext(topic);
-        const diff = normalizeDifficulty(data.difficulty);
-        const score = getScore(data);
-        const mistakes = Array.isArray(data.mistakes) ? data.mistakes : [];
+        const diff = (data.difficulty || 'simple').toLowerCase();
 
+        const score = parseFloat(data.percentage || data.score_percent || data.score || 0);
         if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
         if (score !== null) {
             if (!subjectScores[subject][diff]) subjectScores[subject][diff] = [];
@@ -204,36 +172,31 @@ function processData(scoreDocs) {
         });
     });
 
-    // Calculate subject averages.
+    // Calculate subject averages
     Object.keys(subjectScores).forEach(subj => {
         const s = subjectScores[subj];
         const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
-        state.subjectStats[subj] = { simple: avg(s.simple || []), medium: avg(s.medium || []), advanced: avg(s.advanced || []) };
+        state.subjectStats[subj] = { simple: avg(s.simple), medium: avg(s.medium), advanced: avg(s.advanced) };
     });
 
-    // PASS 2: A question is active friction when it is still wrong in the
-    // latest attempt for that chapter/difficulty. If it was wrong before but
-    // absent from the latest attempt's wrong-question list, it moves to victory.
-    Object.values(topicHistory).forEach(({ subject, chapterName, topic, difficulties }) => {
-        Object.entries(difficulties).forEach(([diff, attempts]) => {
-            if (!attempts?.length) return;
+    // PASS 2: Extract friction and victory
+    Object.entries(topicHistory).forEach(([topic, difficulties]) => {
+        const { subject, chapterName } = getSubjectContext(topic);
 
+        Object.entries(difficulties).forEach(([diff, attempts]) => {
+            if (!attempts || !attempts.length) return;
+            
+            // Sort by timestamp DESC to get latest first
             attempts.sort((a, b) => b.timestamp - a.timestamp);
             const allMistakes = new Map();
 
             attempts.forEach(att => {
-                att.mistakes.forEach(m => {
-                    const id = getMistakeId(m);
-                    if (!id) return;
-                    if (!allMistakes.has(id)) {
-                        allMistakes.set(id, {
-                            id,
-                            text: m.question_text || m.question || "Question unavailable",
-                            type: classifyQuestionType(m),
-                            dates: [],
-                            topic,
-                            difficulty: diff
-                        });
+                if (att.mistakes?.length) hasRealMistakes = true;
+                (att.mistakes || []).forEach(m => {
+                    const mId = m.id || m.question_id || m.question_text || m.question;
+                    if (!mId) return;
+                    if (!allMistakes.has(mId)) {
+                        allMistakes.set(mId, { id: mId, text: m.question_text || m.question || "Unavailable", type: classifyQuestionType(m), dates: [], topic, difficulty: diff });
                     }
                     allMistakes.get(id).dates.push(att.timestamp);
                 });
@@ -269,7 +232,15 @@ function processData(scoreDocs) {
         });
     });
 
-    state.activeChapterCount = countChapters(state.friction);
+function addToState(type, subject, chapter, item) {
+    if (!state[type][subject]) state[type][subject] = {};
+    if (!state[type][subject][chapter]) {
+        state[type][subject][chapter] = {};
+        if (type === 'friction') state.activeChapterCount++;
+    }
+    const diff = item.difficulty || 'simple';
+    if (!state[type][subject][chapter][diff]) state[type][subject][chapter][diff] = [];
+    state[type][subject][chapter][diff].push(item);
 }
 
 function renderConsole(container) {
@@ -345,42 +316,65 @@ function renderSubjectNavigator(subject) {
 window.toggleList = (subject, type) => {
     const container = document.getElementById(`list-${subject}`);
     const chapters = state[type][subject] || {};
-    const names = Object.keys(chapters).sort();
-    if (container.dataset.type === type && !container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
-    container.dataset.type = type;
+    
+    if (container.dataset.type === type && !container.classList.contains('hidden')) { 
+        container.classList.add('hidden'); 
+        return; 
+    }
+    
+    container.dataset.type = type; 
     container.classList.remove('hidden');
-    if (names.length === 0) { container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`; return; }
-    let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
-    names.forEach(ch => {
-        let count = 0;
-        Object.values(chapters[ch]).forEach(arr => count += arr.length);
-        html += `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
-    });
-    container.innerHTML = html + `</div>`;
+    
+    const names = Object.keys(chapters).sort();
+    if (!names.length) { 
+        container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Clean list!</div>`; 
+        return; 
+    }
+    
+    container.innerHTML = names.map(ch => {
+        let count = 0; 
+        const chapterData = chapters[ch] || {};
+        Object.values(chapterData).forEach(arr => count += (Array.isArray(arr) ? arr.length : 0));
+        return `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700 hover:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
+    }).join('');
+
     container.querySelectorAll('.chapter-item').forEach(el => {
-        const s = el.getAttribute('data-subject');
-        const ch = el.getAttribute('data-chapter');
-        const t = el.getAttribute('data-type');
-        el.addEventListener('mouseenter', () => window.inspectChapter(s, ch, t));
-        el.addEventListener('click', () => window.inspectChapter(s, ch, t, true));
+        el.addEventListener('mouseenter', () => window.inspectChapter(el.dataset.subject, el.dataset.chapter, el.dataset.type));
+        el.addEventListener('click', () => window.inspectChapter(el.dataset.subject, el.dataset.chapter, el.dataset.type, true));
     });
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CORRECTED: Inspector properly handles nested difficulty structure
+// ═══════════════════════════════════════════════════════════════════════════
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
     const difficultiesObj = state[type][subject]?.[chapter];
     if (!difficultiesObj) return;
     const isFriction = type === 'friction';
-    let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800">${chapter}</h3></div>`;
+    let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100">
+        <span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span>
+        <h3 class="text-xl font-black text-slate-800">${chapter}</h3>
+    </div>`;
 
-    Object.keys(data).sort().forEach(level => {
-        html += `<div class="mt-4 mb-2"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded">${level} Level</span></div>`;
-        data[level].forEach(m => {
+    // Iterate through difficulty levels (simple, medium, advanced)
+    Object.keys(difficultiesObj).sort().forEach(level => {
+        const mistakes = difficultiesObj[level];
+        if (!Array.isArray(mistakes) || !mistakes.length) return;
+        
+        html += `<div class="mt-4 mb-3"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded text-slate-600">${level.charAt(0).toUpperCase() + level.slice(1)} Level (${mistakes.length})</span></div>`;
+        
+        mistakes.forEach(m => {
+            const failCount = m.dates ? m.dates.length : 0;
             html += `<div class="bg-white rounded-xl p-4 border border-slate-200 mb-3 shadow-sm relative overflow-hidden">
                 <div class="absolute left-0 top-0 bottom-0 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'}"></div>
-                <p class="text-xs font-medium text-slate-700 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
-                <div class="flex justify-between items-center pt-2 border-t border-slate-50">
-                    <span class="text-[9px] font-bold text-slate-400 uppercase">${isFriction ? `Failed ${m.dates.length}x` : `Mastered: ${m.masteryDate}`}</span>
-                    ${isFriction ? `<a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-cbse-blue uppercase hover:underline">Review concept</a>` : ''}
+                <p class="text-xs font-medium text-slate-700 mb-3 leading-relaxed pl-2">${cleanKatexMarkers(m.text || "Question unavailable")}</p>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-50 pl-2">
+                    ${isFriction ? 
+                        `<span class="text-[9px] font-bold text-red-500 uppercase">Failed ${failCount}x</span>
+                         <a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded hover:bg-red-100">Review</a>` : 
+                        `<span class="text-[9px] font-bold text-green-600 uppercase">✅ Mastered: ${m.masteryDate}</span>
+                         <span class="text-[9px] font-bold text-green-600 bg-green-50 border border-green-100 px-2 py-1 rounded">Type: ${m.type}</span>`
+                    }
                 </div>
             </div>`;
         });
