@@ -20,7 +20,8 @@ const state = {
         AR: { total: 0, mistakes: 0 },
         CB: { total: 0, mistakes: 0 }
     },
-    victoryCount: 0
+    victoryCount: 0,
+    activeChapterCount: 0 // Track chapters instead of subjects
 };
 
 const THEMES = {
@@ -56,6 +57,7 @@ async function init(user, profile) {
             return;
         }
 
+        // STEP 1: Map mistakes into scores
         const scoreDocs = scoresSnap.docs.map(d => {
             const data = d.data();
             const topic = data.topic || data.topicSlug || data.chapter_slug || "";
@@ -64,10 +66,25 @@ async function init(user, profile) {
                 const mData = md.data();
                 if (sid && mData.session_id) return mData.session_id === sid;
                 return (mData.topic === topic || mData.chapter_slug === topic) && 
-                       (Math.abs((mData.timestamp?.seconds || 0) - (data.timestamp?.seconds || 0)) < 5);
+                       (Math.abs((mData.timestamp?.seconds || 0) - (data.timestamp?.seconds || 0)) < 10);
             });
             data.mistakes = matchingNotebookEntry ? (matchingNotebookEntry.data().mistakes || []) : [];
             return { data: () => data };
+        });
+
+        // STEP 2: Restore missing logic - Add standalone mistakes that didn't match a score
+        mistakesSnap.docs.forEach(md => {
+            const mData = md.data();
+            const sid = mData.session_id;
+            const alreadyMapped = scoreDocs.some(sd => {
+                const sData = sd.data();
+                if (sid && sData.session_id) return sData.session_id === sid;
+                return (sData.topic === mData.topic || sData.chapter_slug === mData.chapter_slug) &&
+                       (Math.abs((sData.timestamp?.seconds || 0) - (mData.timestamp?.seconds || 0)) < 10);
+            });
+            if (!alreadyMapped) {
+                scoreDocs.push({ data: () => ({ ...mData, percentage: 0 }) });
+            }
         });
 
         processData(scoreDocs);
@@ -109,9 +126,6 @@ function classifyQuestionType(m) {
     return "MCQ";
 }
 
-/**
- * UPDATED: Mutual Exclusivity and Clean Initialization
- */
 function processData(scoreDocs) {
     const topicHistory = {};
     const subjectScores = {};
@@ -174,13 +188,14 @@ function processData(scoreDocs) {
 
             allMistakesMap.forEach((m, id) => {
                 if (latestIds.has(id)) {
-                    // STILL WRONG: Friction
                     if (!state.friction[subject]) state.friction[subject] = {};
-                    if (!state.friction[subject][chapterName]) state.friction[subject][chapterName] = {};
+                    if (!state.friction[subject][chapterName]) {
+                         state.friction[subject][chapterName] = {};
+                         state.activeChapterCount++; // Incremented for unique active chapters
+                    }
                     if (!state.friction[subject][chapterName][diff]) state.friction[subject][chapterName][diff] = [];
                     state.friction[subject][chapterName][diff].push(m);
                 } else {
-                    // PREVIOUSLY WRONG, NOW CORRECT: Victory
                     if (!state.victory[subject]) state.victory[subject] = {};
                     if (!state.victory[subject][chapterName]) state.victory[subject][chapterName] = {};
                     if (!state.victory[subject][chapterName][diff]) state.victory[subject][chapterName][diff] = [];
@@ -202,7 +217,7 @@ function renderConsole(container) {
             </div>
             <div class="flex items-center space-x-8">
                 <div class="text-right"><span class="block text-3xl font-black text-green-600">${state.victoryCount}</span><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Victory Gains</span></div>
-                <div class="text-right"><span class="block text-3xl font-black text-red-500">${Object.keys(state.friction).length}</span><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Zones</span></div>
+                <div class="text-right"><span class="block text-3xl font-black text-red-500">${state.activeChapterCount}</span><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Zones</span></div>
             </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -282,9 +297,6 @@ window.toggleList = (subject, type) => {
     });
 };
 
-/**
- * FIXED: Properly displays question cards in the Inspector
- */
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
     const data = state[type][subject]?.[chapter];
     if (!data) return;
@@ -292,7 +304,7 @@ window.inspectChapter = (subject, chapter, type, isClick = false) => {
     let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800">${chapter}</h3></div>`;
 
     Object.keys(data).sort().forEach(level => {
-        html += `<div class="mt-4 mb-2"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded">${level}</span></div>`;
+        html += `<div class="mt-4 mb-2"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded">${level} Level</span></div>`;
         data[level].forEach(m => {
             html += `<div class="bg-white rounded-xl p-4 border border-slate-200 mb-3 shadow-sm relative overflow-hidden">
                 <div class="absolute left-0 top-0 bottom-0 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'}"></div>
