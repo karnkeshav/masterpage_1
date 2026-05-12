@@ -96,27 +96,53 @@ async function init(user, profile) {
     }
 }
 
-function getSubjectContext(topicSlug) {
-    const s = topicSlug.toLowerCase();
+function getSubjectContext(topicSlug = "") {
+    const raw = String(topicSlug || "");
+    const s = raw.toLowerCase();
     let subject = "General";
+
+    // Prefer exact curriculum table_id matches. Title-only matching can misclassify
+    // similar slugs (for example, Force and Laws of Motion vs Motion).
     for (const [subj, sections] of Object.entries(curriculumData)) {
+        if (!sections || typeof sections !== 'object') continue;
         for (const chapters of Object.values(sections)) {
             if (!Array.isArray(chapters)) continue;
             for (const ch of chapters) {
-                const title = (ch.chapter_title || "").toLowerCase();
-                if (title && (s.includes(title) || title.includes(s.replace(/_/g, " ")))) {
+                const tableId = String(ch.table_id || "").toLowerCase();
+                if (tableId && tableId === s) {
+                    return { subject: subj, chapterName: ch.chapter_title || raw };
+                }
+            }
+        }
+    }
+
+    // Then fall back to title matching for legacy documents that stored a title
+    // instead of the table slug.
+    const slugWords = s.replace(/_/g, " ");
+    for (const [subj, sections] of Object.entries(curriculumData)) {
+        if (!sections || typeof sections !== 'object') continue;
+        for (const chapters of Object.values(sections)) {
+            if (!Array.isArray(chapters)) continue;
+            for (const ch of chapters) {
+                const title = String(ch.chapter_title || "").toLowerCase();
+                if (title && (slugWords.includes(title) || title.includes(slugWords))) {
                     return { subject: subj, chapterName: ch.chapter_title };
                 }
             }
         }
     }
-    let cleaned = topicSlug.replace(/^(science|mathematics|social_science|math)_/i, "")
-                          .replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "");
+
+    // Fallback: clean the slug while preserving the subject prefix.
+    let cleaned = raw.replace(/^(science|mathematics|social_science|social|math)_/i, "")
+                     .replace(/_\d+_quiz$|_grade_\d+_quiz$/i, "")
+                     .replace(/_quiz$/i, "");
     const chapterName = cleaned.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+
     if (s.includes("math")) subject = "Mathematics";
     else if (s.includes("social")) subject = "Social Science";
     else if (s.includes("science")) subject = "Science";
-    return { subject, chapterName };
+
+    return { subject, chapterName: chapterName || raw || "Unknown Chapter" };
 }
 
 function classifyQuestionType(m) {
@@ -127,66 +153,103 @@ function classifyQuestionType(m) {
 }
 
 function processData(scoreDocs) {
+    state.friction = {};
+    state.victory = {};
+    state.subjectStats = {};
+    state.proficiency = {
+        MCQ: { total: 0, mistakes: 0 },
+        AR: { total: 0, mistakes: 0 },
+        CB: { total: 0, mistakes: 0 }
+    };
+    state.victoryCount = 0;
+    state.activeChapterCount = 0;
+
     const topicHistory = {};
     const subjectScores = {};
 
+    // PASS 1: Build chapter-attempt history and subject scores from quiz_scores
+    // joined with mistake_notebook entries. Each attempt keeps the question IDs
+    // that were wrong for that submit event.
     scoreDocs.forEach(d => {
         const data = d.data();
         const topic = data.topic || data.topicSlug || data.chapter_slug;
         if (!topic) return;
 
         const { subject, chapterName } = getSubjectContext(topic);
-        const diff = (data.difficulty || 'simple').toLowerCase();
+        const diff = normalizeDifficulty(data.difficulty);
+        const score = getScore(data);
+        const mistakes = Array.isArray(data.mistakes) ? data.mistakes : [];
 
         if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
-        subjectScores[subject][diff].push(parseFloat(data.percentage || 0));
+        if (score !== null) {
+            if (!subjectScores[subject][diff]) subjectScores[subject][diff] = [];
+            subjectScores[subject][diff].push(score);
+        }
 
         state.proficiency.MCQ.total += (data.mcq_total || 0);
         state.proficiency.AR.total += (data.ar_total || 0);
         state.proficiency.CB.total += (data.cb_total || 0);
+        mistakes.forEach(m => {
+            const type = classifyQuestionType(m);
+            state.proficiency[type].mistakes++;
+        });
 
-        (data.mistakes || []).forEach(m => state.proficiency[classifyQuestionType(m)].mistakes++);
-
-        const historyKey = `${subject}|${chapterName}`;
-        if (!topicHistory[historyKey]) topicHistory[historyKey] = {};
-        if (!topicHistory[historyKey][diff]) topicHistory[historyKey][diff] = [];
-        topicHistory[historyKey][diff].push({
-            mistakes: data.mistakes || [],
-            timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
-            percentage: data.percentage || 0
+        const historyKey = `${subject}|${chapterName}|${topic}`;
+        if (!topicHistory[historyKey]) topicHistory[historyKey] = { subject, chapterName, topic, difficulties: {} };
+        if (!topicHistory[historyKey].difficulties[diff]) topicHistory[historyKey].difficulties[diff] = [];
+        topicHistory[historyKey].difficulties[diff].push({
+            mistakes,
+            timestamp: toDate(data.timestamp),
+            topic
         });
     });
 
+    // Calculate subject averages.
     Object.keys(subjectScores).forEach(subj => {
         const s = subjectScores[subj];
         const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
-        state.subjectStats[subj] = { simple: avg(s.simple), medium: avg(s.medium), advanced: avg(s.advanced) };
+        state.subjectStats[subj] = { simple: avg(s.simple || []), medium: avg(s.medium || []), advanced: avg(s.advanced || []) };
     });
 
-    Object.entries(topicHistory).forEach(([historyKey, difficulties]) => {
-        const [subject, chapterName] = historyKey.split('|');
-
+    // PASS 2: A question is active friction when it is still wrong in the
+    // latest attempt for that chapter/difficulty. If it was wrong before but
+    // absent from the latest attempt's wrong-question list, it moves to victory.
+    Object.values(topicHistory).forEach(({ subject, chapterName, topic, difficulties }) => {
         Object.entries(difficulties).forEach(([diff, attempts]) => {
+            if (!attempts?.length) return;
+
             attempts.sort((a, b) => b.timestamp - a.timestamp);
-            const latestAttempt = attempts[0];
-            const latestIds = new Set(latestAttempt.mistakes.map(m => m.id || m.question_id));
-            
-            const allMistakesMap = new Map();
+            const allMistakes = new Map();
+
             attempts.forEach(att => {
                 att.mistakes.forEach(m => {
-                    const id = m.id || m.question_id;
-                    if (!allMistakesMap.has(id)) {
-                        allMistakesMap.set(id, {
-                            id, text: m.question_text || m.question, 
-                            type: classifyQuestionType(m), topic: subject, 
-                            difficulty: diff, dates: []
+                    const id = getMistakeId(m);
+                    if (!id) return;
+                    if (!allMistakes.has(id)) {
+                        allMistakes.set(id, {
+                            id,
+                            text: m.question_text || m.question || "Question unavailable",
+                            type: classifyQuestionType(m),
+                            dates: [],
+                            topic,
+                            difficulty: diff
                         });
                     }
-                    allMistakesMap.get(id).dates.push(att.timestamp);
+                    allMistakes.get(id).dates.push(att.timestamp);
                 });
             });
 
-            allMistakesMap.forEach((m, id) => {
+            if (!allMistakes.size) return;
+
+            const latestIds = new Set(attempts[0].mistakes.map(getMistakeId).filter(Boolean));
+            allMistakes.forEach((mistakeData, id) => {
+                const sortedDates = mistakeData.dates.sort((a, b) => a - b);
+                const enriched = {
+                    ...mistakeData,
+                    dates: sortedDates,
+                    lastFailedDate: sortedDates[sortedDates.length - 1]?.toLocaleDateString() || "Recent"
+                };
+
                 if (latestIds.has(id)) {
                     if (!state.friction[subject]) state.friction[subject] = {};
                     if (!state.friction[subject][chapterName]) {
@@ -205,6 +268,8 @@ function processData(scoreDocs) {
             });
         });
     });
+
+    state.activeChapterCount = countChapters(state.friction);
 }
 
 function renderConsole(container) {
@@ -231,7 +296,7 @@ function renderConsole(container) {
         <div class="grid lg:grid-cols-3 gap-8 items-start relative min-h-[500px]">
             <div class="lg:col-span-2 space-y-6">${sortedSubjects.map(s => renderSubjectNavigator(s)).join('')}</div>
             <div class="lg:col-span-1 hidden lg:block sticky top-24">
-                <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm bg-white/50">
+                <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm bg-white/50 overflow-y-auto">
                     <div class="text-4xl mb-4 text-slate-300 animate-pulse">📡</div>
                     <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Inspector Active</h4>
                     <p class="text-xs text-slate-500 max-w-[200px]">Hover over any chapter on the left to analyze friction points.</p>
@@ -239,13 +304,14 @@ function renderConsole(container) {
             </div>
         </div>
         <div id="mobile-inspector" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-end justify-center lg:hidden p-4 pb-8" onclick="closeMobileInspector()">
-            <div class="bg-white w-full max-w-md rounded-3xl p-6 relative shadow-2xl" onclick="event.stopPropagation()"><div id="mobile-inspector-content"></div></div>
+            <div class="bg-white w-full max-w-md rounded-3xl p-6 relative shadow-2xl overflow-y-auto max-h-[80vh]" onclick="event.stopPropagation()"><div id="mobile-inspector-content"></div></div>
         </div>`;
     container.innerHTML = tier1 + tier2;
 }
 
 function renderProficiencyPill(type, label, stats) {
-    const errorRate = stats.total > 0 ? (stats.mistakes / stats.total) * 100 : 0;
+    if (stats.total === 0) return `<div class="p-3 rounded-xl bg-slate-100 text-slate-500 text-xs font-bold">No data for ${label}</div>`;
+    const errorRate = (stats.mistakes / stats.total) * 100;
     let color = "bg-green-100 text-green-700", dot = "bg-green-500", status = "Strong";
     if (errorRate > 30) { color = "bg-red-100 text-red-700"; dot = "bg-red-500"; status = "Needs Focus"; }
     else if (errorRate > 15) { color = "bg-yellow-100 text-yellow-700"; dot = "bg-yellow-500"; status = "Review"; }
@@ -266,40 +332,43 @@ function renderMasteryCard(subject) {
 
 function renderSubjectNavigator(subject) {
     const theme = THEMES[subject] || THEMES["General"];
-    const fCount = Object.keys(state.friction[subject] || {}).length;
-    const vCount = Object.keys(state.victory[subject] || {}).length;
-    return `<div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-            <div class="px-6 py-5 flex items-center justify-between ${theme.bg}">
-                <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center ${theme.text}"><i class="fas ${theme.icon}"></i></div><h3 class="text-lg font-black text-slate-700">${subject}</h3></div>
-                <div class="flex space-x-4">
-                    <button onclick="toggleList('${subject}', 'friction')" class="text-xs font-bold text-red-500 hover:underline">Friction (${fCount})</button>
-                    <button onclick="toggleList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:underline">Victory (${vCount})</button>
-                </div>
-            </div><div id="list-${subject}" class="hidden bg-white divide-y divide-slate-100"></div></div>`;
+    const fChapters = Object.keys(state.friction[subject] || {}).length;
+    const vChapters = Object.keys(state.victory[subject] || {}).length;
+    return `<div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm transition group">
+            <div class="px-6 py-5 flex items-center justify-between border-b border-slate-50 ${theme.bg}">
+                <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text}"><i class="fas ${theme.icon}"></i></div><h3 class="text-lg font-black text-slate-700 tracking-tight">${subject}</h3></div>
+                <div class="flex space-x-4"><button onclick="toggleList('${subject}', 'friction')" class="text-xs font-bold text-red-500 hover:text-red-700 transition flex items-center"><span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span> Friction (${fChapters})</button>
+                <button onclick="toggleList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:text-green-700 transition flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Victory (${vChapters})</button></div>
+            </div><div id="list-${subject.replace(/\s+/g, '-')}" class="hidden bg-white"></div></div>`;
 }
 
 window.toggleList = (subject, type) => {
     const container = document.getElementById(`list-${subject}`);
     const chapters = state[type][subject] || {};
-    if (container.dataset.type === type && !container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
-    container.dataset.type = type; container.classList.remove('hidden');
     const names = Object.keys(chapters).sort();
-    if (!names.length) { container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Clean list!</div>`; return; }
-    
-    container.innerHTML = names.map(ch => {
-        let count = 0; Object.values(chapters[ch]).forEach(arr => count += arr.length);
-        return `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
-    }).join('');
-
+    if (container.dataset.type === type && !container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
+    container.dataset.type = type;
+    container.classList.remove('hidden');
+    if (names.length === 0) { container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`; return; }
+    let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
+    names.forEach(ch => {
+        let count = 0;
+        Object.values(chapters[ch]).forEach(arr => count += arr.length);
+        html += `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
+    });
+    container.innerHTML = html + `</div>`;
     container.querySelectorAll('.chapter-item').forEach(el => {
-        el.addEventListener('mouseenter', () => window.inspectChapter(el.dataset.subject, el.dataset.chapter, el.dataset.type));
-        el.addEventListener('click', () => window.inspectChapter(el.dataset.subject, el.dataset.chapter, el.dataset.type, true));
+        const s = el.getAttribute('data-subject');
+        const ch = el.getAttribute('data-chapter');
+        const t = el.getAttribute('data-type');
+        el.addEventListener('mouseenter', () => window.inspectChapter(s, ch, t));
+        el.addEventListener('click', () => window.inspectChapter(s, ch, t, true));
     });
 };
 
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
-    const data = state[type][subject]?.[chapter];
-    if (!data) return;
+    const difficultiesObj = state[type][subject]?.[chapter];
+    if (!difficultiesObj) return;
     const isFriction = type === 'friction';
     let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800">${chapter}</h3></div>`;
 
@@ -317,11 +386,12 @@ window.inspectChapter = (subject, chapter, type, isClick = false) => {
         });
     });
 
-    const panel = document.getElementById('inspector-panel');
-    if (panel) {
-        panel.innerHTML = html + `</div>`;
-        panel.classList.remove('items-center', 'justify-center', 'text-center');
-        panel.classList.add('items-start', 'justify-start');
+    const inspector = document.getElementById('inspector-panel');
+    if (inspector) {
+        inspector.innerHTML = html + `</div>`;
+        inspector.classList.replace('items-center', 'items-start');
+        inspector.classList.replace('justify-center', 'justify-start');
+        inspector.classList.remove('text-center');
     }
     if (window.innerWidth < 1024 && isClick) {
         document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`;

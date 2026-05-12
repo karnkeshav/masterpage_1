@@ -281,18 +281,19 @@ async function handleSubmit() {
     // if the browser navigates or goes to background before Firestore commits.
     const saves = [];
 
-    if (percentage < 85) {
-        saves.push(
-            saveMistakes(
-                quizState.questions,
-                quizState.userAnswers,
-                quizState.topicSlug,
-                quizState.classId,
-                quizState.difficulty,
-                sessionId
-            ).catch(e => console.warn("saveMistakes failed:", e))
-        );
-    }
+    // Save every wrong-question set per submit attempt. The notebook writer
+    // returns early when there are no mistakes, so this records friction even
+    // for high-scoring attempts that still had individual wrong answers.
+    saves.push(
+        saveMistakes(
+            quizState.questions,
+            quizState.userAnswers,
+            quizState.topicSlug,
+            quizState.classId,
+            quizState.difficulty,
+            sessionId
+        ).catch(e => console.warn("saveMistakes failed:", e))
+    );
 
     saves.push(
             saveResult({
