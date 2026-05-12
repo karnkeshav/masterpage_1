@@ -157,19 +157,18 @@ function getSubjectContext(topicSlug) {
     return { subject, chapterName };
 }
 
-function getQuestionType(id) {
-    const strId = String(id || "");
-    if (strId.startsWith("ar_")) return "AR";
-    if (strId.startsWith("cb_")) return "CB";
+function classifyQuestionType(m) {
+    const raw = (m.question_type || "").toLowerCase();
+    if (raw.includes("ar") || raw.includes("assertion")) return "AR";
+    if (raw.includes("case") || raw.includes("cb")) return "CB";
     return "MCQ";
 }
 
-// Fix #2, #3, #4: Complete rewrite of processData
 function processData(scoreDocs) {
     const subjectScores = {};
     const topicHistory = {};
 
-    // Pass 1: Aggregate by subject and build topic history
+    // Pass 1: Aggregate scores, proficiency totals, and per-topic history
     scoreDocs.forEach(d => {
         const data = d.data();
         const topic = data.topic || data.topicSlug || data.chapter_slug;
@@ -179,31 +178,24 @@ function processData(scoreDocs) {
         const score = parseFloat(data.percentage || data.score_percent || data.score || 0);
         const diff = (data.difficulty || 'simple').toLowerCase();
 
-        if (!subjectScores[subject]) {
-            subjectScores[subject] = { simple: [], medium: [], advanced: [] };
-        }
-        if (subjectScores[subject][diff]) {
-            subjectScores[subject][diff].push(score);
-        }
+        if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
+        if (subjectScores[subject][diff]) subjectScores[subject][diff].push(score);
 
-        // Fix #3: Count ACTUAL mistakes, not fixed numbers
+        // Fix #4: Use the actual per-type question counts saved by quiz-engine
+        // (mcq_total / ar_total / cb_total come from quiz_scores documents)
+        state.proficiency.MCQ.total += (data.mcq_total || 0);
+        state.proficiency.AR.total  += (data.ar_total  || 0);
+        state.proficiency.CB.total  += (data.cb_total  || 0);
+
+        // Count each wrong question into its actual type's mistake tally
         (data.mistakes || []).forEach(m => {
-            const type = getQuestionType(m.id || m.question_id);
+            const type = classifyQuestionType(m);
             state.proficiency[type].mistakes++;
-            state.proficiency[type].total++;
         });
-
-        // If no mistakes, count all questions as attempted
-        if ((!data.mistakes || data.mistakes.length === 0) && data.totalQuestions) {
-            state.proficiency.MCQ.total += Math.ceil(data.totalQuestions * 0.6);
-            state.proficiency.AR.total += Math.ceil(data.totalQuestions * 0.2);
-            state.proficiency.CB.total += Math.ceil(data.totalQuestions * 0.2);
-        }
 
         const historyKey = `${subject}|${chapterName}`;
         if (!topicHistory[historyKey]) topicHistory[historyKey] = {};
         if (!topicHistory[historyKey][diff]) topicHistory[historyKey][diff] = [];
-
         topicHistory[historyKey][diff].push({
             mistakes: data.mistakes || [],
             timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
@@ -214,45 +206,32 @@ function processData(scoreDocs) {
 
     Object.keys(subjectScores).forEach(subj => {
         const s = subjectScores[subj];
-        const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
-        state.subjectStats[subj] = {
-            simple: avg(s.simple) || 0,
-            medium: avg(s.medium) || 0,
-            advanced: avg(s.advanced) || 0
-        };
+        const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+        state.subjectStats[subj] = { simple: avg(s.simple), medium: avg(s.medium), advanced: avg(s.advanced) };
     });
 
-    // Pass 2: Extract friction and victory
+    // Pass 2: Build friction (persistent wrong Qs) and victory (previously wrong, now correct)
     Object.entries(topicHistory).forEach(([historyKey, difficulties]) => {
         const [subject, chapterName] = historyKey.split('|');
 
         Object.entries(difficulties).forEach(([diff, attempts]) => {
-            if (!attempts || !attempts.length) return;
+            if (!attempts?.length) return;
             attempts.sort((a, b) => b.timestamp - a.timestamp);
 
+            // Collect all mistakes across every attempt for this chapter+difficulty
             const allMistakes = new Map();
-            if (!state.friction[subject]) state.friction[subject] = {};
-            if (!state.friction[subject][chapterName]) state.friction[subject][chapterName] = {};
-            if (!state.friction[subject][chapterName][diff]) state.friction[subject][chapterName][diff] = [];
-
-            if (!state.victory[subject]) state.victory[subject] = {};
-            if (!state.victory[subject][chapterName]) state.victory[subject][chapterName] = {};
-            if (!state.victory[subject][chapterName][diff]) state.victory[subject][chapterName][diff] = [];
-
             let hasRealMistakes = false;
 
             attempts.forEach(att => {
-                if (att.mistakes && att.mistakes.length > 0) hasRealMistakes = true;
+                if (att.mistakes?.length) hasRealMistakes = true;
                 (att.mistakes || []).forEach(m => {
                     const mId = m.id || m.question_id;
                     if (!mId) return;
-
-                    // Fix #2: Store complete question data
                     if (!allMistakes.has(mId)) {
                         allMistakes.set(mId, {
                             id: mId,
-                            text: m.question || m.question_text || "Question unavailable",
-                            type: getQuestionType(mId),
+                            text: m.question_text || m.question || "Question unavailable",
+                            type: classifyQuestionType(m),
                             topic: subject,
                             difficulty: diff,
                             dates: [],
@@ -263,16 +242,30 @@ function processData(scoreDocs) {
                 });
             });
 
+            // Fix #2 & #3: Only create state entries when real mistakes exist.
+            // Initializing before this check was causing every chapter (even 100%
+            // scores) to appear in friction/victory lists with empty data.
             if (!hasRealMistakes) return;
 
-            allMistakes.forEach((mistakeData) => {
-                state.friction[subject][chapterName][diff].push({...mistakeData});
+            if (!state.friction[subject]) state.friction[subject] = {};
+            if (!state.friction[subject][chapterName]) state.friction[subject][chapterName] = {};
+            if (!state.friction[subject][chapterName][diff]) state.friction[subject][chapterName][diff] = [];
+
+            if (!state.victory[subject]) state.victory[subject] = {};
+            if (!state.victory[subject][chapterName]) state.victory[subject][chapterName] = {};
+            if (!state.victory[subject][chapterName][diff]) state.victory[subject][chapterName][diff] = [];
+
+            // All mistakes across all attempts → friction list
+            allMistakes.forEach(mistakeData => {
+                state.friction[subject][chapterName][diff].push({ ...mistakeData });
             });
 
+            // Victory: questions wrong in a past attempt but absent from the latest attempt
             const latestAttempt = attempts[0];
-            const latestIds = new Set((latestAttempt.mistakes || []).map(m => m.id || m.question_id).filter(Boolean));
+            const latestIds = new Set(
+                (latestAttempt.mistakes || []).map(m => m.id || m.question_id).filter(Boolean)
+            );
             const prevIds = new Set();
-
             attempts.slice(1).forEach(att => {
                 (att.mistakes || []).forEach(m => prevIds.add(m.id || m.question_id));
             });
