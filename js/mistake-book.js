@@ -355,127 +355,92 @@ function renderSubjectNavigator(subject) {
             </div><div id="list-${subject}" class="hidden bg-white"></div></div>`;
 }
 
-// Indexed registry avoids HTML-attribute quoting bugs with chapter names
-const _chIdx = [];
-
 window.toggleList = (subject, type) => {
     const container = document.getElementById(`list-${subject}`);
-    if (!container) return;
     const chapters = state[type][subject] || {};
     const names = Object.keys(chapters).sort();
-
-    if (container.dataset.type === type && !container.classList.contains('hidden')) {
-        container.classList.add('hidden');
-        return;
-    }
+    if (container.dataset.type === type && !container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
     container.dataset.type = type;
     container.classList.remove('hidden');
-
-    if (names.length === 0) {
-        container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`;
-        return;
-    }
-
+    if (names.length === 0) { container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No items found.</div>`; return; }
     let html = `<div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">`;
     names.forEach(ch => {
         let count = 0;
-        Object.values(chapters[ch]).forEach(arr => { count += arr.length; });
-        const idx = _chIdx.length;
-        _chIdx.push({ subject, chapter: ch, type });
-        html += `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 active:bg-slate-100 transition select-none" onclick="window._inspectIdx(${idx})">
-            <span class="text-sm font-bold text-slate-700 hover:text-cbse-blue">${ch}</span>
-            <span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span>
-        </div>`;
+        Object.values(chapters[ch]).forEach(arr => count += arr.length);
+        html += `<div class="px-6 py-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition group/item chapter-item" data-subject="${subject}" data-chapter="${ch}" data-type="${type}"><span class="text-sm font-bold text-slate-700 group-hover/item:text-cbse-blue">${ch}</span><span class="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded">${count}</span></div>`;
     });
     container.innerHTML = html + `</div>`;
+    container.querySelectorAll('.chapter-item').forEach(el => {
+        const s = el.getAttribute('data-subject');
+        const ch = el.getAttribute('data-chapter');
+        const t = el.getAttribute('data-type');
+        el.addEventListener('mouseenter', () => window.inspectChapter(s, ch, t));
+        el.addEventListener('click', () => window.inspectChapter(s, ch, t, true));
+    });
 };
 
-window._inspectIdx = (idx) => {
-    const entry = _chIdx[idx];
-    if (entry) window.inspectChapter(entry.subject, entry.chapter, entry.type);
-};
-
-window.inspectChapter = (subject, chapter, type) => {
-    const difficultiesObj = state[type]?.[subject]?.[chapter];
+// Fix #2 & #4: Complete rewrite of inspectChapter to show questions properly
+window.inspectChapter = (subject, chapter, type, isClick = false) => {
+    const difficultiesObj = state[type][subject]?.[chapter];
     if (!difficultiesObj) return;
 
     const isFriction = type === 'friction';
+    let html = `<div class="animate-fade-in text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Persistent Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800 leading-tight">${chapter}</h3></div>`;
 
-    // Flatten all difficulties into one question list, keeping the diff label
-    const questions = [];
-    Object.entries(difficultiesObj).forEach(([diff, items]) => {
-        (items || []).forEach(m => questions.push({ ...m, diff }));
+    Object.keys(difficultiesObj).sort().forEach(diff => {
+        const items = difficultiesObj[diff];
+        if (!items?.length) return;
+
+        const colors = { simple: 'text-blue-500', medium: 'text-amber-500', advanced: 'text-purple-500' };
+        const bgs = { simple: 'bg-blue-50', medium: 'bg-amber-50', advanced: 'bg-purple-50' };
+        html += `<div class="mt-6 mb-3 flex items-center"><span class="text-xs font-black uppercase tracking-widest ${colors[diff] || 'text-slate-500'} px-2 py-1 ${bgs[diff] || 'bg-slate-100'} rounded">${diff} Level</span></div>`;
+
+        items.forEach(m => {
+            const dateStr = (m.dates || [])
+                .map(d => (d instanceof Date ? d : d.toDate?.() || new Date(d)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
+                .join(', ');
+            const count = (m.dates || []).length;
+
+            if (isFriction) {
+                html += `<div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-3 relative">
+                    <div class="absolute left-0 top-4 bottom-4 w-1 bg-red-400 rounded-r-full"></div>
+                    ${count > 1 ? `<div class="mb-2"><span class="text-[9px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200 uppercase tracking-wider shadow-sm">⚠️ Failed ${count} Times</span></div>` : ''}
+                    <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
+                    <div class="pl-3 pt-2 border-t border-slate-200/50 flex justify-between items-center">
+                        <span class="text-[9px] font-bold text-red-500 uppercase">Trend: ${dateStr}</span>
+                        <a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-white border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 uppercase shadow-sm">Master Concept</a>
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="bg-green-50 rounded-xl p-4 border border-green-100 mb-3 relative">
+                    <div class="absolute left-0 top-4 bottom-4 w-1 bg-green-400 rounded-r-full"></div>
+                    <div class="mb-2">
+                        <span class="text-[9px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 uppercase tracking-wider">✅ Mastered</span>
+                    </div>
+                    <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
+                    <div class="pl-3 pt-2 border-t border-green-200/50 flex justify-between items-center">
+                        <span class="text-[9px] font-bold text-green-600 uppercase">🏆 Since: ${m.masteryDate}</span>
+                        <span class="text-[9px] font-bold text-green-600 bg-white border border-green-100 px-2 py-1 rounded">Type: ${m.type || 'MCQ'}</span>
+                    </div>
+                </div>`;
+            }
+        });
     });
-    if (!questions.length) return;
 
-    // Sort: most-repeated failures first, then alphabetically by text
-    questions.sort((a, b) => (b.dates?.length || 0) - (a.dates?.length || 0) || (a.text || '').localeCompare(b.text || ''));
-
-    const diffBadge = { simple: 'bg-blue-100 text-blue-700', medium: 'bg-amber-100 text-amber-700', advanced: 'bg-purple-100 text-purple-700' };
-
-    const header = `
-        <div class="pb-4 mb-4 border-b border-slate-100">
-            <span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} block mb-1">
-                ${isFriction ? '⚠️ Friction Zone' : '✅ Victory Gallery'}
-            </span>
-            <h3 class="text-base font-black text-slate-800 leading-snug">${chapter}</h3>
-            <p class="text-[10px] text-slate-400 mt-0.5">${questions.length} question${questions.length !== 1 ? 's' : ''} · ${subject}</p>
-        </div>`;
-
-    const cards = questions.map(m => {
-        const failCount = m.dates?.length || 0;
-        const isRepeated = failCount > 1;
-        const lastTs = m.dates?.reduce((best, d) => {
-            const t = d instanceof Date ? d.getTime() : (d.toDate?.() ?? new Date(d)).getTime();
-            return t > best ? t : best;
-        }, 0);
-        const lastDate = lastTs ? new Date(lastTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-
-        if (isFriction) {
-            const cardBg = isRepeated ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100';
-            const countBadge = isRepeated
-                ? `<span class="text-[9px] font-black bg-red-100 text-red-700 px-2 py-0.5 rounded">⚠️ Wrong ${failCount}×</span>`
-                : `<span class="text-[9px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">1st attempt</span>`;
-            return `<div class="rounded-xl border ${cardBg} p-3 space-y-2">
-                <div class="flex items-center gap-2 flex-wrap">
-                    ${countBadge}
-                    <span class="text-[9px] font-bold ${diffBadge[m.diff] || 'bg-slate-100 text-slate-500'} px-2 py-0.5 rounded">${m.diff}</span>
-                </div>
-                <p class="text-xs font-medium text-slate-800 leading-relaxed break-words">${cleanKatexMarkers(m.text)}</p>
-                ${lastDate ? `<p class="text-[9px] text-slate-400">Last wrong: ${lastDate}</p>` : ''}
-            </div>`;
-        } else {
-            const masteryDate = m.masteryDate || lastDate;
-            return `<div class="rounded-xl border border-green-200 bg-green-50 p-3 space-y-2">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[9px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded">✅ Mastered</span>
-                    <span class="text-[9px] font-bold ${diffBadge[m.diff] || 'bg-slate-100 text-slate-500'} px-2 py-0.5 rounded">${m.diff}</span>
-                </div>
-                <p class="text-xs font-medium text-slate-800 leading-relaxed break-words">${cleanKatexMarkers(m.text)}</p>
-                ${masteryDate ? `<p class="text-[9px] text-green-600">🏆 Corrected: ${masteryDate}</p>` : ''}
-            </div>`;
-        }
-    }).join('');
-
-    const html = `<div class="text-left">${header}<div class="space-y-3">${cards}</div></div>`;
-
-    const panel = document.getElementById('inspector-panel');
-    if (panel) {
-        panel.innerHTML = html;
-        panel.className = 'glass-panel rounded-3xl p-5 border border-slate-200 shadow-sm bg-white/80 overflow-y-auto';
-        panel.style.maxHeight = '75vh';
+    const inspector = document.getElementById('inspector-panel');
+    if (inspector) {
+        inspector.innerHTML = html + `</div>`;
+        inspector.classList.replace('items-center', 'items-start');
+        inspector.classList.replace('justify-center', 'justify-start');
+        inspector.classList.remove('text-center');
     }
-
-    const mobileContent = document.getElementById('mobile-inspector-content');
-    const mobilePanel = document.getElementById('mobile-inspector');
-    if (mobileContent) mobileContent.innerHTML = html;
-    if (mobilePanel && window.innerWidth < 1024) mobilePanel.classList.remove('hidden');
+    if (window.innerWidth < 1024 && isClick) {
+        document.getElementById('mobile-inspector-content').innerHTML = html + `</div>`;
+        document.getElementById('mobile-inspector').classList.remove('hidden');
+    }
 };
 
-window.closeMobileInspector = () => {
-    const p = document.getElementById('mobile-inspector');
-    if (p) p.classList.add('hidden');
-};
+window.closeMobileInspector = () => document.getElementById('mobile-inspector').classList.add('hidden');
 
 function renderEmptyState(container) {
     if (!container) return;
