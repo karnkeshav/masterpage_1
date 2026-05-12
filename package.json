@@ -33,6 +33,7 @@
     "firebase-admin": "^13.8.0",
     "jsdom": "^29.0.2",
     "jsonwebtoken": "^9.0.3",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "nodemailer": "^6.9.0"
   }
 }
