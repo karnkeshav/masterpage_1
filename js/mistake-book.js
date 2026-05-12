@@ -21,7 +21,7 @@ const state = {
         CB: { total: 0, mistakes: 0 }
     },
     victoryCount: 0,
-    activeChapterCount: 0
+    activeChapterCount: 0 // Track chapters instead of subjects
 };
 
 const THEMES = {
@@ -57,6 +57,7 @@ async function init(user, profile) {
             return;
         }
 
+        // STEP 1: Map mistakes into scores
         const scoreDocs = scoresSnap.docs.map(d => {
             const data = d.data();
             const topic = data.topic || data.topicSlug || data.chapter_slug || "";
@@ -71,6 +72,7 @@ async function init(user, profile) {
             return { data: () => data };
         });
 
+        // STEP 2: Restore missing logic - Add standalone mistakes that didn't match a score
         mistakesSnap.docs.forEach(md => {
             const mData = md.data();
             const sid = mData.session_id;
@@ -148,47 +150,6 @@ function classifyQuestionType(m) {
     if (raw.includes("ar") || raw.includes("assertion")) return "AR";
     if (raw.includes("case") || raw.includes("cb")) return "CB";
     return "MCQ";
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// CORRECTED: Proper friction/victory logic
-// ═══════════════════════════════════════════════════════════════════════════
-function normalizeDifficulty(value) {
-    return String(value || "simple").trim().toLowerCase();
-}
-
-function toDate(value) {
-    if (!value) return new Date(0);
-    if (value instanceof Date) return value;
-    if (typeof value.toDate === "function") return value.toDate();
-    if (typeof value.seconds === "number") return new Date(value.seconds * 1000);
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
-}
-
-function getScore(data) {
-    const raw = data.percentage ?? data.score_percent ?? data.scorePercent;
-    if (typeof raw === "number" && Number.isFinite(raw)) return Math.round(raw);
-    if (typeof data.score === "number" && typeof data.total === "number" && data.total > 0) {
-        return Math.round((data.score / data.total) * 100);
-    }
-    return null;
-}
-
-function getMistakeId(m) {
-    return String(m.id || m.question_id || m.question_text || m.question || "").trim();
-}
-
-function addToState(type, subject, chapter, mistakeData) {
-    const diff = normalizeDifficulty(mistakeData.difficulty);
-    state[type][subject] ||= {};
-    state[type][subject][chapter] ||= {};
-    state[type][subject][chapter][diff] ||= [];
-    state[type][subject][chapter][diff].push(mistakeData);
-}
-
-function countChapters(group) {
-    return Object.values(group).reduce((total, chapters) => total + Object.keys(chapters || {}).length, 0);
 }
 
 function processData(scoreDocs) {
@@ -290,12 +251,18 @@ function processData(scoreDocs) {
                 };
 
                 if (latestIds.has(id)) {
-                    addToState('friction', subject, chapterName, enriched);
+                    if (!state.friction[subject]) state.friction[subject] = {};
+                    if (!state.friction[subject][chapterName]) {
+                         state.friction[subject][chapterName] = {};
+                         state.activeChapterCount++; // Incremented for unique active chapters
+                    }
+                    if (!state.friction[subject][chapterName][diff]) state.friction[subject][chapterName][diff] = [];
+                    state.friction[subject][chapterName][diff].push(m);
                 } else {
-                    addToState('victory', subject, chapterName, {
-                        ...enriched,
-                        masteryDate: attempts[0].timestamp.toLocaleDateString()
-                    });
+                    if (!state.victory[subject]) state.victory[subject] = {};
+                    if (!state.victory[subject][chapterName]) state.victory[subject][chapterName] = {};
+                    if (!state.victory[subject][chapterName][diff]) state.victory[subject][chapterName][diff] = [];
+                    state.victory[subject][chapterName][diff].push({ ...m, masteryDate: latestAttempt.timestamp.toDateString() });
                     state.victoryCount++;
                 }
             });
@@ -399,50 +366,23 @@ window.toggleList = (subject, type) => {
     });
 };
 
-// Fix #2 & #4: Complete rewrite of inspectChapter to show questions properly
 window.inspectChapter = (subject, chapter, type, isClick = false) => {
     const difficultiesObj = state[type][subject]?.[chapter];
     if (!difficultiesObj) return;
     const isFriction = type === 'friction';
-    let html = `<div class="animate-fade-in text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Persistent Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800 leading-tight">${chapter}</h3></div>`;
+    let html = `<div class="text-left"><div class="mb-6 pb-4 border-b border-slate-100"><span class="text-[10px] font-black uppercase tracking-widest ${isFriction ? 'text-red-500' : 'text-green-500'} mb-1 block">${isFriction ? 'Active Friction' : 'Victory Gallery'}</span><h3 class="text-xl font-black text-slate-800">${chapter}</h3></div>`;
 
-    Object.keys(difficultiesObj).sort().forEach(diff => {
-        const items = difficultiesObj[diff];
-        if (!items?.length) return;
-
-        const colors = { simple: 'text-blue-500', medium: 'text-amber-500', advanced: 'text-purple-500' };
-        const bgs = { simple: 'bg-blue-50', medium: 'bg-amber-50', advanced: 'bg-purple-50' };
-        html += `<div class="mt-6 mb-3 flex items-center"><span class="text-xs font-black uppercase tracking-widest ${colors[diff] || 'text-slate-500'} px-2 py-1 ${bgs[diff] || 'bg-slate-100'} rounded">${diff} Level</span></div>`;
-
-        items.forEach(m => {
-            const dateStr = (m.dates || [])
-                .map(d => (d instanceof Date ? d : d.toDate?.() || new Date(d)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
-                .join(', ');
-            const count = (m.dates || []).length;
-
-            if (isFriction) {
-                html += `<div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-3 relative">
-                    <div class="absolute left-0 top-4 bottom-4 w-1 bg-red-400 rounded-r-full"></div>
-                    ${count > 1 ? `<div class="mb-2"><span class="text-[9px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded border border-red-200 uppercase tracking-wider shadow-sm">⚠️ Failed ${count} Times</span></div>` : ''}
-                    <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
-                    <div class="pl-3 pt-2 border-t border-slate-200/50 flex justify-between items-center">
-                        <span class="text-[9px] font-bold text-red-500 uppercase">Trend: ${dateStr}</span>
-                        <a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-red-600 bg-white border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 uppercase shadow-sm">Master Concept</a>
-                    </div>
-                </div>`;
-            } else {
-                html += `<div class="bg-green-50 rounded-xl p-4 border border-green-100 mb-3 relative">
-                    <div class="absolute left-0 top-4 bottom-4 w-1 bg-green-400 rounded-r-full"></div>
-                    <div class="mb-2">
-                        <span class="text-[9px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 uppercase tracking-wider">✅ Mastered</span>
-                    </div>
-                    <p class="text-xs font-medium text-slate-700 pl-3 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
-                    <div class="pl-3 pt-2 border-t border-green-200/50 flex justify-between items-center">
-                        <span class="text-[9px] font-bold text-green-600 uppercase">🏆 Since: ${m.masteryDate}</span>
-                        <span class="text-[9px] font-bold text-green-600 bg-white border border-green-100 px-2 py-1 rounded">Type: ${m.type || 'MCQ'}</span>
-                    </div>
-                </div>`;
-            }
+    Object.keys(data).sort().forEach(level => {
+        html += `<div class="mt-4 mb-2"><span class="text-[10px] font-black uppercase bg-slate-100 px-2 py-1 rounded">${level} Level</span></div>`;
+        data[level].forEach(m => {
+            html += `<div class="bg-white rounded-xl p-4 border border-slate-200 mb-3 shadow-sm relative overflow-hidden">
+                <div class="absolute left-0 top-0 bottom-0 w-1 ${isFriction ? 'bg-red-400' : 'bg-green-400'}"></div>
+                <p class="text-xs font-medium text-slate-700 mb-3 leading-relaxed">${cleanKatexMarkers(m.text)}</p>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-50">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">${isFriction ? `Failed ${m.dates.length}x` : `Mastered: ${m.masteryDate}`}</span>
+                    ${isFriction ? `<a href="study-content.html?grade=${currentGrade}&topic=${m.topic}" class="text-[9px] font-black text-cbse-blue uppercase hover:underline">Review concept</a>` : ''}
+                </div>
+            </div>`;
         });
     });
 
