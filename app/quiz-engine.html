@@ -41,18 +41,43 @@
     html, body { height: 100%; width: 100%; margin: 0; padding: 0; scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background-color: #f5f7fa; color: #1f2937; }
 
+    body.quiz-engine-page #app-header {
+      width: 100%;
+      box-sizing: border-box;
+    }
 
+    @media (max-width: 640px) {
+      body.quiz-engine-page #app-header {
+        flex-wrap: wrap;
+        row-gap: 0.75rem;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
 
+      body.quiz-engine-page #app-header > .flex:first-child {
+        flex: 1 1 10rem;
+        min-width: 0;
+      }
 
+      body.quiz-engine-page #app-header > .flex:last-child {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        min-width: 0;
+        row-gap: 0.5rem;
+      }
 
-
-
+      body.quiz-engine-page #app-header h2,
+      body.quiz-engine-page #app-header p {
+        overflow-wrap: anywhere;
+      }
+    }
   </style>
 
   <script src="../js/firebase-master-config.js"></script>
 </head>
 
-<body class="bg-cbse-light min-h-screen w-full flex flex-col">
+<body class="quiz-engine-page bg-cbse-light min-h-screen w-full flex flex-col overflow-x-hidden">
 
 <div id="app-header"></div>
 <script>R4E.renderHeader({
@@ -79,8 +104,8 @@
   </div>
 </div>
 
-<main id="quiz-content" class="hidden flex flex-col items-center w-full max-w-4xl mx-auto px-4 py-6 md:py-10">
-  <div id="question-list" class="w-full mb-8"></div>
+<main id="quiz-content" class="hidden flex flex-col items-center w-full max-w-4xl mx-auto px-4 py-6 md:py-10 overflow-x-hidden">
+  <div id="question-list" class="w-full min-w-0 mb-8"></div>
   <div class="w-full sticky bottom-6 z-30 flex justify-between items-center bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 p-3 sm:p-4">
     <button id="prev-btn" class="px-3 sm:px-5 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 active:scale-95 transition text-sm">← Prev</button>
     <span id="question-counter" class="text-xs sm:text-sm font-black text-cbse-blue tracking-widest">01 / 25</span>
