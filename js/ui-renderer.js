@@ -344,9 +344,20 @@ export function updateNavigation(i, t, s) {
     if (els.counter) els.counter.textContent = `${i + 1}/${t}`;
 }
 export function attachAnswerListeners(fn) {
+
     els.list.onclick = e => {
-        const radio = e.target.closest('input[type="radio"]');
-        if (radio) fn(radio.dataset.id, radio.value);
+
+        const label = e.target.closest('label');
+
+        if (!label) return;
+
+        const radio = label.querySelector('input[type="radio"]');
+
+        if (!radio) return;
+
+        radio.checked = true;
+
+        fn(radio.dataset.id, radio.value);
     };
 }
 
