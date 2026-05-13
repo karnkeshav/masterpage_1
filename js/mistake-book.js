@@ -169,26 +169,47 @@ function getQuestionType(id) {
     if (strId.startsWith("cb_")) return "CB";
     return "MCQ";
 }
-
 function processData(scoreDocs) {
+
     const subjectScores = {};
     const topicHistory = {};
 
+    // RESET STATE
+    state.friction = {};
+    state.victory = {};
+    state.subjectStats = {};
+    state.victoryCount = 0;
+
+    state.proficiency = {
+        MCQ: { total: 0, mistakes: 0 },
+        AR: { total: 0, mistakes: 0 },
+        CB: { total: 0, mistakes: 0 }
+    };
+
     scoreDocs.forEach(d => {
+
         const data = d.data();
 
-        const topic = data.topic || data.chapter_slug || data.topicSlug;
+        const topic =
+            data.topic ||
+            data.chapter_slug ||
+            data.topicSlug;
+
         if (!topic) return;
 
         const { subject } = getSubjectContext(topic);
 
         const score = parseFloat(
-            data.percentage || data.score_percent || 0
+            data.percentage ||
+            data.score_percent ||
+            0
         );
 
-        const diff = (data.difficulty || "simple").toLowerCase();
+        const diff = (
+            data.difficulty || "simple"
+        ).toLowerCase();
 
-        // Subject stats
+        // SUBJECT STATS
         if (!subjectScores[subject]) {
             subjectScores[subject] = {
                 simple: [],
@@ -201,9 +222,14 @@ function processData(scoreDocs) {
             subjectScores[subject][diff].push(score);
         }
 
-        // Topic history
-        if (!topicHistory[topic]) topicHistory[topic] = {};
-        if (!topicHistory[topic][diff]) topicHistory[topic][diff] = [];
+        // TOPIC HISTORY
+        if (!topicHistory[topic]) {
+            topicHistory[topic] = {};
+        }
+
+        if (!topicHistory[topic][diff]) {
+            topicHistory[topic][diff] = [];
+        }
 
         const ts = data.timestamp?.toDate
             ? data.timestamp.toDate()
@@ -214,8 +240,9 @@ function processData(scoreDocs) {
             timestamp: ts
         });
 
-        // Proficiency
+        // PROFICIENCY
         (data.mistakes || []).forEach(m => {
+
             const type = getQuestionType(m.id);
 
             if (state.proficiency[type]) {
@@ -225,24 +252,24 @@ function processData(scoreDocs) {
         });
     });
 
-    // RESET
-    state.friction = {};
-    state.victory = {};
-    state.victoryCount = 0;
+    console.log("TOPIC HISTORY", topicHistory);
 
     // PROCESS FRICTION + VICTORY
     Object.entries(topicHistory).forEach(([topic, difficulties]) => {
 
-        const { subject, chapterName } = getSubjectContext(topic);
+        const {
+            subject,
+            chapterName
+        } = getSubjectContext(topic);
 
         Object.entries(difficulties).forEach(([diff, attempts]) => {
 
-            // Latest first
+            // latest first
             attempts.sort((a, b) => b.timestamp - a.timestamp);
 
             const latestAttempt = attempts[0];
 
-            // CURRENT WRONG QUESTIONS
+            // CURRENTLY WRONG
             const currentMistakeMap = new Map();
 
             latestAttempt.mistakes.forEach(m => {
@@ -262,7 +289,7 @@ function processData(scoreDocs) {
                 });
             });
 
-            // ALL HISTORICAL WRONG QUESTIONS
+            // ALL HISTORICAL WRONG
             const historicalMistakes = new Map();
 
             attempts.forEach(att => {
@@ -296,6 +323,8 @@ function processData(scoreDocs) {
             // ACTIVE FRICTION
             currentMistakeMap.forEach(qData => {
 
+                console.log("ADDING FRICTION", qData);
+
                 addToState(
                     "friction",
                     subject,
@@ -304,10 +333,14 @@ function processData(scoreDocs) {
                 );
             });
 
-            // VICTORY = PREVIOUSLY WRONG BUT NOW FIXED
+            // VICTORY
             historicalMistakes.forEach((qData, idStr) => {
 
-                if (currentMistakeMap.has(idStr)) return;
+                if (currentMistakeMap.has(idStr)) {
+                    return;
+                }
+
+                console.log("ADDING VICTORY", qData);
 
                 const masteryDate =
                     latestAttempt.timestamp.toLocaleDateString(
@@ -333,7 +366,7 @@ function processData(scoreDocs) {
         });
     });
 
-    // Final subject averages
+    // FINAL SUBJECT AVERAGES
     Object.keys(subjectScores).forEach(subj => {
 
         const s = subjectScores[subj];
@@ -351,13 +384,33 @@ function processData(scoreDocs) {
             advanced: avg(s.advanced)
         };
     });
+
+    console.log("FINAL FRICTION", state.friction);
+    console.log("FINAL VICTORY", state.victory);
 }
 function addToState(type, subject, chapter, item) {
-    if (!state[type][subject]) state[type][subject] = {};
-    if (!state[type][subject][chapter]) state[type][subject][chapter] = {};
-    const diff = item.difficulty || 'simple';
-    if (!state[type][subject][chapter][diff]) state[type][subject][chapter][diff] = [];
-    state[type][subject][chapter][diff].push(item);
+
+    if (!state[type][subject]) {
+        state[type][subject] = {};
+    }
+
+    if (!state[type][subject][chapter]) {
+        state[type][subject][chapter] = {};
+    }
+
+    const diff = (item.difficulty || "simple").toLowerCase();
+
+    if (!state[type][subject][chapter][diff]) {
+        state[type][subject][chapter][diff] = [];
+    }
+
+    // prevent duplicate questions
+    const exists = state[type][subject][chapter][diff]
+        .some(q => String(q.id) === String(item.id));
+
+    if (!exists) {
+        state[type][subject][chapter][diff].push(item);
+    }
 }
 
 function renderConsole(container) {
@@ -373,14 +426,17 @@ function renderConsole(container) {
 
     const sortedSubjects = Array.from(allSubjects).sort();
 
-    // TOTAL ACTIVE WRONG QUESTIONS
     const activeFrictionCount = Object.values(state.friction)
         .reduce((a, subj) => {
 
             return a + Object.values(subj).reduce((b, ch) => {
 
                 return b + Object.values(ch).reduce(
-                    (c, arr) => c + arr.length,
+                    (c, arr) => c + (
+                        Array.isArray(arr)
+                            ? arr.length
+                            : 0
+                    ),
                     0
                 );
 
@@ -412,6 +468,7 @@ function renderConsole(container) {
             <div class="flex items-center space-x-8">
 
                 <div class="text-right">
+
                     <span class="block text-3xl font-black text-green-600">
                         ${state.victoryCount}
                     </span>
@@ -419,11 +476,13 @@ function renderConsole(container) {
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         Victory Gains
                     </span>
+
                 </div>
 
                 <div class="h-10 w-px bg-slate-200"></div>
 
                 <div class="text-right">
+
                     <span class="block text-3xl font-black text-red-500">
                         ${activeFrictionCount}
                     </span>
@@ -431,6 +490,7 @@ function renderConsole(container) {
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         Active Zones
                     </span>
+
                 </div>
 
             </div>
@@ -446,9 +506,11 @@ function renderConsole(container) {
                 </h4>
 
                 <div class="space-y-4">
+
                     ${renderProficiencyPill("MCQ", "Recall", state.proficiency.MCQ)}
                     ${renderProficiencyPill("AR", "Logic", state.proficiency.AR)}
                     ${renderProficiencyPill("CB", "Application", state.proficiency.CB)}
+
                 </div>
 
             </div>
@@ -557,25 +619,34 @@ function renderSubjectNavigator(subject) {
 
     const theme = THEMES[subject] || THEMES["General"];
 
-    const fCount = Object.values(
-        state.friction[subject] || {}
-    ).reduce((a, ch) => {
+    const frictionData = state.friction[subject] || {};
+    const victoryData = state.victory[subject] || {};
 
-        return a + Object.values(ch).reduce(
-            (b, arr) => b + arr.length,
-            0
-        );
+    const fCount = Object.values(frictionData).reduce((a, ch) => {
+
+        return a + Object.values(ch).reduce((b, arr) => {
+
+            return b + (
+                Array.isArray(arr)
+                    ? arr.length
+                    : 0
+            );
+
+        }, 0);
 
     }, 0);
 
-    const vCount = Object.values(
-        state.victory[subject] || {}
-    ).reduce((a, ch) => {
+    const vCount = Object.values(victoryData).reduce((a, ch) => {
 
-        return a + Object.values(ch).reduce(
-            (b, arr) => b + arr.length,
-            0
-        );
+        return a + Object.values(ch).reduce((b, arr) => {
+
+            return b + (
+                Array.isArray(arr)
+                    ? arr.length
+                    : 0
+            );
+
+        }, 0);
 
     }, 0);
 
@@ -585,6 +656,7 @@ function renderSubjectNavigator(subject) {
             <div class="px-6 py-5 flex items-center justify-between border-b border-slate-50 ${theme.bg}">
 
                 <div class="flex items-center space-x-4">
+
                     <div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text}">
                         <i class="fas ${theme.icon}"></i>
                     </div>
@@ -592,6 +664,7 @@ function renderSubjectNavigator(subject) {
                     <h3 class="text-lg font-black text-slate-700 tracking-tight">
                         ${subject}
                     </h3>
+
                 </div>
 
                 <div class="flex space-x-4">
@@ -613,6 +686,7 @@ function renderSubjectNavigator(subject) {
                     </button>
 
                 </div>
+
             </div>
 
             <div id="list-${subject}" class="hidden bg-white"></div>
@@ -620,7 +694,6 @@ function renderSubjectNavigator(subject) {
         </div>
     `;
 }
-
 window.toggleList = (subject, type) => {
     const container = document.getElementById(`list-${subject}`);
     const chapters = state[type][subject] || {};
