@@ -89,6 +89,7 @@ async function init(user, profile) {
             return;
         }
 
+                window.__debugScores = [];
                const scoreDocs = scoresSnap.docs.map(d => {
 
     const data = d.data();
