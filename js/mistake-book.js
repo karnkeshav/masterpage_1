@@ -89,21 +89,65 @@ async function init(user, profile) {
             return;
         }
 
-                const scoreDocs = scoresSnap.docs.map(d => {
-                    const data = d.data();
-                    const topic = data.topic || data.topicSlug || data.chapter_slug || "";
-                    const t1 = data.timestamp ? data.timestamp.seconds : 0;
-                    const sid = data.session_id;
-                    const matchingNotebookEntry = mistakesSnap.docs.find(md => {
-                        const mData = md.data();
-                        // Prefer exact session_id match; fall back to topic+timestamp proximity
-                        if (sid && mData.session_id) return mData.session_id === sid;
-                        return (mData.topic === topic || mData.chapter_slug === topic) && (Math.abs((mData.timestamp?.seconds || 0) - t1) < 5);
-                    });
-                    data.mistakes = matchingNotebookEntry ? (matchingNotebookEntry.data().mistakes || []) : [];
-                    data.difficulty = data.difficulty || 'simple';
-                    return { data: () => data };
-                });
+               const scoreDocs = scoresSnap.docs.map(d => {
+
+    const data = d.data();
+
+    const topic =
+        data.topic ||
+        data.topicSlug ||
+        data.chapter_slug ||
+        "";
+
+    const t1 = data.timestamp
+        ? data.timestamp.seconds
+        : 0;
+
+    const sid = data.session_id;
+
+    const matchingNotebookEntry = mistakesSnap.docs.find(md => {
+
+        const mData = md.data();
+
+        if (sid && mData.session_id) {
+            return mData.session_id === sid;
+        }
+
+        return (
+            (mData.topic === topic ||
+             mData.chapter_slug === topic) &&
+            Math.abs(
+                (mData.timestamp?.seconds || 0) - t1
+            ) < 5
+        );
+    });
+
+    // PRIORITY 1 = mistake_notebook
+    if (matchingNotebookEntry) {
+
+        data.mistakes =
+            matchingNotebookEntry.data().mistakes || [];
+
+    } else {
+
+        // FALLBACK = derive mistakes from quiz_scores
+        const incorrect =
+            data.incorrect_questions ||
+            data.wrong_questions ||
+            data.mistakes ||
+            [];
+
+        data.mistakes = incorrect;
+    }
+
+    data.difficulty =
+        data.difficulty || "simple";
+
+    return {
+        data: () => data
+    };
+});
+        
 
                 mistakesSnap.docs.forEach(md => {
                     const mData = md.data();
