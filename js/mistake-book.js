@@ -176,100 +176,182 @@ function processData(scoreDocs) {
 
     scoreDocs.forEach(d => {
         const data = d.data();
-        // Use 'topic' or 'chapter_slug' from the top level of the document
+
         const topic = data.topic || data.chapter_slug || data.topicSlug;
         if (!topic) return;
 
-        const { subject, chapterName } = getSubjectContext(topic);
-        const score = parseFloat(data.percentage || data.score_percent || 0);
-        const diff = (data.difficulty || 'simple').toLowerCase();
+        const { subject } = getSubjectContext(topic);
 
-        // 1. Handle Subject Stats
-        if (!subjectScores[subject]) subjectScores[subject] = { simple: [], medium: [], advanced: [] };
-        if (subjectScores[subject][diff]) subjectScores[subject][diff].push(score);
+        const score = parseFloat(
+            data.percentage || data.score_percent || 0
+        );
 
-        // 2. Map Proficiency & History
+        const diff = (data.difficulty || "simple").toLowerCase();
+
+        // Subject stats
+        if (!subjectScores[subject]) {
+            subjectScores[subject] = {
+                simple: [],
+                medium: [],
+                advanced: []
+            };
+        }
+
+        if (subjectScores[subject][diff]) {
+            subjectScores[subject][diff].push(score);
+        }
+
+        // Topic history
         if (!topicHistory[topic]) topicHistory[topic] = {};
         if (!topicHistory[topic][diff]) topicHistory[topic][diff] = [];
-        
-        // Use the timestamp already processed in the loop or raw from doc
-        const ts = data.timestamp?.toDate ? data.timestamp.toDate() : (data.timestamp || new Date());
 
-        topicHistory[topic][diff].push({ 
-            mistakes: data.mistakes || [], 
-            timestamp: ts 
+        const ts = data.timestamp?.toDate
+            ? data.timestamp.toDate()
+            : (data.timestamp || new Date());
+
+        topicHistory[topic][diff].push({
+            mistakes: data.mistakes || [],
+            timestamp: ts
         });
 
-        // Update Global Proficiency Stats
+        // Proficiency
         (data.mistakes || []).forEach(m => {
             const type = getQuestionType(m.id);
-            if (state.proficiency[type]) state.proficiency[type].mistakes++;
+
+            if (state.proficiency[type]) {
+                state.proficiency[type].mistakes++;
+                state.proficiency[type].total++;
+            }
         });
-        state.proficiency.MCQ.total += (data.mistakes?.length || 0); 
     });
 
-    // 3. Process Friction vs Victory
+    // RESET
+    state.friction = {};
+    state.victory = {};
+    state.victoryCount = 0;
+
+    // PROCESS FRICTION + VICTORY
     Object.entries(topicHistory).forEach(([topic, difficulties]) => {
+
         const { subject, chapterName } = getSubjectContext(topic);
 
         Object.entries(difficulties).forEach(([diff, attempts]) => {
-            // Sort: Latest attempt first
+
+            // Latest first
             attempts.sort((a, b) => b.timestamp - a.timestamp);
 
             const latestAttempt = attempts[0];
-            
-            // Set of IDs currently wrong (force to String for consistent comparison)
-            const currentMistakeIds = new Set(
-                latestAttempt.mistakes.map(m => String(m.id))
-            );
 
-            // Track every unique question ever failed in this chapter
-            const allFailedQuestions = new Map();
+            // CURRENT WRONG QUESTIONS
+            const currentMistakeMap = new Map();
+
+            latestAttempt.mistakes.forEach(m => {
+
+                const idStr = String(m.id);
+
+                currentMistakeMap.set(idStr, {
+                    id: idStr,
+                    text:
+                        m.question ||
+                        m.question_text ||
+                        "Question text missing",
+                    type: getQuestionType(m.id),
+                    dates: [latestAttempt.timestamp],
+                    topic,
+                    difficulty: diff
+                });
+            });
+
+            // ALL HISTORICAL WRONG QUESTIONS
+            const historicalMistakes = new Map();
+
             attempts.forEach(att => {
+
                 att.mistakes.forEach(m => {
+
                     const idStr = String(m.id);
-                    if (!allFailedQuestions.has(idStr)) {
-                        allFailedQuestions.set(idStr, {
+
+                    if (!historicalMistakes.has(idStr)) {
+
+                        historicalMistakes.set(idStr, {
                             id: idStr,
-                            text: m.question || m.question_text || "Question text missing",
+                            text:
+                                m.question ||
+                                m.question_text ||
+                                "Question text missing",
                             type: getQuestionType(m.id),
                             dates: [],
                             topic,
                             difficulty: diff
                         });
                     }
-                    allFailedQuestions.get(idStr).dates.push(att.timestamp);
+
+                    historicalMistakes
+                        .get(idStr)
+                        .dates
+                        .push(att.timestamp);
                 });
             });
 
-            // Distribute to State
-            allFailedQuestions.forEach((qData, idStr) => {
-                if (currentMistakeIds.has(idStr)) {
-                    // STILL WRONG in the most recent test
-                    addToState('friction', subject, chapterName, qData);
-                } else {
-                    // WAS WRONG previously, but NOT in the most recent test
-                    const mDate = latestAttempt.timestamp.toLocaleDateString('en-US', { 
-                        month: 'short', day: 'numeric' 
-                    });
-                    addToState('victory', subject, chapterName, { 
-                        ...qData, 
-                        masteryDate: mDate 
-                    });
-                    state.victoryCount++;
-                }
+            // ACTIVE FRICTION
+            currentMistakeMap.forEach(qData => {
+
+                addToState(
+                    "friction",
+                    subject,
+                    chapterName,
+                    qData
+                );
+            });
+
+            // VICTORY = PREVIOUSLY WRONG BUT NOW FIXED
+            historicalMistakes.forEach((qData, idStr) => {
+
+                if (currentMistakeMap.has(idStr)) return;
+
+                const masteryDate =
+                    latestAttempt.timestamp.toLocaleDateString(
+                        "en-US",
+                        {
+                            month: "short",
+                            day: "numeric"
+                        }
+                    );
+
+                addToState(
+                    "victory",
+                    subject,
+                    chapterName,
+                    {
+                        ...qData,
+                        masteryDate
+                    }
+                );
+
+                state.victoryCount++;
             });
         });
     });
 
-    // Finalize Stats
+    // Final subject averages
     Object.keys(subjectScores).forEach(subj => {
+
         const s = subjectScores[subj];
-        const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
-        state.subjectStats[subj] = { simple: avg(s.simple), medium: avg(s.medium), advanced: avg(s.advanced) };
+
+        const avg = arr =>
+            arr.length
+                ? Math.round(
+                    arr.reduce((a, b) => a + b, 0) / arr.length
+                )
+                : 0;
+
+        state.subjectStats[subj] = {
+            simple: avg(s.simple),
+            medium: avg(s.medium),
+            advanced: avg(s.advanced)
+        };
     });
 }
-
 function addToState(type, subject, chapter, item) {
     if (!state[type][subject]) state[type][subject] = {};
     if (!state[type][subject][chapter]) state[type][subject][chapter] = {};
@@ -279,39 +361,173 @@ function addToState(type, subject, chapter, item) {
 }
 
 function renderConsole(container) {
-    const allSubjects = new Set([...Object.keys(state.subjectStats), ...Object.keys(state.friction), ...Object.keys(state.victory), "Mathematics", "Science", "Social Science"]);
+
+    const allSubjects = new Set([
+        ...Object.keys(state.subjectStats),
+        ...Object.keys(state.friction),
+        ...Object.keys(state.victory),
+        "Mathematics",
+        "Science",
+        "Social Science"
+    ]);
+
     const sortedSubjects = Array.from(allSubjects).sort();
+
+    // TOTAL ACTIVE WRONG QUESTIONS
+    const activeFrictionCount = Object.values(state.friction)
+        .reduce((a, subj) => {
+
+            return a + Object.values(subj).reduce((b, ch) => {
+
+                return b + Object.values(ch).reduce(
+                    (c, arr) => c + arr.length,
+                    0
+                );
+
+            }, 0);
+
+        }, 0);
 
     const tier1 = `
         <div class="glass-panel rounded-3xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between bg-gradient-to-r from-cbse-blue/5 to-transparent border-cbse-blue/10">
+
             <div class="flex items-center space-x-6 mb-4 md:mb-0">
-                <div class="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-sm">🛡️</div>
-                <div><h3 class="text-2xl font-black text-cbse-blue tracking-tight">Diagnostic Status</h3><p class="text-sm text-slate-500 font-medium">Identify patterns. Eliminate friction.</p></div>
+
+                <div class="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-sm">
+                    🛡️
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-black text-cbse-blue tracking-tight">
+                        Diagnostic Status
+                    </h3>
+
+                    <p class="text-sm text-slate-500 font-medium">
+                        Identify patterns. Eliminate friction.
+                    </p>
+                </div>
+
             </div>
+
             <div class="flex items-center space-x-8">
-                <div class="text-right"><span class="block text-3xl font-black text-green-600">${state.victoryCount}</span><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Victory Gains</span></div>
+
+                <div class="text-right">
+                    <span class="block text-3xl font-black text-green-600">
+                        ${state.victoryCount}
+                    </span>
+
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Victory Gains
+                    </span>
+                </div>
+
                 <div class="h-10 w-px bg-slate-200"></div>
-                <div class="text-right"><span class="block text-3xl font-black text-red-500">${Object.keys(state.friction).length}</span><span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Zones</span></div>
+
+                <div class="text-right">
+                    <span class="block text-3xl font-black text-red-500">
+                        ${activeFrictionCount}
+                    </span>
+
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Active Zones
+                    </span>
+                </div>
+
             </div>
+
         </div>
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
             <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between">
-                <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Proficiency Profile</h4>
-                <div class="space-y-4">${renderProficiencyPill("MCQ", "Recall", state.proficiency.MCQ)}${renderProficiencyPill("AR", "Logic", state.proficiency.AR)}${renderProficiencyPill("CB", "Application", state.proficiency.CB)}</div>
+
+                <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">
+                    Proficiency Profile
+                </h4>
+
+                <div class="space-y-4">
+                    ${renderProficiencyPill("MCQ", "Recall", state.proficiency.MCQ)}
+                    ${renderProficiencyPill("AR", "Logic", state.proficiency.AR)}
+                    ${renderProficiencyPill("CB", "Application", state.proficiency.CB)}
+                </div>
+
             </div>
+
             ${sortedSubjects.map(s => renderMasteryCard(s)).join('')}
-        </div>`;
+
+        </div>
+    `;
+
     const tier2 = `
         <div class="grid lg:grid-cols-3 gap-8 items-start relative min-h-[500px]">
-            <div class="lg:col-span-2 space-y-6"><h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Subject Navigator</h4>${sortedSubjects.map(s => renderSubjectNavigator(s)).join('')}</div>
-            <div class="lg:col-span-1 hidden lg:block sticky top-24">
-                <div id="inspector-panel" class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm relative overflow-hidden bg-white/50">
-                     <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"><div class="w-64 h-64 rounded-full border border-slate-300 relative overflow-hidden"><div class="radar-sweep"></div></div></div>
-                    <div class="relative z-10"><div class="text-4xl mb-4 text-slate-300 animate-pulse">📡</div><h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Inspector Active</h4><p class="text-xs text-slate-500 max-w-[200px]">Hover over any chapter on the left to analyze friction points.</p></div>
-                </div>
+
+            <div class="lg:col-span-2 space-y-6">
+
+                <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">
+                    Subject Navigator
+                </h4>
+
+                ${sortedSubjects.map(s => renderSubjectNavigator(s)).join('')}
+
             </div>
+
+            <div class="lg:col-span-1 hidden lg:block sticky top-24">
+
+                <div
+                    id="inspector-panel"
+                    class="glass-panel rounded-3xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center transition-all duration-300 border border-slate-200 shadow-sm relative overflow-hidden bg-white/50"
+                >
+
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+
+                        <div class="w-64 h-64 rounded-full border border-slate-300 relative overflow-hidden">
+                            <div class="radar-sweep"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="relative z-10">
+
+                        <div class="text-4xl mb-4 text-slate-300 animate-pulse">
+                            📡
+                        </div>
+
+                        <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">
+                            Inspector Active
+                        </h4>
+
+                        <p class="text-xs text-slate-500 max-w-[200px]">
+                            Hover over any chapter on the left to analyze friction points.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
-        <div id="mobile-inspector" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-end justify-center lg:hidden p-4 pb-8" onclick="closeMobileInspector()"><div class="bg-white w-full max-w-md rounded-3xl max-h-[85vh] overflow-y-auto p-6 relative slide-up shadow-2xl" onclick="event.stopPropagation()"><div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div><div id="mobile-inspector-content"></div></div></div>`;
+
+        <div
+            id="mobile-inspector"
+            class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-end justify-center lg:hidden p-4 pb-8"
+            onclick="closeMobileInspector()"
+        >
+
+            <div
+                class="bg-white w-full max-w-md rounded-3xl max-h-[85vh] overflow-y-auto p-6 relative slide-up shadow-2xl"
+                onclick="event.stopPropagation()"
+            >
+
+                <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+
+                <div id="mobile-inspector-content"></div>
+
+            </div>
+
+        </div>
+    `;
+
     container.innerHTML = tier1 + tier2;
 }
 
@@ -338,15 +554,71 @@ function renderMasteryCard(subject) {
 }
 
 function renderSubjectNavigator(subject) {
+
     const theme = THEMES[subject] || THEMES["General"];
-    const fChapters = Object.keys(state.friction[subject] || {}).length;
-    const vChapters = Object.keys(state.victory[subject] || {}).length;
-    return `<div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm transition group">
+
+    const fCount = Object.values(
+        state.friction[subject] || {}
+    ).reduce((a, ch) => {
+
+        return a + Object.values(ch).reduce(
+            (b, arr) => b + arr.length,
+            0
+        );
+
+    }, 0);
+
+    const vCount = Object.values(
+        state.victory[subject] || {}
+    ).reduce((a, ch) => {
+
+        return a + Object.values(ch).reduce(
+            (b, arr) => b + arr.length,
+            0
+        );
+
+    }, 0);
+
+    return `
+        <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm transition group">
+
             <div class="px-6 py-5 flex items-center justify-between border-b border-slate-50 ${theme.bg}">
-                <div class="flex items-center space-x-4"><div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text}"><i class="fas ${theme.icon}"></i></div><h3 class="text-lg font-black text-slate-700 tracking-tight">${subject}</h3></div>
-                <div class="flex space-x-4"><button onclick="toggleList('${subject}', 'friction')" class="text-xs font-bold text-red-500 hover:text-red-700 transition flex items-center"><span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span> Friction (${fChapters})</button>
-                <button onclick="toggleList('${subject}', 'victory')" class="text-xs font-bold text-green-600 hover:text-green-700 transition flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Victory (${vChapters})</button></div>
-            </div><div id="list-${subject}" class="hidden bg-white"></div></div>`;
+
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-xl bg-white text-lg flex items-center justify-center shadow-sm ${theme.text}">
+                        <i class="fas ${theme.icon}"></i>
+                    </div>
+
+                    <h3 class="text-lg font-black text-slate-700 tracking-tight">
+                        ${subject}
+                    </h3>
+                </div>
+
+                <div class="flex space-x-4">
+
+                    <button
+                        onclick="toggleList('${subject}', 'friction')"
+                        class="text-xs font-bold text-red-500 hover:text-red-700 transition flex items-center"
+                    >
+                        <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                        Friction (${fCount})
+                    </button>
+
+                    <button
+                        onclick="toggleList('${subject}', 'victory')"
+                        class="text-xs font-bold text-green-600 hover:text-green-700 transition flex items-center"
+                    >
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Victory (${vCount})
+                    </button>
+
+                </div>
+            </div>
+
+            <div id="list-${subject}" class="hidden bg-white"></div>
+
+        </div>
+    `;
 }
 
 window.toggleList = (subject, type) => {
