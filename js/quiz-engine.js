@@ -76,6 +76,8 @@ let quizState = {
     lastActionTime: 0
 };
 
+window.quizState = quizState;
+
 let questionsPromise = null;
 
 /* -----------------------------------
