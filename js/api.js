@@ -406,13 +406,29 @@ export async function saveMistakes(questions, userAnswers, topic, classId, diffi
             }))
         };
 
-        await addDoc(collection(db, "mistake_notebook"), data);
-        console.log("Mistakes saved to notebook.");
+        console.log("ATTEMPTING NOTEBOOK SAVE", data);
+
+        const ref = await addDoc(
+        collection(db, "mistake_notebook"),
+        data
+    );
+
+console.log("NOTEBOOK SAVED", ref.id);
 
     } catch (e) {
-        console.error("Failed to save mistakes:", e);
+
+    console.error("FAILED NOTEBOOK SAVE FULL", e);
+
+    if (e?.code) {
+        console.error("ERROR CODE:", e.code);
+    }
+
+    if (e?.message) {
+        console.error("ERROR MESSAGE:", e.message);
     }
 }
+    }
+
 
 export async function getChapterMastery(userId, topic) {
     if (!userId || !topic) return 0;
