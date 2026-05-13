@@ -378,33 +378,21 @@ export async function saveMistakes(questions, userAnswers, topic, classId, diffi
 
         if (mistakes.length === 0) return;
 
-        const data = {
-            user_id: uid,
-            topic: topic,
-            chapter_slug: topic,
-            class_id: classId,
-            // FIXED: difficulty is now explicitly saved (was missing before,
-            // causing all mistakes to fall back to 'simple' in mistake-book.html)
-            difficulty: (difficulty || 'Simple').toLowerCase(),
-            // SESSION LINK: same ID written to quiz_scores so mistake-book.html
-            // can reliably join both documents without guessing by timestamp
-            session_id: sessionId || null,
-            timestamp: serverTimestamp(),
-            mistakes: mistakes.map(q => ({
-                user_id: uid,
-                chapter_slug: topic,
-                id: q.id,
-                question_text: q.text,   // consistent field name for reader
-                question: q.text,         // keep legacy field too
-                options: q.options,
-                correct: q.correct_answer,
-                selected: userAnswers[q.id] || "Skipped",
-                explanation: q.scenario_reason || "",
-                // Store the actual question_type so proficiency is computed
-                // from real data in mistake-book.html instead of 6/2/2 fiction
-                question_type: q.question_type || "mcq"
-            }))
-        };
+       const userSnap = await getDoc(doc(db, "users", uid));
+const userData = userSnap.exists()
+    ? userSnap.data()
+    : {};
+
+const data = {
+    user_id: uid,
+
+    school_id: userData.school_id || null,
+    tenantType: userData.tenantType || "individual",
+    tenantId: userData.tenantId || null,
+
+    topic: topic,
+    chapter_slug: topic,
+    class_id: classId,
 
         console.log("ATTEMPTING NOTEBOOK SAVE", data);
 
