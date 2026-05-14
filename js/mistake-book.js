@@ -655,15 +655,81 @@ function renderProficiencyPill(type, label, stats) {
 }
 
 function renderMasteryCard(subject) {
-    const theme = THEMES[subject] || THEMES["General"];
-    const stats = state.subjectStats[subject] || { simple: 0, medium: 0, advanced: 0 };
-    return `<div class="${theme.bg} rounded-3xl p-5 border ${theme.border} relative overflow-hidden group">
-             <div class="flex justify-between items-start mb-4 relative z-10"><h3 class="font-black ${theme.text} text-lg tracking-tight">${subject}</h3><div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-sm shadow-sm ${theme.text}"><i class="fas ${theme.icon}"></i></div></div>
-             <div class="flex items-end space-x-2 h-24 mt-2 relative z-10">
-                <div class="flex-1 flex flex-col items-center"><div class="w-full ${theme.bar} rounded-t-md progress-step" style="height: ${Math.max(15, stats.simple)}%"></div><span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Basics</span></div>
-                <div class="flex-1 flex flex-col items-center"><div class="w-full ${theme.bar} rounded-t-md progress-step opacity-80" style="height: ${Math.max(15, stats.medium)}%"></div><span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Std</span></div>
-                <div class="flex-1 flex flex-col items-center"><div class="w-full ${theme.bar} rounded-t-md progress-step opacity-60" style="height: ${Math.max(15, stats.advanced)}%"></div><span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">Elite</span></div>
-             </div></div>`;
+
+    const theme =
+        THEMES[subject] || THEMES["General"];
+
+    const stats =
+        state.subjectStats[subject] || {
+            simple: 0,
+            medium: 0,
+            advanced: 0
+        };
+
+    const max =
+        Math.max(
+            stats.simple,
+            stats.medium,
+            stats.advanced,
+            1
+        );
+
+    const h1 =
+        (stats.simple / max) * 100;
+
+    const h2 =
+        (stats.medium / max) * 100;
+
+    const h3 =
+        (stats.advanced / max) * 100;
+
+    return `
+    <div class="${theme.bg} rounded-3xl p-5 border ${theme.border} relative overflow-hidden group">
+
+        <div class="flex justify-between items-start mb-4 relative z-10">
+
+            <h3 class="font-black ${theme.text} text-lg tracking-tight">
+                ${subject}
+            </h3>
+
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-sm shadow-sm ${theme.text}">
+                <i class="fas ${theme.icon}"></i>
+            </div>
+
+        </div>
+
+        <div class="flex items-end space-x-2 h-24 mt-2 relative z-10">
+
+            <div class="flex-1 flex flex-col items-center">
+                <div class="w-full ${theme.bar} rounded-t-md"
+                     style="height:${Math.max(h1,15)}%">
+                </div>
+                <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
+                    Basics
+                </span>
+            </div>
+
+            <div class="flex-1 flex flex-col items-center">
+                <div class="w-full ${theme.bar} rounded-t-md opacity-80"
+                     style="height:${Math.max(h2,15)}%">
+                </div>
+                <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
+                    Std
+                </span>
+            </div>
+
+            <div class="flex-1 flex flex-col items-center">
+                <div class="w-full ${theme.bar} rounded-t-md opacity-60"
+                     style="height:${Math.max(h3,15)}%">
+                </div>
+                <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
+                    Elite
+                </span>
+            </div>
+
+        </div>
+
+    </div>`;
 }
 
 function renderSubjectNavigator(subject) {
