@@ -54,13 +54,33 @@ if (forgotBtn && forgotModal) {
     });
 }
 
-closeForgotModalBtn.addEventListener("click", () => {
-    forgotModal.classList.add("hidden");
-    resetMsgBox.classList.add("hidden");
-    document.getElementById("reset-email").value = "";
-    document.getElementById("reset-student-name").value = "";
-});
+if (
+    closeForgotModalBtn &&
+    forgotModal &&
+    resetMsgBox
+) {
 
+    closeForgotModalBtn.addEventListener("click", () => {
+
+        forgotModal.classList.add("hidden");
+
+        resetMsgBox.classList.add("hidden");
+
+        const resetEmail =
+            document.getElementById("reset-email");
+
+        const resetStudent =
+            document.getElementById("reset-student-name");
+
+        if (resetEmail) {
+            resetEmail.value = "";
+        }
+
+        if (resetStudent) {
+            resetStudent.value = "";
+        }
+    });
+}
 // 4. SECURE RESET API CALL
 submitResetBtn.addEventListener("click", async () => {
     const email = document.getElementById("reset-email").value.trim();
