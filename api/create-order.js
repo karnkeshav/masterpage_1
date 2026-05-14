@@ -6,40 +6,38 @@ const crypto   = require('crypto');
 
 // ─── 2D Plan × Duration Pricing Table ─────────────────────────────────────
 // amountPaise = price in paise (₹1 = 100 paise)
-// Keep this table in sync with:
-//   - offering.html  PLAN_DATA
-//   - register-handler.js  TIER_PRICES
+// Updated with catchy Gen Z branding and ₹299 price fix for CORE
 const TIER_PRICES = {
     practitioner: {
-        '3m': { amountPaise:   19900, label: "BASE",                durationLabel: "3 Months" },
-        '1y': { amountPaise:   69900, label: "BASE",                durationLabel: "1 Year"   },
-        '3y': { amountPaise:  179900, label: "BASE",                durationLabel: "3 Years"  },
+        '3m': { amountPaise:   19900, label: "BASE",       durationLabel: "3 Months" },
+        '1y': { amountPaise:   69900, label: "BASE",       durationLabel: "1 Year"   },
+        '3y': { amountPaise:  179900, label: "BASE",       durationLabel: "3 Years"  },
     },
     strategist: {
-        '3m': { amountPaise:   29900, label: "CORE",                durationLabel: "3 Months" },
-        '1y': { amountPaise:   99900, label: "CORE",                durationLabel: "1 Year"   },
-        '3y': { amountPaise:  279900, label: "CORE",                durationLabel: "3 Years"  },
+        '3m': { amountPaise:   29900, label: "CORE",       durationLabel: "3 Months" },
+        '1y': { amountPaise:   99900, label: "CORE",       durationLabel: "1 Year"   },
+        '3y': { amountPaise:  279900, label: "CORE",       durationLabel: "3 Years"  },
     },
     sync: {
-        '3m': { amountPaise:   60000, label: "LINK",                durationLabel: "3 Months" },
-        '1y': { amountPaise:  199900, label: "LINK",                durationLabel: "1 Year"   },
-        '3y': { amountPaise:  549900, label: "LINK",                durationLabel: "3 Years"  },
+        '3m': { amountPaise:   60000, label: "LINK",       durationLabel: "3 Months" },
+        '1y': { amountPaise:  199900, label: "LINK",       durationLabel: "1 Year"   },
+        '3y': { amountPaise:  549900, label: "LINK",       durationLabel: "3 Years"  },
     },
     board_self: {
-        '3m': { amountPaise:  149900, label: "PEAK",                durationLabel: "3 Months" },
-        '1y': { amountPaise:  499900, label: "PEAK",                durationLabel: "1 Year"   },
-        '3y': { amountPaise: 1399900, label: "PEAK",                durationLabel: "3 Years"  },
+        '3m': { amountPaise:  149900, label: "PEAK",       durationLabel: "3 Months" },
+        '1y': { amountPaise:  499900, label: "PEAK",       durationLabel: "1 Year"   },
+        '3y': { amountPaise: 1399900, label: "PEAK",       durationLabel: "3 Years"  },
     },
     board_parent: {
-        '3m': { amountPaise:  209900, label: "PEAK LINK",           durationLabel: "3 Months" },
-        '1y': { amountPaise:  699900, label: "PEAK LINK",           durationLabel: "1 Year"   },
-        '3y': { amountPaise: 1899900, label: "PEAK LINK",           durationLabel: "3 Years"  },
+        '3m': { amountPaise:  209900, label: "PEAK LINK",  durationLabel: "3 Months" },
+        '1y': { amountPaise:  699900, label: "PEAK LINK",  durationLabel: "1 Year"   },
+        '3y': { amountPaise: 1899900, label: "PEAK LINK",  durationLabel: "3 Years"  },
     },
     // Backward-compatibility: mapping old board_ready slug to PEAK pricing
     board_ready: {
-        '3m': { amountPaise:  149900, label: "PEAK",                durationLabel: "3 Months" },
-        '1y': { amountPaise:  499900, label: "PEAK",                durationLabel: "1 Year"   },
-        '3y': { amountPaise: 1399900, label: "PEAK",                durationLabel: "3 Years"  },
+        '3m': { amountPaise:  149900, label: "PEAK",       durationLabel: "3 Months" },
+        '1y': { amountPaise:  499900, label: "PEAK",       durationLabel: "1 Year"   },
+        '3y': { amountPaise: 1399900, label: "PEAK",       durationLabel: "3 Years"  },
     },
 };
 
@@ -87,7 +85,6 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Missing required parameters.' });
         }
 
-        // Sanitise duration — default to 3m if not supplied (practitioner backward compat)
         const safeDur = VALID_DURATIONS.includes(duration) ? duration : '3m';
 
         const planDurations = TIER_PRICES[planID];
@@ -117,14 +114,14 @@ module.exports = async (req, res) => {
         const hashedPassword   = await bcrypt.hash(password, salt);
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
-        // ── Store pending registration (duration + labels persisted for verify step)
+        // ── Store pending registration ───────────────────────────────────────
         await db.collection('pending_registrations').doc(order.id).set({
             orderId:            order.id,
             amountPaise:        meta.amountPaise,
             planID,
-            duration:           safeDur,            // ← consumed by verify-payment.js
-            durationLabel:      meta.durationLabel,  // ← used in confirmation email
-            planLabel:          meta.label,           // ← used in confirmation email
+            duration:           safeDur,
+            durationLabel:      meta.durationLabel,
+            planLabel:          meta.label,
             hashedPassword,
             profileData,
             verificationToken,
