@@ -37,20 +37,15 @@ const THEMES = {
 };
 
 function removeSkeleton(container) {
+
     if (!container) return;
 
-    // Remove all known skeleton elements
-    container.querySelectorAll('.skeleton, .loading, .animate-pulse').forEach(el => el.remove());
+    container
+        .querySelectorAll(
+            '.skeleton, .loading, .animate-pulse'
+        )
+        .forEach(el => el.remove());
 
-    // Remove overlay divs (safety)
-    container.querySelectorAll('div').forEach(el => {
-        const style = window.getComputedStyle(el);
-        if (style.position === 'absolute' || style.position === 'fixed') {
-            el.remove();
-        }
-    });
-
-    // Reset container completely (final guarantee)
     container.innerHTML = "";
 }
 
