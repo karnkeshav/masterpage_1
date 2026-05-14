@@ -15,9 +15,8 @@ const TIER_LABELS = {
     strategist:   "Main",
     sync:         "Linked",
     board_self:   "Peak",
-    board_parent: "Apex Link",
-    board_ready:  "Board-Ready",          // backward-compat alias
-};
+    board_parent: "Peak Link",
+  };
 
 // Display prices matching create-order.js amountPaise exactly
 const TIER_PRICES = {
@@ -36,10 +35,7 @@ const TIER_PRICES = {
     board_parent: {
         '3m': '₹2,099',  '1y': '₹6,999',  '3y': '₹18,999'
     },
-    board_ready: {
-        '3m': '₹1,499',  '1y': '₹4,999',  '3y': '₹13,999'  // backward-compat
-    },
-};
+  };
 
 const DUR_LABELS = {
     '3m': '3 Months',
