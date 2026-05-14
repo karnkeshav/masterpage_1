@@ -909,3 +909,5 @@ initializeAuthListener(async (user, profile) => {
         await init(user, profile);
     } else { window.location.href = "../offering.html"; }
 });
+window.renderMasteryCard = renderMasteryCard;
+window.renderProficiencyPill = renderProficiencyPill;
