@@ -178,16 +178,23 @@ export async function routeUser(user) {
     }
 
     // 3. Individual/B2C Routing (Practitioner Integration)
-    if (data.tenantType === "individual") {
-        // Direct practitioners to their specific console based on subscription tier
-        if (data.subscriptionTier === 'practitioner') {
-            window.location.href = "app/consoles/practitioner.html";
-        } else {
-            // Default routing for other B2C students (Strategist, Sync, Legacy)
-            window.location.href = "app/consoles/student.html";
-        }
-        return;
+// js/auth-paywall.js
+
+if (data.tenantType === "individual") {
+    // Direct practitioners to their simplified console
+    if (data.subscriptionTier === 'practitioner') {
+        window.location.href = "app/consoles/practitioner.html";
+    } 
+    // ROUTING LOGIC: Send strategists to the full-featured student hub
+    else if (data.subscriptionTier === 'strategist') {
+        window.location.href = "app/consoles/student.html";
     }
+    else {
+        // Default routing for Sync Bundle and Legacy users
+        window.location.href = "app/consoles/student.html";
+    }
+    return;
+}
 
     // Fallback Routing
     if (!data.tenantType && data.school_id && data.role) {
