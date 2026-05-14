@@ -11,9 +11,9 @@ const API_BASE = 'https://masterpage-1.vercel.app';
 // ─── Plan Metadata ─────────────────────────────────────────────────────────
 // Labels used for the plan badge on the registration form
 const TIER_LABELS = {
-    practitioner: "The Practitioner",
-    strategist:   "Self-Strategist",
-    sync:         "The Sync Bundle",
+    practitioner: "Practice",
+    strategist:   "Pulse",
+    sync:         "Sync",
     board_self:   "Board-Ready",
     board_parent: "Board-Ready + Parent",
     board_ready:  "Board-Ready",          // backward-compat alias
