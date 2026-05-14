@@ -292,15 +292,50 @@ function processData(scoreDocs) {
         });
 
         // PROFICIENCY
-        (data.mistakes || []).forEach(m => {
+        // PROFICIENCY TOTALS
 
-            const type = getQuestionType(m.id);
+state.proficiency.MCQ.total += (
+    data.mcq_total || 0
+);
 
-            if (state.proficiency[type]) {
-                state.proficiency[type].mistakes++;
-                state.proficiency[type].total++;
-            }
-        });
+state.proficiency.AR.total += (
+    data.ar_total || 0
+);
+
+state.proficiency.CB.total += (
+    data.cb_total || 0
+);
+
+// PROFICIENCY MISTAKES
+
+(data.mistakes || []).forEach(m => {
+
+    const rawType =
+        (
+            m.question_type ||
+            getQuestionType(m.id) ||
+            "mcq"
+        ).toLowerCase();
+
+    let type = "MCQ";
+
+    if (
+        rawType.includes("assertion") ||
+        rawType === "ar"
+    ) {
+
+        type = "AR";
+
+    } else if (
+        rawType.includes("case") ||
+        rawType.includes("cb")
+    ) {
+
+        type = "CB";
+    }
+
+    state.proficiency[type].mistakes++;
+});
     });
 
     console.log("TOPIC HISTORY", topicHistory);
