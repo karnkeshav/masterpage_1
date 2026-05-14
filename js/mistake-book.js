@@ -681,8 +681,41 @@ function renderProficiencyPill(type, label, stats) {
     let color = "bg-green-100 text-green-700", dot = "bg-green-500", status = "Strong";
     if (errorRate > 30) { color = "bg-red-100 text-red-700"; dot = "bg-red-500"; status = "Needs Focus"; }
     else if (errorRate > 15) { color = "bg-yellow-100 text-yellow-700"; dot = "bg-yellow-500"; status = "Review"; }
-    return `<div class="flex items-center justify-between p-3 rounded-xl ${color} transition hover:scale-[1.02]"><div class="flex items-center space-x-3"><span class="w-2 h-2 rounded-full ${dot} animate-pulse"></span><div><span class="block text-xs font-black uppercase tracking-wide">${label}</span><span class="text-[10px] opacity-80 font-bold">${status}</span></div></div><span class="text-lg font-black opacity-50">${type}</span></div>`;
-}
+    return `
+<div class="flex items-center justify-between p-3 rounded-xl ${color} transition hover:scale-[1.02]">
+
+    <div class="flex items-center space-x-3">
+
+        <span class="w-2 h-2 rounded-full ${dot} animate-pulse"></span>
+
+        <div>
+
+            <span class="block text-xs font-black uppercase tracking-wide">
+                ${label}
+            </span>
+
+            <span class="text-[10px] opacity-80 font-bold">
+                ${status}
+            </span>
+
+        </div>
+
+    </div>
+
+    <div class="text-right">
+
+        <div class="text-lg font-black opacity-70">
+            ${Math.round(errorRate)}%
+        </div>
+
+        <div class="text-[9px] font-bold opacity-50">
+            Error Rate
+        </div>
+
+    </div>
+
+</div>`;
+    }
 
 function renderMasteryCard(subject) {
 
@@ -732,7 +765,7 @@ function renderMasteryCard(subject) {
 
             <div class="flex-1 flex flex-col items-center">
                <div class="w-full ${theme.bar} rounded-t-md progress-step"
-                     style="height:${Math.max(h1,15)}%; min-height:12px;">
+                     style="height:${h1}%;">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
                     Basics
@@ -741,7 +774,7 @@ function renderMasteryCard(subject) {
 
             <div class="flex-1 flex flex-col items-center">
                 <div class="w-full ${theme.bar} rounded-t-md progress-step opacity-80"
-                     style="height:${Math.max(h2,15)}%; min-height:12px;">
+                     style="height:${h2}%;">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
                     Std
@@ -750,7 +783,7 @@ function renderMasteryCard(subject) {
 
             <div class="flex-1 flex flex-col items-center">
                 <div class="w-full ${theme.bar} rounded-t-md progress-step opacity-60"
-                     style="height:${Math.max(h3,15)}%; min-height:12px;">
+                     style="height:${h3}%;">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
                     Elite
