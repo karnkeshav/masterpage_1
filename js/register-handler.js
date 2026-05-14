@@ -11,11 +11,11 @@ const API_BASE = 'https://masterpage-1.vercel.app';
 // ─── Plan Metadata ─────────────────────────────────────────────────────────
 // Labels used for the plan badge on the registration form
 const TIER_LABELS = {
-    practitioner: "Practice",
-    strategist:   "Pulse",
-    sync:         "Sync",
-    board_self:   "Board-Ready",
-    board_parent: "Board-Ready + Parent",
+    practitioner: "Base",
+    strategist:   "Main",
+    sync:         "Linked",
+    board_self:   "Peak",
+    board_parent: "Apex Link",
     board_ready:  "Board-Ready",          // backward-compat alias
 };
 
@@ -25,10 +25,10 @@ const TIER_PRICES = {
         '3m': '₹199',    '1y': '₹699',    '3y': '₹1,799'
     },
     strategist: {
-        '3m': '₹300',    '1y': '₹999',    '3y': '₹2,799'
+        '3m': '₹299',    '1y': '₹999',    '3y': '₹2,799'
     },
     sync: {
-        '3m': '₹600',    '1y': '₹1,999',  '3y': '₹5,499'
+        '3m': '₹599',    '1y': '₹1,999',  '3y': '₹5,499'
     },
     board_self: {
         '3m': '₹1,499',  '1y': '₹4,999',  '3y': '₹13,999'
