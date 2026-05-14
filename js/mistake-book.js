@@ -765,7 +765,7 @@ function renderMasteryCard(subject) {
 
             <div class="flex-1 flex flex-col items-center">
                <div class="w-full ${theme.bar} rounded-t-md progress-step"
-                     style="height:${h1}%;">
+                     style="height:${Math.max(h1, 0)}px;">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
                     Basics
@@ -774,7 +774,7 @@ function renderMasteryCard(subject) {
 
             <div class="flex-1 flex flex-col items-center">
                 <div class="w-full ${theme.bar} rounded-t-md progress-step opacity-80"
-                     style="height:${h2}%;">
+                       style="height:${Math.max(h2, 0)}px;">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
                     Std
@@ -783,7 +783,7 @@ function renderMasteryCard(subject) {
 
             <div class="flex-1 flex flex-col items-center">
                 <div class="w-full ${theme.bar} rounded-t-md progress-step opacity-60"
-                     style="height:${h3}%;">
+                     style="height:${Math.max(h3, 0)}px;">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
                     Elite
