@@ -1,7 +1,8 @@
 import { initializeAuthListener } from "./auth-paywall.js";
 import { getInitializedClients } from "./api.js";
 import { bindConsoleLogout } from "./guard.js";
-import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.
+    com/firebasejs/11.6.1/firebase-firestore.js";
 import { cleanKatexMarkers } from "./utils.js";
 import * as UI from "./ui-renderer.js";
 import { loadCurriculum } from "./curriculum/loader.js";
@@ -736,7 +737,7 @@ function renderMasteryCard(subject) {
         <div class="flex items-end space-x-2 h-24 mt-2 relative z-10">
 
             <div class="flex-1 flex flex-col items-center">
-                <div class="w-full ${theme.bar} rounded-t-md"
+                <div class="w-full ${theme.bar} rounded-t-md progress-step"
                      style="height:${Math.max(h1,15)}%">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
@@ -745,7 +746,7 @@ function renderMasteryCard(subject) {
             </div>
 
             <div class="flex-1 flex flex-col items-center">
-                <div class="w-full ${theme.bar} rounded-t-md opacity-80"
+                <div class="w-full ${theme.bar} rounded-t-md progress-step opacity-80"
                      style="height:${Math.max(h2,15)}%">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
@@ -754,7 +755,7 @@ function renderMasteryCard(subject) {
             </div>
 
             <div class="flex-1 flex flex-col items-center">
-                <div class="w-full ${theme.bar} rounded-t-md opacity-60"
+                <div class="w-full ${theme.bar} rounded-t-md progress-step opacity-60"
                      style="height:${Math.max(h3,15)}%">
                 </div>
                 <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase">
