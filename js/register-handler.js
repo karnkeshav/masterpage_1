@@ -148,6 +148,7 @@ form.addEventListener('submit', async (e) => {
         tenantType:      "individual",
         isB2C:           true,
         subscriptionTier: selectedTier,
+        classId:         grade,
         class:           parseInt(grade),
         board:           board,
     };
