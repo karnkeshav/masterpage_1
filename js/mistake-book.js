@@ -1,8 +1,7 @@
 import { initializeAuthListener } from "./auth-paywall.js";
 import { getInitializedClients } from "./api.js";
 import { bindConsoleLogout } from "./guard.js";
-import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.
-    com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { cleanKatexMarkers } from "./utils.js";
 import * as UI from "./ui-renderer.js";
 import { loadCurriculum } from "./curriculum/loader.js";
