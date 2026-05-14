@@ -11,35 +11,35 @@ const crypto   = require('crypto');
 //   - register-handler.js  TIER_PRICES
 const TIER_PRICES = {
     practitioner: {
-        '3m': { amountPaise:   19900, label: "The Practitioner",       durationLabel: "3 Months" },
-        '1y': { amountPaise:   69900, label: "The Practitioner",       durationLabel: "1 Year"   },
-        '3y': { amountPaise:  179900, label: "The Practitioner",       durationLabel: "3 Years"  },
+        '3m': { amountPaise:   19900, label: "BASE",                durationLabel: "3 Months" },
+        '1y': { amountPaise:   69900, label: "BASE",                durationLabel: "1 Year"   },
+        '3y': { amountPaise:  179900, label: "BASE",                durationLabel: "3 Years"  },
     },
     strategist: {
-        '3m': { amountPaise:   30000, label: "Self-Strategist",        durationLabel: "3 Months" },
-        '1y': { amountPaise:   99900, label: "Self-Strategist",        durationLabel: "1 Year"   },
-        '3y': { amountPaise:  279900, label: "Self-Strategist",        durationLabel: "3 Years"  },
+        '3m': { amountPaise:   29900, label: "CORE",                durationLabel: "3 Months" },
+        '1y': { amountPaise:   99900, label: "CORE",                durationLabel: "1 Year"   },
+        '3y': { amountPaise:  279900, label: "CORE",                durationLabel: "3 Years"  },
     },
     sync: {
-        '3m': { amountPaise:   60000, label: "The Sync Bundle",        durationLabel: "3 Months" },
-        '1y': { amountPaise:  199900, label: "The Sync Bundle",        durationLabel: "1 Year"   },
-        '3y': { amountPaise:  549900, label: "The Sync Bundle",        durationLabel: "3 Years"  },
+        '3m': { amountPaise:   60000, label: "LINK",                durationLabel: "3 Months" },
+        '1y': { amountPaise:  199900, label: "LINK",                durationLabel: "1 Year"   },
+        '3y': { amountPaise:  549900, label: "LINK",                durationLabel: "3 Years"  },
     },
     board_self: {
-        '3m': { amountPaise:  149900, label: "Board-Ready",            durationLabel: "3 Months" },
-        '1y': { amountPaise:  499900, label: "Board-Ready",            durationLabel: "1 Year"   },
-        '3y': { amountPaise: 1399900, label: "Board-Ready",            durationLabel: "3 Years"  },
+        '3m': { amountPaise:  149900, label: "PEAK",                durationLabel: "3 Months" },
+        '1y': { amountPaise:  499900, label: "PEAK",                durationLabel: "1 Year"   },
+        '3y': { amountPaise: 1399900, label: "PEAK",                durationLabel: "3 Years"  },
     },
     board_parent: {
-        '3m': { amountPaise:  209900, label: "Board-Ready + Parent",   durationLabel: "3 Months" },
-        '1y': { amountPaise:  699900, label: "Board-Ready + Parent",   durationLabel: "1 Year"   },
-        '3y': { amountPaise: 1899900, label: "Board-Ready + Parent",   durationLabel: "3 Years"  },
+        '3m': { amountPaise:  209900, label: "PEAK LINK",           durationLabel: "3 Months" },
+        '1y': { amountPaise:  699900, label: "PEAK LINK",           durationLabel: "1 Year"   },
+        '3y': { amountPaise: 1899900, label: "PEAK LINK",           durationLabel: "3 Years"  },
     },
-    // ── Backward-compat: old board_ready slug maps to board_self pricing ──
+    // Backward-compatibility: mapping old board_ready slug to PEAK pricing
     board_ready: {
-        '3m': { amountPaise:  149900, label: "Board-Ready",            durationLabel: "3 Months" },
-        '1y': { amountPaise:  499900, label: "Board-Ready",            durationLabel: "1 Year"   },
-        '3y': { amountPaise: 1399900, label: "Board-Ready",            durationLabel: "3 Years"  },
+        '3m': { amountPaise:  149900, label: "PEAK",                durationLabel: "3 Months" },
+        '1y': { amountPaise:  499900, label: "PEAK",                durationLabel: "1 Year"   },
+        '3y': { amountPaise: 1399900, label: "PEAK",                durationLabel: "3 Years"  },
     },
 };
 
