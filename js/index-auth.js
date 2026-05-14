@@ -45,9 +45,14 @@ const closeForgotModalBtn = document.getElementById("close-forgot-modal");
 const submitResetBtn = document.getElementById("submit-reset-btn");
 const resetMsgBox = document.getElementById("reset-msg");
 
-document.getElementById("forgot-password-btn").addEventListener("click", () => {
-    forgotModal.classList.remove("hidden");
-});
+const forgotBtn = document.getElementById("forgot-password-btn");
+
+if (forgotBtn && forgotModal) {
+
+    forgotBtn.addEventListener("click", () => {
+        forgotModal.classList.remove("hidden");
+    });
+}
 
 closeForgotModalBtn.addEventListener("click", () => {
     forgotModal.classList.add("hidden");
