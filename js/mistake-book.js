@@ -14,14 +14,19 @@ let curriculumData = {};
 const state = {
     friction: {},
     victory: {},
+
     subjectStats: {},
+
     proficiency: {
         MCQ: { total: 0, mistakes: 0 },
         AR: { total: 0, mistakes: 0 },
         CB: { total: 0, mistakes: 0 }
     },
+
     victoryCount: 0
 };
+
+window.state = state;
 
 const THEMES = {
     "Mathematics": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: "fa-calculator", bar: "bg-blue-500", lightBar: "bg-blue-200" },
