@@ -189,24 +189,60 @@ async function init(user, profile) {
         }
 
 function getSubjectContext(topicSlug) {
-    const s = topicSlug.toLowerCase();
+
+    const s = (topicSlug || "").toLowerCase();
+
     let subject = "General";
-    let chapterName = topicSlug.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-    for (const [subj, sections] of Object.entries(curriculumData)) {
-        for (const [sec, chapters] of Object.entries(sections)) {
+
+    let chapterName = topicSlug
+        .replace(/^(math|mathematics|science|social)_/i, '')
+        .replace(/_\d+_quiz$/i, '')
+        .replace(/_quiz$/i, '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+
+    // EXACT CURRICULUM MATCH
+    for (const [subj, sections] of Object.entries(curriculumData || {})) {
+
+        for (const chapters of Object.values(sections || {})) {
+
+            if (!Array.isArray(chapters)) continue;
+
             for (const ch of chapters) {
-                const title = ch.chapter_title.toLowerCase();
-                if (s.includes(title) || title.includes(s.replace(/_/g, " "))) {
-                    return { subject: subj, chapterName: ch.chapter_title };
+
+                const tableId =
+                    (ch.table_id || "").toLowerCase();
+
+                if (tableId === s) {
+
+                    return {
+                        subject: subj,
+                        chapterName: ch.chapter_title
+                    };
                 }
             }
         }
     }
+
+    // FALLBACK SUBJECT DETECTION
     const prefix = s.split('_')[0];
-    if (["math", "mathematics"].includes(prefix)) subject = "Mathematics";
-    else if (prefix === "social") subject = "Social Science";
-    else if (prefix === "science") subject = "Science";
-    return { subject, chapterName };
+
+    if (["math", "mathematics"].includes(prefix)) {
+        subject = "Mathematics";
+    }
+
+    else if (prefix === "social") {
+        subject = "Social Science";
+    }
+
+    else if (prefix === "science") {
+        subject = "Science";
+    }
+
+    return {
+        subject,
+        chapterName
+    };
 }
 
 function getQuestionType(id) {
