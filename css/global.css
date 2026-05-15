@@ -264,3 +264,48 @@ body.focus-mode #quiz-content {
 .whatsapp-float:hover {
   transform: scale(1.1);
 }
+/* ===========================
+   FORMULA VAULT & MATH FIXES
+   =========================== */
+
+/* 1. Fix the "Flooding" (Character Clumping) */
+.formula-card-content, 
+.katex, 
+.mjx-chtml {
+  letter-spacing: 0.01em !important; /* Prevents italic characters from touching */
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2. Force Text Wrapping (Fixes overflow in cards) */
+.formula-card-content {
+  display: block;
+  width: 100%;
+  white-space: normal !important; /* Overrides any 'nowrap' causing flooding */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/* 3. Container constraint for Formula Cards */
+#formula-vault-container .bg-white {
+  max-width: 100%;
+  overflow: hidden; /* Clips any rogue mathematical glyphs */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 4. Fix for KaTeX/MathJax specific flooding */
+.katex-display {
+  margin: 0.5em 0;
+  overflow-x: auto; /* Allows horizontal scroll on mobile instead of flooding */
+  overflow-y: hidden;
+  padding: 5px 0;
+}
+
+/* 5. Hide the "Misplaced &" error if you can't fix data immediately */
+/* Warning: Only use this if you want to hide the yellow highlight while debugging */
+.katex-error {
+  background: transparent !important;
+  color: inherit !important;
+}
