@@ -5,10 +5,13 @@ import { ensureUserInFirestore } from "./auth-paywall.js";
  * ARCHIVE MAPPING: Links subjects to local JSON file paths
  * Based on the project structure in your 'archive' folder.
  */
+/**
+ * ARCHIVE MAPPING: Fixed to use relative paths
+ */
 const ARCHIVE_MAP = {
-    "Mathematics": "/masterpage_1/archive/mathematics_refined.json",
-    "Science": "/masterpage_1/archive/science_refined.json",
-    "Social Science": "/masterpage_1/archive/social_science_refined.json"
+    "Mathematics": "./archive/mathematics_refined.json",
+    "Science": "./archive/science_refined.json",
+    "Social Science": "./archive/social_science_refined.json"
 };
 
 let state = {  
