@@ -295,10 +295,10 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
                 priorityCount++;
 
                 const statusLabel = hasScore
-                    ? 'Test Taken'
+                    ? 'Completed'
                     : (hoursDiff <= 48
-                        ? 'Pending Execution'
-                        : 'Overdue');
+                        ? 'Pending'
+                        : 'Escalated');
 
                 const statusColor = hasScore
                     ? 'text-success-green'
@@ -306,16 +306,34 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
                         ? 'text-accent-gold'
                         : 'text-danger-red');
 
+                // =========================
+                // PRIORITY INBOX
+                // =========================
+
                 inboxHtml += `
-                <div class="text-xs border-b border-slate-50 pb-2 mb-2 p-2 rounded hover:bg-blue-50 transition cursor-pointer">
-                    <span class="font-bold text-cbse-blue">
-                        Chapter Finished:
-                    </span>
-                    ${data.chapter_title || chap}
-                    —
-                    <span class="${statusColor} font-bold">
-                        ${statusLabel}
-                    </span>
+                <div class="bg-white border border-slate-100 rounded-2xl p-3 hover:border-blue-100 transition shadow-sm">
+
+                    <div class="flex items-start justify-between gap-3">
+
+                        <div class="min-w-0">
+
+                            <div class="text-[10px] uppercase tracking-widest font-black ${statusColor}">
+                                ${statusLabel}
+                            </div>
+
+                            <div class="font-bold text-slate-800 text-xs mt-1 break-words">
+                                ${(data.chapter_title || chap)
+                                    .replaceAll("_", " ")
+                                    .replaceAll("quiz", "")
+                                }
+                            </div>
+
+                        </div>
+
+                        <div class="w-2.5 h-2.5 rounded-full bg-cbse-blue mt-1.5 shrink-0"></div>
+
+                    </div>
+
                 </div>
                 `;
 
@@ -341,11 +359,11 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
                                     </div>
 
                                     <div class="font-bold text-slate-800 text-sm truncate">
-                                        ${chap}
+                                        ${chap.replaceAll("_", " ")}
                                     </div>
 
                                     <div class="text-xs text-slate-500 mt-1">
-                                        Student is within autonomous execution window.
+                                        Autonomous execution window active.
                                     </div>
 
                                 </div>
@@ -362,7 +380,7 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
                 }
 
                 // =========================
-                // OVERDUE
+                // ESCALATED
                 // =========================
 
                 else if (!hasScore && hoursDiff > 48) {
@@ -383,11 +401,11 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
                                     </div>
 
                                     <div class="font-bold text-slate-800 text-sm truncate">
-                                        ${chap}
+                                        ${chap.replaceAll("_", " ")}
                                     </div>
 
                                     <div class="text-xs text-slate-500 mt-1">
-                                        Pending beyond autonomous execution window.
+                                        Pending beyond execution window.
                                     </div>
 
                                 </div>
@@ -399,18 +417,6 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
 
                         </div>
 
-                        <div class="flex gap-2 mt-4">
-
-                            <button class="px-3 py-1.5 bg-cbse-blue text-white rounded-xl text-[10px] font-black hover:bg-blue-800 transition">
-                                Issue Nudge
-                            </button>
-
-                            <button class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black hover:bg-slate-200 transition">
-                                Review
-                            </button>
-
-                        </div>
-
                     </div>
                     `;
                 }
@@ -419,10 +425,7 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
 
     } catch (e) {
 
-        console.warn(
-            "Skipping notification fetch due to rules error.",
-            e
-        );
+        console.warn("Notification fetch error:", e);
     }
 
     // =========================
@@ -448,51 +451,29 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
             scoreData.advanced || 0
         );
 
-        // =========================
-        // BELOW 95
-        // =========================
-
         if (latestScore < 95) {
 
             priorityCount++;
 
             inboxHtml += `
-            <div class="text-xs border-b border-slate-50 pb-2 mb-2 p-2 rounded hover:bg-amber-50 transition cursor-pointer">
-
-                <span class="font-bold text-warning-yellow">
-                    Test Completed:
-                </span>
-
-                Score below 95% threshold in ${chap}.
-
-            </div>
-            `;
-
-            syncHtml += `
-            <div class="bg-white border border-red-100 rounded-2xl p-4 hover:border-danger-red transition shadow-sm">
+            <div class="bg-white border border-red-100 rounded-2xl p-3 hover:border-danger-red transition shadow-sm">
 
                 <div class="flex items-start justify-between gap-3">
 
-                    <div class="flex items-start gap-3 min-w-0">
+                    <div class="min-w-0">
 
-                        <div class="w-3 h-3 rounded-full bg-danger-red mt-1.5 shrink-0"></div>
-
-                        <div class="min-w-0">
-
-                            <div class="text-[10px] uppercase tracking-widest font-black text-danger-red mb-1">
-                                Diagnostic Alert
-                            </div>
-
-                            <div class="font-bold text-slate-800 text-sm truncate">
-                                ${chap}
-                            </div>
-
-                            <div class="text-xs text-slate-500 mt-1">
-                                Student scored ${latestScore}%.
-                                Re-attempt recommended.
-                            </div>
-
+                        <div class="text-[10px] uppercase tracking-widest font-black text-danger-red">
+                            Re-Attempt Required
                         </div>
+
+                        <div class="font-bold text-slate-800 text-xs mt-1 break-words">
+                            ${chap.replaceAll("_", " ")}
+                        </div>
+
+                        <div class="text-[10px] text-slate-400 mt-1">
+                            Mastery below 95%
+                        </div>
+
                     </div>
 
                     <div class="text-[10px] font-black text-danger-red whitespace-nowrap">
@@ -501,27 +482,10 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
 
                 </div>
 
-                <div class="flex gap-2 mt-4">
-
-                    <button class="px-3 py-1.5 bg-cbse-blue text-white rounded-xl text-[10px] font-black hover:bg-blue-800 transition">
-                        Re-Attempt
-                    </button>
-
-                    <button class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black hover:bg-slate-200 transition">
-                        Review
-                    </button>
-
-                </div>
-
             </div>
             `;
-        }
 
-        // =========================
-        // MASTERED
-        // =========================
-
-        else {
+        } else {
 
             syncHtml += `
             <div class="bg-white border border-green-100 rounded-2xl p-4 opacity-80 hover:opacity-100 transition shadow-sm">
@@ -539,11 +503,7 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
                             </div>
 
                             <div class="font-bold text-slate-800 text-sm truncate">
-                                ${chap}
-                            </div>
-
-                            <div class="text-xs text-slate-500 mt-1">
-                                Student achieved mastery threshold.
+                                ${chap.replaceAll("_", " ")}
                             </div>
 
                         </div>
@@ -560,10 +520,6 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
         }
     }
 
-    // =========================
-    // EMPTY STATE
-    // =========================
-
     if (syncHtml === "") {
 
         syncHtml = `
@@ -575,10 +531,6 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
 
     syncWall.innerHTML = syncHtml;
 
-    // =========================
-    // INBOX
-    // =========================
-
     if (priorityCount > 0) {
 
         if (inboxBadge) {
@@ -587,7 +539,11 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
             inboxBadge.classList.remove("hidden");
         }
 
-        inboxList.innerHTML = inboxHtml;
+        inboxList.innerHTML = `
+        <div class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+            ${inboxHtml}
+        </div>
+        `;
 
     } else {
 
