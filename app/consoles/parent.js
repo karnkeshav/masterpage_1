@@ -6,8 +6,6 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot } f
 // LOGOUT LOGIC — use standard bindConsoleLogout for uniformity
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 
-// GLOBAL GUARD
-guardConsole("parent");
 
 window.loadConsoleData = async (profile) => {
     console.log("Loading Parent Console for:", profile.uid);
@@ -21,6 +19,7 @@ window.loadConsoleData = async (profile) => {
     listenToIntercom();
     
 };
+guardConsole("parent");
 
 async function listenToIntercom() {
     const { auth, db } = await getInitializedClients();
@@ -500,3 +499,5 @@ function renderGrowthChart(overallAvg) {
         }
     });
 }
+
+
