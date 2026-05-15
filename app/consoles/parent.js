@@ -389,45 +389,150 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
 }
 
 function renderMatrix(chapterData) {
-    const tbody = document.getElementById("matrix-body");
-    if (!tbody) return;
+
+    const container = document.getElementById("subject-report-container");
+    if (!container) return;
+
+    const grouped = {};
+
+    for (const [chap, data] of Object.entries(chapterData)) {
+        const subject = data.subject || "General";
+
+        if (!grouped[subject]) grouped[subject] = [];
+
+        grouped[subject].push({
+            chap,
+            ...data
+        });
+    }
 
     let html = "";
-    for (const [chap, data] of Object.entries(chapterData)) {
 
-        const sLabel = getBadgeHtml(data.simple);
-        const mLabel = getBadgeHtml(data.medium);
-        const aLabel = getBadgeHtml(data.advanced);
+    Object.entries(grouped).forEach(([subject, chapters]) => {
 
-        let diagnostic = "";
-        let diagColor = "text-slate-400";
+        const avg = Math.round(
+            chapters.reduce((a, c) => {
+                const vals = [c.simple, c.medium, c.advanced].filter(v => v !== null);
+                const localAvg = vals.length ? vals.reduce((x,y)=>x+y,0)/vals.length : 0;
+                return a + localAvg;
+            }, 0) / chapters.length
+        );
 
-        if (data.advanced !== null && data.advanced < 80) {
-            diagnostic = `<div class="text-[9px] text-danger-red mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> Struggles with Higher Order</div>`;
-        } else if (data.medium !== null && data.medium < 80) {
-            diagnostic = `<div class="text-[9px] text-warning-yellow mt-1 font-bold"><i class="fas fa-exclamation-triangle"></i> Application Logic Weak</div>`;
-        } else if (data.simple !== null && data.simple < 80) {
-            diagnostic = `<div class="text-[9px] text-danger-red mt-1 font-bold"><i class="fas fa-bomb"></i> Core Foundation Gap</div>`;
+        let strength = "WEAK";
+        let strengthColor = "text-danger-red bg-red-50 border-red-100";
+
+        if (avg >= 95) {
+            strength = "MASTERED";
+            strengthColor = "text-success-green bg-green-50 border-green-100";
+        } else if (avg >= 80) {
+            strength = "STRONG";
+            strengthColor = "text-cbse-blue bg-blue-50 border-blue-100";
+        } else if (avg >= 60) {
+            strength = "MODERATE";
+            strengthColor = "text-warning-yellow bg-amber-50 border-amber-100";
         }
 
         html += `
-            <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                <td class="py-3 px-2">
-                    <div class="text-slate-800 font-bold">${chap}</div>
-                    <div class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${data.subject}</div>
-                </td>
-                <td class="py-3 px-2 text-center">${sLabel}</td>
-                <td class="py-3 px-2 text-center">${mLabel}</td>
-                <td class="py-3 px-2 text-center">${aLabel}</td>
-                <td class="py-3 px-2 text-right">
-                    <button class="text-[10px] text-cbse-blue font-bold hover:underline transition"><i class="fas fa-history"></i> Deep-Dive</button>
-                    ${diagnostic}
-                    <div class="text-[9px] text-slate-400 mt-1">${data.attempts} attempts • Last ${data.lastDate || 'N/A'}</div>
-                </td>
-            </tr>
+        <div class="bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden">
+
+            <button onclick="toggleSubjectCard(this)"
+                class="w-full flex items-center justify-between px-5 py-4 hover:bg-white transition group">
+
+                <div class="flex items-center gap-4">
+
+                    <div class="w-11 h-11 rounded-xl bg-blue-50 text-cbse-blue flex items-center justify-center">
+                        <i class="fas fa-book"></i>
+                    </div>
+
+                    <div class="text-left">
+                        <div class="font-black text-slate-900 text-sm uppercase tracking-wide">
+                            ${subject}
+                        </div>
+
+                        <div class="text-[11px] text-slate-400 font-semibold mt-0.5">
+                            ${chapters.length} Chapters • ${avg}% Avg Mastery
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+
+                    <div class="px-3 py-1 rounded-full border text-[10px] font-black ${strengthColor}">
+                        ${strength}
+                    </div>
+
+                    <i class="fas fa-chevron-down text-slate-400 transition subject-chevron"></i>
+                </div>
+            </button>
+
+            <div class="subject-content hidden border-t border-slate-100 bg-white">
+
+                <div class="grid grid-cols-12 gap-2 px-5 py-3 text-[10px] uppercase tracking-widest font-black text-slate-400 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <div class="col-span-5">Chapter</div>
+                    <div class="col-span-2 text-center text-success-green">Simple</div>
+                    <div class="col-span-2 text-center text-cbse-blue">Medium</div>
+                    <div class="col-span-2 text-center text-accent-gold">Advanced</div>
+                    <div class="col-span-1 text-right">Status</div>
+                </div>
+
+                <div class="max-h-[420px] overflow-y-auto">
         `;
-    }
-    tbody.innerHTML = html;
+
+        chapters.forEach(data => {
+
+            const latest = Math.max(
+                data.simple || 0,
+                data.medium || 0,
+                data.advanced || 0
+            );
+
+            let status = "bg-danger-red";
+
+            if (latest >= 95) status = "bg-success-green";
+            else if (latest >= 80) status = "bg-cbse-blue";
+            else if (latest >= 60) status = "bg-warning-yellow";
+
+            html += `
+            <div class="grid grid-cols-12 gap-2 px-5 py-4 border-b border-slate-50 hover:bg-slate-50 transition items-center">
+
+                <div class="col-span-5 min-w-0">
+                    <div class="font-bold text-slate-800 text-sm truncate">
+                        ${data.chap}
+                    </div>
+
+                    <div class="text-[10px] text-slate-400 mt-1">
+                        ${data.attempts} attempts • Last ${data.lastDate || 'N/A'}
+                    </div>
+                </div>
+
+                <div class="col-span-2 text-center">
+                    ${getBadgeHtml(data.simple)}
+                </div>
+
+                <div class="col-span-2 text-center">
+                    ${getBadgeHtml(data.medium)}
+                </div>
+
+                <div class="col-span-2 text-center">
+                    ${getBadgeHtml(data.advanced)}
+                </div>
+
+                <div class="col-span-1 flex justify-end">
+                    <div class="w-2.5 h-2.5 rounded-full ${status}"></div>
+                </div>
+
+            </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
 }
 
 function getBadgeHtml(score) {
