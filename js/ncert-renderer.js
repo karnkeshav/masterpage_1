@@ -184,23 +184,23 @@ function renderDynamicContent(container, data, subject) {
                     ${formulaTitle}
                 </h3>
                 <div class="grid md:grid-cols-2 gap-4 relative z-10">
-                   ${formulaData.map(item => {
+                 ${formulaData.map(item => {
     const f = getFormulaContent(item);
     const displayLabel = (f.label && f.label.toLowerCase() !== 'formula') ? sanitize(f.label) : (isChemistry ? 'Equation' : 'Formula');
     
-    // Check if it's a long sentence
-    const isLongText = f.content.length > 25 || /[a-zA-Z]{5,}/.test(f.content); 
-    
-    // If it's long text, render it as plain HTML instead of MathJax
-    // Only use MathJax delimiters if it looks like a pure equation (contains =, ^, +, etc)
-    const contentHtml = isLongText && !f.content.includes('=') 
-        ? `<span class="text-slate-800">${f.content}</span>` 
-        : `\\(${f.content}\\)`;
-    
+    // THE HYBRID FIX: 
+    // We replace the spaces in the string with a 'break' point.
+    // This allows the browser to wrap at every space even inside MathJax blocks.
+    const parts = f.content.split(' ');
+    const contentHtml = parts.map(part => {
+        // If a part contains math symbols, wrap it in delimiters, otherwise keep as text
+        return /[0-9=+\-\/^\\(\)]/.test(part) ? `\\(${part}\\)` : part;
+    }).join(' ');
+
     return `
-        <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-2">
-            <div class="text-[10px] text-slate-400 uppercase font-black tracking-widest">${displayLabel}</div>
-            <div class="font-medium text-base text-slate-900 leading-snug break-words">
+        <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-2 min-h-[110px] justify-start">
+            <div class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">${displayLabel}</div>
+            <div class="formula-render-zone text-sm md:text-base text-slate-800 font-medium leading-relaxed">
                 ${contentHtml}
             </div>
         </div>
