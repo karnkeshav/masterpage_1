@@ -535,6 +535,16 @@ function renderMatrix(chapterData) {
     container.innerHTML = html;
 }
 
+window.toggleSubjectCard = function(btn) {
+
+    const card = btn.parentElement;
+    const content = card.querySelector(".subject-content");
+    const chevron = card.querySelector(".subject-chevron");
+
+    content.classList.toggle("hidden");
+    chevron.classList.toggle("rotate-180");
+}
+
 function getBadgeHtml(score) {
     if (score === null) return `<span class="text-slate-300 text-xs font-bold">—</span>`;
     if (score >= 95) return `<div class="inline-block px-2 py-1 bg-green-50 text-success-green rounded font-black border border-green-100" title="Mastered">${score}%</div>`;
