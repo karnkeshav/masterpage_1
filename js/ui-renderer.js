@@ -172,6 +172,9 @@ function generateOptionHtml(q, opt, selected, submitted, labelText) {
 /* -----------------------------------
    QUESTION RENDERER
 ----------------------------------- */
+/* -----------------------------------
+    QUESTION RENDERER (With Auto-Typesetting)
+----------------------------------- */
 export function renderQuestion(q, idx, selected, submitted) {
     if (!isInit) initializeElements();
     const type = (q.question_type || "").toLowerCase();
@@ -189,10 +192,8 @@ export function renderQuestion(q, idx, selected, submitted) {
                     ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted, AR_LABELS[o])).join("")}
                 </div>
             </div>`;
-        return;
-    }
-
-    if (type.includes("case")) {
+    } 
+    else if (type.includes("case")) {
         els.list.innerHTML = `
             <div class="quiz-flow grid md:grid-cols-2 gap-8">
                 <div class="order-2 md:order-1 min-w-0">
@@ -205,21 +206,25 @@ export function renderQuestion(q, idx, selected, submitted) {
                     ${cleanKatexMarkers(localizedValue(q, "scenario_reason"))}
                 </div>
             </div>`;
-        return;
+    } 
+    else {
+        els.list.innerHTML = `
+            <div class="quiz-flow space-y-6">
+                <div class="quiz-text text-xl font-extrabold break-words">Q${idx}: ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
+                <div class="grid w-full min-w-0 gap-3">
+                    ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted)).join("")}
+                </div>
+            </div>`;
     }
 
-    els.list.innerHTML = `
-        <div class="quiz-flow space-y-6">
-            <div class="quiz-text text-xl font-extrabold break-words">Q${idx}: ${cleanKatexMarkers(localizedValue(q, "text"))}</div>
-            <div class="grid w-full min-w-0 gap-3">
-                ${['A','B','C','D'].map(o => generateOptionHtml(q, o, selected, submitted)).join("")}
-            </div>
-        </div>`;
+    // CRITICAL FIX: Force MathJax to process the new HTML layout instantly
+    if (window.MathJax) {
+        const typesetter = window.MathJax.typesetPromise || window.MathJax.typeset;
+        if (typesetter) {
+            typesetter.call(window.MathJax, [els.list]);
+        }
+    }
 }
-
-/* -----------------------------------
-   RESULTS + COGNITIVE FEEDBACK
------------------------------------ */
 export function renderResults(stats, diff) {
     if (!isInit) initializeElements();
     showView("results-screen");
