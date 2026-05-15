@@ -309,3 +309,24 @@ body.focus-mode #quiz-content {
   background: transparent !important;
   color: inherit !important;
 }
+
+/* Add this at the very bottom of global.css */
+
+/* Force all formula containers to wrap and stay within bounds */
+[id^="formula"], .formula-vault-card, .katex-display, .mjx-chtml {
+    white-space: normal !important; 
+    word-wrap: break-word !important;
+    overflow-wrap: anywhere !important; /* Most aggressive wrapping */
+    max-width: 100% !important;
+    display: block !important;
+}
+
+/* Fix for character clumping in italics */
+.katex, .math-tex {
+    letter-spacing: 0.05rem !important; 
+}
+
+/* Ensure the card container doesn't expand infinitely */
+#content-container, .grid {
+    min-width: 0 !important; /* Critical for flex/grid children */
+}
