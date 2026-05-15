@@ -16,8 +16,13 @@ const sanitize = s => String(s ?? '').replace(/&/g,'&amp;')
 
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 const mirrorMode = sessionStorage.getItem("mirror_mode");
+const mirrorStudentUid = sessionStorage.getItem("mirror_student_uid");
 
-if (mirrorMode === "parent") {
+const isParentMirror =
+    mirrorMode === "parent" &&
+    mirrorStudentUid;
+
+if (isParentMirror) {
 
     console.log("Parent Mirror Mode Active");
 
@@ -28,7 +33,6 @@ if (mirrorMode === "parent") {
         const childUid = sessionStorage.getItem("mirror_student_uid");
 
         if (!childUid) {
-            alert("Mirror student missing.");
             return;
         }
 
@@ -43,8 +47,12 @@ if (mirrorMode === "parent") {
 
 } else {
 
+    // CLEANUP STALE MIRROR DATA
+    sessionStorage.removeItem("mirror_mode");
+    sessionStorage.removeItem("mirror_student_uid");
+
     guardConsole("student");
-}
+} 
 
 
 window.loadConsoleData = async (profile) => {
