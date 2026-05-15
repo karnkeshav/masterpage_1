@@ -614,5 +614,20 @@ function renderGrowthChart(overallAvg) {
         }
     });
 }
+window.launchMirrorPortal = async function () {
 
+    const profile = window.userProfile;
+
+    if (!profile?.linked_children?.length) {
+        alert("No linked student found.");
+        return;
+    }
+
+    const childUid = profile.linked_children[0];
+
+    sessionStorage.setItem("mirror_student_uid", childUid);
+    sessionStorage.setItem("mirror_mode", "parent");
+
+    window.location.href = "../student/student.html";
+}
 
