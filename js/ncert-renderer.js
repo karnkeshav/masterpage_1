@@ -188,19 +188,21 @@ function renderDynamicContent(container, data, subject) {
     const f = getFormulaContent(item);
     const displayLabel = (f.label && f.label.toLowerCase() !== 'formula') ? sanitize(f.label) : (isChemistry ? 'Equation' : 'Formula');
     
-    // FIX: Detect if the content is a sentence (text) or a math formula
-    // This regex checks if there are words longer than 3 letters
-    const isText = /[a-zA-Z]{4,}/.test(f.content); 
+    // Check if it's a long sentence
+    const isLongText = f.content.length > 25 || /[a-zA-Z]{5,}/.test(f.content); 
     
-    // FIX: Use \text{} for sentences to preserve spaces and allow wrapping
-    const wrappedContent = isText 
-        ? `\\(\\text{${f.content}}\\)` 
-        : (isChemistry ? `\\(\\ce{${f.content}}\\)` : `\\(${f.content}\\)`);
+    // If it's long text, render it as plain HTML instead of MathJax
+    // Only use MathJax delimiters if it looks like a pure equation (contains =, ^, +, etc)
+    const contentHtml = isLongText && !f.content.includes('=') 
+        ? `<span class="text-slate-800">${f.content}</span>` 
+        : `\\(${f.content}\\)`;
     
     return `
-        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 overflow-hidden">
-            <div class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">${displayLabel}</div>
-            <div class="font-mono text-lg font-bold text-slate-900 break-words leading-relaxed">${wrappedContent}</div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-2">
+            <div class="text-[10px] text-slate-400 uppercase font-black tracking-widest">${displayLabel}</div>
+            <div class="font-medium text-base text-slate-900 leading-snug break-words">
+                ${contentHtml}
+            </div>
         </div>
     `}).join("")}
     </div>
