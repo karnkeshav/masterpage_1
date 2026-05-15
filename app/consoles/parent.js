@@ -19,7 +19,7 @@ window.loadConsoleData = async (profile) => {
     listenToIntercom();
     
 };
-guardConsole("parent");
+guardConsole("parent"); 
 
 async function listenToIntercom() {
     const { auth, db } = await getInitializedClients();
