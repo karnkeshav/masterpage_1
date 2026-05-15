@@ -16,16 +16,37 @@ async function initEngine() {
 }
 await initEngine();
 
-// --- Symmetric Button Observer ---
+// --- Unified DOM Observer (FIXED) ---
 const container = document.getElementById('content-container');
 if (container) {
     const observer = new MutationObserver(() => {
+        // 1. Handle the "Take Chapter Test" button move
         const testBtn = document.getElementById('btn-target-test');
-        if (testBtn && !testBtn.dataset.moved) setupSymmetricBar(testBtn);
+        if (testBtn && !testBtn.dataset.moved) {
+            setupSymmetricBar(testBtn);
+        }
+        
+        // 2. Apply the Math Overflow/Flooding Fix
+        applyEmergencyMathFix();
     });
+    
     observer.observe(container, { childList: true, subtree: true });
 }
 
+// --- Emergency Math Fix Logic ---
+function applyEmergencyMathFix() {
+    const formulas = document.querySelectorAll('.formula-card-content, .katex, .mjx-chtml, [id^="formula"]');
+    formulas.forEach(el => {
+        el.style.whiteSpace = 'normal';
+        el.style.display = 'block';
+        el.style.overflowWrap = 'anywhere'; 
+        el.style.wordBreak = 'break-word';
+        el.style.maxWidth = '100%';
+        el.style.letterSpacing = '0.02em';
+    });
+}
+
+// --- Symmetric Button Logic ---
 function setupSymmetricBar(oldBtn) {
     oldBtn.dataset.moved = "true";
     oldBtn.classList.add('hidden'); 
@@ -35,8 +56,11 @@ function setupSymmetricBar(oldBtn) {
     newBtn.innerHTML = `<span>Take Chapter Test</span> <i class="fas fa-bolt text-accent-gold"></i>`;
     newBtn.onclick = () => openDifficultyModal({ subject: params.get('subject'), chapter: params.get('chapter') });
 
-    document.getElementById('test-btn-slot').appendChild(newBtn);
-    document.getElementById('action-bar-wrapper').classList.remove('hidden');
+    const slot = document.getElementById('test-btn-slot');
+    const wrapper = document.getElementById('action-bar-wrapper');
+    
+    if (slot) slot.appendChild(newBtn);
+    if (wrapper) wrapper.classList.remove('hidden');
     
     renderGuidance();
 }
@@ -45,22 +69,33 @@ function setupSymmetricBar(oldBtn) {
 async function renderGuidance() {
     const quizSlug = engine.getQuizTableSlug(params.get('grade'), params.get('subject'), params.get('chapter'));
     const msgEl = document.getElementById('quiz-guidance-msg');
+    if (!msgEl) return;
+
     try {
         const { auth, db } = await getInitializedClients();
         const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        
         let user = auth.currentUser;
         if (!user) await new Promise(r => auth.onAuthStateChanged(u => { if(u){user=u;r();} }));
         if (!user) return;
+
         const q = query(collection(db, "quiz_scores"), where("user_id", "==", user.uid), where("topicSlug", "==", quizSlug));
         const snap = await getDocs(q);
+        
         let best = 0;
-        snap.forEach(d => { if (d.data().difficulty === "Simple" && d.data().percentage > best) best = d.data().percentage; });
+        snap.forEach(d => { 
+            if (d.data().difficulty === "Simple" && d.data().percentage > best) best = d.data().percentage; 
+        });
+
         if (best === 0) msgEl.innerHTML = "Ready to Start? Begin with Simple Level";
         else if (best < 85) msgEl.innerHTML = "Current Focus: Master Simple Level (85%+)";
         else msgEl.innerHTML = "Great Work! Target next Proficiency";
-    } catch (e) {}
+    } catch (e) {
+        console.error("Guidance render failed", e);
+    }
 }
 
+// --- Theme and UI Components ---
 const twHex = {
     slate:   { 50: '#f8fafc', 100: '#f1f5f9', 600: '#475569' },
     red:     { 50: '#fef2f2', 100: '#fee2e2', 600: '#dc2626' },
@@ -109,7 +144,7 @@ function openDifficultyModal(ctx) {
                 </div>
                 <h3 class="text-2xl font-black text-slate-900 mb-1">Select Difficulty</h3>
                 <p class="text-xs font-bold uppercase tracking-widest" style="color:${ch[600]}">
-                    ${ctx.subject} &gt; ${ctx.chapter || params.get('chapter') || ''}
+                    ${ctx.subject} > ${ctx.chapter || params.get('chapter') || ''}
                 </p>
             </div>
             <div class="space-y-4">
