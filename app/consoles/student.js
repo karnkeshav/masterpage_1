@@ -15,7 +15,36 @@ const sanitize = s => String(s ?? '').replace(/&/g,'&amp;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
 bindConsoleLogout("logout-nav-btn", "../../index.html");
-guardConsole("student");
+const mirrorMode = sessionStorage.getItem("mirror_mode");
+
+if (mirrorMode === "parent") {
+
+    console.log("Parent Mirror Mode Active");
+
+    const originalLoader = window.loadConsoleData;
+
+    window.loadConsoleData = async (profile) => {
+
+        const childUid = sessionStorage.getItem("mirror_student_uid");
+
+        if (!childUid) {
+            alert("Mirror student missing.");
+            return;
+        }
+
+        profile.uid = childUid;
+
+        if (originalLoader) {
+            originalLoader(profile);
+        }
+    };
+
+    guardConsole("parent");
+
+} else {
+
+    guardConsole("student");
+}
 
 
 window.loadConsoleData = async (profile) => {
