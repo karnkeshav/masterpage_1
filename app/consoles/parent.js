@@ -797,6 +797,6 @@ window.launchMirrorPortal = async function () {
 
     sessionStorage.setItem("mirror_student_uid", childUid);
     sessionStorage.setItem("mirror_mode", "parent");
-window.location.href = "/masterpage_1/app/consoles/student.html";
+    window.location.href = "/app/consoles/student.html";
 }
 
