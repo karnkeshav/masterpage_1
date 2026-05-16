@@ -75,17 +75,16 @@
 });</script>
 
 <!-- HERO SECTION: 60/40 WITH FULL-WIDTH MOBILE IMAGE -->
-
 <!-- HERO SECTION -->
-<section class="overflow-hidden border-b border-slate-200 bg-[#f4f7fb]">
+<section class="overflow-hidden border-b border-slate-200 bg-gradient-to-br from-[#eef3fb] via-[#f7f9fc] to-[#edf2ff]">
 
     <!-- MOBILE -->
     <div class="lg:hidden flex flex-col">
 
         <!-- HERO IMAGE -->
-        <div class="bg-[#f4f7fb] px-4 pt-5">
+        <div class="relative px-4 pt-5">
 
-            <div class="rounded-[32px] overflow-hidden bg-white border border-slate-200">
+            <div class="rounded-[30px] overflow-hidden bg-gradient-to-br from-[#f8fbff] to-[#eef3fb] border border-white/60 shadow-lg">
 
                 <img
                     src="images/hero-bg.png"
@@ -97,16 +96,34 @@
 
         </div>
 
-        <!-- LOGIN -->
-        <div class="px-3 pt-4">
+        <!-- RIGHT SIDE -->
+        <div class="px-4 py-4">
 
-            <div class="bg-white border border-slate-200 rounded-[30px] p-7 shadow-sm">
+            <!-- HEADING -->
+            <div class="mb-4 text-center">
 
-                <div class="flex items-center justify-center gap-3 mb-7">
+                <h1 class="text-[32px] leading-[1.05] font-black text-cbse-blue">
+                    Master Your Exams
+                    <span class="block text-gold">
+                        With Precision
+                    </span>
+                </h1>
 
-                    <i class="fas fa-fingerprint text-gold text-lg"></i>
+                <p class="text-slate-500 text-sm mt-3 leading-relaxed px-4">
+                    AI-powered academic ecosystem for students,
+                    parents, teachers and schools.
+                </p>
 
-                    <h2 class="text-[20px] font-black text-cbse-blue">
+            </div>
+
+            <!-- LOGIN CARD -->
+            <div class="bg-gradient-to-br from-white via-[#fdfefe] to-[#f4f7fc] border border-white/70 rounded-[30px] p-6 shadow-xl backdrop-blur">
+
+                <div class="flex items-center justify-center gap-3 mb-6">
+
+                    <i class="fas fa-fingerprint text-gold text-xl"></i>
+
+                    <h2 class="text-[24px] font-black text-cbse-blue">
                         Enter Portal
                     </h2>
 
@@ -124,7 +141,7 @@
                             type="text"
                             id="username"
                             placeholder="e.g. keshav"
-                            class="w-full bg-[#f5f7fb] border border-slate-200 rounded-2xl px-4 py-3.5 text-[15px] focus:border-gold"
+                            class="w-full bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] border border-slate-200 rounded-2xl px-4 py-3.5 text-[15px]"
                             required
                         >
 
@@ -140,7 +157,7 @@
                             type="password"
                             id="password"
                             placeholder="••••••••"
-                            class="w-full bg-[#f5f7fb] border border-slate-200 rounded-2xl px-4 py-3.5 text-[15px] focus:border-gold"
+                            class="w-full bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] border border-slate-200 rounded-2xl px-4 py-3.5 text-[15px]"
                             required
                         >
 
@@ -148,7 +165,7 @@
 
                     <button
                         type="submit"
-                        class="w-full bg-white border border-slate-300 text-black text-[18px] font-black py-3.5 rounded-2xl hover:bg-slate-900 hover:text-white transition"
+                        class="w-full bg-gradient-to-r from-gold to-yellow-400 text-cbse-blue text-[20px] font-black py-3.5 rounded-2xl hover:scale-[1.01] transition"
                     >
                         Log In
                     </button>
@@ -164,18 +181,14 @@
 
             </div>
 
-        </div>
+            <!-- SCHOOL CARD -->
+            <div class="bg-gradient-to-br from-[#0b2f72] via-[#123f93] to-[#0c2a66] rounded-[30px] p-5 shadow-2xl mt-5">
 
-        <!-- SCHOOL DEMO CARD -->
-        <div class="px-3 py-4">
-
-            <div class="bg-[#0d3278] rounded-[30px] p-5 shadow-xl">
-
-                <p class="text-white text-[15px] leading-relaxed">
+                <p class="text-white text-[14px]">
                     Looking to onboard your school?
                 </p>
 
-                <h3 class="text-white text-[18px] leading-snug font-black mt-1">
+                <h3 class="text-white text-[20px] leading-tight font-black mt-1">
                     Discover our unified ecosystem
                     <span class="font-medium">
                         built for every stakeholder.
@@ -185,72 +198,36 @@
                 <!-- PERSONAS -->
                 <div class="grid grid-cols-4 gap-2 mt-5">
 
-                    <!-- STUDENT -->
-                    <div class="bg-white/8 border border-white/10 rounded-2xl p-3 text-center">
-
-                        <div class="text-[22px]">🎓</div>
-
-                        <p class="text-white font-black text-[13px] mt-2">
-                            Student
-                        </p>
-
-                        <p class="text-white/70 text-[11px] leading-tight mt-1">
-                            Learn<br>Practice.<br>Grow.
-                        </p>
-
+                    <div class="bg-gradient-to-br from-white/12 to-white/5 border border-white/10 rounded-2xl py-3 px-2 text-center">
+                        <div class="text-[20px]">🎓</div>
+                        <p class="text-white font-black text-[12px] mt-1">Student</p>
+                        <p class="text-white/70 text-[10px] leading-tight mt-1">Learn Grow</p>
                     </div>
 
-                    <!-- PARENT -->
-                    <div class="bg-white/8 border border-white/10 rounded-2xl p-3 text-center">
-
-                        <div class="text-[22px]">🧑‍🏫</div>
-
-                        <p class="text-white font-black text-[13px] mt-2">
-                            Parent
-                        </p>
-
-                        <p class="text-white/70 text-[11px] leading-tight mt-1">
-                            Track &<br>Support
-                        </p>
-
+                    <div class="bg-gradient-to-br from-white/12 to-white/5 border border-white/10 rounded-2xl py-3 px-2 text-center">
+                        <div class="text-[20px]">👨‍👩‍👧</div>
+                        <p class="text-white font-black text-[12px] mt-1">Parent</p>
+                        <p class="text-white/70 text-[10px] leading-tight mt-1">Track Support</p>
                     </div>
 
-                    <!-- TEACHER -->
-                    <div class="bg-white/8 border border-white/10 rounded-2xl p-3 text-center">
-
-                        <div class="text-[22px]">📖</div>
-
-                        <p class="text-white font-black text-[13px] mt-2">
-                            Teacher
-                        </p>
-
-                        <p class="text-white/70 text-[11px] leading-tight mt-1">
-                            Teach &<br>Assess
-                        </p>
-
+                    <div class="bg-gradient-to-br from-white/12 to-white/5 border border-white/10 rounded-2xl py-3 px-2 text-center">
+                        <div class="text-[20px]">📖</div>
+                        <p class="text-white font-black text-[12px] mt-1">Teacher</p>
+                        <p class="text-white/70 text-[10px] leading-tight mt-1">Teach Assess</p>
                     </div>
 
-                    <!-- PRINCIPAL -->
-                    <div class="bg-white/8 border border-white/10 rounded-2xl p-3 text-center">
-
-                        <div class="text-[22px]">🛡️</div>
-
-                        <p class="text-white font-black text-[13px] mt-2">
-                            Principal
-                        </p>
-
-                        <p class="text-white/70 text-[11px] leading-tight mt-1">
-                            Monitor<br>& Lead
-                        </p>
-
+                    <div class="bg-gradient-to-br from-white/12 to-white/5 border border-white/10 rounded-2xl py-3 px-2 text-center">
+                        <div class="text-[20px]">🛡️</div>
+                        <p class="text-white font-black text-[12px] mt-1">Principal</p>
+                        <p class="text-white/70 text-[10px] leading-tight mt-1">Monitor Lead</p>
                     </div>
 
                 </div>
 
-                <!-- BUTTON -->
+                <!-- CTA -->
                 <button
                     onclick="document.getElementById('demoModal').classList.remove('hidden')"
-                    class="w-full mt-5 border border-gold/30 bg-white/5 rounded-2xl py-4 text-gold font-black text-[22px] hover:bg-gold hover:text-cbse-blue transition"
+                    class="w-full mt-5 bg-gradient-to-r from-[#173d86] to-[#214b9f] border border-gold/30 rounded-2xl py-4 text-gold font-black text-[18px] hover:brightness-110 transition"
                 >
                     🔗 Book a Live Demo →
                 </button>
@@ -262,26 +239,47 @@
     </div>
 
     <!-- DESKTOP -->
-    <div class="hidden lg:grid lg:grid-cols-[60fr_40fr] min-h-[760px]">
+    <div class="hidden lg:grid lg:grid-cols-[60fr_40fr] min-h-[820px]">
 
         <!-- LEFT IMAGE -->
-        <div class="bg-[#f4f7fb] flex items-center justify-center p-10">
+        <div class="relative flex items-center justify-center px-10 py-10">
 
-            <img
-                src="images/hero-bg.png"
-                alt="Ready4Exam Students"
-                class="w-full h-auto max-h-[700px] object-contain"
-            >
+            <div class="w-full h-full flex items-center justify-center">
+
+                <img
+                    src="images/hero-bg.png"
+                    alt="Ready4Exam Students"
+                    class="w-full h-auto max-h-[760px] object-contain"
+                >
+
+            </div>
 
         </div>
 
-        <!-- RIGHT SIDE -->
-        <div class="bg-[#f4f7fb] flex flex-col justify-center px-10 py-10">
+        <!-- RIGHT PANEL -->
+        <div class="flex flex-col justify-center pr-10 py-10">
+
+            <!-- TITLE -->
+            <div class="mb-6">
+
+                <h1 class="text-[62px] leading-[0.95] font-black text-cbse-blue">
+                    Master Your Exams
+                    <span class="block text-gold">
+                        With Precision
+                    </span>
+                </h1>
+
+                <p class="text-slate-500 text-lg mt-5 leading-relaxed max-w-lg">
+                    AI-powered academic ecosystem designed for students,
+                    parents, teachers and school leadership.
+                </p>
+
+            </div>
 
             <!-- LOGIN CARD -->
-            <div class="bg-white border border-slate-200 rounded-[34px] p-10 shadow-lg">
+            <div class="bg-gradient-to-br from-white via-[#fbfcff] to-[#f1f5fb] border border-white/80 rounded-[34px] p-8 shadow-2xl backdrop-blur">
 
-                <div class="flex items-center justify-center gap-3 mb-8">
+                <div class="flex items-center justify-center gap-3 mb-7">
 
                     <i class="fas fa-fingerprint text-gold text-2xl"></i>
 
@@ -302,7 +300,7 @@
                         <input
                             type="text"
                             placeholder="e.g. keshav"
-                            class="w-full rounded-2xl border-slate-200 bg-[#f5f7fb] px-5 py-4"
+                            class="w-full rounded-2xl border-slate-200 bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] px-5 py-4"
                         >
 
                     </div>
@@ -316,13 +314,13 @@
                         <input
                             type="password"
                             placeholder="••••••••"
-                            class="w-full rounded-2xl border-slate-200 bg-[#f5f7fb] px-5 py-4"
+                            class="w-full rounded-2xl border-slate-200 bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] px-5 py-4"
                         >
 
                     </div>
 
                     <button
-                        class="w-full bg-white border border-slate-300 text-black text-[24px] font-black py-4 rounded-2xl hover:bg-slate-900 hover:text-white transition"
+                        class="w-full bg-gradient-to-r from-gold to-yellow-400 text-cbse-blue text-[24px] font-black py-4 rounded-2xl hover:scale-[1.01] transition"
                     >
                         Log In
                     </button>
@@ -339,13 +337,13 @@
             </div>
 
             <!-- SCHOOL CARD -->
-            <div class="bg-[#0d3278] rounded-[34px] p-7 shadow-xl mt-6">
+            <div class="bg-gradient-to-br from-[#0b2f72] via-[#123f93] to-[#0c2a66] rounded-[34px] p-6 shadow-2xl mt-6">
 
-                <p class="text-white text-[17px]">
+                <p class="text-white text-[16px]">
                     Looking to onboard your school?
                 </p>
 
-                <h3 class="text-white text-[28px] leading-tight font-black mt-1">
+                <h3 class="text-white text-[30px] leading-tight font-black mt-1">
                     Discover our unified ecosystem
                     <span class="font-medium">
                         built for every stakeholder.
@@ -353,30 +351,30 @@
                 </h3>
 
                 <!-- PERSONAS -->
-                <div class="grid grid-cols-4 gap-3 mt-6">
+                <div class="grid grid-cols-4 gap-3 mt-5">
 
-                    <div class="bg-white/8 border border-white/10 rounded-2xl p-4 text-center">
-                        <div class="text-[26px]">🎓</div>
-                        <p class="text-white font-black text-sm mt-2">Student</p>
-                        <p class="text-white/70 text-xs mt-1">Learn Practice Grow.</p>
+                    <div class="bg-gradient-to-br from-white/12 to-white/5 border border-white/10 rounded-2xl py-3 px-2 text-center">
+                        <div class="text-[24px]">🎓</div>
+                        <p class="text-white font-black text-[13px] mt-1">Student</p>
+                        <p class="text-white/70 text-[11px] mt-1">Learn Grow</p>
                     </div>
 
-                    <div class="bg-white/8 border border-white/10 rounded-2xl p-4 text-center">
-                        <div class="text-[26px]">🧑‍🏫</div>
-                        <p class="text-white font-black text-sm mt-2">Parent</p>
-                        <p class="text-white/70 text-xs mt-1">Track & Support</p>
+                    <div class="bg-gradient-to-br from-white/12 to-white/5 border border-white/10 rounded-2xl py-3 px-2 text-center">
+                        <div class="text-[24px]">👨‍👩‍👧</div>
+                        <p class="text-white font-black text-[13px] mt-1">Parent</p>
+                        <p class="text-white/70 text-[11px] mt-1">Track Support</p>
                     </div>
 
-                    <div class="bg-white/8 border border-white/10 rounded-2xl p-4 text-center">
-                        <div class="text-[26px]">📖</div>
-                        <p class="text-white font-black text-sm mt-2">Teacher</p>
-                        <p class="text-white/70 text-xs mt-1">Teach & Assess</p>
+                    <div class="bg-gradient-to-br from-white/12 to-white/5 border border-white/10 rounded-2xl py-3 px-2 text-center">
+                        <div class="text-[24px]">📖</div>
+                        <p class="text-white font-black text-[13px] mt-1">Teacher</p>
+                        <p class="text-white/70 text-[11px] mt-1">Teach Assess</p>
                     </div>
 
-                    <div class="bg-white/8 border border-white/10 rounded-2xl p-4 text-center">
-                        <div class="text-[26px]">🛡️</div>
-                        <p class="text-white font-black text-sm mt-2">Principal</p>
-                        <p class="text-white/70 text-xs mt-1">Monitor & Lead</p>
+                    <div class="bg-gradient-to-br from-white/12 to-white/5 border border-white/10 rounded-2xl py-3 px-2 text-center">
+                        <div class="text-[24px]">🛡️</div>
+                        <p class="text-white font-black text-[13px] mt-1">Principal</p>
+                        <p class="text-white/70 text-[11px] mt-1">Monitor Lead</p>
                     </div>
 
                 </div>
@@ -384,9 +382,9 @@
                 <!-- CTA -->
                 <button
                     onclick="document.getElementById('demoModal').classList.remove('hidden')"
-                    class="w-full mt-6 border border-gold/30 bg-white/5 rounded-2xl py-5 text-gold font-black text-[24px] hover:bg-gold hover:text-cbse-blue transition"
+                    class="w-full mt-6 bg-gradient-to-r from-[#173d86] to-[#214b9f] border border-gold/30 rounded-2xl py-5 text-gold font-black text-[22px] hover:brightness-110 transition"
                 >
-                    🔗 Book a Live Demo →
+                    Book a Live Demo →
                 </button>
 
             </div>
@@ -396,89 +394,6 @@
     </div>
 
 </section>
-
-<!-- DEMO MODAL -->
-<div
-    id="demoModal"
-    class="hidden fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
->
-
-    <div class="bg-white rounded-[32px] w-full max-w-2xl p-7 relative animate-fadeIn">
-
-        <!-- CLOSE -->
-        <button
-            onclick="document.getElementById('demoModal').classList.add('hidden')"
-            class="absolute top-5 right-5 text-slate-400 hover:text-black text-xl"
-        >
-            ✕
-        </button>
-
-        <h2 class="text-3xl font-black text-cbse-blue">
-            Book a School Demo
-        </h2>
-
-        <p class="text-slate-500 mt-2">
-            Explore how Ready4Exam works for students,
-            parents, teachers and principals.
-        </p>
-
-        <form class="mt-7 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            <input
-                type="text"
-                placeholder="School Name"
-                class="rounded-2xl border-slate-200"
-            >
-
-            <input
-                type="text"
-                placeholder="Your Name"
-                class="rounded-2xl border-slate-200"
-            >
-
-            <input
-                type="email"
-                placeholder="Email Address"
-                class="rounded-2xl border-slate-200"
-            >
-
-            <input
-                type="text"
-                placeholder="Phone Number"
-                class="rounded-2xl border-slate-200"
-            >
-
-            <input
-                type="text"
-                placeholder="Board / Curriculum"
-                class="rounded-2xl border-slate-200"
-            >
-
-            <input
-                type="text"
-                placeholder="City / State"
-                class="rounded-2xl border-slate-200"
-            >
-
-            <textarea
-                rows="4"
-                placeholder="Tell us about your school requirements..."
-                class="md:col-span-2 rounded-2xl border-slate-200"
-            ></textarea>
-
-            <button
-                type="submit"
-                class="md:col-span-2 bg-gold text-cbse-blue font-black py-4 rounded-2xl hover:bg-slate-900 hover:text-white transition"
-            >
-                Submit Demo Request
-            </button>
-
-        </form>
-
-    </div>
-
-</div>
-    
 <!-- QUIZ SECTION: INSTANT PRACTICE -->
 <section id="quiz-section" class="py-16 px-4 bg-white border-b border-slate-200">
     <div class="max-w-7xl mx-auto">
