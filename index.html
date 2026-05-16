@@ -82,14 +82,14 @@
     <div class="lg:hidden flex flex-col">
 
         <!-- HERO IMAGE -->
-        <div class="relative px-4 pt-2">
+        <div class="relative px-4 pt-3">
 
-            <div class="rounded-[30px] overflow-hidden bg-gradient-to-br from-[#f8fbff] to-[#eef3fb] border border-white/60 shadow-lg">
+            <div class="rounded-[30px] overflow-hidden bg-white border border-white/60 shadow-lg">
 
                 <img
                     src="images/hero-bg.png"
                     alt="Ready4Exam"
-                    class="w-full h-auto object-contain"
+                    class="w-full h-auto object-cover object-center"
                 >
 
             </div>
@@ -153,14 +153,30 @@
                             Password
                         </label>
 
-                        <input
-                            type="password"
-                            id="password"
-                            placeholder="••••••••"
-                            class="w-full bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] border border-slate-200 rounded-2xl px-4 py-3.5 text-[15px]"
-                            required
-                        >
+                        <div class="relative">
 
+                            <input
+                                type="password"
+                                id="password"
+                                placeholder="••••••••"
+                                class="w-full bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] border border-slate-200 rounded-2xl px-4 py-3.5 pr-12 text-[15px]"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                id="togglePassword"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                            >
+                                <i class="fas fa-eye" id="eyeIcon"></i>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <div id="login-error"
+                        class="hidden text-red-600 text-xs font-bold text-center p-2">
                     </div>
 
                     <button
@@ -220,7 +236,7 @@
             </div>
 
             <!-- LOGIN CARD -->
-            <div class="bg-gradient-to-br from-white via-[#fbfcff] to-[#f1f5fb] border border-white/80 rounded-[34px] p-8 shadow-2xl backdrop-blur">
+            <div class="bg-gradient-to-br from-white via-[#fbfcff] to-[#f1f5fb] border border-white/80 rounded-[34px] p-8 shadow-2xl backdrop-blur max-w-[560px]">
 
                 <div class="flex items-center justify-center gap-3 mb-7">
 
@@ -254,11 +270,22 @@
                             Password
                         </label>
 
-                        <input
-                            type="password"
-                            placeholder="••••••••"
-                            class="w-full rounded-2xl border-slate-200 bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] px-5 py-4"
-                        >
+                        <div class="relative">
+
+                            <input
+                                type="password"
+                                placeholder="••••••••"
+                                class="w-full rounded-2xl border-slate-200 bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] px-5 py-4 pr-14"
+                            >
+
+                            <button
+                                type="button"
+                                class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"
+                            >
+                                <i class="fas fa-eye"></i>
+                            </button>
+
+                        </div>
 
                     </div>
 
@@ -283,6 +310,7 @@
 
     </div>
 
+</section>
 </section>
     <!-- ECOSYSTEM STRIP -->
 <!-- ECOSYSTEM STRIP -->
