@@ -142,7 +142,7 @@
                 <div class="flex flex-col lg:flex-row lg:items-center gap-4 flex-1">
 
                     <!-- TEXT -->
-<div class="shrink-0 min-w-[320px]">
+<div class="shrink-0 min-w-[220px]">
 
     <h3 class="text-white text-3xl lg:text-[44px] font-black leading-none">
         Looking to onboard your school?
@@ -383,5 +383,173 @@
     else { wireIndexDifficultyTeasers(); }
 </script>
 <script type="module" src="./js/guest-google-auth.js"></script>
+    <!-- DEMO MODAL -->
+<div
+    id="demoModal"
+    class="hidden fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+>
+
+    <!-- MODAL BOX -->
+    <div class="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden">
+
+        <!-- HEADER -->
+        <div class="bg-gradient-to-r from-[#0b2f72] via-[#123f93] to-[#0c2a66] px-8 py-6">
+
+            <div class="flex items-start justify-between gap-4">
+
+                <div>
+
+                    <p class="text-white/60 uppercase tracking-[3px] text-xs font-bold">
+                        School Onboarding
+                    </p>
+
+                    <h2 class="text-white text-3xl font-black mt-2">
+                        Book a Live Demo
+                    </h2>
+
+                    <p class="text-white/70 mt-2 text-sm leading-relaxed">
+                        Explore the Ready4Exam ecosystem for students,
+                        parents, teachers and school leadership.
+                    </p>
+
+                </div>
+
+                <!-- CLOSE -->
+                <button
+                    onclick="document.getElementById('demoModal').classList.add('hidden')"
+                    class="text-white/70 hover:text-white text-2xl leading-none"
+                >
+                    ×
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- FORM -->
+        <form
+            class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5"
+        >
+
+            <!-- SCHOOL -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    School Name
+                </label>
+
+                <input
+                    type="text"
+                    placeholder="Enter school name"
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                    required
+                >
+            </div>
+
+            <!-- NAME -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Contact Person
+                </label>
+
+                <input
+                    type="text"
+                    placeholder="Your name"
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                    required
+                >
+            </div>
+
+            <!-- EMAIL -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    placeholder="you@school.com"
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                    required
+                >
+            </div>
+
+            <!-- PHONE -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Phone Number
+                </label>
+
+                <input
+                    type="text"
+                    placeholder="+91 XXXXX XXXXX"
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                    required
+                >
+            </div>
+
+            <!-- BOARD -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Board / Curriculum
+                </label>
+
+                <select
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                >
+                    <option>CBSE</option>
+                    <option>ICSE</option>
+                    <option>State Board</option>
+                    <option>International</option>
+                </select>
+            </div>
+
+            <!-- STUDENT COUNT -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Approx. Students
+                </label>
+
+                <select
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                >
+                    <option>Below 500</option>
+                    <option>500 - 1000</option>
+                    <option>1000 - 3000</option>
+                    <option>3000+</option>
+                </select>
+            </div>
+
+            <!-- MESSAGE -->
+            <div class="md:col-span-2">
+
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Requirements
+                </label>
+
+                <textarea
+                    rows="4"
+                    placeholder="Tell us about your school requirements..."
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                ></textarea>
+
+            </div>
+
+            <!-- SUBMIT -->
+            <div class="md:col-span-2">
+
+                <button
+                    type="submit"
+                    class="w-full bg-gradient-to-r from-gold to-yellow-400 text-cbse-blue text-xl font-black py-4 rounded-2xl hover:brightness-105 transition"
+                >
+                    Submit Demo Request
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
 </body>
 </html>
