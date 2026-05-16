@@ -75,59 +75,215 @@
 });</script>
 
 <!-- HERO SECTION: 60/40 WITH FULL-WIDTH MOBILE IMAGE -->
-<section class="hero-split-grid overflow-hidden border-b border-slate-200">
-    <!-- Left 60%: High-Quality Visual -->
-    <div class="hero-image-side pt-0 lg:pt-20">
-        <img src="images/hero-bg.png" alt="Ready4Exam Students" class="w-full h-full object-cover object-center lg:object-right block">
-        
-        <!-- Mobile Overlay Headline -->
-        <div class="absolute inset-0 bg-slate-900/40 lg:bg-transparent flex items-center px-6 lg:hidden">
-            <h1 class="text-3xl font-black text-white leading-tight">
-                Master Your Exams <br><span class="text-gold">With Precision</span>
-            </h1>
-        </div>
-    </div>
-    
-    <!-- Right 40%: Portal & Login Card -->
-    <div class="flex flex-col justify-center items-center lg:items-start p-8 lg:p-12 lg:bg-[#f1f4f9]">
-        <div class="hidden lg:block mb-8">
-            <h1 class="text-5xl font-black text-cbse-blue mb-4 leading-tight">
-                Master Your Exams <br><span class="text-gold">With Precision</span>
-            </h1>
-            <p class="text-slate-600 text-lg max-w-md">
-                Access premium exam preparation tools tailored for your success.
-            </p>
-        </div>
+<!-- HERO SECTION -->
+<section class="overflow-hidden border-b border-slate-200 bg-gradient-to-br from-[#eef3fb] via-[#f7f9fc] to-[#edf2ff] pt-2 lg:pt-1">
 
-        <div class="w-full max-w-sm bg-white border border-slate-200 p-8 rounded-3xl shadow-xl">
-            <div class="flex items-center justify-center gap-3 mb-6">
-                <i class="fas fa-fingerprint text-gold text-2xl"></i>
-                <h2 class="text-cbse-blue font-bold text-xl">Enter Portal</h2>
+    <!-- MOBILE -->
+    <div class="lg:hidden flex flex-col">
+
+        <!-- HERO IMAGE -->
+        <div class="relative px-4 pt-2">
+
+            <div class="rounded-[30px] overflow-hidden bg-gradient-to-br from-[#f8fbff] to-[#eef3fb] border border-white/60 shadow-lg">
+
+                <img
+                    src="images/hero-bg.png"
+                    alt="Ready4Exam"
+                    class="w-full h-auto object-contain"
+                >
+
             </div>
-            <form id="sovereign-login-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username / Email</label>
-                    <input type="text" id="username" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:border-gold transition" placeholder="e.g. keshav" required>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-                    <div class="relative">
-                        <input type="password" id="password" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:border-gold transition pr-10" placeholder="••••••••" required>
-                        <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cbse-blue transition focus:outline-none">
-                            <i class="fas fa-eye" id="eyeIcon"></i>
-                        </button>
-                    </div>
-                </div>
-                <div id="login-error" class="hidden text-red-600 text-xs font-bold text-center p-2"></div>
-                <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-slate-900 hover:text-white transition shadow-lg mt-2">Log In</button>
-            </form>
-            <a href="#quiz-section" class="text-xs text-cbse-blue font-bold hover:underline mt-4 block text-center uppercase tracking-widest">
-                <i class="fas fa-bolt mr-1"></i> Try Guest Quiz
-            </a>
-        </div>
-    </div>
-</section>
 
+        </div>
+
+        <!-- RIGHT SIDE -->
+        <div class="px-4 py-4">
+
+            <!-- HEADING -->
+            <div class="mb-4 text-center">
+
+                <h1 class="text-[32px] leading-[1.05] font-black text-cbse-blue">
+                    Master Your Exams
+                    <span class="block text-gold">
+                        With Precision
+                    </span>
+                </h1>
+
+                <p class="text-slate-500 text-sm mt-3 leading-relaxed px-4">
+                    AI-powered academic ecosystem for students,
+                    parents, teachers and schools.
+                </p>
+
+            </div>
+
+            <!-- LOGIN CARD -->
+            <div class="bg-gradient-to-br from-white via-[#fdfefe] to-[#f4f7fc] border border-white/70 rounded-[30px] p-6 shadow-xl backdrop-blur">
+
+                <div class="flex items-center justify-center gap-3 mb-6">
+
+                    <i class="fas fa-fingerprint text-gold text-xl"></i>
+
+                    <h2 class="text-[24px] font-black text-cbse-blue">
+                        Enter Portal
+                    </h2>
+
+                </div>
+
+                <form id="sovereign-login-form" class="space-y-4">
+
+                    <div>
+
+                        <label class="block text-[11px] tracking-wider font-black uppercase text-[#7d8fb3] mb-2">
+                            Username / Email
+                        </label>
+
+                        <input
+                            type="text"
+                            id="username"
+                            placeholder="e.g. keshav"
+                            class="w-full bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] border border-slate-200 rounded-2xl px-4 py-3.5 text-[15px]"
+                            required
+                        >
+
+                    </div>
+
+                    <div>
+
+                        <label class="block text-[11px] tracking-wider font-black uppercase text-[#7d8fb3] mb-2">
+                            Password
+                        </label>
+
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="••••••••"
+                            class="w-full bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] border border-slate-200 rounded-2xl px-4 py-3.5 text-[15px]"
+                            required
+                        >
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full bg-gradient-to-r from-gold to-yellow-400 text-cbse-blue text-[20px] font-black py-3.5 rounded-2xl hover:scale-[1.01] transition"
+                    >
+                        Log In
+                    </button>
+
+                </form>
+
+                <a
+                    href="#quiz-section"
+                    class="mt-5 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-[2px] text-cbse-blue"
+                >
+                    ⚡ Try Guest Quiz
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- DESKTOP -->
+    <div class="hidden lg:grid lg:grid-cols-[60fr_40fr] items-stretch -mt-3">
+
+        <!-- LEFT IMAGE -->
+        <div class="relative bg-gradient-to-br from-[#eef3fb] via-[#f7f9fc] to-[#edf2ff] overflow-hidden min-h-[820px] -mt-2">
+
+            <img
+                src="images/hero-bg.png"
+                alt="Ready4Exam Students"
+                class="w-full h-full object-fill object-top"
+            >
+
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="flex flex-col justify-center pr-10 pt-3 pb-8">
+
+            <!-- TITLE -->
+            <div class="mb-6">
+
+                <h1 class="text-[62px] leading-[0.95] font-black text-cbse-blue">
+                    Master Your Exams
+                    <span class="block text-gold">
+                        With Precision
+                    </span>
+                </h1>
+
+                <p class="text-slate-500 text-lg mt-5 leading-relaxed max-w-lg">
+                    Access premium exam preparation tools tailored
+                    for your success.
+                </p>
+
+            </div>
+
+            <!-- LOGIN CARD -->
+            <div class="bg-gradient-to-br from-white via-[#fbfcff] to-[#f1f5fb] border border-white/80 rounded-[34px] p-8 shadow-2xl backdrop-blur">
+
+                <div class="flex items-center justify-center gap-3 mb-7">
+
+                    <i class="fas fa-fingerprint text-gold text-2xl"></i>
+
+                    <h2 class="text-[34px] font-black text-cbse-blue">
+                        Enter Portal
+                    </h2>
+
+                </div>
+
+                <form id="desktop-login-form" class="space-y-5">
+
+                    <div>
+
+                        <label class="block text-xs font-black uppercase tracking-wider text-[#7d8fb3] mb-2">
+                            Username / Email
+                        </label>
+
+                        <input
+                            type="text"
+                            placeholder="e.g. keshav"
+                            class="w-full rounded-2xl border-slate-200 bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] px-5 py-4"
+                        >
+
+                    </div>
+
+                    <div>
+
+                        <label class="block text-xs font-black uppercase tracking-wider text-[#7d8fb3] mb-2">
+                            Password
+                        </label>
+
+                        <input
+                            type="password"
+                            placeholder="••••••••"
+                            class="w-full rounded-2xl border-slate-200 bg-gradient-to-r from-[#f7f9fc] to-[#eef2f8] px-5 py-4"
+                        >
+
+                    </div>
+
+                    <button
+                        class="w-full bg-gradient-to-r from-gold to-yellow-400 text-cbse-blue text-[24px] font-black py-4 rounded-2xl hover:scale-[1.01] transition"
+                    >
+                        Log In
+                    </button>
+
+                </form>
+
+                <a
+                    href="#quiz-section"
+                    class="mt-6 flex items-center justify-center gap-2 text-[12px] font-black uppercase tracking-[2px] text-cbse-blue"
+                >
+                    ⚡ Try Guest Quiz
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
     <!-- ECOSYSTEM STRIP -->
 <!-- ECOSYSTEM STRIP -->
 <section class="relative mt-4 lg:mt-5 px-4">
