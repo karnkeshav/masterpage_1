@@ -6,6 +6,10 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot } f
 // LOGOUT LOGIC — use standard bindConsoleLogout for uniformity
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 
+let _mirrorChildUid = null;
+let _mirrorChildClassId = null;
+let _mirrorChildSection = null;
+
 // GLOBAL GUARD
 guardConsole("parent");
 
@@ -19,6 +23,12 @@ window.loadConsoleData = async (profile) => {
     const overallAvg = await fetchChildData(profile);
     renderGrowthChart(overallAvg);
     listenToIntercom();
+
+    document.getElementById('launch-mirror-btn')?.addEventListener('click', () => {
+        if (_mirrorChildUid) {
+            window.open(`student.html?view_uid=${_mirrorChildUid}&classId=${_mirrorChildClassId}&section=${_mirrorChildSection}`, '_blank');
+        }
+    });
     
 };
 
@@ -119,6 +129,9 @@ async function fetchChildData(parentProfile) {
                 if (childSnap.exists()) {
                     const childData = childSnap.data();
                     childName = childData.displayName || "Student";
+                    _mirrorChildUid = targetUid;
+                    _mirrorChildClassId = childData.classId || "9";
+                    _mirrorChildSection = childData.section || "A";
                 }
             } catch (e) {
                 console.warn("Could not fetch child profile:", e);
