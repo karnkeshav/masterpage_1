@@ -17,6 +17,12 @@ window.loadConsoleData = async (profile) => {
     const overallAvg = await fetchChildData(profile);
     renderGrowthChart(overallAvg);
     listenToIntercom();
+
+    document.getElementById('launch-mirror-btn')?.addEventListener('click', () => {
+        if (_mirrorChildUid) {
+            window.open(`student.html?view_uid=${_mirrorChildUid}&classId=${_mirrorChildClassId}&section=${_mirrorChildSection}`, '_blank');
+        }
+    });
     
 };
 guardConsole("parent"); 
