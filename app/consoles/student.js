@@ -66,8 +66,8 @@ window.loadConsoleData = async (profile) => {
     
     await generateKnowledgeHub(profile, grade);
     await loadStudentStats(profile.uid, grade);
-    renderInbox();
-    listenToIntercom();
+    renderInbox(profile.uid);            // FIXED: Passes the correct child UID
+    listenToIntercom(profile.uid);       // FIXED: Passes the correct child UID
 };
 
 // ─── 2. EVALUATE MIRROR ENVIRONMENT ROUTING ───────────────────────────────
@@ -798,19 +798,23 @@ window.launchFromInbox = async (topicSlug, discipline, notifGrade, chapterTitle)
     window.location.href = `../study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;
 };
 
-async function listenToIntercom() {
+// ─── FIXED SUBROUTINES FOR PASS-THROUGH CONTEXT IN MIRROR MODE ──────────────────
+async function listenToIntercom(targetUid) {
     if (unsubIntercom) unsubIntercom();
     const { auth, db } = await getInitializedClients();
     const feed = document.getElementById('intercom-feed');
     if (!feed || !auth.currentUser) return;
 
-    const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+    // Use passed context UID, fallback to mirror session state, fallback to direct login
+    const uid = targetUid || sessionStorage.getItem("mirror_student_uid") || auth.currentUser.uid;
+
+    const userSnap = await getDoc(doc(db, "users", uid));
     if (!userSnap.exists()) return;
     const profile = userSnap.data();
 
     const schoolId = profile.school_id;
-    const targetGrade = profile.classId || "9";
-    const targetSection = profile.section || "A";
+    const targetGrade = profile.classId || sessionStorage.getItem("mirror_student_classId") || "9";
+    const targetSection = profile.section || sessionStorage.getItem("mirror_student_section") || "A";
 
     if(!schoolId) return;
 
@@ -858,13 +862,16 @@ async function listenToIntercom() {
     });
 }
 
-async function renderInbox() {
+async function renderInbox(targetUid) {
     if (unsubInbox) unsubInbox();
     const { auth, db } = await getInitializedClients();
     const notificationContainer = document.getElementById('notification-list');
     if (!notificationContainer || !auth.currentUser) return;
 
-    const q = query(collection(db, "student_notifications"), where("student_id", "==", auth.currentUser.uid));
+    // Use passed context UID, fallback to mirror session state, fallback to direct login
+    const uid = targetUid || sessionStorage.getItem("mirror_student_uid") || auth.currentUser.uid;
+
+    const q = query(collection(db, "student_notifications"), where("student_id", "==", uid));
 
     unsubInbox = onSnapshot(q, (snapshot) => {
         notificationContainer.innerHTML = "";
