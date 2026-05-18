@@ -2,15 +2,19 @@
   "name": "testing_tool",
   "version": "1.0.0",
   "description": "",
-  "main": "run_tests.js",
+  "main": "run_tests_curriculum.js",
+  "type": "commonjs",
   "scripts": {
-    "test": "node run_tests.js",
-    "start": "node server.js"
+    "test": "node run_tests_curriculum.js",
+    "start": "node server.js",
+    "audit": "node exhaustive_playwright_audit.js",
+     "bot":     "node bot.js",
+    "bot_rit": "node bot_rit.js",
+    "bot:headless": "HEADLESS=true node bot.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "lighthouse": "^13.0.1",
     "playwright": "^1.58.1"

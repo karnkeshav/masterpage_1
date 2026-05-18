@@ -22,9 +22,8 @@ function getArray(data) {
 function getCleanText(item) {
     if (typeof item === 'string') return sanitize(item);
     if (item && typeof item === 'object') {
-        // Fix "Undefined" errors by checking multiple field names (tex, content, value, formula, definition)
-        // Fix [object Object] by ensuring we extract a string property
         const raw = item.tex || item.content || item.value || item.formula || item.definition || item.text || "";
+        // If it's a long string and doesn't look like an equation, return as plain text
         return sanitize(raw);
     }
     return "";
@@ -185,17 +184,28 @@ function renderDynamicContent(container, data, subject) {
                     ${formulaTitle}
                 </h3>
                 <div class="grid md:grid-cols-2 gap-4 relative z-10">
-                    ${formulaData.map(item => {
-            const f = getFormulaContent(item);
-            const displayLabel = (f.label && f.label.toLowerCase() !== 'formula') ? sanitize(f.label) : (isChemistry ? 'Equation' : 'Formula');
-            const wrappedContent = isChemistry ? `\\(\\ce{${f.content}}\\)` : `\\(${f.content}\\)`;
-            return `
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">${displayLabel}</div>
-                            <div class="font-mono text-lg font-bold text-slate-900">${wrappedContent}</div>
-                        </div>
-                    `}).join("")}
-                </div>
+                 ${formulaData.map(item => {
+    const f = getFormulaContent(item);
+    const displayLabel = (f.label && f.label.toLowerCase() !== 'formula') ? sanitize(f.label) : (isChemistry ? 'Equation' : 'Formula');
+    
+    // THE HYBRID FIX: 
+    // We replace the spaces in the string with a 'break' point.
+    // This allows the browser to wrap at every space even inside MathJax blocks.
+    const parts = f.content.split(' ');
+    const contentHtml = parts.map(part => {
+        // If a part contains math symbols, wrap it in delimiters, otherwise keep as text
+        return /[0-9=+\-\/^\\(\)]/.test(part) ? `\\(${part}\\)` : part;
+    }).join(' ');
+
+    return `
+        <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-2 min-h-[110px] justify-start">
+            <div class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">${displayLabel}</div>
+            <div class="formula-render-zone text-sm md:text-base text-slate-800 font-medium leading-relaxed">
+                ${contentHtml}
+            </div>
+        </div>
+    `}).join("")}
+    </div>
             </div>
         `;
     }

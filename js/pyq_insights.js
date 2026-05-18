@@ -1,23 +1,23 @@
 import { getInitializedClients } from './config.js';  
 import { ensureUserInFirestore } from "./auth-paywall.js"; 
 
-/**
- * ARCHIVE MAPPING: Links subjects to local JSON file paths
- * Based on the project structure in your 'archive' folder.
- */
-const ARCHIVE_MAP = {
-    "Mathematics": "/masterpage_1/archive/mathematics_refined.json",
-    "Science": "/masterpage_1/archive/science_refined.json",
-    "Social Science": "/masterpage_1/archive/social_science_refined.json"
-};
-
+// MOVE THIS HERE (To the top)
 let state = {  
     grade: new URLSearchParams(window.location.search).get('grade') || '10',  
     subject: new URLSearchParams(window.location.search).get('subject') || 'Mathematics',  
     chapterID: new URLSearchParams(window.location.search).get('chapter') || '', 
     rawQuestions: []
 };  
-  
+
+const ARCHIVE_MAP = {
+    "Mathematics": "../archive/mathematics_refined.json",
+    "Science": "../archive/science_refined.json",
+    "Social Science": "../archive/social_science_refined.json"
+};
+
+// ... rest of your functions
+
+ 
 const normalizeChapter = (slug) => slug.replace(/_/g, ' ').trim().toLowerCase();  
   
 /**

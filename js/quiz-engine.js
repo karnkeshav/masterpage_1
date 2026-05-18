@@ -76,6 +76,8 @@ let quizState = {
     lastActionTime: 0
 };
 
+window.quizState = quizState;
+
 let questionsPromise = null;
 
 /* -----------------------------------
@@ -277,36 +279,45 @@ async function handleSubmit() {
         cb: stats.case.t
     };
 
-    if (percentage < 85) {
-        // Save to Mistake Notebook — now passes difficulty and session_id
+    // Await both saves before allowing navigation — fire-and-forget risks data loss
+    // if the browser navigates or goes to background before Firestore commits.
+    const saves = [];
+
+    // Save every wrong-question set per submit attempt. The notebook writer
+    // returns early when there are no mistakes, so this records friction even
+    // for high-scoring attempts that still had individual wrong answers.
+    saves.push(
         saveMistakes(
             quizState.questions,
             quizState.userAnswers,
             quizState.topicSlug,
             quizState.classId,
-            quizState.difficulty,  // fixes: difficulty was never passed before
-            sessionId               // links to the quiz_scores document
-        );
+            quizState.difficulty,
+            sessionId
+        ).catch(e => console.warn("saveMistakes failed:", e))
+    );
 
-        // Trigger In-Page Review
+    saves.push(
+            saveResult({
+            ...quizState,
+            score: stats.correct,
+            total: stats.total,
+            topic: quizState.topicSlug,
+            latency_vector: quizState.latency,
+            quiz_mode: quizState.quizMode,
+            session_id: sessionId,
+            typeStats
+        }).catch(e => console.warn("saveResult failed:", e))
+    );
+
+    await Promise.all(saves);
+
+    if (percentage < 85) {
         setTimeout(() => {
             alert("⚠️ Mastery Alert: Score below 85%.\nQuestions have been added to your Mistake Notebook.");
-            // VISUAL INTELLIGENCE: Focus Mode
-            UI.toggleFocusMode(true);
             UI.renderAllQuestionsForReview(quizState.questions, quizState.userAnswers);
-        }, 1000);
+        }, 300);
     }
-
-    saveResult({
-        ...quizState,
-        score: stats.correct,
-        total: stats.total,
-        topic: quizState.topicSlug,
-        latency_vector: quizState.latency,
-        quiz_mode: quizState.quizMode,
-        session_id: sessionId,  // links to the mistake_notebook document
-        typeStats               // real per-type counts for proficiency profile
-    });
 }
 
 /* -----------------------------------

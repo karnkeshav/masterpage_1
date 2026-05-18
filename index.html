@@ -1,525 +1,519 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ready4Exam — Board-Aligned Academic Portal</title>
 
-<title>Ready4Exam — Board-Aligned Academic Portal</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
+    </script>
 
-<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-4EFDM0CRYY"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-4EFDM0CRYY', { anonymize_ip:true });
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <link href="./css/global.css" rel="stylesheet">
+    <script src="js/firebase-master-config.js"></script>
 
-
-</script>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Merriweather:wght@400;700&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-<script src="./js/tailwind-config.js"></script>
-<link href="./css/global.css" rel="stylesheet">
-<script src="js/firebase-master-config.js"></script>
-
-
-
-<style>
-/* --- BASE & UTILS --- */
-
-
-
-
-.whatsapp-float {
-  position: fixed; bottom: 80px; right: 20px;
-  background-color: #25d366; color: white;
-  width: 55px; height: 55px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
-  z-index: 90; transition: transform 0.3s;
-  text-decoration: none;
-}
-.whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
-@media(min-width:1024px){ .whatsapp-float{ bottom: 30px; right: 30px; } }
-
-/* Hide scrollbar for horizontal scroll */
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
+    <style>
+        .whatsapp-float {
+            position: fixed; bottom: 80px; right: 20px;
+            background-color: #25d366; color: white;
+            width: 55px; height: 55px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            z-index: 90; transition: transform 0.3s;
+            text-decoration: none;
+        }
+        .whatsapp-float:hover { transform: scale(1.1); background-color: #20ba5a; }
+        @media(min-width:1024px){ .whatsapp-float{ bottom: 30px; right: 30px; } }
 
         .animate-marquee { animation: marquee 60s linear infinite; }
         @keyframes marquee {
             0% { transform: translateX(0%); }
             100% { transform: translateX(-50%); }
         }
+
+        /* Hero 60:40 Split & Seamless Color Bleed */
+        .hero-split-grid { display: grid; grid-template-columns: 1fr; }
+        
+        .hero-image-side { 
+            position: relative; 
+            width: 100%; 
+            height: 65vw; /* Optimized for mobile visibility */
+            overflow: hidden;
+        }
+
+        @media(min-width:1024px) {
+            .hero-split-grid { 
+                grid-template-columns: 6fr 4fr; 
+                background-color: #f1f4f9; 
+            }
+            .hero-image-side { 
+                height: auto; 
+                min-height: 500px; 
+            }
+            .hero-image-side::after {
+                content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 150px;
+                background: linear-gradient(to right, transparent, #f1f4f9);
+            }
+        }
     </style>
     <script src="./js/shell.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased flex flex-col min-h-screen">
 
-<!-- Header -->
 <div id="app-header"></div>
 <script>R4E.renderHeader({
     title: 'Ready4<span class="text-white">Exam</span>',
-    showUserWelcome: false,
-    showLogout: false,
-    showInbox: false
+    showUserWelcome: false, showLogout: false, showInbox: false
 });</script>
 
-<!-- Section 1: Hero & Login -->
-<section class="bg-hero-grad text-white py-12 lg:py-20 px-4 relative overflow-hidden">
-  <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 relative z-10">
-    <div class="flex-1 text-center lg:text-left">
-      <h1 class="text-4xl lg:text-6xl font-black mb-4 leading-tight fade-in">
-        Master Your Exams <br><span class="text-gold">With Precision</span>
-      </h1>
-      <p class="text-white/80 text-lg mb-8 max-w-xl mx-auto lg:mx-0 fade-in" style="animation-delay: 0.2s;">
-        Access high-end educational resources and premium exam preparation tools tailored for your success. For registered schools &amp; students.
-      </p>
-    </div>
-
-    <div class="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl fade-in" style="animation-delay: 0.3s;">
-      <div class="flex items-center justify-center gap-3 mb-6">
-        <i class="fas fa-fingerprint text-gold text-2xl"></i>
-        <h2 class="text-white font-bold text-xl">Login</h2>
-      </div>
-
-      <form id="sovereign-login-form" class="space-y-4">
-          <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Username / Email</label>
-              <input type="text" id="username" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. keshav, student, dps.ready4exam" required="">
-          </div>
-          <div>
-              <label class="block text-xs font-bold text-white/70 uppercase mb-1">Password</label>
-              <input type="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="••••••••" required="">
-          </div>
-          <div id="login-error" class="hidden text-red-400 text-xs font-bold text-center bg-red-900/20 p-2 rounded"></div>
-          <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-white hover:scale-[1.02] transition shadow-lg shadow-gold/20 mt-2">
-              Log In
-          </button>
-          <button type="button" id="forgot-password-btn" class="text-xs text-white/60 hover:text-gold underline mt-2 block mx-auto">
-              Forgot Password?
-          </button>
-      </form>
-
-      <!-- Forgot Password Modal -->
-      <div id="forgot-password-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div class="bg-slate-900 border border-white/10 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
-              <button id="close-forgot-modal" class="absolute top-4 right-4 text-white/50 hover:text-white transition">
-                  <i class="fas fa-times"></i>
-              </button>
-              <h3 class="text-xl font-bold text-white mb-4">Secure Password Reset</h3>
-              <p class="text-xs text-white/60 mb-6">Enter your registered email and student name to verify your identity.</p>
-
-              <div class="space-y-4">
-                  <div>
-                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Registered Email</label>
-                      <input type="email" id="reset-email" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="student@example.com">
-                  </div>
-                  <div>
-                      <label class="block text-[10px] font-bold text-white/70 uppercase mb-1">Registered Student Name</label>
-                      <input type="text" id="reset-student-name" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition" placeholder="e.g. John Doe">
-                  </div>
-                  <div id="reset-msg" class="hidden text-[11px] font-bold text-center p-2 rounded"></div>
-                  <button type="button" id="submit-reset-btn" class="w-full bg-gold text-cbse-blue font-black py-3 rounded-xl hover:bg-white transition mt-2">
-                      Send Reset Link
-                  </button>
-              </div>
-          </div>
-      </div>
-      <div class="mt-6 text-center border-t border-white/10 pt-4">
-          <p class="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Owner • School Admin • Students &amp; Parents</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Section 2: Quiz + Request Side-by-Side -->
-<section class="py-16 px-4 bg-white border-b border-slate-200">
-  <div class="max-w-7xl mx-auto">
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
-
-      <!-- LEFT: Try a Quiz Now (60%) -->
-      <div class="lg:col-span-3">
-        <div class="text-center mb-10">
-          <h2 class="text-3xl font-black text-cbse-blue mb-2">Try a Quiz Now</h2>
-          <p class="text-slate-500">Select your curriculum to start practicing instantly.</p>
+<!-- HERO SECTION: 60/40 WITH FULL-WIDTH MOBILE IMAGE -->
+<section class="hero-split-grid overflow-hidden border-b border-slate-200">
+    <!-- Left 60%: High-Quality Visual -->
+    <div class="hero-image-side pt-0 lg:pt-20">
+        <img src="images/hero-bg.png" alt="Ready4Exam Students" class="w-full h-full object-cover object-center lg:object-right block">
+        
+        <!-- Mobile Overlay Headline -->
+        <div class="absolute inset-0 bg-slate-900/40 lg:bg-transparent flex items-center px-6 lg:hidden">
+            <h1 class="text-3xl font-black text-white leading-tight">
+                Master Your Exams <br><span class="text-gold">With Precision</span>
+            </h1>
         </div>
-
-        <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
-            <!-- Board -->
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
-              <div class="flex gap-2">
-                <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="CBSE" onclick="selectBoard('CBSE', this)">CBSE</button>
-                <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue hover:text-cbse-blue transition data-[selected=true]:bg-cbse-blue data-[selected=true]:text-white data-[selected=true]:border-cbse-blue" data-board="SCERT" onclick="selectBoard('SCERT', this)">SCERT (TS)</button>
-              </div>
-            </div>
-
-            <!-- Class -->
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
-              <select id="class-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadSubjects()">
-                <option value="">Select Board first...</option>
-              </select>
-            </div>
-
-            <!-- Subject -->
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
-              <select id="subject-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="loadChapters()">
-                <option value="">Select Class first...</option>
-              </select>
-            </div>
-
-            <!-- Chapter -->
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
-              <select id="chapter-select" class="w-full rounded-lg border-slate-300 bg-white text-slate-700 focus:border-cbse-blue focus:ring-cbse-blue h-[46px] shadow-sm disabled:opacity-50 disabled:bg-slate-100" disabled="" onchange="checkChapter()">
-                <option value="">Select Subject first...</option>
-              </select>
-            </div>
-
-          </div>
-
-          <!-- Difficulty & Start -->
-          <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
-            <div class="flex-1 w-full">
-              <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
-              <div class="flex gap-2">
-                <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-cbse-blue transition data-[selected=true]:bg-slate-800 data-[selected=true]:text-white data-[selected=true]:border-slate-800" data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">Simple</button>
-                <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Medium" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Medium</button>
-                <button class="diff-btn flex-1 py-2.5 px-2 rounded-lg border border-slate-200 bg-slate-100 text-sm font-semibold text-slate-400 cursor-not-allowed opacity-60" data-diff="Advanced" disabled><i class="fas fa-lock text-[10px] mr-1"></i> Advanced</button>
-              </div>
-            </div>
-            <div class="flex-1 w-full">
-              <button id="start-quiz-btn" class="w-full bg-cbse-blue hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled="" onclick="startQuiz()">
-                <i class="fas fa-play-circle"></i> Start Quiz
-              </button>
-              <p id="quiz-msg" class="text-[10px] text-red-500 font-bold text-center mt-2 hidden"></p>
-            </div>
-          </div>
-
-          <!-- Other Board Fallback -->
-          <div id="other-board-msg" class="hidden mt-6 text-center bg-blue-50 border border-blue-100 p-4 rounded-xl">
-            <p class="text-sm text-cbse-blue font-medium mb-2">We are actively building for more boards!</p>
-            <a href="#request-section" class="text-xs bg-white border border-cbse-blue text-cbse-blue px-4 py-2 rounded-lg font-bold hover:bg-cbse-blue hover:text-white transition inline-block">Request Institutional Onboarding ↓</a>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- RIGHT: Don't see your board? (40%) -->
-      <div id="request-section" class="lg:col-span-2">
-        <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm h-full flex flex-col justify-center">
-
-          <!-- Heading -->
-          <div class="text-center mb-6">
-            <div class="bg-gold/20 text-gold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">🚀</div>
-            <h2 class="text-2xl font-black text-heading mb-2">Don't see your board?</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">
-              Gather <span class="text-red-500 font-bold">10 students</span> and we'll deploy your curriculum in <span class="text-heading font-bold">24 hours</span>.
+    </div>
+    
+    <!-- Right 40%: Portal & Login Card -->
+    <div class="flex flex-col justify-center items-center lg:items-start p-8 lg:p-12 lg:bg-[#f1f4f9]">
+        <div class="hidden lg:block mb-8">
+            <h1 class="text-5xl font-black text-cbse-blue mb-4 leading-tight">
+                Master Your Exams <br><span class="text-gold">With Precision</span>
+            </h1>
+            <p class="text-slate-600 text-lg max-w-md">
+                Access premium exam preparation tools tailored for your success.
             </p>
-          </div>
-
-          <!-- Form -->
-          <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Board</label>
-              <input type="text" id="reqBoard" placeholder="e.g. Karnataka State, IB" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Class</label>
-              <input type="text" id="reqClass" placeholder="e.g. Class 8" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">WhatsApp / Email</label>
-              <input type="text" id="reqContact" placeholder="e.g. 9876543210" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:border-cbse-blue focus:ring-1 focus:ring-cbse-blue transition">
-            </div>
-            <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-900 transition text-sm flex items-center justify-center gap-2">
-              <i class="fas fa-paper-plane"></i> Request Onboarding
-            </button>
-          </form>
-
-          <!-- WhatsApp fallback -->
-          <p class="text-center mt-4 text-[11px] text-slate-400">
-            or <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20want%20to%20request%20a%20new%20board." class="text-green-600 font-bold hover:underline"><i class="fab fa-whatsapp"></i> message us on WhatsApp</a>
-          </p>
-
         </div>
-      </div>
 
+        <div class="w-full max-w-sm bg-white border border-slate-200 p-8 rounded-3xl shadow-xl">
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <i class="fas fa-fingerprint text-gold text-2xl"></i>
+                <h2 class="text-cbse-blue font-bold text-xl">Enter Portal</h2>
+            </div>
+            <form id="sovereign-login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username / Email</label>
+                    <input type="text" id="username" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:border-gold transition" placeholder="e.g. keshav" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+                    <div class="relative">
+                        <input type="password" id="password" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:border-gold transition pr-10" placeholder="••••••••" required>
+                        <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cbse-blue transition focus:outline-none">
+                            <i class="fas fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="login-error" class="hidden text-red-600 text-xs font-bold text-center p-2"></div>
+                <button type="submit" class="w-full bg-gold text-cbse-blue font-black py-3.5 rounded-xl hover:bg-slate-900 hover:text-white transition shadow-lg mt-2">Log In</button>
+            </form>
+            <a href="#quiz-section" class="text-xs text-cbse-blue font-bold hover:underline mt-4 block text-center uppercase tracking-widest">
+                <i class="fas fa-bolt mr-1"></i> Try Guest Quiz
+            </a>
+        </div>
     </div>
-  </div>
+</section>
+<section class="relative mt-6 lg:mt-10 px-4">
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-gradient-to-r from-[#0b2f72] via-[#123f93] to-[#0c2a66] rounded-[28px] shadow-2xl border border-white/10 overflow-hidden transition-all duration-300">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 p-6 lg:p-8 xl:p-10">
+                
+                <div class="flex flex-col xl:flex-row xl:items-center gap-6 flex-1 min-w-0">
+                    
+                    <div class="w-full xl:max-w-[380px] text-left">
+                        <h3 class="text-white text-2xl sm:text-3xl lg:text-[34px] xl:text-[38px] font-black tracking-tight leading-tight">
+                            Looking to onboard your school?
+                        </h3>
+                        <p class="text-white/80 text-sm sm:text-base font-medium mt-3 leading-relaxed text-left">
+                            Discover our unified ecosystem built for
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full flex-1 min-w-0">
+                        
+                        <div class="bg-white/[0.05] backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center flex flex-col items-center justify-center hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 group">
+                            <div class="text-2xl transform group-hover:scale-110 transition-transform duration-300">🎓</div>
+                            <p class="text-white font-bold text-sm mt-2 tracking-wide">
+                                Student
+                            </p>
+                            <p class="text-white/60 text-[11px] mt-0.5 leading-tight font-medium">
+                                Learn & Grow
+                            </p>
+                        </div>
+
+                        <div class="bg-white/[0.05] backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center flex flex-col items-center justify-center hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 group">
+                            <div class="text-2xl transform group-hover:scale-110 transition-transform duration-300">👨‍👩‍👧</div>
+                            <p class="text-white font-bold text-sm mt-2 tracking-wide">
+                                Parent
+                            </p>
+                            <p class="text-white/60 text-[11px] mt-0.5 leading-tight font-medium">
+                                Track & Support
+                            </p>
+                        </div>
+
+                        <div class="bg-white/[0.05] backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center flex flex-col items-center justify-center hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 group">
+                            <div class="text-2xl transform group-hover:scale-110 transition-transform duration-300">📖</div>
+                            <p class="text-white font-bold text-sm mt-2 tracking-wide">
+                                Teacher
+                            </p>
+                            <p class="text-white/60 text-[11px] mt-0.5 leading-tight font-medium">
+                                Teach & Assess
+                            </p>
+                        </div>
+
+                        <div class="bg-white/[0.05] backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center flex flex-col items-center justify-center hover:bg-white/[0.08] hover:border-white/20 transition-all duration-300 group">
+                            <div class="text-2xl transform group-hover:scale-110 transition-transform duration-300">🛡️</div>
+                            <p class="text-white font-bold text-sm mt-2 tracking-wide">
+                                Principal
+                            </p>
+                            <p class="text-white/60 text-[11px] mt-0.5 leading-tight font-medium">
+                                Monitor & Lead
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="lg:pl-6 lg:border-l lg:border-white/10 shrink-0 w-full lg:w-auto flex items-center justify-center">
+                    <button
+                        onclick="document.getElementById('demoModal').classList.remove('hidden')"
+                        class="w-full lg:w-auto bg-gradient-to-r from-gold to-yellow-400 text-cbse-blue font-black px-8 py-4 rounded-2xl shadow-lg hover:from-yellow-400 hover:to-gold active:scale-[0.98] hover:shadow-yellow-500/10 transition-all duration-200 whitespace-nowrap text-lg tracking-wide flex items-center justify-center gap-2"
+                    >
+                        Book a Live Demo 
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>    
+<!-- QUIZ SECTION: INSTANT PRACTICE -->
+    <section id="quiz-section" class="pt-20 pb-16 px-4 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
+            <div class="lg:col-span-3">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-black text-cbse-blue mb-2">Instant Practice (Free Forever)</h2>
+                    <div class="flex items-center justify-center gap-2 mt-4 text-[10px] font-bold uppercase tracking-tighter">
+                        <span class="text-emerald-600">Simple (Free)</span> <i class="fas fa-chevron-right text-slate-300"></i>
+                        <span class="text-gold">Medium (Pro)</span> <i class="fas fa-chevron-right text-slate-300"></i>
+                        <span class="text-blue-500">Advanced (Elite)</span>
+                    </div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl shadow-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Board</label>
+                            <div class="flex gap-2">
+                                <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold" data-board="CBSE" onclick="selectBoard('CBSE', this)">CBSE</button>
+                                <button class="board-btn flex-1 py-3 px-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold" data-board="SCERT" onclick="selectBoard('SCERT', this)">SCERT (TS)</button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Class</label>
+                            <select id="class-select" class="w-full rounded-lg border-slate-300 h-[46px] disabled:opacity-50" disabled onchange="loadSubjects()"><option value="">Select Board first...</option></select>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Select Subject</label>
+                            <select id="subject-select" class="w-full rounded-lg border-slate-300 h-[46px] disabled:opacity-50" disabled onchange="loadChapters()"><option value="">Select Class first...</option></select>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">4. Select Chapter</label>
+                            <select id="chapter-select" class="w-full rounded-lg border-slate-300 h-[46px] disabled:opacity-50" disabled onchange="checkChapter()"><option value="">Select Subject first...</option></select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-6 items-end mt-8 pt-6 border-t border-slate-200">
+                        <div class="flex-1 w-full">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">5. Select Difficulty</label>
+                            <div class="flex gap-2">
+                                <button class="diff-btn relative flex-1 py-3 px-2 rounded-xl border-2 border-emerald-500/30 bg-emerald-50 text-sm font-bold text-emerald-800 transition-all data-[selected=true]:bg-emerald-600 data-[selected=true]:text-white" 
+                                        data-diff="Simple" onclick="selectDifficulty('Simple', this)" data-selected="true">
+                                    Simple <span class="absolute -top-2.5 -right-1 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md border border-white">FREE</span>
+                                </button>
+                                <button class="diff-btn flex-1 py-3 px-2 rounded-xl border border-gold/40 bg-gold/5 text-sm font-bold text-gold opacity-70 cursor-not-allowed" data-diff="Medium" disabled><i class="fas fa-lock text-[10px]"></i> Medium</button>
+                                <button class="diff-btn flex-1 py-3 px-2 rounded-xl border border-slate-300 bg-slate-50 text-sm font-bold text-slate-400 opacity-60 cursor-not-allowed" data-diff="Advanced" disabled><i class="fas fa-gem text-[10px]"></i> Advanced</button>
+                            </div>
+                        </div>
+                        <div class="flex shrink-0 w-full md:w-auto">
+                            <button id="start-quiz-btn" class="w-full bg-gold text-cbse-blue font-black py-3 px-8 rounded-xl shadow-lg hover:bg-slate-900 hover:text-white transition disabled:opacity-50" disabled><i class="fas fa-play-circle"></i> Start Quiz</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REQUEST SECTION -->
+            <div id="request-section" class="lg:col-span-2">
+                <div class="bg-slate-50 border border-slate-200 p-6 lg:p-8 rounded-2xl h-full">
+                    <div class="bg-blue-600 text-white text-[10px] font-bold py-1 px-3 rounded-full mb-4 inline-block animate-pulse">LIVE: ICSE Class 10 deployed!</div>
+                    <h2 class="text-2xl font-black text-cbse-blue mb-2">Request Your Board</h2>
+                    <p class="text-sm text-slate-500 mb-6">Gather 10 students and we'll deploy in 24 hours.</p>
+                    <div class="mb-6 bg-white p-4 rounded-xl border border-slate-200">
+                        <div class="flex justify-between text-[10px] font-bold mb-1"><span>Karnataka State Board</span><span class="text-cbse-blue">7/10 Students</span></div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div class="bg-gold h-full" style="width: 70%"></div></div>
+                    </div>
+                    <form onsubmit="handleRequestSubmit(event)" class="space-y-3">
+                        <input type="text" id="reqBoard" placeholder="Board Name" required class="w-full rounded-xl border-slate-200 text-sm">
+                        <input type="text" id="reqClass" placeholder="Class" required class="w-full rounded-xl border-slate-200 text-sm">
+                        <input type="text" id="reqContact" placeholder="WhatsApp / Email" required class="w-full rounded-xl border-slate-200 text-sm">
+                        <button type="submit" class="w-full bg-cbse-blue text-white font-bold py-3.5 rounded-xl hover:bg-blue-900 transition">Submit Request</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
 
-<!-- Section 3: Platform Features -->
+<!-- DASHBOARD GRID -->
 <section id="get-started" class="py-16 px-4 bg-slate-50 border-b border-slate-200">
-  <div class="max-w-6xl mx-auto">
-    <div class="text-center mb-12">
-      <h2 class="text-3xl font-black text-cbse-blue mb-2">Unlock Your Full Dashboard</h2>
-      <p class="text-slate-500">What Awaits After Registration &amp; Subscription.</p>
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-black text-cbse-blue mb-2">Unlock Your Full Dashboard</h2>
+            <p class="text-slate-500">Professional tracking available after subscription.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4 text-cbse-blue"><i class="fas fa-chart-pie text-xl"></i><h3 class="text-lg font-bold">Knowledge Hub</h3></div>
+                <img src="images/dashboard-subject-navigator.png" alt="Knowledge Hub" class="w-full rounded-xl border">
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4 text-indigo-600"><i class="fas fa-user-friends text-xl"></i><h3 class="text-lg font-bold">Parent Dashboard</h3></div>
+                <img src="images/dashboard-parent-console.png" alt="Parent Dashboard" class="w-full rounded-xl border">
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4 text-purple-600"><i class="fas fa-book-open text-xl"></i><h3 class="text-lg font-bold">Mistake Notebook</h3></div>
+                <img src="images/dashboard-study-guide.png" alt="Mistake Notebook" class="w-full rounded-xl border">
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4 text-red-600"><i class="fas fa-book-dead text-xl"></i><h3 class="text-lg font-bold">Student Dashboard</h3></div>
+                <img src="images/dashboard-performance.png" alt="Student Dashboard" class="w-full rounded-xl border">
+            </div>
+        </div>
+        <div class="text-center mt-10">
+            <a href="offering.html" class="inline-flex items-center gap-2 bg-slate-900 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:scale-105 transition"><i class="fas fa-user-plus"></i> Subscribe Today</a>
+        </div>
     </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-      <!-- Knowledge Hub -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
-        <div class="flex items-center gap-3 mb-4 text-cbse-blue">
-          <div class="bg-blue-50 p-2 rounded-lg"><i class="fas fa-chart-pie text-xl"></i></div>
-          <h3 class="text-lg font-bold">Knowledge Hub</h3>
-        </div>
-        <p class="text-sm text-slate-600 mb-6">Track average mastery, view subject progress, and monitor your professional journey line.</p>
-        <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
-          <img src="images/dashboard-subject-navigator.png" alt="Subject Navigator Dashboard" class="w-full h-auto rounded-xl">
-        </div>
-
-      <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
-      </div>
-    </div>
-
-      <!-- Parent Dashboard -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
-        <div class="flex items-center gap-3 mb-4 text-indigo-600">
-          <div class="bg-indigo-50 p-2 rounded-lg"><i class="fas fa-user-friends text-xl"></i></div>
-          <h3 class="text-lg font-bold">Parent Dashboard</h3>
-        </div>
-        <p class="text-sm text-slate-600 mb-6">Real-time performance tracking via the Sync Wall and direct Command Nudges.</p>
-        <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
-          <img src="images/dashboard-parent-console.png" alt="Parent Console Dashboard" class="w-full h-auto rounded-xl">
-        </div>
-
-      <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after subscription</span>
-      </div>
-    </div>
-
-      <!-- Mistake Notebook -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
-        <div class="flex items-center gap-3 mb-4 text-purple-600">
-          <div class="bg-purple-50 p-2 rounded-lg"><i class="fas fa-book-open text-xl"></i></div>
-          <h3 class="text-lg font-bold">Mistake Notebook</h3>
-        </div>
-        <p class="text-sm text-slate-600 mb-6">Structured navigation through Mathematics, Science, and Social Science curriculums.</p>
-        <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
-          <img src="images/dashboard-study-guide.png" alt="Study Guide Dashboard" class="w-full h-auto rounded-xl">
-        </div>
-        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-          <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
-        </div>
-      </div>
-
-      <!-- Student Dashboard -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition">
-        <div class="flex items-center gap-3 mb-4 text-red-600">
-          <div class="bg-red-50 p-2 rounded-lg"><i class="fas fa-book-dead text-xl"></i></div>
-          <h3 class="text-lg font-bold">Student Dashboard</h3>
-        </div>
-        <p class="text-sm text-slate-600 mb-6">Two-Tier Diagnostic Console to analyze error patterns and build behavioral profiles.</p>
-        <div class="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
-          <img src="images/dashboard-performance.png" alt="Performance Dashboard" class="w-full h-auto rounded-xl">
-        </div>
-        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-          <span class="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1"><i class="fas fa-lock"></i> Available after registration</span>
-        </div>
-      </div>
-
-    </div>
-      <div class="text-center mt-10">
-        <a href="offering.html" class="inline-flex items-center gap-2 bg-slate-900 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:bg-slate-800 transition transform hover:scale-105">
-          <i class="fas fa-user-plus"></i> Get Started — Subscribe Today
-        </a>
-      </div>
-
-  </div>
 </section>
 
-<!-- Section 4: Testimonials -->
+<!-- TESTIMONIALS -->
 <section class="py-16 px-4 bg-white border-b border-slate-200 overflow-hidden">
-  <div class="max-w-6xl mx-auto overflow-hidden relative">
-    <div class="text-center mb-10">
-      <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Community Love</span>
-      <h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2>
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-10"><h2 class="text-3xl font-black text-heading mt-1">Trusted by Ecosystem</h2></div>
+        <div class="flex gap-6 pb-8 animate-marquee hover:[animation-play-state:paused]">
+            <div class="min-w-[300px] bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
+                <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-slate-600 text-sm italic mb-4">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step."</p>
+                <div class="flex items-center gap-3">👨‍🎓 <div><p class="text-xs font-bold">Student</p><p class="text-[10px] text-slate-400">Class 10</p></div></div>
+            </div>
+            <div class="min-w-[300px] bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
+                <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-slate-600 text-sm italic mb-4">"The instant feedback and mistake notebook are game-changers."</p>
+                <div class="flex items-center gap-3">👩‍🎓 <div><p class="text-xs font-bold">Student</p><p class="text-[10px] text-slate-400">Class 9</p></div></div>
+            </div>
+            <div class="min-w-[300px] bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
+                <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-slate-600 text-sm italic mb-4">"The parent console gives me peace of mind."</p>
+                <div class="flex items-center gap-3">👩‍👧 <div><p class="text-xs font-bold">Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div></div>
+            </div>
+        </div>
     </div>
-
-    <!-- Horizontal scroll container -->
-    <div class="flex gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0 animate-marquee hover:[animation-play-state:paused]">
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 10</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The instant feedback and mistake notebook are game-changers. I don't repeat the same errors in exams anymore."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 9</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The advanced questions mirror the actual board exams perfectly. This is the ultimate prep tool for final revisions."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 12</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The parent console gives me peace of mind. I can see exactly where my daughter needs help without constantly asking her."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍👧</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Tracking progress has never been easier. The platform clearly identifies weak areas so we know what to focus on."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍👦</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The curriculum alignment is spot-on. I use the platform's case-based questions directly in my classroom discussions."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Science Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The quality of questions is outstanding. It challenges the top students while providing a foundational path for those struggling."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Math Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Adopting Ready4Exam has transformed our institutional approach. The heatmap analytics allow us to target interventions effectively."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- School Principal</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The Simple/Medium/Advanced tiering helped me conquer my weak subjects step-by-step. I finally understand Chemical Reactions!"</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 10</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The instant feedback and mistake notebook are game-changers. I don't repeat the same errors in exams anymore."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 9</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The advanced questions mirror the actual board exams perfectly. This is the ultimate prep tool for final revisions."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🎓</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Student</p><p class="text-[10px] text-slate-400">Class 12</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The parent console gives me peace of mind. I can see exactly where my daughter needs help without constantly asking her."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍👧</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Tracking progress has never been easier. The platform clearly identifies weak areas so we know what to focus on."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍👦</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Parent</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The curriculum alignment is spot-on. I use the platform's case-based questions directly in my classroom discussions."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👩‍🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Science Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"The quality of questions is outstanding. It challenges the top students while providing a foundational path for those struggling."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">👨‍🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- Math Teacher</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-
-      <div class="min-w-[300px] md:min-w-[320px] snap-center bg-white border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition">
-        <div class="flex gap-1 text-gold mb-3 text-sm"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-        <p class="text-slate-600 text-sm italic mb-4">"Adopting Ready4Exam has transformed our institutional approach. The heatmap analytics allow us to target interventions effectively."</p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">🏫</div>
-          <div><p class="text-xs font-bold text-heading uppercase">- School Principal</p><p class="text-[10px] text-slate-400">Ready4Exam Partner</p></div>
-        </div>
-      </div>
-    </div>
-  </div>
 </section>
-
 
 <div id="app-footer"></div>
 <script>R4E.renderFooter();</script>
+<a href="https://wa.me/918520977573?text=Hi%20Ready4Exam" class="whatsapp-float" target="_blank"><i class="fab fa-whatsapp"></i></a>
 
-<a href="https://wa.me/918520977573?text=Hi%20Ready4Exam,%20I%20need%20help%20regarding%20the%20platform." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
-  <i class="fab fa-whatsapp"></i>
-</a>
-
-<!-- AUTH LOGIC -->
 <script type="module" src="./js/index-auth.js"></script>
-
-<!-- WIDGET LOGIC -->
 <script type="module" src="./js/index-quiz-widget.js"></script>
-
-<!-- GUEST TEASERS: Wire Medium/Advanced locked buttons -->
 <script type="module">
     import { wireIndexDifficultyTeasers } from './js/guest-teasers.js';
-    // Wait for DOM so the buttons exist
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', wireIndexDifficultyTeasers);
-    } else {
-        wireIndexDifficultyTeasers();
-    }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', wireIndexDifficultyTeasers); } 
+    else { wireIndexDifficultyTeasers(); }
 </script>
+<script type="module" src="./js/guest-google-auth.js"></script>
+<!-- ADD THIS — plain script, not module, intentional -->
+<script src="./js/demo-modal.js" defer></script>    
+    <!-- DEMO MODAL -->
+<div
+    id="demoModal"
+    class="hidden fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+>
 
-</body></html>
+    <!-- MODAL BOX -->
+    <div class="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden">
+
+        <!-- HEADER -->
+        <div class="bg-gradient-to-r from-[#0b2f72] via-[#123f93] to-[#0c2a66] px-8 py-6">
+
+            <div class="flex items-start justify-between gap-4">
+
+                <div>
+
+                    <p class="text-white/60 uppercase tracking-[3px] text-xs font-bold">
+                        School Onboarding
+                    </p>
+
+                    <h2 class="text-white text-3xl font-black mt-2">
+                        Book a Live Demo
+                    </h2>
+
+                    <p class="text-white/70 mt-2 text-sm leading-relaxed">
+                        Explore the Ready4Exam ecosystem for students,
+                        parents, teachers and school leadership.
+                    </p>
+
+                </div>
+
+                <!-- CLOSE -->
+                <button
+                    onclick="document.getElementById('demoModal').classList.add('hidden')"
+                    class="text-white/70 hover:text-white text-2xl leading-none"
+                >
+                    ×
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- FORM -->
+        <form
+            class="p-8 grid grid-cols-1 md:grid-cols-2 gap-5"
+        >
+
+            <!-- SCHOOL -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    School Name
+                </label>
+
+                <input
+                    type="text"
+                    placeholder="Enter school name"
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                    required
+                >
+            </div>
+
+            <!-- NAME -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Contact Person
+                </label>
+
+                <input
+                    type="text"
+                    placeholder="Your name"
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                    required
+                >
+            </div>
+
+            <!-- EMAIL -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    placeholder="you@school.com"
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                    required
+                >
+            </div>
+
+            <!-- PHONE -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Phone Number
+                </label>
+
+                <input
+                    type="text"
+                    placeholder="+91 XXXXX XXXXX"
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                    required
+                >
+            </div>
+
+            <!-- BOARD -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Board / Curriculum
+                </label>
+
+                <select
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                >
+                    <option>CBSE</option>
+                    <option>ICSE</option>
+                    <option>State Board</option>
+                    <option>International</option>
+                </select>
+            </div>
+
+            <!-- STUDENT COUNT -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Approx. Students
+                </label>
+
+                <select
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                >
+                    <option>Below 500</option>
+                    <option>500 - 1000</option>
+                    <option>1000 - 3000</option>
+                    <option>3000+</option>
+                </select>
+            </div>
+
+            <!-- MESSAGE -->
+            <div class="md:col-span-2">
+
+                <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+                    Requirements
+                </label>
+
+                <textarea
+                    rows="4"
+                    placeholder="Tell us about your school requirements..."
+                    class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3"
+                ></textarea>
+
+            </div>
+
+            <!-- SUBMIT -->
+            <div class="md:col-span-2">
+
+                <button
+                    type="submit"
+                    class="w-full bg-gradient-to-r from-gold to-yellow-400 text-cbse-blue text-xl font-black py-4 rounded-2xl hover:brightness-105 transition"
+                >
+                    Submit Demo Request
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+</body>
+</html>

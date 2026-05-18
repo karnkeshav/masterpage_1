@@ -1,33 +1,30 @@
 {
-  "devDependencies": {
-    "@playwright/test": "^1.58.2",
-    "autoprefixer": "^10.4.27",
-    "playwright": "^1.59.1",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.19"
-  },
   "name": "masterpage_1",
   "version": "1.0.0",
   "description": "",
   "main": "data.js",
+  "type": "module",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node testing_tool/run_tests_curriculum.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/karnkeshav/masterpage_1.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
+  "homepage": "https://github.com/karnkeshav/masterpage_1#readme",
   "bugs": {
     "url": "https://github.com/karnkeshav/masterpage_1/issues"
   },
-  "homepage": "https://github.com/karnkeshav/masterpage_1#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "autoprefixer": "^10.4.27",
+    "playwright": "^1.60.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
@@ -36,6 +33,8 @@
     "firebase-admin": "^13.8.0",
     "jsdom": "^29.0.2",
     "jsonwebtoken": "^9.0.3",
+    "lighthouse": "^13.3.0",
+    "nodemailer": "^6.9.0",
     "razorpay": "^2.9.6"
   }
 }

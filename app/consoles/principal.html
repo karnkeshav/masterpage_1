@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Principal Console — Ready4Exam</title>
+    <title>Principal Command — Ready4Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="../../js/shell.js"></script>
     <script src="../../js/tailwind-config.js"></script>
     <script src="../../js/i18n-config.js"></script>
-<script src="../../js/translator.js"></script>
-<link href="../../css/global.css" rel="stylesheet">
+    <script src="../../js/translator.js"></script>
+    <link href="../../css/global.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -17,104 +17,235 @@
     <script src="../../js/firebase-master-config.js"></script>
     <script src="../../js/config.js" type="module"></script>
     <script src="principal.js" type="module"></script>
+    
+    <style>
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .sidebar-active { background: #1a3e6a; color: white; box-shadow: 0 4px 12px rgba(26, 62, 106, 0.2); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .heatmap-cell { transition: all 0.2s ease; }
+        .heatmap-cell:hover { transform: scale(1.05); z-index: 10; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- Full-width header -->
     <div id="app-header"></div>
     <script>R4E.renderHeader({
-        title: "Institutional Health",
+        title: "Principal Command",
         userWelcomeDefault: "Principal",
-        roleBadge: "Principal",
+        roleBadge: "Institutional Head",
         showLogout: true,
         logoutId: "logout-nav-btn"
     });</script>
 
     <div id="loading" class="flex items-center justify-center flex-grow">
-        <div class="animate-pulse font-bold text-slate-400">Verifying Principal Access...</div>
+        <div class="animate-pulse font-bold text-slate-400">Synchronizing Institutional Data...</div>
     </div>
 
-    <div id="app" class="hidden max-w-7xl mx-auto w-full p-4 md:p-8 fade-in">
+    <div id="app" class="hidden flex flex-1 overflow-hidden relative">
+        <aside class="w-72 flex-shrink-0 bg-white border-r border-slate-200 p-6 hidden lg:flex flex-col shadow-sm z-10">
+            <div class="mb-10">
+                <h1 class="text-xl font-black text-slate-900 tracking-tight">Institutional<span class="text-cbse-blue">Pulse</span></h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Ready4Exam Strategic Suite</p>
+            </div>
+            
+            <nav class="space-y-2 flex-grow">
+                <button onclick="window.switchTab('overview')" id="tab-btn-overview" class="sidebar-active w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all">
+                    <i class="fas fa-chart-pie w-5"></i> Global Overview
+                </button>
+                <button onclick="window.switchTab('curriculum')" id="tab-btn-curriculum" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">
+                    <i class="fas fa-map-signs w-5"></i> Curriculum Velocity
+                </button>
+                <button onclick="window.switchTab('board')" id="tab-btn-board" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all border-l-4 border-amber-400">
+                    <i class="fas fa-shield-halved w-5"></i> Board War Room (10/12)
+                </button>
+                <button onclick="window.switchTab('talent')" id="tab-btn-talent" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">
+                    <i class="fas fa-trophy w-5"></i> Talent & Recovery Hub
+                </button>
+                <button onclick="window.switchTab('faculty')" id="tab-btn-faculty" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">
+                    <i class="fas fa-chalkboard-teacher w-5"></i> Faculty Efficiency
+                </button>
+            </nav>
 
-        <!-- KPI Summary Row -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-blue-600 text-white p-5 rounded-2xl shadow-lg shadow-blue-600/20">
-                <div class="text-blue-200 font-bold text-[10px] uppercase tracking-widest mb-1"><i class="fas fa-user-graduate mr-1"></i> Total Students</div>
-                <div id="kpi-total-students" class="text-3xl font-black">--</div>
-                <div id="kpi-students-sub" class="text-xs font-medium opacity-80 mt-1">Grades 6–12</div>
-            </div>
-            <div class="bg-emerald-600 text-white p-5 rounded-2xl shadow-lg shadow-emerald-600/20">
-                <div class="text-emerald-200 font-bold text-[10px] uppercase tracking-widest mb-1"><i class="fas fa-chalkboard-teacher mr-1"></i> Total Teachers</div>
-                <div id="kpi-total-teachers" class="text-3xl font-black">--</div>
-                <div id="kpi-teachers-sub" class="text-xs font-medium opacity-80 mt-1">Faculty strength</div>
-            </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1"><i class="fas fa-chart-line mr-1"></i> Avg Mastery</div>
-                <div id="kpi-avg-mastery" class="text-3xl font-black text-slate-900">--%</div>
-                <div id="kpi-mastery-sub" class="text-xs font-medium text-slate-500 mt-1">School-wide average</div>
-            </div>
-            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1"><i class="fas fa-clipboard-check mr-1"></i> Total Quizzes</div>
-                <div id="kpi-total-quizzes" class="text-3xl font-black text-slate-900">--</div>
-                <div id="kpi-quizzes-sub" class="text-xs font-medium text-slate-500 mt-1">Attempts logged</div>
-            </div>
-        </div>
-
-        <!-- Grade-Wise Student Inventory -->
-        <h3 class="text-lg font-black text-slate-900 mb-4"><i class="fas fa-school mr-2 text-blue-600"></i>Student Inventory (Grade 6–12)</h3>
-        <div id="grade-inventory" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-10">
-            <!-- Injected by JS -->
-        </div>
-
-        <!-- Charts Row -->
-        <div class="grid lg:grid-cols-2 gap-8 mb-10">
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <h3 class="font-bold text-slate-900 mb-4"><i class="fas fa-chart-bar mr-2 text-blue-600"></i>Grade-Wise Avg Score</h3>
-                <div class="h-64">
-                    <canvas id="gradeBarChart"></canvas>
+            <div class="pt-6 border-t border-slate-100">
+                <div class="bg-blue-50 p-4 rounded-2xl">
+                    <div class="text-[10px] font-bold text-blue-600 uppercase mb-1">Board Readiness</div>
+                    <div class="h-2 bg-blue-200 rounded-full overflow-hidden">
+                        <div id="sidebar-board-progress" class="h-full bg-blue-600" style="width: 65%"></div>
+                    </div>
+                    <div class="text-[10px] text-blue-400 mt-2 font-medium">65% of Syllabus Validated</div>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <h3 class="font-bold text-slate-900 mb-4"><i class="fas fa-chart-pie mr-2 text-emerald-600"></i>Student Distribution</h3>
-                <div class="h-64">
-                    <canvas id="studentDistChart"></canvas>
-                </div>
-            </div>
-        </div>
+        </aside>
 
-        <!-- Subject Strength Dashboard — All Classes -->
-        <h3 class="text-lg font-black text-slate-900 mb-4"><i class="fas fa-th mr-2 text-indigo-600"></i>Subject Strength Dashboard</h3>
-        <p class="text-xs text-slate-400 mb-4 -mt-2">See which subjects each grade is strong or weak in. Click a cell to drill down.</p>
-        <div id="subject-dashboard" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto mb-10">
-            <div class="p-6 text-center text-slate-400 text-sm">Loading subject data...</div>
-        </div>
-
-        <!-- Grade Performance Heatmap -->
-        <h3 class="text-lg font-black text-slate-900 mb-4"><i class="fas fa-fire mr-2 text-amber-500"></i>Grade Performance Heatmap</h3>
-        <p class="text-xs text-slate-400 mb-4 -mt-2">Click any grade card to drill down into sections &amp; students.</p>
-        <div id="grade-heatmap" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            <!-- Injected by JS -->
-        </div>
-
-        <!-- Drill-Down Panel (hidden by default) -->
-        <div id="drilldown-panel" class="hidden mb-10">
-            <div class="flex items-center justify-between mb-4">
-                <h3 id="drilldown-title" class="text-lg font-black text-slate-900"><i class="fas fa-search-plus mr-2 text-blue-600"></i>Drill-Down</h3>
-                <button onclick="window.closeDrillDown()" aria-label="Close drill-down panel" class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition min-w-[44px] min-h-[44px]"><i class="fas fa-times mr-1"></i>Close</button>
-            </div>
-            <!-- Section-wise breakdown -->
-            <div id="drilldown-sections" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
-            <!-- Student-level table -->
-            <div id="drilldown-students" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto"></div>
-        </div>
-
-        <!-- Teacher Inventory -->
-        <h3 class="text-lg font-black text-slate-900 mb-4"><i class="fas fa-users mr-2 text-emerald-600"></i>Teacher Inventory</h3>
-        <div id="teacher-inventory" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-10">
-            <div class="p-6 text-center text-slate-400 text-sm">Loading teacher data...</div>
-        </div>
-
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-20 lg:pb-8">
+            <div id="tab-viewport" class="max-w-7xl mx-auto space-y-10"></div>
+        </main>
     </div>
+
+    <template id="tpl-overview">
+        <div class="fade-in space-y-10">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition">
+                    <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Average Mastery</div>
+                    <div id="kpi-avg-mastery" class="text-4xl font-black text-slate-900">--%</div>
+                    <div class="flex items-center gap-1 text-xs text-green-500 font-bold mt-2">
+                        <i class="fas fa-caret-up"></i> 4% vs last week
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition">
+                    <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Test Turnaround</div>
+                    <div id="kpi-punctuality" class="text-4xl font-black text-slate-900">1.2d</div>
+                    <div class="text-xs text-slate-400 font-medium mt-2">Avg time to first attempt</div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl shadow-sm hover:shadow-md transition">
+                    <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Curriculum Sync</div>
+                    <div id="kpi-sync-rate" class="text-4xl font-black text-blue-600">--%</div>
+                    <div class="text-xs text-slate-400 font-medium mt-2">Chapters validated</div>
+                </div>
+                <div class="bg-cbse-blue p-6 rounded-3xl shadow-lg shadow-blue-900/20 text-white">
+                    <div class="text-blue-200 font-bold text-[10px] uppercase tracking-widest mb-1">Board Confidence</div>
+                    <div id="kpi-board-readiness" class="text-4xl font-black">--%</div>
+                    <div class="text-xs text-blue-300 font-medium mt-2">Classes 10 & 12 average</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <h3 class="font-bold text-slate-900 mb-6 flex justify-between items-center">
+                        Student Distribution
+                        <span class="text-[9px] text-slate-400 uppercase tracking-widest">Hover for details</span>
+                    </h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="studentDistChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <h3 class="font-bold text-slate-900 mb-6">Mastery Performance by Grade</h3>
+                    <div class="h-64">
+                        <canvas id="gradePerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                        <h3 class="font-black text-slate-900"><i class="fas fa-clock mr-2 text-amber-500"></i>Punctuality Alerts</h3>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Classes behind schedule</span>
+                    </div>
+                    <div id="punctuality-alerts" class="p-0"></div>
+                </div>
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                        <h3 class="font-black text-slate-900"><i class="fas fa-exclamation-circle mr-2 text-red-500"></i>Defaulting Students</h3>
+                        <button class="text-xs text-blue-600 font-bold">Nudge All Parents</button>
+                    </div>
+                    <div id="defaulting-students" class="p-0"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-curriculum">
+        <div class="fade-in space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900">Curriculum Velocity</h2>
+                    <p class="text-sm text-slate-500">Live tracking of teacher handshakes across sections.</p>
+                </div>
+                <div class="w-full md:w-64">
+                    <select id="curriculum-subject-filter" class="w-full bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-cbse-blue shadow-sm transition-all">
+                        <option value="all">All Subjects</option>
+                    </select>
+                </div>
+            </div>
+            <div id="curriculum-heatmap-container" class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm overflow-x-auto"></div>
+        </div>
+    </template>
+
+    <template id="tpl-board">
+        <div class="fade-in space-y-10">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900">Board Exam War Room</h2>
+                    <p class="text-sm text-slate-500 mt-1">High-stakes performance metrics for Grades 10 & 12.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold shadow-sm">Download PDF Report</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-slate-900 p-8 rounded-3xl text-white">
+                    <h3 class="font-bold mb-6 flex items-center gap-2 text-amber-400">
+                        <i class="fas fa-bullseye"></i> Subject Strength Matrix
+                    </h3>
+                    <div class="h-80">
+                        <canvas id="boardSubjectRadar"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                    <h3 class="font-bold text-slate-900 mb-6">Critical Chapter Bottlenecks</h3>
+                    <div id="board-bottlenecks" class="space-y-4"></div>
+                </div>
+            </div>
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-50">
+                    <h3 class="font-black text-slate-900">Board Tier Specialists</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Students scoring >95% in Advanced tiers</p>
+                </div>
+                <div id="board-specialists" class="p-0"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-talent">
+        <div class="fade-in space-y-10">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-cbse-blue rounded-3xl shadow-lg overflow-hidden">
+                    <div class="p-8 text-white border-b border-white/10">
+                        <h3 class="text-xl font-black text-accent-gold flex items-center gap-2">
+                            <i class="fas fa-bolt"></i> First-Strike Toppers
+                        </h3>
+                        <p class="text-xs text-blue-200 mt-1">Students achieving 95%+ in the first attempt.</p>
+                    </div>
+                    <div id="precision-toppers-list" class="max-h-[600px] overflow-y-auto no-scrollbar"></div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                    <div class="p-8 border-b border-slate-100">
+                        <h3 class="text-xl font-black text-red-600 flex items-center gap-2">
+                            <i class="fas fa-heart-pulse"></i> Recovery Queue (Remedial)
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Students stuck in simple tiers needing intervention.</p>
+                    </div>
+                    <div id="recovery-remedial-list" class="max-h-[600px] overflow-y-auto no-scrollbar"></div>
+                </div>
+            </div>
+            <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                <h3 class="font-black text-slate-900 mb-6">Cognitive Migration Pipeline</h3>
+                <div id="migration-pipeline-grid" class="space-y-6"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-faculty">
+        <div class="fade-in space-y-8">
+            <h2 class="text-2xl font-black text-slate-900">Faculty Efficiency Benchmarks</h2>
+            <p class="text-sm text-slate-500 -mt-6">Measuring teaching impact by average attempts to reach mastery.</p>
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-left">
+                        <tr>
+                            <th class="px-8 py-4 font-bold text-slate-400 text-[10px] uppercase tracking-widest">Faculty Member</th>
+                            <th class="px-8 py-4 font-bold text-slate-400 text-[10px] uppercase tracking-widest">Subject/Class</th>
+                            <th class="px-8 py-4 font-bold text-slate-400 text-[10px] uppercase tracking-widest text-center">Avg Attempts to 95%</th>
+                            <th class="px-8 py-4 font-bold text-slate-400 text-[10px] uppercase tracking-widest text-center">Efficiency Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faculty-efficiency-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </template>
 
     <div id="app-footer"></div>
     <script>R4E.renderFooter();</script>

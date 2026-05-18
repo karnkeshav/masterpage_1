@@ -109,7 +109,7 @@
                         </div>
                         <h3 class="text-xl font-black text-slate-800 tracking-tight">${subject}</h3>
                     </div>
-                    <div id="${gridId}" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    <div id="${gridId}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 `;
                 container.appendChild(section);
 
@@ -163,6 +163,7 @@
     <div id="app-header"></div>
     <script>R4E.renderHeader({
         title: "Study Library",
+        titleHref: "../consoles/student.html",
         userWelcomeDefault: "Student",
         roleBadge: "Grade --",
         roleBadgeId: "context-badge",

@@ -39,7 +39,7 @@ service cloud.firestore {
 
     // Quiz Scores Collection
     match /quiz_scores/{scoreId} {
-      allow read: if isOwner();
+      allow read: if isOwner() || isAdmin();
       allow read, write: if request.auth != null && resource.data.user_id == request.auth.uid;
       allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
       allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
@@ -47,10 +47,16 @@ service cloud.firestore {
 
     // Mistake Notebook Collection
     match /mistake_notebook/{docId} {
-      allow read: if isOwner();
+      allow read: if isOwner() || isAdmin();
       allow read, write: if request.auth != null && resource.data.user_id == request.auth.uid;
       allow create: if isLoggedIn() && request.resource.data.user_id == request.auth.uid;
       allow update: if isLoggedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    // Chapter Benchmarks Collection (VIP Observability)
+    match /chapter_benchmarks/{docId} {
+      allow read: if isAdmin() || isOwner();
+      allow write: if isOwner();
     }
 
     // Chapter Control Collection

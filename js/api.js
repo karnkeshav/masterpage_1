@@ -363,57 +363,96 @@ export async function saveResult(result) {
 }
 
 export async function saveMistakes(questions, userAnswers, topic, classId, difficulty, sessionId) {
+
     const { auth, db } = await getInitializedClients();
-    // Persistence Priority: Auth > Window Profile (fallback)
+
     const uid = auth.currentUser?.uid || window.userProfile?.uid;
 
     if (!uid) {
-        console.error("Save failed: No UID found (User not authenticated)");
+        console.error("Save failed: No UID found");
         return;
     }
 
     try {
-        // Filter for wrong answers
-        const mistakes = questions.filter(q => userAnswers[q.id] !== q.correct_answer);
+
+        const mistakes = questions.filter(
+            q => userAnswers[q.id] !== q.correct_answer
+        );
 
         if (mistakes.length === 0) return;
 
+        const userSnap = await getDoc(doc(db, "users", uid));
+
+        const userData = userSnap.exists()
+            ? userSnap.data()
+            : {};
+
         const data = {
+
             user_id: uid,
+
+            school_id: userData.school_id || null,
+            tenantType: userData.tenantType || "individual",
+            tenantId: userData.tenantId || null,
+
             topic: topic,
             chapter_slug: topic,
+
             class_id: classId,
-            // FIXED: difficulty is now explicitly saved (was missing before,
-            // causing all mistakes to fall back to 'simple' in mistake-book.html)
-            difficulty: (difficulty || 'Simple').toLowerCase(),
-            // SESSION LINK: same ID written to quiz_scores so mistake-book.html
-            // can reliably join both documents without guessing by timestamp
+
+            difficulty: (difficulty || "Simple").toLowerCase(),
+
             session_id: sessionId || null,
+
             timestamp: serverTimestamp(),
+
             mistakes: mistakes.map(q => ({
+
                 user_id: uid,
+
                 chapter_slug: topic,
+
                 id: q.id,
-                question_text: q.text,   // consistent field name for reader
-                question: q.text,         // keep legacy field too
+
+                question_text: q.text,
+
+                question: q.text,
+
                 options: q.options,
+
                 correct: q.correct_answer,
+
                 selected: userAnswers[q.id] || "Skipped",
+
                 explanation: q.scenario_reason || "",
-                // Store the actual question_type so proficiency is computed
-                // from real data in mistake-book.html instead of 6/2/2 fiction
+
                 question_type: q.question_type || "mcq"
+
             }))
         };
 
-        await addDoc(collection(db, "mistake_notebook"), data);
-        console.log("Mistakes saved to notebook.");
+        console.log("ATTEMPTING NOTEBOOK SAVE", data);
+
+        const ref = await addDoc(
+            collection(db, "mistake_notebook"),
+            data
+        );
+
+        console.log("NOTEBOOK SAVED", ref.id);
 
     } catch (e) {
-        console.error("Failed to save mistakes:", e);
+
+        console.error("FAILED NOTEBOOK SAVE FULL", e);
+
+        if (e?.code) {
+            console.error("ERROR CODE:", e.code);
+        }
+
+        if (e?.message) {
+            console.error("ERROR MESSAGE:", e.message);
+        }
     }
 }
-
 export async function getChapterMastery(userId, topic) {
     if (!userId || !topic) return 0;
 

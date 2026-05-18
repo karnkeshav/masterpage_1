@@ -82,6 +82,7 @@ const wireLanguageSwitcher = () => {
  * @param {string} [config.centerHtml]      - Raw HTML injected in center column (only used with layout:"grid-3")
  * @param {string} [config.extraRightHtml]  - Raw HTML injected before user-welcome in the right section
  * @param {string} [config.targetId]        - Target element id. Default: "app-header"
+ * @param {string} [config.titleHref]       - If provided, wraps the title+subtitle in an <a> tag linking here
  */
 R4E.renderHeader = (config = {}) => {
     if (config.titleKey && window.R4ETranslator) {
@@ -132,11 +133,14 @@ R4E.renderHeader = (config = {}) => {
     const glassClass = glass ? " glass-panel border-b border-white/10" : "";
 
     const leftJustify = layout === "grid-3" ? " justify-self-start" : "";
+    const titleHref = config.titleHref || "";
+    const titleInner = `<h2${titleId} class="text-xl font-black leading-none tracking-tight text-accent-gold">${title}</h2>
+            <p class="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">${subtitle}</p>`;
+    const titleBlock = titleHref
+        ? `<a href="${titleHref}" class="hover:opacity-80 transition-opacity">${titleInner}</a>`
+        : `<div>${titleInner}</div>`;
     const leftHtml = `<div class="flex items-center space-x-4${leftJustify}">
-          <div>
-            <h2${titleId} class="text-xl font-black leading-none tracking-tight text-accent-gold">${title}</h2>
-            <p class="text-[10px] font-bold uppercase tracking-widest mt-1 text-white opacity-80 italic tracking-wide">${subtitle}</p>
-          </div>
+          ${titleBlock}
         </div>`;
 
     const centerSection = layout === "grid-3" ? centerHtml : "";

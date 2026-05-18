@@ -6,12 +6,6 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot } f
 // LOGOUT LOGIC — use standard bindConsoleLogout for uniformity
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 
-let _mirrorChildUid = null;
-let _mirrorChildClassId = null;
-let _mirrorChildSection = null;
-
-// GLOBAL GUARD
-guardConsole("parent");
 
 window.loadConsoleData = async (profile) => {
     console.log("Loading Parent Console for:", profile.uid);
@@ -31,6 +25,7 @@ window.loadConsoleData = async (profile) => {
     });
     
 };
+guardConsole("parent"); 
 
 async function listenToIntercom() {
     const { auth, db } = await getInitializedClients();
@@ -122,21 +117,45 @@ async function fetchChildData(parentProfile) {
 
         // Step 1: Use linked_children from parent profile
         if (parentProfile.linked_children && parentProfile.linked_children.length > 0) {
-            targetUid = parentProfile.linked_children[0]; // First linked child
-            // Fetch child's display name using direct document read (document ID = UID)
+            const children = parentProfile.linked_children;
+
+            // Build child switcher if multiple children are linked
+            if (children.length > 1) {
+                const switcher = document.getElementById("child-switcher");
+                if (switcher) {
+                    const childProfiles = await Promise.all(
+                        children.map(uid => getDoc(doc(db, "users", uid)).catch(() => null))
+                    );
+                    switcher.innerHTML = childProfiles.map((snap, i) => {
+                        const name = snap?.exists() ? (snap.data().displayName || `Child ${i + 1}`) : `Child ${i + 1}`;
+                        return `<button onclick="window._switchChild('${children[i]}')"
+                            class="px-3 py-1.5 text-xs font-bold rounded-xl border transition ${i === 0 ? 'bg-cbse-blue text-white border-cbse-blue' : 'bg-white text-slate-600 border-slate-200 hover:border-cbse-blue'}">${name}</button>`;
+                    }).join('');
+                    switcher.classList.remove('hidden');
+                }
+            }
+
+            targetUid = children[0];
             try {
                 const childSnap = await getDoc(doc(db, "users", targetUid));
-                if (childSnap.exists()) {
-                    const childData = childSnap.data();
-                    childName = childData.displayName || "Student";
-                    _mirrorChildUid = targetUid;
-                    _mirrorChildClassId = childData.classId || "9";
-                    _mirrorChildSection = childData.section || "A";
-                }
+                if (childSnap.exists()) childName = childSnap.data().displayName || "Student";
             } catch (e) {
                 console.warn("Could not fetch child profile:", e);
             }
         }
+
+        // Allow switching between children from the switcher UI
+        window._switchChild = async (uid) => {
+            targetUid = uid;
+            const snap = await getDoc(doc(db, "users", uid)).catch(() => null);
+            childName = snap?.exists() ? (snap.data().displayName || "Student") : "Student";
+            const contextBadge = document.getElementById("context-badge");
+            if (contextBadge) contextBadge.innerHTML = `<i class="fas fa-child mr-1"></i> ${childName}`;
+            // Re-fetch data for newly selected child
+            const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
+            const snap2 = await getDocs(q).catch(() => null);
+            if (snap2) await renderSyncWallAndInbox(db, uid, {});
+        };
 
 
 
@@ -225,6 +244,7 @@ async function fetchChildData(parentProfile) {
 }
 
 async function renderSyncWallAndInbox(db, childUid, chapterData) {
+
     const syncWall = document.getElementById("sync-wall-container");
     const inboxList = document.getElementById("parent-inbox-list");
     const inboxBadge = document.getElementById("parent-inbox-badge");
@@ -234,187 +254,471 @@ async function renderSyncWallAndInbox(db, childUid, chapterData) {
     let syncHtml = "";
     let inboxHtml = "";
     let priorityCount = 0;
+
     const now = new Date();
     const renderedChaps = new Set();
 
     try {
-        const q = query(collection(db, "student_notifications"), where("student_id", "==", childUid), orderBy("timestamp", "desc"));
+
+        const q = query(
+            collection(db, "student_notifications"),
+            where("student_id", "==", childUid),
+            orderBy("timestamp", "desc")
+        );
+
         const notifDocs = await getDocs(q);
 
         if (!notifDocs.empty) {
+
             notifDocs.forEach(doc => {
+
                 const data = doc.data();
+
                 if (data.type !== "TEST_ASSIGNED" || !data.topicSlug) return;
 
                 const chap = data.topicSlug;
+
                 renderedChaps.add(chap);
-                const assignedDate = data.timestamp ? data.timestamp.toDate() : new Date();
-                const hoursDiff = Math.floor((now - assignedDate) / (1000 * 60 * 60));
 
-                // Check if student has taken it
+                const assignedDate = data.timestamp
+                    ? data.timestamp.toDate()
+                    : new Date();
+
+                const hoursDiff = Math.floor(
+                    (now - assignedDate) / (1000 * 60 * 60)
+                );
+
                 const scoreData = chapterData[chap];
-                const hasScore = scoreData && (scoreData.simple !== null || scoreData.medium !== null || scoreData.advanced !== null);
-                const latestScore = hasScore ? Math.max(scoreData.simple || 0, scoreData.medium || 0, scoreData.advanced || 0) : null;
 
-                // ALWAYS add to priority inbox regardless of score or time
+                const hasScore =
+                    scoreData &&
+                    (
+                        scoreData.simple !== null ||
+                        scoreData.medium !== null ||
+                        scoreData.advanced !== null
+                    );
+
                 priorityCount++;
-                const statusLabel = hasScore ? 'Test Taken' : (hoursDiff <= 48 ? 'Pending Execution' : 'Overdue');
-                const statusColor = hasScore ? 'text-success-green' : (hoursDiff <= 48 ? 'text-accent-gold' : 'text-danger-red');
-                inboxHtml += `
-                <div class="text-xs border-b border-slate-50 pb-2 mb-2 p-2 rounded hover:bg-blue-50 transition cursor-pointer">
-                    <span class="font-bold text-cbse-blue">Chapter Finished:</span> ${data.chapter_title || chap} — <span class="${statusColor} font-bold">${statusLabel}</span>
-                </div>`;
 
-                if (!hasScore) {
-                    if (hoursDiff <= 48) {
-                        // Scenario 1: Pending Execution
-                        syncHtml += `
-                        <div class="flex gap-4">
-                            <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
-                                <div class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-cbse-blue rounded-full border-4 border-white"></div>
+                const statusLabel = hasScore
+                    ? 'Completed'
+                    : (hoursDiff <= 48
+                        ? 'Pending'
+                        : 'Escalated');
+
+                const statusColor = hasScore
+                    ? 'text-success-green'
+                    : (hoursDiff <= 48
+                        ? 'text-accent-gold'
+                        : 'text-danger-red');
+
+                // =========================
+                // PRIORITY INBOX
+                // =========================
+
+                inboxHtml += `
+                <div class="bg-white border border-slate-100 rounded-2xl p-3 hover:border-blue-100 transition shadow-sm">
+
+                    <div class="flex items-start justify-between gap-3">
+
+                        <div class="min-w-0">
+
+                            <div class="text-[10px] uppercase tracking-widest font-black ${statusColor}">
+                                ${statusLabel}
                             </div>
-                            <div class="pb-4 w-full">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <div class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Teacher Trigger</div>
-                                        <div class="font-bold text-slate-800 text-sm">${chap}</div>
+
+                            <div class="font-bold text-slate-800 text-xs mt-1 break-words">
+                                ${(data.chapter_title || chap)
+                                    .replaceAll("_", " ")
+                                    .replaceAll("quiz", "")
+                                }
+                            </div>
+
+                        </div>
+
+                        <div class="w-2.5 h-2.5 rounded-full bg-cbse-blue mt-1.5 shrink-0"></div>
+
+                    </div>
+
+                </div>
+                `;
+
+                // =========================
+                // PENDING EXECUTION
+                // =========================
+
+                if (!hasScore && hoursDiff <= 48) {
+
+                    syncHtml += `
+                    <div class="bg-white border border-slate-100 rounded-2xl p-4 hover:border-blue-100 transition shadow-sm">
+
+                        <div class="flex items-start justify-between gap-3">
+
+                            <div class="flex items-start gap-3 min-w-0">
+
+                                <div class="w-3 h-3 rounded-full bg-cbse-blue mt-1.5 shrink-0"></div>
+
+                                <div class="min-w-0">
+
+                                    <div class="text-[10px] uppercase tracking-widest font-black text-cbse-blue mb-1">
+                                        Teacher Trigger
                                     </div>
-                                    <span class="text-[9px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded">Assigned ${hoursDiff}h ago</span>
-                                </div>
-                                <div class="text-xs text-slate-500 mt-1">Verification Status: <span class="text-accent-gold font-bold">Pending Execution</span></div>
-                                <p class="text-[10px] text-slate-400 mt-1 italic"><i class="fas fa-lock mr-0.5 text-slate-300"></i> Nudge locked. Student is in 48-hour autonomous window.</p>
-                            </div>
-                        </div>`;
-                    } else {
-                        // Scenario 2: Overdue
-                        syncHtml += `
-                        <div class="flex gap-4">
-                            <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
-                                <div class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-warning-yellow rounded-full border-4 border-white shadow-[0_0_8px_rgba(202,138,4,0.3)]"></div>
-                            </div>
-                            <div class="pb-4 w-full">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <div class="text-[10px] font-bold text-warning-yellow uppercase tracking-widest mb-1">Escalation Protocol Active</div>
-                                        <div class="font-bold text-slate-800 text-sm">${chap}</div>
+
+                                    <div class="font-bold text-slate-800 text-sm truncate">
+                                        ${chap.replaceAll("_", " ")}
                                     </div>
-                                    <span class="text-[9px] text-danger-red font-bold animate-pulse bg-red-50 px-2 py-0.5 rounded">Overdue (${hoursDiff}h)</span>
+
+                                    <div class="text-xs text-slate-500 mt-1">
+                                        Autonomous execution window active.
+                                    </div>
+
                                 </div>
-                                <div class="text-xs text-slate-500 mt-1">Verification Status: <span class="text-danger-red font-bold">Missed Deadline</span></div>
-                                <button class="mt-2 text-[10px] bg-cbse-blue text-white hover:bg-blue-800 px-3 py-1.5 rounded font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-bell"></i> Issue Command Nudge to Student</button>
-                                <p class="text-[9px] text-slate-400 mt-1">If unaddressed by 96h, Teacher Escalation Protocol automatically activates.</p>
                             </div>
-                        </div>`;
-                    }
+
+                            <div class="text-[10px] font-black text-cbse-blue whitespace-nowrap">
+                                ${hoursDiff}h
+                            </div>
+
+                        </div>
+
+                    </div>
+                    `;
+                }
+
+                // =========================
+                // ESCALATED
+                // =========================
+
+                else if (!hasScore && hoursDiff > 48) {
+
+                    syncHtml += `
+                    <div class="bg-white border border-amber-100 rounded-2xl p-4 hover:border-warning-yellow transition shadow-sm">
+
+                        <div class="flex items-start justify-between gap-3">
+
+                            <div class="flex items-start gap-3 min-w-0">
+
+                                <div class="w-3 h-3 rounded-full bg-warning-yellow mt-1.5 shrink-0"></div>
+
+                                <div class="min-w-0">
+
+                                    <div class="text-[10px] uppercase tracking-widest font-black text-warning-yellow mb-1">
+                                        Escalation Protocol
+                                    </div>
+
+                                    <div class="font-bold text-slate-800 text-sm truncate">
+                                        ${chap.replaceAll("_", " ")}
+                                    </div>
+
+                                    <div class="text-xs text-slate-500 mt-1">
+                                        Pending beyond execution window.
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="text-[10px] font-black text-danger-red whitespace-nowrap">
+                                ${hoursDiff}h
+                            </div>
+
+                        </div>
+
+                    </div>
+                    `;
                 }
             });
         }
+
     } catch (e) {
-        console.warn("Skipping notification fetch due to rules error, falling back to pure mastery data.", e);
+
+        console.warn("Notification fetch error:", e);
     }
 
-    // Fallback - Map remaining chapters to diagnostic alerts if they score below 95%
+    // =========================
+    // FALLBACK DIAGNOSTICS
+    // =========================
+
     for (const [chap, scoreData] of Object.entries(chapterData)) {
+
         if (renderedChaps.has(chap)) continue;
 
-        const hasScore = (scoreData.simple !== null || scoreData.medium !== null || scoreData.advanced !== null);
+        const hasScore =
+            (
+                scoreData.simple !== null ||
+                scoreData.medium !== null ||
+                scoreData.advanced !== null
+            );
+
         if (!hasScore) continue;
 
-        const latestScore = Math.max(scoreData.simple || 0, scoreData.medium || 0, scoreData.advanced || 0);
+        const latestScore = Math.max(
+            scoreData.simple || 0,
+            scoreData.medium || 0,
+            scoreData.advanced || 0
+        );
 
         if (latestScore < 95) {
+
             priorityCount++;
+
             inboxHtml += `
-            <div class="text-xs border-b border-slate-50 pb-2 mb-2 p-2 rounded hover:bg-amber-50 transition cursor-pointer">
-                <span class="font-bold text-warning-yellow">Test Completed:</span> Score below 95% threshold in ${chap}. Re-attempt required.
-            </div>`;
+            <div class="bg-white border border-red-100 rounded-2xl p-3 hover:border-danger-red transition shadow-sm">
+
+                <div class="flex items-start justify-between gap-3">
+
+                    <div class="min-w-0">
+
+                        <div class="text-[10px] uppercase tracking-widest font-black text-danger-red">
+                            Re-Attempt Required
+                        </div>
+
+                        <div class="font-bold text-slate-800 text-xs mt-1 break-words">
+                            ${chap.replaceAll("_", " ")}
+                        </div>
+
+                        <div class="text-[10px] text-slate-400 mt-1">
+                            Mastery below 95%
+                        </div>
+
+                    </div>
+
+                    <div class="text-[10px] font-black text-danger-red whitespace-nowrap">
+                        ${latestScore}%
+                    </div>
+
+                </div>
+
+            </div>
+            `;
+
+        } else {
 
             syncHtml += `
-            <div class="flex gap-4 relative">
-                <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
-                    <div class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-danger-red rounded-full border-4 border-white shadow-[0_0_8px_rgba(220,38,38,0.3)]"></div>
-                </div>
-                <div class="pb-4 w-full">
-                    <div class="text-[10px] font-bold text-danger-red uppercase tracking-widest mb-1">Diagnostic Alert (System to Parent)</div>
-                    <div class="font-bold text-slate-800 text-sm">${chap}</div>
-                    <div class="text-xs text-slate-500 mt-1">Latest Score: <span class="text-danger-red font-bold">${latestScore}%</span></div>
-                    <p class="text-xs text-slate-500 mt-1"><i class="fas fa-exclamation-triangle text-amber-500"></i> Student completed execution, but failed to reach 95% Mastery threshold. Task persists in Student Inbox.</p>
-                    <div class="flex gap-2 mt-2">
-                        <button class="text-[10px] bg-cbse-blue text-white hover:bg-blue-800 px-3 py-1.5 rounded font-bold transition flex items-center gap-1 shadow-sm"><i class="fas fa-redo"></i> Nudge Re-Attempt</button>
-                        <button class="text-[10px] bg-slate-100 text-slate-600 hover:bg-slate-200 px-3 py-1.5 rounded font-bold transition flex items-center gap-1"><i class="fas fa-reply"></i> Request Teacher Review</button>
+            <div class="bg-white border border-green-100 rounded-2xl p-4 opacity-80 hover:opacity-100 transition shadow-sm">
+
+                <div class="flex items-start justify-between gap-3">
+
+                    <div class="flex items-start gap-3 min-w-0">
+
+                        <div class="w-3 h-3 rounded-full bg-success-green mt-1.5 shrink-0"></div>
+
+                        <div class="min-w-0">
+
+                            <div class="text-[10px] uppercase tracking-widest font-black text-success-green mb-1">
+                                Mastered
+                            </div>
+
+                            <div class="font-bold text-slate-800 text-sm truncate">
+                                ${chap.replaceAll("_", " ")}
+                            </div>
+
+                        </div>
                     </div>
+
+                    <div class="text-[10px] font-black text-success-green whitespace-nowrap">
+                        ${latestScore}%
+                    </div>
+
                 </div>
-            </div>`;
-        } else {
-            syncHtml += `
-            <div class="flex gap-4 relative opacity-60">
-                <div class="flex-shrink-0 w-2 h-full bg-slate-100 rounded-full mx-auto relative mt-1">
-                    <div class="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-success-green rounded-full border-4 border-white"></div>
-                </div>
-                <div class="pb-4 w-full">
-                    <div class="text-[10px] font-bold text-success-green uppercase tracking-widest mb-1">Student Execution</div>
-                    <div class="font-bold text-slate-800 text-sm">${chap}</div>
-                    <div class="text-xs text-slate-500 mt-1">Verification Status: <span class="text-success-green font-bold">Mastered (${latestScore}%)</span></div>
-                </div>
-            </div>`;
+
+            </div>
+            `;
         }
     }
 
-    if (syncHtml === "") syncHtml = `<div class="text-sm text-slate-500 italic p-4 text-center">No immediate authoritative triggers found. Student is performing nominally.</div>`;
+    if (syncHtml === "") {
+
+        syncHtml = `
+        <div class="text-sm text-slate-500 italic p-6 text-center bg-white rounded-2xl border border-slate-100">
+            No immediate authoritative triggers found.
+        </div>
+        `;
+    }
+
     syncWall.innerHTML = syncHtml;
 
     if (priorityCount > 0) {
+
         if (inboxBadge) {
+
             inboxBadge.textContent = priorityCount;
             inboxBadge.classList.remove("hidden");
         }
-        inboxList.innerHTML = inboxHtml;
+
+        inboxList.innerHTML = `
+        <div class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+            ${inboxHtml}
+        </div>
+        `;
+
     } else {
-        if (inboxBadge) inboxBadge.classList.add("hidden");
-        inboxList.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">No priority alerts. Dashboard nominal.</div>`;
+
+        if (inboxBadge) {
+            inboxBadge.classList.add("hidden");
+        }
+
+        inboxList.innerHTML = `
+        <div class="text-xs text-slate-400 text-center py-4">
+            No priority alerts.
+        </div>
+        `;
     }
 }
-
 function renderMatrix(chapterData) {
-    const tbody = document.getElementById("matrix-body");
-    if (!tbody) return;
+
+    const container = document.getElementById("subject-report-container");
+    if (!container) return;
+
+    const grouped = {};
+
+    for (const [chap, data] of Object.entries(chapterData)) {
+        const subject = data.subject || "General";
+
+        if (!grouped[subject]) grouped[subject] = [];
+
+        grouped[subject].push({
+            chap,
+            ...data
+        });
+    }
 
     let html = "";
-    for (const [chap, data] of Object.entries(chapterData)) {
 
-        const sLabel = getBadgeHtml(data.simple);
-        const mLabel = getBadgeHtml(data.medium);
-        const aLabel = getBadgeHtml(data.advanced);
+    Object.entries(grouped).forEach(([subject, chapters]) => {
 
-        let diagnostic = "";
-        let diagColor = "text-slate-400";
+        const avg = Math.round(
+            chapters.reduce((a, c) => {
+                const vals = [c.simple, c.medium, c.advanced].filter(v => v !== null);
+                const localAvg = vals.length ? vals.reduce((x,y)=>x+y,0)/vals.length : 0;
+                return a + localAvg;
+            }, 0) / chapters.length
+        );
 
-        if (data.advanced !== null && data.advanced < 80) {
-            diagnostic = `<div class="text-[9px] text-danger-red mt-1 font-bold"><i class="fas fa-exclamation-circle"></i> Struggles with Higher Order</div>`;
-        } else if (data.medium !== null && data.medium < 80) {
-            diagnostic = `<div class="text-[9px] text-warning-yellow mt-1 font-bold"><i class="fas fa-exclamation-triangle"></i> Application Logic Weak</div>`;
-        } else if (data.simple !== null && data.simple < 80) {
-            diagnostic = `<div class="text-[9px] text-danger-red mt-1 font-bold"><i class="fas fa-bomb"></i> Core Foundation Gap</div>`;
+        let strength = "WEAK";
+        let strengthColor = "text-danger-red bg-red-50 border-red-100";
+
+        if (avg >= 95) {
+            strength = "MASTERED";
+            strengthColor = "text-success-green bg-green-50 border-green-100";
+        } else if (avg >= 80) {
+            strength = "STRONG";
+            strengthColor = "text-cbse-blue bg-blue-50 border-blue-100";
+        } else if (avg >= 60) {
+            strength = "MODERATE";
+            strengthColor = "text-warning-yellow bg-amber-50 border-amber-100";
         }
 
         html += `
-            <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                <td class="py-3 px-2">
-                    <div class="text-slate-800 font-bold">${chap}</div>
-                    <div class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${data.subject}</div>
-                </td>
-                <td class="py-3 px-2 text-center">${sLabel}</td>
-                <td class="py-3 px-2 text-center">${mLabel}</td>
-                <td class="py-3 px-2 text-center">${aLabel}</td>
-                <td class="py-3 px-2 text-right">
-                    <button class="text-[10px] text-cbse-blue font-bold hover:underline transition"><i class="fas fa-history"></i> Deep-Dive</button>
-                    ${diagnostic}
-                    <div class="text-[9px] text-slate-400 mt-1">${data.attempts} attempts • Last ${data.lastDate || 'N/A'}</div>
-                </td>
-            </tr>
+        <div class="bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden">
+
+            <button onclick="toggleSubjectCard(this)"
+                class="w-full flex items-center justify-between px-5 py-4 hover:bg-white transition group">
+
+                <div class="flex items-center gap-4">
+
+                    <div class="w-11 h-11 rounded-xl bg-blue-50 text-cbse-blue flex items-center justify-center">
+                        <i class="fas fa-book"></i>
+                    </div>
+
+                    <div class="text-left">
+                        <div class="font-black text-slate-900 text-sm uppercase tracking-wide">
+                            ${subject}
+                        </div>
+
+                        <div class="text-[11px] text-slate-400 font-semibold mt-0.5">
+                            ${chapters.length} Chapters • ${avg}% Avg Mastery
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+
+                    <div class="px-3 py-1 rounded-full border text-[10px] font-black ${strengthColor}">
+                        ${strength}
+                    </div>
+
+                    <i class="fas fa-chevron-down text-slate-400 transition subject-chevron"></i>
+                </div>
+            </button>
+
+            <div class="subject-content hidden border-t border-slate-100 bg-white">
+
+                <div class="grid grid-cols-12 gap-2 px-5 py-3 text-[10px] uppercase tracking-widest font-black text-slate-400 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <div class="col-span-5">Chapter</div>
+                    <div class="col-span-2 text-center text-success-green">Simple</div>
+                    <div class="col-span-2 text-center text-cbse-blue">Medium</div>
+                    <div class="col-span-2 text-center text-accent-gold">Advanced</div>
+                    <div class="col-span-1 text-right">Status</div>
+                </div>
+
+                <div class="max-h-[420px] overflow-y-auto">
         `;
-    }
-    tbody.innerHTML = html;
+
+        chapters.forEach(data => {
+
+            const latest = Math.max(
+                data.simple || 0,
+                data.medium || 0,
+                data.advanced || 0
+            );
+
+            let status = "bg-danger-red";
+
+            if (latest >= 95) status = "bg-success-green";
+            else if (latest >= 80) status = "bg-cbse-blue";
+            else if (latest >= 60) status = "bg-warning-yellow";
+
+            html += `
+            <div class="grid grid-cols-12 gap-2 px-5 py-4 border-b border-slate-50 hover:bg-slate-50 transition items-center">
+
+                <div class="col-span-5 min-w-0">
+                    <div class="font-bold text-slate-800 text-sm truncate">
+                        ${data.chap}
+                    </div>
+
+                    <div class="text-[10px] text-slate-400 mt-1">
+                        ${data.attempts} attempts • Last ${data.lastDate || 'N/A'}
+                    </div>
+                </div>
+
+                <div class="col-span-2 text-center">
+                    ${getBadgeHtml(data.simple)}
+                </div>
+
+                <div class="col-span-2 text-center">
+                    ${getBadgeHtml(data.medium)}
+                </div>
+
+                <div class="col-span-2 text-center">
+                    ${getBadgeHtml(data.advanced)}
+                </div>
+
+                <div class="col-span-1 flex justify-end">
+                    <div class="w-2.5 h-2.5 rounded-full ${status}"></div>
+                </div>
+
+            </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+window.toggleSubjectCard = function(btn) {
+
+    const card = btn.parentElement;
+    const content = card.querySelector(".subject-content");
+    const chevron = card.querySelector(".subject-chevron");
+
+    content.classList.toggle("hidden");
+    chevron.classList.toggle("rotate-180");
 }
 
 function getBadgeHtml(score) {
@@ -486,3 +790,20 @@ function renderGrowthChart(overallAvg) {
         }
     });
 }
+window.launchMirrorPortal = async function () {
+
+    const profile = window.userProfile;
+
+    if (!profile?.linked_children?.length) {
+        alert("No linked student found.");
+        return;
+    }
+
+    const childUid = profile.linked_children[0];
+
+    sessionStorage.setItem("mirror_student_uid", childUid);
+    sessionStorage.setItem("mirror_mode", "parent");
+
+    window.open("/app/consoles/student.html", "_blank");
+}
+

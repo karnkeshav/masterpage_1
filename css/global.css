@@ -1,29 +1,44 @@
 /* css/global.css
    Master stylesheet for Ready4Exam — imported by ALL pages.
-   Contains: base resets, shared component styles, animations.
-   Tailwind utility classes are handled by the CDN + js/tailwind-config.js.
 */
 
 /* ===========================
-   BASE
+   BASE & LAYOUT
    =========================== */
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
+  max-width: 100%;
+  min-width: 0;
   font-family: 'Inter', sans-serif;
   background-color: #f8fafc;
   color: #1f2937;
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
 
-/* Add this to your base section */
 #app-header {
   position: sticky;
   top: 0;
-  z-index: 50; /* Stays above content but below modals */
+  z-index: 50;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+#app-header h2, #app-header p {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ===========================
-   GLASSMORPHISM
+   UI COMPONENTS
    =========================== */
 .glass-panel {
   background: rgba(255, 255, 255, 0.7);
@@ -33,154 +48,95 @@ body {
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 }
 
-/* ===========================
-   SKELETON LOADER
-   =========================== */
 .skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
   border-radius: 8px;
 }
+
 @keyframes skeleton-loading {
-  0%   { background-position: 200% 0; }
+  0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 
 /* ===========================
-   ANIMATIONS
+   FORMULA VAULT & MATH RENDERING
    =========================== */
-.fade-in {
-  animation: fade 0.5s ease-out forwards;
-  opacity: 0;
-}
-@keyframes fade {
-  to { opacity: 1; }
+
+/* Unified Container Fixes */
+#content-container, .grid {
+    min-width: 0 !important; /* Critical for preventing flex items from stretching parents */
 }
 
-@keyframes peel-back {
-  0%   { transform: scale(1); opacity: 1; }
-  50%  { transform: scale(0.95) rotate(-2deg); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
+/* Card individual item behavior */
+#content-container .bg-white .grid > div {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100px; 
 }
-.peel-back-anim {
-  animation: peel-back 0.6s ease-in-out;
-  border: 2px solid #ef4444;
+
+/* Force wrapping for all Math/Formula labels and zones */
+.formula-card-content, 
+.formula-render-zone, 
+.font-mono.text-lg, 
+[id^="formula"] {
+    display: block !important;
+    width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important; 
+    word-break: break-word;
+    line-height: 1.6;
+}
+
+/* Character Clumping Fix (Italics) */
+.katex, .mjx-chtml, .math-tex {
+    letter-spacing: 0.05rem !important; 
+    font-variant-numeric: tabular-nums;
+}
+
+/* Internal Math Renderer constraints */
+.mjx-container, .katex-display {
+    display: inline-block !important;
+    max-width: 100% !important;
+    white-space: normal !important; /* Allows internal wrapping if supported */
+    overflow-x: auto; /* Mobile safety */
+    overflow-y: hidden;
+    padding: 2px 0;
+    margin: 0.5em 0;
+}
+
+/* Hide Math Errors while debugging */
+.katex-error {
+    background: transparent !important;
+    color: inherit !important;
 }
 
 /* ===========================
-   FOCUS MODE (Quiz Engine)
+   RESPONSIVE DESIGN
    =========================== */
-body.focus-mode {
-  background: #f8fafc;
-}
-body.focus-mode header,
-body.focus-mode footer,
-body.focus-mode #app-header,
-body.focus-mode #app-footer,
-body.focus-mode .glass-nav {
-  display: none !important;
-}
-body.focus-mode #quiz-content {
-  max-width: 800px;
-  margin: 40px auto;
+@media (max-width: 640px) {
+  #app-header {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    gap: 0.75rem;
+  }
+
+  #content-container .grid {
+    grid-template-columns: 1fr !important; /* Stack cards on mobile */
+    gap: 1rem;
+  }
+
+  #difficulty-display {
+    max-width: 4.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 /* ===========================
-   QUIZ ENGINE OPTIONS
-   =========================== */
-.option-label {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  border: 2px solid transparent;
-}
-.option-label:hover {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
-}
-.option-label.selected {
-  border-color: #2563eb;
-  background-color: #dbeafe;
-}
-
-.option-label:hover, .option-label:focus-within {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
-}
-/* ===========================
-   RESULT CARD ANIMATION
-   =========================== */
-.result-card {
-  animation: slideUp 0.5s ease-out;
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ===========================
-   MODAL OVERLAY
-   =========================== */
-.modal-overlay {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(4px);
-}
-
-/* ===========================
-   MARQUEE (Testimonials)
-   =========================== */
-@keyframes marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.animate-marquee {
-  display: flex;
-  animation: marquee 40s linear infinite;
-}
-.animate-marquee:hover {
-  animation-play-state: paused;
-}
-
-/* ===========================
-   SCROLLBAR UTILITIES
-   =========================== */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-#analysis-modal div::-webkit-scrollbar { width: 6px; }
-#analysis-modal div::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-/* ===========================
-   EXAM PULSE PRIORITY SECTION
-   =========================== */
-.priority-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 1.5rem;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-}
-.priority-card:hover {
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-    border-color: #1a3e6a;
-}
-.repetition-badge {
-    background: #f0f7ff;
-    color: #1a3e6a;
-    font-size: 0.65rem;
-    font-weight: 900;
-    padding: 0.25rem 0.75rem;
-    border-radius: 99px;
-    text-transform: uppercase;
-}
-
-/* ===========================
-   WHATSAPP FLOAT
+   WHATSAPP & UTILITIES
    =========================== */
 .whatsapp-float {
   position: fixed;
@@ -198,7 +154,4 @@ body.focus-mode #quiz-content {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   transition: transform 0.2s;
-}
-.whatsapp-float:hover {
-  transform: scale(1.1);
 }

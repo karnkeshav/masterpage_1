@@ -16,6 +16,7 @@
         <div id="app-header"></div>
 <script>R4E.renderHeader({
     title: "Mistake Notebook",
+    titleHref: "../consoles/student.html",
     showUserWelcome: false,
     showLogout: false
 });</script>
@@ -81,7 +82,7 @@
                                 <span class="text-slate-400 text-xs">${date}</span>
                             </div>
                             <h3 class="font-bold text-lg mb-4 text-slate-900">${m.question}</h3>
-                            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
                                     <span class="block text-xs font-bold text-red-500 uppercase mb-1">You Selected</span>
                                     <div class="font-medium text-red-900">${m.selected}: ${m.options[m.selected] || m.selected}</div>
