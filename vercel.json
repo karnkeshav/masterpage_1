@@ -2,7 +2,8 @@
   "functions": {
     "api/create-order.js": { "maxDuration": 30 },
     "api/verify-payment.js": { "maxDuration": 30 },
-    "api/secure-reset.js": { "maxDuration": 30 }
+    "api/secure-reset.js": { "maxDuration": 30 },
+    "api/contact.js": { "maxDuration": 15 }
   },
   "headers": [
     {
