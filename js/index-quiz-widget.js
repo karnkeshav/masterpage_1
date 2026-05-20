@@ -159,12 +159,53 @@
       }
   }
 
-  window.handleRequestSubmit = function(e) {
+  window.handleRequestSubmit = async function(e) {
     e.preventDefault();
-    const board = document.getElementById("reqBoard").value;
-    const cls = document.getElementById("reqClass").value;
-    const contact = document.getElementById("reqContact").value;
-    const subject = `Curriculum Request: ${board} - ${cls}`;
-    const body = `Hi Ready4Exam Team,\n\nI request content for:\n- Board: ${board}\n- Class: ${cls}\n- Contact: ${contact}\n\nCount me as one of the 10 students for the Fast Track deployment!`;
-    window.location.href = `mailto:ready4urexam@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const form    = e.target;
+    const btn     = form.querySelector('button[type="submit"]');
+    const errDiv  = form.querySelector('#req-error') || (() => {
+        const d = document.createElement('p');
+        d.id = 'req-error';
+        d.style.cssText = 'color:#dc2626;font-size:12px;font-weight:700;text-align:center;margin:0';
+        btn.insertAdjacentElement('beforebegin', d);
+        return d;
+    })();
+
+    const board   = document.getElementById('reqBoard').value.trim();
+    const cls     = document.getElementById('reqClass').value.trim();
+    const contact = document.getElementById('reqContact').value.trim();
+
+    btn.disabled    = true;
+    btn.textContent = 'Sending…';
+    errDiv.textContent = '';
+
+    try {
+        const res  = await fetch('/api/contact', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ board, cls, contact }),
+        });
+        const data = await res.json();
+        if (!res.ok && !data.success) throw new Error(data.error || 'Submission failed');
+
+        // Replace card content with thank-you message
+        const card = form.parentElement;
+        card.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;text-align:center;gap:16px;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:30px;">✅</div>
+            <h3 style="font-size:20px;font-weight:900;color:#1a3e6a;margin:0;">Request Received!</h3>
+            <p style="font-size:14px;color:#475569;max-width:280px;line-height:1.6;margin:0;">
+              Thank you! Our team will get back to you within
+              <strong>2 business days</strong> at<br>
+              <strong style="color:#1a3e6a;">${contact}</strong>
+            </p>
+            <div style="font-size:11px;color:#94a3b8;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 16px;margin-top:4px;">
+              Board: <strong>${board}</strong>&nbsp;&nbsp;·&nbsp;&nbsp;Class: <strong>${cls}</strong>
+            </div>
+          </div>`;
+    } catch (err) {
+        btn.disabled    = false;
+        btn.textContent = 'Submit Request';
+        errDiv.textContent = err.message || 'Something went wrong — please WhatsApp us directly.';
+    }
   };
