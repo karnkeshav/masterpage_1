@@ -337,6 +337,14 @@
 <script>R4E.renderFooter();</script>
 <a href="https://wa.me/918520977573?text=Hi%20Ready4Exam" class="whatsapp-float" target="_blank"><i class="fab fa-whatsapp"></i></a>
 
+<!-- HELP BOT — React widget, lazy-loaded after page is interactive -->
+<div id="r4e-helpme-root"></div>
+<script type="module">
+  import { mount } from './react/helpme/helpme.js';
+  mount(document.getElementById('r4e-helpme-root'));
+</script>
+
+<!-- AUTH LOGIC -->
 <script type="module" src="./js/index-auth.js"></script>
 <script type="module" src="./js/index-quiz-widget.js"></script>
 <script type="module">
