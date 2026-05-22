@@ -10,13 +10,16 @@
     "audit": "node exhaustive_playwright_audit.js",
      "bot":     "node bot.js",
     "bot_rit": "node bot_rit.js",
-    "bot:headless": "HEADLESS=true node bot.js"
+    "bot:headless": "HEADLESS=true node bot.js",
+    "bot-server":   "node bot-server.js",
+    "bot-server:visible": "HEADLESS=false node bot-server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "lighthouse": "^13.0.1",
-    "playwright": "^1.58.1"
+    "playwright": "^1.58.1",
+    "ws": "^8.18.0"
   }
 }

@@ -5,6 +5,9 @@
     "api/secure-reset.js": { "maxDuration": 30 },
     "api/contact.js": { "maxDuration": 15 }
   },
+  "rewrites": [
+    { "source": "/bots", "destination": "/bots.html" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
