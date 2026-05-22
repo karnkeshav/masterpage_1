@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bot Control Center — Ready4Exam</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f1e; --card:#111827; --card2:#1e293b;
+  --border:#1e293b; --border2:#334155;
+  --gold:#f5a623; --navy:#1a3e6a;
+  --green:#22c55e; --red:#ef4444; --blue:#3b82f6;
+  --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding:32px 16px}
+a{color:var(--gold);text-decoration:none}
+
+/* ── Layout ──────────────────────── */
+.wrap{max-width:860px;margin:0 auto}
+
+/* ── Status badge ─────────────────── */
+.status-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:var(--card);border:1px solid var(--border2);font-size:12px;font-weight:700;color:var(--muted2)}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+.dot.off{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* ── Banner ───────────────────────── */
+.banner{background:#0d0800;border:1px solid #713f12;border-radius:14px;padding:18px 20px;margin-bottom:28px;display:flex;gap:14px;align-items:flex-start}
+.banner-icon{font-size:18px;color:var(--gold);margin-top:2px;flex-shrink:0}
+.banner code{background:#050a14;padding:10px 14px;border-radius:8px;display:block;font-family:'JetBrains Mono',monospace;font-size:13px;color:#86efac;margin-top:10px;word-break:break-all}
+
+/* ── Mode cards ───────────────────── */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+@media(max-width:540px){.mode-grid{grid-template-columns:1fr}}
+.mode-card{background:var(--card);border:2px solid var(--border);border-radius:18px;padding:22px;cursor:pointer;transition:border-color .18s,transform .18s,background .18s;user-select:none}
+.mode-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.mode-card.sel{border-color:var(--gold);background:#1a1000}
+.mode-card.disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.mode-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+.mode-title{font-size:17px;font-weight:900;color:#fff;margin-bottom:4px}
+.mode-sub{font-size:12px;color:var(--muted2);margin-bottom:14px}
+.mode-feat{list-style:none;display:flex;flex-direction:column;gap:6px}
+.mode-feat li{font-size:12.5px;color:var(--muted2);display:flex;align-items:center;gap:7px}
+.mode-feat li i{color:var(--green);font-size:10px}
+
+/* ── Config panel ─────────────────── */
+.panel{background:var(--card);border:1px solid var(--border2);border-radius:18px;padding:24px;margin-bottom:24px;animation:slideIn .2s ease-out}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.panel-title{font-size:16px;font-weight:800;color:#fff}
+.back-btn{background:none;border:none;color:var(--muted2);font-size:13px;cursor:pointer;font-family:inherit;padding:4px 8px;border-radius:6px;transition:color .15s}
+.back-btn:hover{color:var(--text)}
+
+/* ── Form fields ──────────────────── */
+.field-label{font-size:11px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:block}
+.field-group{margin-bottom:20px}
+.account-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.account-row input{flex:1;background:#0a0f1e;border:1px solid var(--border2);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.account-row input:focus{border-color:var(--gold)}
+.account-row input::placeholder{color:var(--muted)}
+.rm-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px;border-radius:6px;flex-shrink:0;transition:color .15s}
+.rm-btn:hover{color:var(--red)}
+.add-acc-btn{background:none;border:1px dashed var(--border2);color:var(--gold);font-size:12px;font-weight:700;padding:8px 16px;border-radius:9px;cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s;margin-top:4px}
+.add-acc-btn:hover{border-color:var(--gold)}
+
+.check-row{display:flex;gap:18px;flex-wrap:wrap}
+.check-item{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13.5px}
+.check-item input[type="checkbox"]{width:15px;height:15px;accent-color:var(--gold);cursor:pointer}
+
+.diff-row{display:flex;gap:10px}
+.diff-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#0a0f1e;border:1px solid var(--border2);border-radius:9px;padding:10px;cursor:pointer;font-size:13.5px;font-weight:600;transition:border-color .15s,background .15s}
+.diff-opt:has(input:checked){border-color:var(--gold);background:#1a1000;color:var(--gold)}
+.diff-opt input[type="radio"]{accent-color:var(--gold);cursor:pointer}
+
+.headless-row{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.headless-row input{width:15px;height:15px;accent-color:var(--gold);cursor:pointer}
+
+/* ── Start button ─────────────────── */
+.start-btn{width:100%;background:var(--gold);color:#0a0f1e;font-weight:900;font-size:14px;border:none;border-radius:12px;padding:15px;cursor:pointer;font-family:inherit;transition:background .15s,opacity .15s;margin-top:6px}
+.start-btn:hover:not(:disabled){background:#fbbf24}
+.start-btn:disabled{opacity:.35;cursor:not-allowed}
+.err-msg{color:var(--red);font-size:12px;font-weight:700;text-align:center;margin-top:10px;min-height:18px}
+
+/* ── Terminal ─────────────────────── */
+.term-wrap{margin-bottom:20px;animation:slideIn .2s ease-out}
+.term-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.term-hdr-title{font-weight:800;color:#fff}
+.term-hdr-right{display:flex;align-items:center;gap:12px}
+.clr-btn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit}
+.clr-btn:hover{color:var(--muted2)}
+.progress-pill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;background:#1e3a5f;color:#93c5fd}
+.progress-pill.done{background:#14532d;color:#86efac}
+.progress-pill.err{background:#450a0a;color:#f87171}
+.terminal{
+  font-family:'JetBrains Mono','Courier New',monospace;
+  font-size:12.5px;line-height:1.65;
+  background:#050a14;color:#a8e6cf;
+  height:400px;overflow-y:auto;
+  padding:16px 18px;border-radius:12px;
+  border:1px solid #1e293b;
+}
+.terminal::-webkit-scrollbar{width:4px}
+.terminal::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
+.t-err{color:#f87171}.t-ok{color:#86efac}.t-warn{color:#fbbf24}.t-info{color:#93c5fd}.t-dim{color:#374151}
+
+/* ── Done panel ───────────────────── */
+.done-panel{background:#0d1f0d;border:1px solid #166534;border-radius:14px;padding:20px 22px;margin-bottom:24px;animation:slideIn .25s ease-out}
+.done-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.done-hdr i{color:var(--green);font-size:20px}
+.done-hdr span{font-weight:900;color:#fff;font-size:15px}
+.done-actions{display:flex;gap:10px;flex-wrap:wrap}
+.dl-btn{background:var(--gold);color:#0a0f1e;font-weight:800;border:none;padding:10px 20px;border-radius:9px;font-size:13px;cursor:pointer;font-family:inherit;transition:background .15s}
+.dl-btn:hover{background:#fbbf24}
+.new-btn{background:none;border:1px solid var(--border2);color:var(--text);font-size:13px;padding:10px 20px;border-radius:9px;cursor:pointer;font-family:inherit;transition:border-color .15s}
+.new-btn:hover{border-color:var(--muted2)}
+
+/* ── Stats bar ────────────────────── */
+.stats-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.stat-box{flex:1;min-width:90px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;text-align:center}
+.stat-num{font-size:22px;font-weight:900;line-height:1.2}
+.stat-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:24px;font-weight:900;color:var(--gold)">Ready4Exam</span>
+        <span style="font-size:24px;font-weight:900;color:#fff">Bot Control</span>
+        <span style="background:#1e3a5f;color:#93c5fd;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.06em">Internal</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted)">Run automated quiz sessions from your browser — powered by a local Playwright server</p>
+    </div>
+    <div class="status-badge" id="status-badge">
+      <span class="dot off" id="conn-dot"></span>
+      <span id="conn-label">Server offline</span>
+    </div>
+  </div>
+
+  <!-- ── Server start banner ─────────────────────────────────── -->
+  <div class="banner" id="server-banner">
+    <i class="fas fa-terminal banner-icon"></i>
+    <div style="flex:1">
+      <p style="font-weight:800;color:var(--gold);margin-bottom:6px">Start the bot server first</p>
+      <p style="font-size:13px;color:#d97706;margin-bottom:2px">Playwright runs locally — open a terminal in the project folder and run:</p>
+      <code>cd testing_tool &amp;&amp; npm install &amp;&amp; node bot-server.js</code>
+      <p style="font-size:12px;color:#a16207;margin-top:10px">To see the browser window: <code style="background:#050a14;padding:2px 7px;border-radius:4px;color:#86efac">HEADLESS=false node bot-server.js</code></p>
+    </div>
+  </div>
+
+  <!-- ── Mode cards ───────────────────────────────────────────── -->
+  <div class="mode-grid" id="mode-grid">
+
+    <div class="mode-card" id="card-random" onclick="selectMode('random')">
+      <div class="mode-icon" style="background:#0d1b2e">🎲</div>
+      <div class="mode-title">Random Test</div>
+      <div class="mode-sub">All chapters · random answers · coverage map</div>
+      <ul class="mode-feat">
+        <li><i class="fas fa-circle"></i> Simple difficulty, all chapters</li>
+        <li><i class="fas fa-circle"></i> Populates mistake notebook data</li>
+        <li><i class="fas fa-circle"></i> Full MD coverage report</li>
+        <li><i class="fas fa-circle"></i> Multi-account support</li>
+      </ul>
+    </div>
+
+    <div class="mode-card" id="card-rit" onclick="selectMode('rit')">
+      <div class="mode-icon" style="background:#1a0d00">⭐</div>
+      <div class="mode-title">Score 95%+</div>
+      <div class="mode-sub">Intercepts Supabase for correct answers</div>
+      <ul class="mode-feat">
+        <li><i class="fas fa-circle"></i> 95% correct, one chapter 100%</li>
+        <li><i class="fas fa-circle"></i> Choose Simple / Medium / Advanced</li>
+        <li><i class="fas fa-circle"></i> Real Supabase answer-key interception</li>
+        <li><i class="fas fa-circle"></i> Multi-account + subject selection</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Config panel ─────────────────────────────────────────── -->
+  <div class="panel hidden" id="config-panel">
+    <div class="panel-header">
+      <span class="panel-title" id="config-title">Configure Run</span>
+      <button class="back-btn" onclick="resetMode()"><i class="fas fa-arrow-left" style="margin-right:5px"></i>Back</button>
+    </div>
+
+    <!-- Accounts -->
+    <div class="field-group">
+      <label class="field-label">Accounts</label>
+      <div id="accounts-list"></div>
+      <button class="add-acc-btn" onclick="addAccount()"><i class="fas fa-plus" style="margin-right:6px"></i>Add Account</button>
+    </div>
+
+    <!-- Subjects -->
+    <div class="field-group">
+      <label class="field-label">Subjects</label>
+      <div class="check-row">
+        <label class="check-item"><input type="checkbox" value="Science" class="subj-cb" checked> Science</label>
+        <label class="check-item"><input type="checkbox" value="Mathematics" class="subj-cb" checked> Mathematics</label>
+        <label class="check-item"><input type="checkbox" value="Social Science" class="subj-cb" checked> Social Science</label>
+      </div>
+    </div>
+
+    <!-- Difficulty (rit only) -->
+    <div class="field-group hidden" id="diff-field">
+      <label class="field-label">Difficulty</label>
+      <div class="diff-row">
+        <label class="diff-opt"><input type="radio" name="diff" value="Simple" checked> Simple</label>
+        <label class="diff-opt"><input type="radio" name="diff" value="Medium"> Medium</label>
+        <label class="diff-opt"><input type="radio" name="diff" value="Advanced"> Advanced</label>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="field-group">
+      <label class="field-label">Options</label>
+      <label class="headless-row"><input type="checkbox" id="headless-cb" checked> Run headless (no visible browser window)</label>
+    </div>
+
+    <button class="start-btn" id="start-btn" onclick="startBot()" disabled>
+      <i class="fas fa-play" style="margin-right:8px"></i>Start Bot
+    </button>
+    <p class="err-msg" id="start-err"></p>
+  </div>
+
+  <!-- ── Terminal ──────────────────────────────────────────────── -->
+  <div class="term-wrap hidden" id="term-wrap">
+    <div class="term-hdr">
+      <span class="term-hdr-title">Live Output</span>
+      <div class="term-hdr-right">
+        <button class="clr-btn" onclick="clearTerm()">Clear</button>
+        <span class="progress-pill" id="prog-pill">Running…</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-box"><div class="stat-num" id="s-total" style="color:var(--muted2)">0</div><div class="stat-lbl">Chapters</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-ok" style="color:var(--green)">0</div><div class="stat-lbl">Passed</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-fail" style="color:var(--red)">0</div><div class="stat-lbl">Failed</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-skip" style="color:var(--muted)">0</div><div class="stat-lbl">Skipped</div></div>
+    </div>
+
+    <div class="terminal" id="terminal"></div>
+  </div>
+
+  <!-- ── Done panel ────────────────────────────────────────────── -->
+  <div class="done-panel hidden" id="done-panel">
+    <div class="done-hdr">
+      <i class="fas fa-check-circle"></i>
+      <span>Bot run complete!</span>
+    </div>
+    <div class="done-actions">
+      <button class="dl-btn" onclick="downloadReport()"><i class="fas fa-download" style="margin-right:7px"></i>Download Report (.md)</button>
+      <button class="new-btn" onclick="newRun()"><i class="fas fa-rotate-right" style="margin-right:7px"></i>New Run</button>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+'use strict';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let ws         = null;
+let wsReady    = false;
+let mode       = null;   // 'random' | 'rit'
+let lastReport = null;
+let reconnTimer = null;
+let accSeq     = 0;
+let liveResults = [];
+
+// ─── WebSocket ────────────────────────────────────────────────────────────────
+function connect() {
+  if (ws && ws.readyState <= 1) return;
+  try { ws = new WebSocket('ws://localhost:4545'); }
+  catch { setOnline(false); scheduleReconnect(); return; }
+
+  ws.onopen  = () => { wsReady = true; setOnline(true); };
+  ws.onclose = () => { wsReady = false; setOnline(false); scheduleReconnect(); };
+  ws.onerror = () => { wsReady = false; setOnline(false); };
+  ws.onmessage = e => {
+    try { dispatch(JSON.parse(e.data)); } catch (_) {}
+  };
+}
+
+function scheduleReconnect() {
+  clearTimeout(reconnTimer);
+  reconnTimer = setTimeout(connect, 3000);
+}
+
+function setOnline(on) {
+  document.getElementById('conn-dot').className   = 'dot ' + (on ? 'ok' : 'off');
+  document.getElementById('conn-label').textContent = on ? 'Connected' : 'Server offline';
+  document.getElementById('conn-label').style.color  = on ? '#22c55e' : '#64748b';
+  document.getElementById('server-banner').classList.toggle('hidden', on);
+  const sb = document.getElementById('start-btn');
+  if (sb && mode) sb.disabled = !on;
+}
+
+// ─── Message dispatcher ───────────────────────────────────────────────────────
+function dispatch(msg) {
+  if (msg.type === 'ready') {
+    wsReady = true; setOnline(true);
+  } else if (msg.type === 'log') {
+    appendLog(msg.msg, msg.icon || '  ');
+  } else if (msg.type === 'done') {
+    lastReport = msg.report;
+    if (msg.results) updateStats(msg.results);
+    appendLog('\n✅ All done! Report ready.', '📄');
+    setRunning(false, 'done');
+  } else if (msg.type === 'error') {
+    appendLog(msg.msg, '❌');
+    setRunning(false, 'error');
+  }
+}
+
+// ─── Log output ───────────────────────────────────────────────────────────────
+const ISO = () => new Date().toISOString().replace('T', ' ').split('.')[0];
+
+function appendLog(msg, icon = '  ') {
+  const term = document.getElementById('terminal');
+  const el   = document.createElement('div');
+  const now  = ISO();
+  const lo   = msg.toLowerCase();
+
+  // Live incremental stats from log lines
+  if (icon === '✅' && msg.includes('questions done')) {
+    liveResults.push('success');
+  } else if (icon === '❌' && msg.includes('FAILED')) {
+    liveResults.push('failed');
+  } else if (icon === '⏭️') {
+    liveResults.push('skipped');
+  }
+  updateStatsFromLive();
+
+  if (icon === '❌' || lo.includes('failed') || lo.includes('error') || lo.includes('crash'))
+    el.className = 't-err';
+  else if (icon === '✅' || lo.includes('complete') || lo.includes('done'))
+    el.className = 't-ok';
+  else if (icon === '⚠️' || lo.includes('warn') || lo.includes('skipping'))
+    el.className = 't-warn';
+  else if (['🔐','🔗','🔍','✓','📥','👤'].includes(icon))
+    el.className = 't-info';
+  else if (msg.startsWith('─') || msg.startsWith('═') || msg.trim() === '')
+    el.className = 't-dim';
+
+  el.textContent = `[${now}]  ${icon}  ${msg}`;
+  term.appendChild(el);
+  term.scrollTop = term.scrollHeight;
+}
+
+function clearTerm() { document.getElementById('terminal').innerHTML = ''; liveResults = []; updateStatsFromLive(); }
+
+function updateStats(results) {
+  const ok   = results.filter(r => r.status === 'success').length;
+  const fail = results.filter(r => r.status === 'failed').length;
+  const skip = results.filter(r => r.status === 'skipped').length;
+  document.getElementById('s-total').textContent = results.length;
+  document.getElementById('s-ok').textContent    = ok;
+  document.getElementById('s-fail').textContent  = fail;
+  document.getElementById('s-skip').textContent  = skip;
+}
+
+function updateStatsFromLive() {
+  const ok   = liveResults.filter(x => x === 'success').length;
+  const fail = liveResults.filter(x => x === 'failed').length;
+  const skip = liveResults.filter(x => x === 'skipped').length;
+  document.getElementById('s-total').textContent = liveResults.length;
+  document.getElementById('s-ok').textContent    = ok;
+  document.getElementById('s-fail').textContent  = fail;
+  document.getElementById('s-skip').textContent  = skip;
+}
+
+// ─── Mode selection ───────────────────────────────────────────────────────────
+function selectMode(m) {
+  mode = m;
+  document.getElementById('card-random').classList.toggle('sel', m === 'random');
+  document.getElementById('card-rit').classList.toggle('sel', m === 'rit');
+  document.getElementById('config-panel').classList.remove('hidden');
+  document.getElementById('config-title').textContent = m === 'random' ? '🎲 Configure Random Test' : '⭐ Configure 95%+ Run';
+  document.getElementById('diff-field').classList.toggle('hidden', m !== 'rit');
+  document.getElementById('start-btn').disabled = !wsReady;
+  if (document.getElementById('accounts-list').children.length === 0) addAccount();
+}
+
+function resetMode() {
+  mode = null;
+  ['card-random','card-rit'].forEach(id => document.getElementById(id).classList.remove('sel'));
+  document.getElementById('config-panel').classList.add('hidden');
+}
+
+// ─── Accounts ─────────────────────────────────────────────────────────────────
+function addAccount() {
+  const id  = ++accSeq;
+  const row = document.createElement('div');
+  row.className = 'account-row';
+  row.id = `acc-${id}`;
+  row.innerHTML = `
+    <input type="text"     placeholder="Username"  class="acc-u" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <input type="password" placeholder="Password"  class="acc-p" autocomplete="new-password">
+    <button class="rm-btn" onclick="removeAcc(${id})" title="Remove">×</button>
+  `;
+  document.getElementById('accounts-list').appendChild(row);
+  row.querySelector('.acc-u').focus();
+}
+
+function removeAcc(id) {
+  const el = document.getElementById(`acc-${id}`);
+  if (el) el.remove();
+}
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+function startBot() {
+  const errEl = document.getElementById('start-err');
+  errEl.textContent = '';
+
+  if (!wsReady || !ws || ws.readyState !== WebSocket.OPEN) {
+    errEl.textContent = 'Bot server is not connected — start it first.';
+    return;
+  }
+
+  const accounts = [];
+  document.querySelectorAll('#accounts-list .account-row').forEach(row => {
+    const u = row.querySelector('.acc-u')?.value?.trim();
+    const p = row.querySelector('.acc-p')?.value?.trim();
+    if (u && p) accounts.push({ username: u, password: p });
+  });
+  if (!accounts.length) { errEl.textContent = 'Add at least one account with credentials.'; return; }
+
+  const subjects = [...document.querySelectorAll('.subj-cb:checked')].map(c => c.value);
+  if (!subjects.length) { errEl.textContent = 'Select at least one subject.'; return; }
+
+  const difficulty = document.querySelector('input[name="diff"]:checked')?.value || 'Simple';
+  const headless   = document.getElementById('headless-cb').checked;
+
+  // Prepare UI
+  liveResults = [];
+  document.getElementById('term-wrap').classList.remove('hidden');
+  document.getElementById('done-panel').classList.add('hidden');
+  document.getElementById('terminal').innerHTML = '';
+  document.getElementById('s-total').textContent = document.getElementById('s-ok').textContent = document.getElementById('s-fail').textContent = document.getElementById('s-skip').textContent = '0';
+  const pill = document.getElementById('prog-pill');
+  pill.textContent = 'Running…';
+  pill.className = 'progress-pill';
+  setRunning(true);
+
+  appendLog(`Starting ${mode === 'rit' ? '95%+ ' : 'random '}run — ${accounts.length} account(s), subjects: ${subjects.join(', ')}`, '🚀');
+
+  ws.send(JSON.stringify({ type: 'start', mode, accounts, subjects, difficulty, headless }));
+}
+
+function setRunning(running, result) {
+  const btn  = document.getElementById('start-btn');
+  const pill = document.getElementById('prog-pill');
+  btn.disabled = running;
+  btn.innerHTML = running
+    ? '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Running…'
+    : '<i class="fas fa-play" style="margin-right:8px"></i>Start Bot';
+
+  if (!running) {
+    if (result === 'done') {
+      pill.textContent = 'Completed';
+      pill.className   = 'progress-pill done';
+      document.getElementById('done-panel').classList.remove('hidden');
+    } else if (result === 'error') {
+      pill.textContent = 'Error';
+      pill.className   = 'progress-pill err';
+    }
+  }
+}
+
+// ─── Report download ──────────────────────────────────────────────────────────
+function downloadReport() {
+  if (!lastReport) return;
+  const blob = new Blob([lastReport], { type: 'text/markdown' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {
+    href: url,
+    download: `r4e-bot-report-${new Date().toISOString().slice(0, 10)}.md`,
+  });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function newRun() {
+  lastReport = null;
+  liveResults = [];
+  document.getElementById('done-panel').classList.add('hidden');
+  document.getElementById('term-wrap').classList.add('hidden');
+  document.getElementById('start-btn').disabled = !wsReady;
+  document.getElementById('start-btn').innerHTML = '<i class="fas fa-play" style="margin-right:8px"></i>Start Bot';
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+setOnline(false);
+connect();
+</script>
+</body>
+</html>
