@@ -19,7 +19,7 @@ const TIER_PRICES = {
         '3y': { amountPaise:  279900, label: "CORE",       durationLabel: "3 Years"  },
     },
     sync: {
-        '3m': { amountPaise:   60000, label: "LINK",       durationLabel: "3 Months" },
+        '3m': { amountPaise:   59900, label: "LINK",       durationLabel: "3 Months" },
         '1y': { amountPaise:  199900, label: "LINK",       durationLabel: "1 Year"   },
         '3y': { amountPaise:  549900, label: "LINK",       durationLabel: "3 Years"  },
     },
@@ -51,8 +51,9 @@ module.exports = async (req, res) => {
         'https://ready4exam.in',
         'https://www.ready4exam.in',
         'https://karnkeshav.github.io',
-        'https://masterpage-1.vercel.app'
-    ];
+        'https://masterpage-1.vercel.app',
+        process.env.ALLOWED_ORIGIN
+    ].filter(Boolean);
     if (allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');

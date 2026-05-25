@@ -153,6 +153,7 @@ module.exports = async (req, res) => {
             if (!pendingDoc.exists) throw new Error("Registration record not found.");
             const data = pendingDoc.data();
             if (data.status === 'completed') throw new Error("Order already processed.");
+            if (data.verificationToken !== verificationToken) throw new Error("Invalid verification token.");
             t.update(pendingRef, { status: 'processing' });
             return data;
         });

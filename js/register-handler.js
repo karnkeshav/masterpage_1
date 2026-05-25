@@ -12,8 +12,8 @@ const API_BASE = 'https://masterpage-1.vercel.app';
 // Labels used for the plan badge on the registration form
 const TIER_LABELS = {
     practitioner: "Base",
-    strategist:   "Main",
-    sync:         "Linked",
+    strategist:   "Core",
+    sync:         "Link",
     board_self:   "Peak",
     board_parent: "Peak Link",
   };
