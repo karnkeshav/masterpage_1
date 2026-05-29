@@ -174,15 +174,35 @@ function getSubjectTheme(subject) {
 function setupRoomNavigation(grade, profile) {
     document.getElementById("start-new-quiz-btn").href = `../curriculum.html?grade=${grade}`;
 
+    const modules = profile?.activeModules || [];
+    const tier    = profile?.subscriptionTier || '';
+
     const mistakeBtn = document.getElementById("btn-mistakes");
     if (mistakeBtn) {
         mistakeBtn.href = "../mistake-book.html";
-        const modules = profile?.activeModules || [];
         if (!modules.includes('MistakeNotebook')) {
             mistakeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.location.href = '../../offering.html';
             });
+        }
+    }
+
+    // PYQ Vault: visible for Class 10/12 AND only for board plans
+    const pyqBtn = document.getElementById("btn-pyq-vault");
+    if (pyqBtn) {
+        const isBoardPlan = ['board_self', 'board_parent'].includes(tier);
+        if (!isBoardPlan) {
+            pyqBtn.classList.add("hidden");
+        }
+    }
+
+    // Exam Pulse: same gate as PYQ Vault
+    const pulseBtn = document.getElementById("btn-exam-pulse");
+    if (pulseBtn) {
+        const isBoardPlan = ['board_self', 'board_parent'].includes(tier);
+        if (!isBoardPlan) {
+            pulseBtn.classList.add("hidden");
         }
     }
 }
