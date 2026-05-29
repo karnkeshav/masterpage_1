@@ -57,6 +57,9 @@
                     <div>
                         <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Parent Email Address</label>
                         <input type="email" id="reg-parent-email" required class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
+                        <p id="parent-console-notice" class="hidden mt-2 text-xs text-success-green font-semibold">
+                            <i class="fas fa-info-circle mr-1"></i> A Parent Console setup link will be emailed here after payment.
+                        </p>
                     </div>
                 </div>
 
@@ -81,6 +84,12 @@
                             <option value="SCERT">SCERT (TS)</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- Parent Name (visible only for Link / Peak Link plans) -->
+                <div id="parent-name-section" class="hidden">
+                    <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Parent's Full Name</label>
+                    <input type="text" id="reg-parent-name" class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition" placeholder="Used for Parent Console account">
                 </div>
 
                 <!-- Stream & Subject Selection (visible only for Class 11/12) -->
@@ -270,6 +279,16 @@
                 document.getElementById('reg-commerce-other').value = '';
             }
         });
+    })();
+    </script>
+    <script>
+    (function () {
+        const parentPlans = ['sync', 'board_parent'];
+        const plan = new URLSearchParams(window.location.search).get('plan') || '';
+        if (parentPlans.includes(plan)) {
+            document.getElementById('parent-name-section').classList.remove('hidden');
+            document.getElementById('parent-console-notice').classList.remove('hidden');
+        }
     })();
     </script>
     <script type="module" src="./js/register-handler.js"></script>

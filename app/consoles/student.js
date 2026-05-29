@@ -62,8 +62,8 @@ window.loadConsoleData = async (profile) => {
     const hubTitleEl = document.getElementById("knowledge-hub-title");
     if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
 
-    setupRoomNavigation(grade);
-    
+    setupRoomNavigation(grade, profile);
+
     await generateKnowledgeHub(profile, grade);
     await loadStudentStats(profile.uid, grade);
     renderInbox(profile.uid);            // FIXED: Passes the correct child UID
@@ -193,9 +193,40 @@ function getSubjectTheme(subject) {
     return { icon: "fas fa-book-open", borderColor: "border-slate-500", bgColor: "bg-slate-50", textColor: "text-slate-600", hoverColor: "text-slate-500", tagline: "Explore knowledge." };
 }
 
-function setupRoomNavigation(grade) {
+function setupRoomNavigation(grade, profile) {
     document.getElementById("start-new-quiz-btn").href = `../curriculum.html?grade=${grade}`;
-    document.getElementById("btn-mistakes").href = `../mistake-book.html`;
+
+    const modules = profile?.activeModules || [];
+    const tier    = profile?.subscriptionTier || '';
+
+    const mistakeBtn = document.getElementById("btn-mistakes");
+    if (mistakeBtn) {
+        mistakeBtn.href = "../mistake-book.html";
+        if (!modules.includes('MistakeNotebook')) {
+            mistakeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = '../../offering.html';
+            });
+        }
+    }
+
+    // PYQ Vault: visible for Class 10/12 AND only for board plans
+    const pyqBtn = document.getElementById("btn-pyq-vault");
+    if (pyqBtn) {
+        const isBoardPlan = ['board_self', 'board_parent'].includes(tier);
+        if (!isBoardPlan) {
+            pyqBtn.classList.add("hidden");
+        }
+    }
+
+    // Exam Pulse: same gate as PYQ Vault
+    const pulseBtn = document.getElementById("btn-exam-pulse");
+    if (pulseBtn) {
+        const isBoardPlan = ['board_self', 'board_parent'].includes(tier);
+        if (!isBoardPlan) {
+            pulseBtn.classList.add("hidden");
+        }
+    }
 }
 
 function getSubjectIcon(subject) {

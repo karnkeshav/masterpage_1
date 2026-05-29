@@ -1,22 +1,14 @@
 {
   "functions": {
-    "api/create-order.js": { "maxDuration": 30 },
-    "api/verify-payment.js": { "maxDuration": 30 },
-    "api/secure-reset.js": { "maxDuration": 30 },
-    "api/contact.js": { "maxDuration": 15 }
+    "api/create-order.js":              { "maxDuration": 30 },
+    "api/verify-payment.js":            { "maxDuration": 30 },
+    "api/secure-reset.js":              { "maxDuration": 30 },
+    "api/contact.js":                   { "maxDuration": 15 },
+    "api/activate-parent.js":           { "maxDuration": 30 },
+    "api/activate-parent-preview.js":   { "maxDuration": 10 }
   },
   "rewrites": [
     { "source": "/bots", "destination": "/bots.html" }
   ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://karnkeshav.github.io" },
-        { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" },
-        { "key": "Access-Control-Allow-Credentials", "value": "true" }
-      ]
-    }
-  ]
+  "headers": []
 }

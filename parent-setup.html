@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Up Parent Console | Ready4Exam</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="./js/tailwind-config.js"></script>
+    <link href="./css/global.css" rel="stylesheet">
+    <script src="./js/firebase-master-config.js"></script>
+
+    <style>
+        .bg-glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+        .border-glass { border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col font-sans">
+
+    <div id="app-header"></div>
+    <script src="./js/shell.js"></script>
+    <script>
+        R4E.renderHeader({ title: 'Ready4<span class="text-white">Exam</span>', titleHref: 'index.html', glass: true });
+    </script>
+
+    <main class="flex-grow flex items-center justify-center px-6 py-24">
+        <div class="w-full max-w-md bg-glass border-glass p-8 md:p-10 rounded-3xl shadow-2xl">
+
+            <div id="loading-state" class="text-center py-8">
+                <i class="fas fa-circle-notch fa-spin text-3xl text-success-green mb-4 block"></i>
+                <p class="text-slate-400 text-sm">Validating your invitation…</p>
+            </div>
+
+            <div id="setup-form-state" class="hidden">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success-green/20 text-success-green text-[10px] font-black uppercase tracking-widest mb-6">
+                    <i class="fas fa-users"></i> Parent Console Setup
+                </div>
+
+                <h1 class="text-2xl md:text-3xl font-black mb-2 tracking-tight">Welcome, Parent!</h1>
+                <p class="text-slate-400 text-sm mb-2">
+                    Your child <strong id="student-name-display" class="text-white"></strong> has subscribed to
+                    <strong id="plan-display" class="text-success-green"></strong>.
+                </p>
+                <p class="text-slate-400 text-sm mb-8">
+                    Create your Parent Console account to start monitoring their progress.
+                </p>
+
+                <div id="error-box" class="hidden bg-red-900/20 text-red-400 text-sm font-medium rounded-xl px-4 py-3 mb-6"></div>
+
+                <form id="setup-form" class="space-y-5">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Your Full Name</label>
+                        <input type="text" id="parent-name" required
+                               class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Your Login Email</label>
+                        <input type="email" id="parent-email" readonly
+                               class="w-full bg-white/10 border-white/10 rounded-xl px-4 py-3 text-slate-400 cursor-not-allowed">
+                        <p class="text-[10px] text-slate-500 mt-1">This is the email where you received this invitation.</p>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Create Password</label>
+                        <input type="password" id="parent-password" required minlength="8"
+                               class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition"
+                               placeholder="Minimum 8 characters">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Confirm Password</label>
+                        <input type="password" id="parent-password-confirm" required minlength="8"
+                               class="w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:ring-success-green focus:border-success-green transition">
+                    </div>
+                    <button type="submit" id="setup-btn"
+                            class="w-full py-4 rounded-xl bg-success-green text-white font-black hover:scale-[1.02] transition-transform shadow-lg shadow-success-green/20">
+                        Activate Parent Console
+                    </button>
+                </form>
+            </div>
+
+            <div id="error-state" class="hidden text-center py-8">
+                <div class="w-16 h-16 bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-400 text-2xl"></i>
+                </div>
+                <h2 class="text-xl font-black mb-2">Invalid Link</h2>
+                <p id="error-state-msg" class="text-slate-400 text-sm mb-6">This activation link is invalid or has expired.</p>
+                <a href="index.html" class="text-success-green font-bold text-sm hover:underline">Return to Home</a>
+            </div>
+        </div>
+    </main>
+
+    <div id="app-footer"></div>
+    <script>R4E.renderFooter();</script>
+
+    <script type="module">
+        import { routeUser } from './js/auth-paywall.js';
+        import { getInitializedClients } from './js/config.js';
+        import { signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+
+        const API_BASE = 'https://masterpage-1.vercel.app';
+        const PLAN_LABELS = {
+            sync: 'Link Plan',
+            board_parent: 'Peak Link Plan'
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const token  = params.get('token');
+
+        function showState(id) {
+            ['loading-state', 'setup-form-state', 'error-state'].forEach(s => {
+                document.getElementById(s).classList.toggle('hidden', s !== id);
+            });
+        }
+
+        async function init() {
+            if (!token) {
+                showState('error-state');
+                return;
+            }
+
+            // Validate token by fetching activation record preview via a lightweight check
+            // We fetch it by attempting to load the activation endpoint; if invalid we'll know on submit.
+            // For UX, pre-fill email and student name from token meta if available via a GET endpoint.
+            // Since we don't expose a GET endpoint, we fetch the record after submit is attempted.
+            // Instead: decode what we can from a preview call to activate-parent with no password (dry-run).
+            try {
+                const res = await fetch(`${API_BASE}/api/activate-parent-preview?token=${encodeURIComponent(token)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('parent-email').value     = data.parentEmail || '';
+                    document.getElementById('parent-name').value      = data.parentName  || '';
+                    document.getElementById('student-name-display').textContent = data.studentName || 'your child';
+                    document.getElementById('plan-display').textContent = PLAN_LABELS[data.planID] || data.planID || 'Parent Plan';
+                }
+            } catch (_) { /* non-fatal — email still shown from token */ }
+
+            showState('setup-form-state');
+        }
+
+        document.getElementById('setup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn       = document.getElementById('setup-btn');
+            const errorBox  = document.getElementById('error-box');
+            const name      = document.getElementById('parent-name').value.trim();
+            const password  = document.getElementById('parent-password').value;
+            const confirm   = document.getElementById('parent-password-confirm').value;
+
+            errorBox.classList.add('hidden');
+
+            if (password !== confirm) {
+                errorBox.textContent = 'Passwords do not match.';
+                errorBox.classList.remove('hidden');
+                return;
+            }
+            if (password.length < 8) {
+                errorBox.textContent = 'Password must be at least 8 characters.';
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled    = true;
+            btn.textContent = 'Activating…';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/activate-parent`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ token, password, parentName: name })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Activation failed.');
+
+                const { auth } = await getInitializedClients();
+                const credential = await signInWithCustomToken(auth, data.customToken);
+                await routeUser(credential.user);
+
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.classList.remove('hidden');
+                btn.disabled    = false;
+                btn.textContent = 'Activate Parent Console';
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
