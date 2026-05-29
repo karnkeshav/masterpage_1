@@ -967,6 +967,10 @@ function renderEmptyState(container) {
 
 initializeAuthListener(async (user, profile) => {
     if (user) {
+        if (profile?.subscriptionTier === 'practitioner') {
+            window.location.href = '../offering.html';
+            return;
+        }
         bindConsoleLogout("logout-nav-btn", "../index.html");
         const welcome = document.getElementById("user-welcome");
         if (welcome) welcome.textContent = profile?.displayName || "Scholar";

@@ -28,15 +28,19 @@ export async function initInsights() {
         const clients = await getInitializedClients();  
         if (!clients) return;  
   
-        clients.auth.onAuthStateChanged(async (user) => {  
-            if (user) {  
-                const profile = await ensureUserInFirestore(user); 
-                updateHeaderUI(profile); 
-                updatePageTitles();  
-                await runDeepAnalysis(); 
-            } else {  
-                window.location.href = "../offering.html";  
-            }  
+        clients.auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const profile = await ensureUserInFirestore(user);
+                if (!['board_self', 'board_parent'].includes(profile?.subscriptionTier)) {
+                    window.location.href = '../offering.html';
+                    return;
+                }
+                updateHeaderUI(profile);
+                updatePageTitles();
+                await runDeepAnalysis();
+            } else {
+                window.location.href = "../offering.html";
+            }
         });  
     } catch (err) {  
         console.error("Initialization Error:", err);  

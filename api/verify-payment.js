@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const admin  = require('firebase-admin');
 
 // ─── Email helper with Username and Reset Link Support ──────────────────────
-async function sendConfirmationEmail({ toEmail, studentName, username, planLabel, durationLabel, amountPaise, expiryDate, resetLink }) {
+async function sendConfirmationEmail({ toEmail, studentName, username, planLabel, durationLabel, amountPaise, expiryDate, resetLink, parentSetupLink }) {
     try {
         const smtpFrom = process.env.SMTP_FROM;
         const smtpPass = process.env.SMTP_PASS;
@@ -87,6 +87,14 @@ async function sendConfirmationEmail({ toEmail, studentName, username, planLabel
                 </a>
               </td>
             </tr>
+            ${parentSetupLink ? `
+            <tr><td style="padding-top:12px;" align="center">
+              <a href="${parentSetupLink}"
+                 style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:12px;font-size:14px;font-weight:900;width:200px;">
+                Set Up Parent Console
+              </a>
+              <p style="margin:6px 0 0;font-size:11px;color:#94a3b8;">Link valid for 48 hours</p>
+            </td></tr>` : ''}
           </table>
 
           <p style="margin:0 0 6px;color:#94a3b8;font-size:12px;">
@@ -202,20 +210,41 @@ module.exports = async (req, res) => {
         batch.update(pendingRef, { status: 'completed', uid: userRecord.uid, completedAt: admin.firestore.FieldValue.serverTimestamp() });
         await batch.commit();
 
+        // Generate parent activation token for Link / Peak Link plans
+        let parentActivationToken = null;
+        if (['sync', 'board_parent'].includes(pID) && pendingData.profileData.parentEmail) {
+            parentActivationToken = crypto.randomBytes(32).toString('hex');
+            const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+            await db.collection('parent_activations').doc(parentActivationToken).set({
+                studentUid:  userRecord.uid,
+                studentName: pendingData.profileData.displayName,
+                parentEmail: pendingData.profileData.parentEmail,
+                parentName:  pendingData.profileData.parentName || '',
+                planID:      pID,
+                used:        false,
+                createdAt:   admin.firestore.FieldValue.serverTimestamp(),
+                expiresAt:   admin.firestore.Timestamp.fromDate(expiresAt)
+            });
+        }
+
         // ── NEW: Generate Password Reset Link ────────────────────────────────
         // We generate the link for the student's email, but send it to the parent address.
         const resetLink = await auth.generatePasswordResetLink(pendingData.profileData.email);
 
         // ── UPDATED: Call email helper with Username and Reset Link ──────────
+        const frontendBase = process.env.FRONTEND_URL || 'https://ready4exam.in';
         await sendConfirmationEmail({
-            toEmail:       pendingData.profileData.parentEmail,
-            studentName:   pendingData.profileData.displayName,
-            username:      pendingData.profileData.username, // From profileData
-            planLabel:     pendingData.planLabel     || pID,
-            durationLabel: pendingData.durationLabel || duration,
-            amountPaise:   pendingData.amountPaise,
-            expiryDate:    expiry,
-            resetLink:     resetLink // Newly generated link
+            toEmail:         pendingData.profileData.parentEmail,
+            studentName:     pendingData.profileData.displayName,
+            username:        pendingData.profileData.username,
+            planLabel:       pendingData.planLabel     || pID,
+            durationLabel:   pendingData.durationLabel || duration,
+            amountPaise:     pendingData.amountPaise,
+            expiryDate:      expiry,
+            resetLink:       resetLink,
+            parentSetupLink: parentActivationToken
+                ? `${frontendBase}/parent-setup.html?token=${parentActivationToken}`
+                : null
         });
 
         const customToken = await auth.createCustomToken(userRecord.uid);

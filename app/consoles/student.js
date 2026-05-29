@@ -90,8 +90,8 @@ window.loadConsoleData = async (profile) => {
     const hubTitleEl = document.getElementById("knowledge-hub-title");
     if (hubTitleEl) hubTitleEl.textContent = `Grade ${grade} Knowledge Hub`;
 
-    setupRoomNavigation(grade);
-    
+    setupRoomNavigation(grade, profile);
+
     await generateKnowledgeHub(profile, grade);
     await loadStudentStats(profile.uid, grade);
     renderInbox();
@@ -171,10 +171,20 @@ function getSubjectTheme(subject) {
     return { icon: "fas fa-book-open", borderColor: "border-slate-500", bgColor: "bg-slate-50", textColor: "text-slate-600", hoverColor: "text-slate-500", tagline: "Explore knowledge." };
 }
 
-function setupRoomNavigation(grade) {
-    // Header Start Button
+function setupRoomNavigation(grade, profile) {
     document.getElementById("start-new-quiz-btn").href = `../curriculum.html?grade=${grade}`;
-    document.getElementById("btn-mistakes").href = `../mistake-book.html`;
+
+    const mistakeBtn = document.getElementById("btn-mistakes");
+    if (mistakeBtn) {
+        mistakeBtn.href = "../mistake-book.html";
+        const modules = profile?.activeModules || [];
+        if (!modules.includes('MistakeNotebook')) {
+            mistakeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = '../../offering.html';
+            });
+        }
+    }
 }
 
 function getSubjectIcon(subject) {

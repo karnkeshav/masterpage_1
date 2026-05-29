@@ -177,22 +177,21 @@ export async function routeUser(user) {
         return;
     }
 
-    // 3. Individual/B2C Routing (Practitioner Integration)
-// 3. Individual/B2C Routing
-if (data.tenantType === "individual") {
-    if (data.subscriptionTier === 'practitioner') {
-        window.location.href = "app/consoles/practitioner.html";
-    } 
-    // Direct 'strategist' (CORE) plan users to the comprehensive Student Hub
-    else if (data.subscriptionTier === 'strategist') {
-        window.location.href = "app/consoles/student.html";
+    // 3a. Parent role routing (B2C Link / Peak Link parent accounts)
+    if (data.role === "parent") {
+        window.location.href = "app/consoles/parent.html";
+        return;
     }
-    else {
-        // Default routing for Sync Bundle (LINK) and other tiers
-        window.location.href = "app/consoles/student.html";
+
+    // 3b. Individual/B2C Student Routing
+    if (data.tenantType === "individual") {
+        if (data.subscriptionTier === 'practitioner') {
+            window.location.href = "app/consoles/practitioner.html";
+        } else {
+            window.location.href = "app/consoles/student.html";
+        }
+        return;
     }
-    return;
-}
 
     // Fallback Routing
     if (!data.tenantType && data.school_id && data.role) {

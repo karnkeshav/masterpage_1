@@ -1,9 +1,11 @@
 {
   "functions": {
-    "api/create-order.js": { "maxDuration": 30 },
-    "api/verify-payment.js": { "maxDuration": 30 },
-    "api/secure-reset.js": { "maxDuration": 30 },
-    "api/contact.js": { "maxDuration": 15 }
+    "api/create-order.js":              { "maxDuration": 30 },
+    "api/verify-payment.js":            { "maxDuration": 30 },
+    "api/secure-reset.js":              { "maxDuration": 30 },
+    "api/contact.js":                   { "maxDuration": 15 },
+    "api/activate-parent.js":           { "maxDuration": 30 },
+    "api/activate-parent-preview.js":   { "maxDuration": 10 }
   },
   "rewrites": [
     { "source": "/bots", "destination": "/bots.html" }

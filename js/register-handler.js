@@ -102,6 +102,7 @@ form.addEventListener('submit', async (e) => {
 
     const name        = document.getElementById('reg-name').value.trim();
     const parentEmail = document.getElementById('reg-parent-email').value.trim();
+    const parentName  = (document.getElementById('reg-parent-name')?.value || '').trim();
     const password    = document.getElementById('reg-password').value;
     const grade       = document.getElementById('reg-class').value;
     const board       = document.getElementById('reg-board').value;
@@ -140,6 +141,7 @@ form.addEventListener('submit', async (e) => {
         username:        `stu_${uniqueStub}`,
         email:           studentLoginEmail,
         parentEmail:     parentEmail,
+        parentName:      parentName || null,
         role:            "student",
         tenantType:      "individual",
         isB2C:           true,

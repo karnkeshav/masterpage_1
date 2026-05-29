@@ -28,9 +28,17 @@ export async function initExamPulse() {
 
     clients.auth.onAuthStateChanged(async (user) => {
         if (user) {
+            const userSnap = await getDoc(doc(clients.db, "users", user.uid));
+            if (userSnap.exists()) {
+                const tier = userSnap.data().subscriptionTier;
+                if (!['board_self', 'board_parent'].includes(tier)) {
+                    window.location.href = '../offering.html';
+                    return;
+                }
+            }
             await syncStudentHeader(user, clients.db);
-            updateNavigationUI(); 
-            
+            updateNavigationUI();
+
             if (state.subject) {
                 showView('analysis-dashboard-view');
                 await runPulseAnalysis();
