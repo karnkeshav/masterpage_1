@@ -15,51 +15,24 @@ const sanitize = s => String(s ?? '').replace(/&/g,'&amp;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
 bindConsoleLogout("logout-nav-btn", "../../index.html");
-const mirrorMode = sessionStorage.getItem("mirror_mode");
-const mirrorStudentUid = sessionStorage.getItem("mirror_student_uid");
 
-const isParentMirror =
-    mirrorMode === "parent" &&
-    mirrorStudentUid;
+// CLEAR STALE METADATA ON LOGOUT EVENT
+const logoutBtn = document.getElementById("logout-nav-btn");
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+        sessionStorage.removeItem("mirror_mode");
+        sessionStorage.removeItem("mirror_student_uid");
+        sessionStorage.removeItem("mirror_student_classId");
+        sessionStorage.removeItem("mirror_student_section");
+    });
+}
 
-if (isParentMirror) {
-
-    console.log("Parent Mirror Mode Active");
-
-    const originalLoader = window.loadConsoleData;
-
-    window.loadConsoleData = async (profile) => {
-
-        const childUid = sessionStorage.getItem("mirror_student_uid");
-
-        if (!childUid) {
-            return;
-        }
-
-        profile.uid = childUid;
-
-        if (originalLoader) {
-            originalLoader(profile);
-        }
-    };
-
-    guardConsole("parent");
-
-} else {
-
-    // CLEANUP STALE MIRROR DATA
-    sessionStorage.removeItem("mirror_mode");
-    sessionStorage.removeItem("mirror_student_uid");
-
-    guardConsole("student");
-} 
-
-
+// ─── 1. DEFINE CORE LOADER FUNCTION FIRST ──────────────────────────────────
 window.loadConsoleData = async (profile) => {
     console.log("Loading Class Hub for:", profile.displayName);
     document.getElementById("user-welcome").textContent = (profile.displayName || "Student");
 
-    // 1. Determine Grade First
+    // Determine Grade Safely
     let grade = "9";
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("grade")) grade = urlParams.get("grade");
@@ -67,7 +40,7 @@ window.loadConsoleData = async (profile) => {
     else if (profile.grade) grade = profile.grade;
     else if (profile.class_id) grade = profile.class_id;
 
-    // 2. Apply Visibility Logic for Grade-Specific Features (Class 10 and 12 only)
+    // Apply Visibility Logic for Grade-Specific Features (Class 10 and 12 only)
     if (grade === "10" || grade === "12") {
         const pyqBtn = document.getElementById("btn-pyq-vault");
         const pulseBtn = document.getElementById("btn-exam-pulse");
@@ -76,15 +49,14 @@ window.loadConsoleData = async (profile) => {
         if (pulseBtn) pulseBtn.classList.remove("hidden");
     }
     else {
-    // ADD THIS TO ENSURE OTHER GRADES NEVER SEE IT
-    const pyqBtn = document.getElementById("btn-pyq-vault");
-    const pulseBtn = document.getElementById("btn-exam-pulse");
-    
-    if (pyqBtn) pyqBtn.classList.add("hidden");
-    if (pulseBtn) pulseBtn.classList.add("hidden");
-}
+        const pyqBtn = document.getElementById("btn-pyq-vault");
+        const pulseBtn = document.getElementById("btn-exam-pulse");
+        
+        if (pyqBtn) pyqBtn.classList.add("hidden");
+        if (pulseBtn) pulseBtn.classList.add("hidden");
+    }
 
-    // 3. Update UI Elements with Detected Grade
+    // Update UI Elements with Detected Grade
     document.getElementById("class-title").textContent = `Class ${grade} Hub`;
     document.getElementById("context-badge").textContent = `Grade ${grade}`;
     const hubTitleEl = document.getElementById("knowledge-hub-title");
@@ -94,11 +66,63 @@ window.loadConsoleData = async (profile) => {
 
     await generateKnowledgeHub(profile, grade);
     await loadStudentStats(profile.uid, grade);
-    renderInbox();
-    listenToIntercom();
+    renderInbox(profile.uid);            // FIXED: Passes the correct child UID
+    listenToIntercom(profile.uid);       // FIXED: Passes the correct child UID
 };
 
+// ─── 2. EVALUATE MIRROR ENVIRONMENT ROUTING ───────────────────────────────
+const mirrorMode = sessionStorage.getItem("mirror_mode");
+const mirrorStudentUid = sessionStorage.getItem("mirror_student_uid");
 
+const isParentMirror =
+    mirrorMode === "parent" &&
+    mirrorStudentUid;
+
+if (isParentMirror) {
+    console.log("Parent Mirror Mode Active");
+
+    const originalLoader = window.loadConsoleData;
+
+    window.loadConsoleData = async (parentProfile) => {
+        const childUid = sessionStorage.getItem("mirror_student_uid");
+        if (!childUid) return;
+
+        try {
+            const { db } = await getInitializedClients();
+            const childSnap = await getDoc(doc(db, "users", childUid));
+            
+            if (childSnap.exists()) {
+                const childProfile = childSnap.data();
+                childProfile.uid = childUid; // Pin verified student UID
+
+                if (originalLoader) {
+                    await originalLoader(childProfile);
+                }
+            } else {
+                console.warn("Child user document missing. Falling back with modified token profile.");
+                parentProfile.uid = childUid;
+                if (originalLoader) await originalLoader(parentProfile);
+            }
+        } catch (e) {
+            console.error("Critical Profile Sync Error in Mirror Mode interceptor:", e);
+            parentProfile.uid = childUid;
+            if (originalLoader) await originalLoader(parentProfile);
+        }
+    };
+
+    guardConsole("parent");
+
+} else {
+    // ENFORCE SYSTEM CLEANUP ON DIRECT INDEPENDENT ENTRIES
+    sessionStorage.removeItem("mirror_mode");
+    sessionStorage.removeItem("mirror_student_uid");
+    sessionStorage.removeItem("mirror_student_classId");
+    sessionStorage.removeItem("mirror_student_section");
+
+    guardConsole("student");
+} 
+
+// ─── 3. CORE SERVICE SUPPORT MODULE FUNCTIONS ───────────────────────────────
 async function generateKnowledgeHub(profile, grade) {
     const container = document.getElementById("knowledge-hub-links");
     if (!container) return;
@@ -121,11 +145,9 @@ async function generateKnowledgeHub(profile, grade) {
     let subjectsToRender = [];
 
     if (profile.mapped_disciplines && Array.isArray(profile.mapped_disciplines) && profile.mapped_disciplines.length > 0) {
-        // Filter mapping to ensure it exists in curriculum (case-insensitive)
         const curriculumKeys = Object.keys(curriculum).map(k => k.toLowerCase());
         subjectsToRender = profile.mapped_disciplines.filter(d => curriculumKeys.includes(d.toLowerCase()));
     } else {
-        // Default triad
         subjectsToRender = ["Mathematics", "Science", "Social Science"].filter(d => {
             const curriculumKeys = Object.keys(curriculum).map(k => k.toLowerCase());
             return curriculumKeys.includes(d.toLowerCase());
@@ -243,7 +265,6 @@ function renderKnowledgeHub(profile) {
 
     linksContainer.innerHTML = "";
     subjects.forEach((subject, index) => {
-        // Determine a nice color based on index
         const colors = ["blue-500", "purple-500", "amber-500", "green-500", "red-500", "indigo-500"];
         const color = colors[index % colors.length];
 
@@ -281,10 +302,9 @@ window.routeToLibrary = (subject) => {
 
 window.loadStudentStats = async (uid, grade) => {
     if (!uid) return;
-    document.getElementById("hub-sync-status").classList.remove("hidden"); // Syncing Hub Pulse
+    document.getElementById("hub-sync-status").classList.remove("hidden");
 
     try {
-        // Parallel Fetch: Stats & Curriculum
         const { db } = await getInitializedClients();
         const q = query(collection(db, "quiz_scores"), where("user_id", "==", uid), orderBy("timestamp", "desc"));
 
@@ -317,20 +337,15 @@ window.loadStudentStats = async (uid, grade) => {
             `;
         }
 
-        // --- METRIC: Curriculum Totals ---
         const curriculumCounts = { "Mathematics": 0, "Science": 0, "Social Science": 0 };
 
-        // Traverse curriculum to count total chapters
         if (curriculum) {
             for (const subject in curriculum) {
-                // Normalize subject key from curriculum to our buckets
                 let bucket = subject;
                 if (subject === "Maths" || subject === "Mathematics") bucket = "Mathematics";
-                // If curriculum has "Social Science" or "Science", it matches our keys.
 
                 if (curriculumCounts.hasOwnProperty(bucket)) {
                     const sections = curriculum[subject];
-                    // sections is { "Physics": [...], ... }
                     for (const sectionKey in sections) {
                         const chapters = sections[sectionKey];
                         if (Array.isArray(chapters)) {
@@ -340,7 +355,6 @@ window.loadStudentStats = async (uid, grade) => {
                 }
             }
         }
-
 
         if (Object.values(curriculumCounts).reduce((a, b) => a + b, 0) === 0) {
             const banner = document.createElement('div');
@@ -352,14 +366,10 @@ window.loadStudentStats = async (uid, grade) => {
             }
         }
 
-
         const totalChapters = curriculumCounts["Mathematics"] + curriculumCounts["Science"] + curriculumCounts["Social Science"];
-        const totalMasteryPoints = totalChapters * 3;
-
-        // Update Total Chapters and Radial Chart
+        
         if (document.getElementById("stat-total")) document.getElementById("stat-total").textContent = totalChapters;
 
-        // Update Total Attempts (in Average Mastery Card)
         const attemptsEl = document.getElementById("stat-attempts-count");
         if (attemptsEl) attemptsEl.textContent = snapshot.size;
 
@@ -369,13 +379,11 @@ window.loadStudentStats = async (uid, grade) => {
             return;
         }
 
-        // --- DATA PROCESSING ---
         let totalScoreSum = 0;
         const subjectScores = {};
         const chapterStats = {};
         const gridData = [];
 
-        // Helper to normalize subject names
         const getActualSubject = (data) => {
             if (data.subject && typeof data.subject === 'string' && data.subject.trim() !== '') {
                 const s = data.subject.trim().toLowerCase();
@@ -391,11 +399,10 @@ window.loadStudentStats = async (uid, grade) => {
             return "General";
         };
 
-        // --- METRIC: User Progress ---
         const uniqueTouchedChapters = new Set();
         const subjectTouchedCounts = { "Mathematics": new Set(), "Science": new Set(), "Social Science": new Set() };
         const masteredTiers = { "Simple": 0, "Medium": 0, "Advanced": 0 };
-        const masteredUniqueMap = new Set(); // Track unique chapter+difficulty mastered
+        const masteredUniqueMap = new Set();
 
         let latestQuiz = null;
 
@@ -408,34 +415,28 @@ window.loadStudentStats = async (uid, grade) => {
             const totalVal = data.totalQuestions || data.total || 20;
             const percentage = totalVal > 0 ? Math.round((scoreVal / totalVal) * 100) : (data.score_percent || 0);
 
-            // 0. Capture Latest Quiz
             if (index === 0) {
                 latestQuiz = { chapter: cleanChapter, percentage: percentage };
             }
 
-            // 1. Overall Avg
             totalScoreSum += percentage;
 
-            // 2. Subject Aggregation
             if (!subjectScores[cleanSubject]) subjectScores[cleanSubject] = [];
             subjectScores[cleanSubject].push(percentage);
 
-            // 3. Chapter Aggregation (Grit & Mastery)
             if (!chapterStats[cleanChapter]) chapterStats[cleanChapter] = { scores: [], attempts: 0, highest: 0 };
             chapterStats[cleanChapter].attempts++;
             chapterStats[cleanChapter].scores.push(percentage);
             if (percentage > chapterStats[cleanChapter].highest) chapterStats[cleanChapter].highest = percentage;
 
-            // 4. Volume Metrics
             if (cleanSubject !== "General") {
                 uniqueTouchedChapters.add(cleanChapter);
                 if (subjectTouchedCounts[cleanSubject]) {
                     subjectTouchedCounts[cleanSubject].add(cleanChapter);
                 }
 
-                // Mastery Funnel
                 if (percentage >= 95) {
-                    const difficulty = data.difficulty || "Simple"; // Default to Simple if missing
+                    const difficulty = data.difficulty || "Simple";
                     const diffKey = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
 
                     if (["Simple", "Medium", "Advanced"].includes(diffKey)) {
@@ -448,7 +449,6 @@ window.loadStudentStats = async (uid, grade) => {
                 }
             }
 
-            // 5. Recent Activity List Data
             const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString() : "N/A";
             gridData.push({
                 subject: cleanSubject,
@@ -459,20 +459,14 @@ window.loadStudentStats = async (uid, grade) => {
             });
         });
 
-        // --- UI RENDERING ---
-
-        // 1. Volume Dashboard
         document.getElementById("stat-coverage").textContent = `${uniqueTouchedChapters.size} Chapters Touched`;
 
-        // Radial Chart Update
         const coveragePercent = Math.min((uniqueTouchedChapters.size / totalChapters) * 100, 100);
         const radialBar = document.getElementById("stat-radial-bar");
         if (radialBar) {
-            // Circumference is ~100 in this viewbox scaling (2 * pi * 15.9155 = 100)
             radialBar.setAttribute("stroke-dasharray", `${coveragePercent}, 100`);
         }
 
-        // Coverage Grid (Persistent)
         const covMath = `${subjectTouchedCounts["Mathematics"].size}/${curriculumCounts["Mathematics"]}`;
         const covSci = `${subjectTouchedCounts["Science"].size}/${curriculumCounts["Science"]}`;
         const covSoc = `${subjectTouchedCounts["Social Science"].size}/${curriculumCounts["Social Science"]}`;
@@ -481,7 +475,6 @@ window.loadStudentStats = async (uid, grade) => {
         document.getElementById("coverage-sci").innerHTML = `<i class="fas fa-flask mb-1"></i> S: ${covSci}`;
         document.getElementById("coverage-sst").innerHTML = `<i class="fas fa-landmark mb-1"></i> SS: ${covSoc}`;
 
-        // Mastery Funnel (Persistent Mini-Bars)
         const wSimple = (masteredTiers["Simple"] / totalChapters) * 100;
         const wMedium = (masteredTiers["Medium"] / totalChapters) * 100;
         const wAdvanced = (masteredTiers["Advanced"] / totalChapters) * 100;
@@ -490,36 +483,29 @@ window.loadStudentStats = async (uid, grade) => {
         document.getElementById("funnel-medium").style.width = `${Math.min(wMedium, 100)}%`;
         document.getElementById("funnel-advanced").style.width = `${Math.min(wAdvanced, 100)}%`;
 
-
-        // 2. Latest Achievement
         if (latestQuiz && document.getElementById("stat-subject")) {
-            document.getElementById("stat-subject").innerHTML = `${sanitize(latestQuiz.chapter)} <span class="${getScoreColor(latestQuiz.percentage)}">(${latestQuiz.percentage}%)</span>`;
+            document.getElementById("stat-subject").innerHTML = `${sanitize(latestQuiz.chapter)} <span class="${getScoreColor(latestQuiz.percentage)}">( ${latestQuiz.percentage}% )</span>`;
             document.getElementById("stat-subject-label").textContent = "Latest Achievement:";
         }
 
-        // 3. Average Mastery
         const avg = Math.round(totalScoreSum / snapshot.size);
         document.getElementById("stat-avg").textContent = `${avg}%`;
 
-        // Update Radial Donut
         const avgRadial = document.getElementById("stat-avg-radial");
         if (avgRadial) {
             avgRadial.setAttribute("stroke-dasharray", `${avg}, 100`);
         }
 
-        // --- NEW: Subject-Based Tier Logic & Diagnostics ---
         const masteryCounts = {
             "Mathematics": { "Advanced": new Set(), "Medium": new Set() },
             "Science": { "Advanced": new Set(), "Medium": new Set() },
             "Social Science": { "Advanced": new Set(), "Medium": new Set() }
         };
 
-        // Diagnostic Data Structure: Subject -> Section -> Scores
-        const sectionScores = {}; // { "Mathematics": { "Algebra": [80, 90], ... } }
+        const sectionScores = {};
         const simpleMasteryCounts = { "Mathematics": 0, "Science": 0, "Social Science": 0 };
         const simpleTotalCounts = { "Mathematics": 0, "Science": 0, "Social Science": 0 };
 
-        // Populate Mastery Sets & Diagnostics
         snapshot.docs.forEach(doc => {
             const d = doc.data();
             const totalQ = d.totalQuestions || d.total || 20;
@@ -529,7 +515,6 @@ window.loadStudentStats = async (uid, grade) => {
             const diffRaw = d.difficulty || "Simple";
             const diff = diffRaw.charAt(0).toUpperCase() + diffRaw.slice(1).toLowerCase();
 
-            // Tier Logic (Advanced/Medium)
             if (p >= 95) {
                 if (masteryCounts[sub]) {
                     if (diff === "Advanced") masteryCounts[sub]["Advanced"].add(chap);
@@ -537,21 +522,16 @@ window.loadStudentStats = async (uid, grade) => {
                 }
             }
 
-            // Diagnostic Logic (Simple Difficulty)
             if (diff === "Simple" || !d.difficulty) {
-                // Find Section in Curriculum
                 let sectionName = "General";
                 if (curriculum && curriculum[sub]) {
-                    // Check direct sections first
                     for (const sec in curriculum[sub]) {
                         const chapters = curriculum[sub][sec];
-                        // Simple substring match for robustness
                         if (Array.isArray(chapters) && chapters.some(c => chap.includes(c.chapter_title) || c.chapter_title.includes(chap))) {
                             sectionName = sec;
                             break;
                         }
                     }
-                    // Fallback mapping for known structures
                     if (sectionName === "General" && sub === "Mathematics") {
                         if (chap.includes("Polynomial") || chap.includes("Number")) sectionName = "Algebra and Number System";
                         else if (chap.includes("Triangle") || chap.includes("Circle") || chap.includes("Line")) sectionName = "Geometry";
@@ -563,7 +543,6 @@ window.loadStudentStats = async (uid, grade) => {
                 if (!sectionScores[sub][sectionName]) sectionScores[sub][sectionName] = [];
                 sectionScores[sub][sectionName].push(p);
 
-                // Simple Mastery Tracking for Pips
                 if (simpleMasteryCounts[sub] !== undefined) {
                     simpleTotalCounts[sub]++;
                     if (p >= 95) simpleMasteryCounts[sub]++;
@@ -571,7 +550,6 @@ window.loadStudentStats = async (uid, grade) => {
             }
         });
 
-        // Calculate Diagnostics (Strong/Weak) per Subject
         const diagnostics = {};
         let globalWeakestSection = "General";
         let globalMinScore = 100;
@@ -586,7 +564,6 @@ window.loadStudentStats = async (uid, grade) => {
                 if (secAvg > maxAvg) { maxAvg = secAvg; strong = sec; }
                 if (secAvg < minAvg) { minAvg = secAvg; weak = sec; }
 
-                // Update Global Weakest
                 if (secAvg < globalMinScore) {
                     globalMinScore = secAvg;
                     globalWeakestSection = sec;
@@ -595,7 +572,6 @@ window.loadStudentStats = async (uid, grade) => {
 
             diagnostics[sub] = { strong, weak, simpleAvg: 0 };
 
-            // Overall Simple Avg for Radar/Pips
             const subSimpleScores = Object.values(sections).flat();
             if (subSimpleScores.length > 0) {
                 diagnostics[sub].simpleAvg = subSimpleScores.reduce((a, b) => a + b, 0) / subSimpleScores.length;
@@ -626,7 +602,6 @@ window.loadStudentStats = async (uid, grade) => {
                 standardCount++;
             }
 
-            // Box Style Sync with Total Chapters + Tier Letter
             return `
                 <div class="px-2 py-1 rounded text-[10px] font-bold text-center border ${config.bgClass} flex items-center gap-1.5 min-w-[80px] justify-between shadow-sm" title="${sub}">
                     <div class="flex items-center gap-1">
@@ -641,7 +616,6 @@ window.loadStudentStats = async (uid, grade) => {
         const tiersContainer = document.getElementById("subject-tiers-container");
         if (tiersContainer) tiersContainer.innerHTML = tiersHtml;
 
-        // Determine Global Badge
         let globalBadgeText = "Foundational Scholar";
         let globalBadgeClass = "bg-slate-100 text-slate-500 border-slate-200";
 
@@ -659,19 +633,16 @@ window.loadStudentStats = async (uid, grade) => {
             badgeEl.className = `px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${globalBadgeClass}`;
         }
 
-        // Update Journey Line
         const journeyBar = document.getElementById("journey-progress");
         if (journeyBar) {
-            let progress = "15%"; // Foundational default
+            let progress = "15%";
             if (globalBadgeText.includes("Challenger")) progress = "100%";
             else if (globalBadgeText.includes("Standard")) progress = "50%";
 
             journeyBar.style.width = progress;
         }
 
-        // 4. Subject Mastery (Slim-Tiles)
         const subjectMeterContainer = document.getElementById("subject-mastery-container");
-
         let diagnosticRows = "";
         const subjectConfigs = [
             { key: "Mathematics", label: "M", icon: "fa-calculator", bg: "bg-blue-50", text: "text-success-green", border: "border-blue-100", bar: "bg-success-green" },
@@ -684,8 +655,7 @@ window.loadStudentStats = async (uid, grade) => {
             const isSimpleMastered = (simpleMasteryCounts[cfg.key] / (simpleTotalCounts[cfg.key] || 1)) >= 0.95;
             const sPipClass = isSimpleMastered ? cfg.text : "text-slate-200";
 
-            // Overall Average for Mini-Spark
-            const scores = Array.isArray(subjectScores[cfg.key]) ? subjectScores[cfg.key] : []; // Flatten logic
+            const scores = Array.isArray(subjectScores[cfg.key]) ? subjectScores[cfg.key] : [];
             const overallAvg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
 
             diagnosticRows += `
@@ -718,20 +688,18 @@ window.loadStudentStats = async (uid, grade) => {
                 <div class="space-y-1">
                     ${diagnosticRows}
                 </div>
-
                 <div class="mt-2 pt-2 border-t border-slate-50 text-[9px] text-slate-400 italic">
                     <span class="font-bold text-cbse-blue">Expert Insight:</span> Focus on <span class="font-bold text-slate-600">${globalWeakestSection}</span> to improve mastery.
                 </div>
             </div>
         `;
 
-        // 5. UPDATED: Chapter Health Grid (Top 5 by Highest Score)
         const healthContainer = document.getElementById("chapter-health-grid");
         if (healthContainer) {
             const topPerformers = Object.entries(chapterStats)
                 .map(([name, stats]) => ({ name, ...stats }))
-                .sort((a, b) => b.highest - a.highest) // Sort by Score DESC
-                .slice(0, 5); // Take only Top 5
+                .sort((a, b) => b.highest - a.highest)
+                .slice(0, 5);
 
             healthContainer.innerHTML = topPerformers.map(chap => {
                 const colorClass = getScoreColor(chap.highest);
@@ -751,7 +719,6 @@ window.loadStudentStats = async (uid, grade) => {
             }).join("");
         }
 
-        // 6. Recent Activity List (Increased to 30 items to utilize the scroll)
         const columns = [
             { key: 'subject', header: 'Subject', cell: (item) => `<span class="font-bold text-cbse-blue">${item.subject}</span>` },
             { key: 'chapter', header: 'Chapter', cell: (item) => `<span class="text-sm font-medium text-slate-600">${item.chapter}</span>` },
@@ -761,7 +728,7 @@ window.loadStudentStats = async (uid, grade) => {
 
         UI.renderResponsiveGrid(
             document.getElementById("grid-container"),
-            gridData.slice(0, 30), // Show more items
+            gridData.slice(0, 30),
             columns,
             (item) => `
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center mb-2">
@@ -789,7 +756,6 @@ window.loadStudentStats = async (uid, grade) => {
 };
 
 function renderZeroState(curriculumCounts, totalChapters) {
-    // Update Volume Dashboard for Zero State
     if (curriculumCounts && totalChapters) {
         if (document.getElementById("stat-coverage")) document.getElementById("stat-coverage").textContent = `0 Chapters Touched`;
 
@@ -830,6 +796,7 @@ function getScoreColor(p) {
     if (p >= 50) return "text-cbse-blue";
     return "text-danger-red";
 }
+
 window.toggleInbox = () => {
     const inbox = document.getElementById("student-inbox");
     if (inbox) inbox.classList.toggle("translate-x-full");
@@ -862,19 +829,23 @@ window.launchFromInbox = async (topicSlug, discipline, notifGrade, chapterTitle)
     window.location.href = `../study-content.html?grade=${grade}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;
 };
 
-async function listenToIntercom() {
+// ─── FIXED SUBROUTINES FOR PASS-THROUGH CONTEXT IN MIRROR MODE ──────────────────
+async function listenToIntercom(targetUid) {
     if (unsubIntercom) unsubIntercom();
     const { auth, db } = await getInitializedClients();
     const feed = document.getElementById('intercom-feed');
     if (!feed || !auth.currentUser) return;
 
-    const userSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+    // Use passed context UID, fallback to mirror session state, fallback to direct login
+    const uid = targetUid || sessionStorage.getItem("mirror_student_uid") || auth.currentUser.uid;
+
+    const userSnap = await getDoc(doc(db, "users", uid));
     if (!userSnap.exists()) return;
     const profile = userSnap.data();
 
     const schoolId = profile.school_id;
-    const targetGrade = profile.classId || "9"; // default
-    const targetSection = profile.section || "A"; // default
+    const targetGrade = profile.classId || sessionStorage.getItem("mirror_student_classId") || "9";
+    const targetSection = profile.section || sessionStorage.getItem("mirror_student_section") || "A";
 
     if(!schoolId) return;
 
@@ -886,14 +857,12 @@ async function listenToIntercom() {
     unsubIntercom = onSnapshot(q, (snapshot) => {
         feed.innerHTML = "";
 
-
-        // Sort manually client side
         const docs = [];
         snapshot.forEach(doc => docs.push(doc));
         docs.sort((a,b) => {
             const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
             const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
-            return tb - ta; // desc
+            return tb - ta;
         });
 
         docs.forEach(doc => {
@@ -910,7 +879,6 @@ async function listenToIntercom() {
                     </div>
                     <p class="text-slate-700 font-medium">${data.text}</p>
                 `;
-                // Using appendChild because we iterate desc (newest first). Wait, if we iterate newest first and append, newest is at the top.
                 feed.appendChild(toast);
 
                 const badge = document.getElementById("inbox-badge");
@@ -925,14 +893,16 @@ async function listenToIntercom() {
     });
 }
 
-async function renderInbox() {
+async function renderInbox(targetUid) {
     if (unsubInbox) unsubInbox();
     const { auth, db } = await getInitializedClients();
     const notificationContainer = document.getElementById('notification-list');
     if (!notificationContainer || !auth.currentUser) return;
 
-    // Querying notifications for the logged-in student
-    const q = query(collection(db, "student_notifications"), where("student_id", "==", auth.currentUser.uid));
+    // Use passed context UID, fallback to mirror session state, fallback to direct login
+    const uid = targetUid || sessionStorage.getItem("mirror_student_uid") || auth.currentUser.uid;
+
+    const q = query(collection(db, "student_notifications"), where("student_id", "==", uid));
 
     unsubInbox = onSnapshot(q, (snapshot) => {
         notificationContainer.innerHTML = "";
