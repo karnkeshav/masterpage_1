@@ -96,6 +96,9 @@
             <button class="nav-link text-slate-400 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" data-tab="ledger">
                 <i class="fas fa-file-invoice-dollar mr-1"></i> Financial Ledger
             </button>
+            <button class="nav-link text-slate-400 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition" data-tab="plans">
+                <i class="fas fa-id-badge mr-1"></i> Plan Control
+            </button>
         </div>
 
         <div id="tab-b2b" class="tab-content">
@@ -150,6 +153,59 @@
                     <button id="ledger-load-more" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-black px-6 py-3 rounded-xl transition uppercase tracking-widest">
                         Load more transactions
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-plans" class="tab-content hidden space-y-5">
+
+            <div class="bg-slate-900 border border-slate-800 rounded-[32px] p-6 lg:p-8">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                    <div>
+                        <h3 class="text-lg font-black text-white flex items-center gap-2">
+                            <i class="fas fa-id-badge text-indigo-400"></i> Student Plan Control
+                        </h3>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                            Sovereign override — view every onboarded student and reassign their plan
+                        </p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-xs"></i>
+                            <input id="plan-search" type="text" placeholder="Search name, email or ID…"
+                                class="bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-xs text-white outline-none focus:border-indigo-500 w-full sm:w-64">
+                        </div>
+                        <select id="plan-filter" class="bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500">
+                            <option value="all">All Plans</option>
+                            <option value="practitioner">Base</option>
+                            <option value="strategist">Core</option>
+                            <option value="sync">Link</option>
+                            <option value="board_self">Peak</option>
+                            <option value="board_parent">Peak Link</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="plan-summary-chips" class="flex flex-wrap gap-3 mb-6"></div>
+
+                <div class="bg-slate-950/40 border border-slate-800 rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-400">
+                            <thead class="bg-slate-950/60 text-[10px] uppercase font-black text-slate-500">
+                                <tr>
+                                    <th class="p-6">Student ID</th>
+                                    <th class="p-6">Identity</th>
+                                    <th class="p-6">Account</th>
+                                    <th class="p-6">Current Plan</th>
+                                    <th class="p-6">Access</th>
+                                    <th class="p-6 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="plan-roster-rows" class="divide-y divide-slate-800">
+                                <tr><td colspan="6" class="p-12 text-center text-slate-500 italic">Open this tab to synchronize the student roster…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -282,10 +338,12 @@
                     <div>
                         <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Subscription Tier</label>
                         <select id="u-plan" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none">
-                            <option value="practitioner">Practitioner</option>
-                            <option value="strategist">Strategist</option>
-                            <option value="sync">Sync Bundle</option>
-                            <option value="board_ready">Board Ready</option>
+                            <option value="practitioner">Base — Practitioner</option>
+                            <option value="strategist">Core — Strategist</option>
+                            <option value="sync">Link — Sync Bundle</option>
+                            <option value="board_self">Peak — Board Self</option>
+                            <option value="board_parent">Peak Link — Board + Parent</option>
+                            <option value="board_ready">Peak (Legacy)</option>
                             <option value="legacy">Legacy</option>
                         </select>
                     </div>
@@ -296,6 +354,52 @@
                 </div>
                 <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-xl transition text-xs uppercase tracking-widest">Synchronize Profile</button>
             </form>
+        </div>
+    </div>
+
+    <div id="plan-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-[32px] w-full max-w-lg p-8 space-y-5 relative shadow-2xl">
+            <button class="js-close-plan-modal absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-500 transition">✕</button>
+
+            <div>
+                <h2 class="text-xl font-black text-white flex items-center gap-2">
+                    <i class="fas fa-sliders-h text-indigo-400"></i> Reassign Plan
+                </h2>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Owner Override · Access updates instantly</p>
+            </div>
+
+            <div class="flex items-center gap-4 bg-slate-950/60 border border-slate-800 rounded-2xl p-4">
+                <span id="plan-modal-id" class="font-mono font-black text-xs px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 text-white">S.–.–</span>
+                <div class="min-w-0">
+                    <div id="plan-modal-student" class="font-bold text-white text-sm truncate">Scholar</div>
+                    <div class="text-[10px] text-slate-500">Current plan: <span id="plan-modal-current" class="text-amber-400 font-bold">—</span></div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black text-slate-500 uppercase mb-2">Assign New Plan</label>
+                <select id="plan-modal-select" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm outline-none focus:border-indigo-500">
+                    <option value="practitioner">Base — Practitioner</option>
+                    <option value="strategist">Core — Strategist</option>
+                    <option value="sync">Link — Sync Bundle</option>
+                    <option value="board_self">Peak — Board Self</option>
+                    <option value="board_parent">Peak Link — Board + Parent</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black text-emerald-400 uppercase mb-2">Modules this plan unlocks</label>
+                <div id="plan-modal-preview" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <p class="text-[10px] text-slate-500 leading-relaxed bg-slate-950/50 border border-white/5 rounded-xl p-3">
+                <i class="fas fa-shield-halved text-indigo-400 mr-1"></i>
+                This override updates the student's <strong class="text-slate-300">subscription tier</strong> and <strong class="text-slate-300">active modules</strong> immediately. Future registrations are unaffected — the plan-based access flow stays intact.
+            </p>
+
+            <button id="plan-apply-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-xl transition text-xs uppercase tracking-widest">
+                <i class="fas fa-bolt mr-1"></i> Apply Plan Override
+            </button>
         </div>
     </div>
 

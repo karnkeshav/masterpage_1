@@ -202,7 +202,7 @@ function setupRoomNavigation(grade, profile) {
     const mistakeBtn = document.getElementById("btn-mistakes");
     if (mistakeBtn) {
         mistakeBtn.href = "../mistake-book.html";
-        if (!modules.includes('MistakeNotebook')) {
+        if (profile?.isB2C === true && !modules.includes('MistakeNotebook')) {
             mistakeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.location.href = '../../offering.html';
@@ -210,9 +210,9 @@ function setupRoomNavigation(grade, profile) {
         }
     }
 
-    // PYQ Vault: visible for Class 10/12 AND only for board plans
+    // PYQ Vault: visible for Class 10/12 AND, for B2C users, only on board plans
     const pyqBtn = document.getElementById("btn-pyq-vault");
-    if (pyqBtn) {
+    if (pyqBtn && profile?.isB2C === true) {
         const isBoardPlan = ['board_self', 'board_parent'].includes(tier);
         if (!isBoardPlan) {
             pyqBtn.classList.add("hidden");
@@ -221,7 +221,7 @@ function setupRoomNavigation(grade, profile) {
 
     // Exam Pulse: same gate as PYQ Vault
     const pulseBtn = document.getElementById("btn-exam-pulse");
-    if (pulseBtn) {
+    if (pulseBtn && profile?.isB2C === true) {
         const isBoardPlan = ['board_self', 'board_parent'].includes(tier);
         if (!isBoardPlan) {
             pulseBtn.classList.add("hidden");

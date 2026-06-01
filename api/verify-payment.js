@@ -191,7 +191,7 @@ module.exports = async (req, res) => {
 
         const activeModules = ["SimpleQuizzes", "MediumQuizzes", "AdvancedQuizzes"];
         const pID = pendingData.planID;
-        if (['strategist', 'sync'].includes(pID)) activeModules.push("MistakeNotebook", "KnowledgeHub", "BehavioralAnalytics", "DiagnosticConsole");
+        if (['strategist', 'sync', 'board_self', 'board_parent'].includes(pID)) activeModules.push("MistakeNotebook", "KnowledgeHub", "BehavioralAnalytics", "DiagnosticConsole");
         if (['sync', 'board_parent'].includes(pID)) activeModules.push("ParentConsole");
         if (['board_self', 'board_parent', 'board_ready'].includes(pID)) activeModules.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
 

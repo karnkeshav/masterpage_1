@@ -26,6 +26,65 @@ const LEDGER_PAGE_SIZE = 100;
 let ledgerLastDoc = null;
 let ledgerFullyLoaded = false;
 
+// ─── Plan Control state & catalog ───────────────────────────────────────────
+let studentsCache = [];
+let studentsStreamStarted = false;
+let planSearchTerm = "";
+let planFilter = "all";
+let planModalUid = null;
+
+const PLAN_CATALOG = [
+    { id: "practitioner", label: "Base",      color: "slate"   },
+    { id: "strategist",   label: "Core",      color: "blue"    },
+    { id: "sync",         label: "Link",      color: "emerald" },
+    { id: "board_self",   label: "Peak",      color: "amber"   },
+    { id: "board_parent", label: "Peak Link", color: "purple"  },
+];
+
+const MODULE_LABELS = {
+    SimpleQuizzes:       "Simple Quizzes",
+    MediumQuizzes:       "Medium Quizzes",
+    AdvancedQuizzes:     "Advanced Quizzes",
+    MistakeNotebook:     "Mistake Notebook",
+    KnowledgeHub:        "Knowledge Hub",
+    BehavioralAnalytics: "Behavioral Analytics",
+    DiagnosticConsole:   "Diagnostic Console",
+    ParentConsole:       "Parent Console",
+    PYQ_Insights:        "PYQ Insights",
+    WeightageAnalytics:  "Weightage Analytics",
+    MarkingGuides:       "Marking Guides",
+};
+
+// Mirrors api/verify-payment.js exactly so an owner override grants the same
+// access a fresh registration on that plan would receive.
+function computeActiveModules(planID) {
+    const mods = ["SimpleQuizzes", "MediumQuizzes", "AdvancedQuizzes"];
+    if (["strategist", "sync", "board_self", "board_parent"].includes(planID)) mods.push("MistakeNotebook", "KnowledgeHub", "BehavioralAnalytics", "DiagnosticConsole");
+    if (["sync", "board_parent"].includes(planID)) mods.push("ParentConsole");
+    if (["board_self", "board_parent", "board_ready"].includes(planID)) mods.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
+    return mods;
+}
+
+function planMeta(tier) {
+    const found = PLAN_CATALOG.find((p) => p.id === tier);
+    if (found) return found;
+    if (tier === "board_ready") return { id: "board_ready", label: "Peak (Legacy)", color: "amber" };
+    return { id: tier || "none", label: tier || "Unassigned", color: "slate" };
+}
+
+// Builds an S.<class>.<section> identifier. Falls back to a deterministic
+// section letter derived from the uid when no section is on record.
+function studentBadgeId(u) {
+    const cls = u.class || u.classId || u.grade || u.class_id || "?";
+    let section = String(u.section || "").trim();
+    if (!section) {
+        const seed = String(u.id || u.uid || "x");
+        const code = seed.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+        section = String.fromCharCode(65 + (code % 26));
+    }
+    return `S.${cls}.${section}`.toUpperCase();
+}
+
 bindConsoleLogout("logout-nav-btn", "../../index.html");
 guardConsole("owner");
 
@@ -337,6 +396,7 @@ async function handleUserFormSubmit(e) {
                     isB2C: true,
                     status: "active",
                     subscriptionTier,
+                    activeModules: computeActiveModules(subscriptionTier),
                     revenue,
                     parentEmail,
                     createdAt: serverTimestamp(),
@@ -357,6 +417,7 @@ async function handleUserFormSubmit(e) {
             await updateDoc(doc(db, "users", uid), {
                 displayName,
                 subscriptionTier,
+                activeModules: computeActiveModules(subscriptionTier),
                 revenue,
                 parentEmail,
                 updatedAt: serverTimestamp()
@@ -558,6 +619,156 @@ function renderB2CTable(users) {
     }).join("");
 }
 
+// ─── Plan Control ────────────────────────────────────────────────────────────
+async function initStudentsStream() {
+    if (studentsStreamStarted) return;
+    studentsStreamStarted = true;
+
+    const tbody = document.getElementById("plan-roster-rows");
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-slate-500 italic animate-pulse">Synchronizing student roster…</td></tr>';
+
+    const { db } = await getInitializedClients();
+    onSnapshot(
+        query(collection(db, "users"), where("role", "==", "student")),
+        (snap) => {
+            studentsCache = [];
+            snap.forEach((d) => studentsCache.push({ id: d.id, ...d.data() }));
+            studentsCache.sort((a, b) => safeTs(b.createdAt || b.activationDate) - safeTs(a.createdAt || a.activationDate));
+            if (currentTab === "plans") renderPlanControl();
+        },
+        (err) => showSyncError("Students Roster", err)
+    );
+}
+
+function renderPlanControl() {
+    const tbody = document.getElementById("plan-roster-rows");
+    const chipsEl = document.getElementById("plan-summary-chips");
+    if (!tbody) return;
+
+    // Summary chips: live count per plan
+    if (chipsEl) {
+        const counts = {};
+        PLAN_CATALOG.forEach((p) => (counts[p.id] = 0));
+        let other = 0;
+        studentsCache.forEach((u) => {
+            if (Object.prototype.hasOwnProperty.call(counts, u.subscriptionTier)) counts[u.subscriptionTier]++;
+            else other++;
+        });
+        let chips = PLAN_CATALOG.map((p) => `
+            <div class="flex items-center gap-2 bg-slate-950/50 border border-white/5 px-4 py-2 rounded-xl">
+                <span class="w-2 h-2 rounded-full bg-${p.color}-400"></span>
+                <span class="text-[10px] font-black uppercase text-slate-400">${p.label}</span>
+                <span class="text-sm font-black text-white">${counts[p.id]}</span>
+            </div>`).join("");
+        if (other) chips += `
+            <div class="flex items-center gap-2 bg-slate-950/50 border border-white/5 px-4 py-2 rounded-xl">
+                <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+                <span class="text-[10px] font-black uppercase text-slate-400">Other</span>
+                <span class="text-sm font-black text-white">${other}</span>
+            </div>`;
+        chipsEl.innerHTML = chips;
+    }
+
+    // Filter + search
+    let rows = studentsCache;
+    if (planFilter !== "all") rows = rows.filter((u) => (u.subscriptionTier || "") === planFilter);
+    if (planSearchTerm) {
+        const term = planSearchTerm.toLowerCase();
+        rows = rows.filter((u) =>
+            (u.displayName || "").toLowerCase().includes(term) ||
+            (u.email || "").toLowerCase().includes(term) ||
+            studentBadgeId(u).toLowerCase().includes(term)
+        );
+    }
+
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-slate-500 italic">No students match the current filter.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = rows.map((u) => {
+        const meta = planMeta(u.subscriptionTier);
+        const badge = studentBadgeId(u);
+        const isSchool = u.tenantType === "school";
+        const account = isSchool ? "School" : "Individual";
+        const accountColor = isSchool ? "indigo" : "emerald";
+        const modCount = Array.isArray(u.activeModules) ? u.activeModules.length : computeActiveModules(u.subscriptionTier).length;
+
+        return `
+        <tr class="hover:bg-slate-900/40 transition">
+            <td class="p-6"><span class="font-mono font-black text-xs px-3 py-1.5 rounded-lg bg-slate-950 border border-white/10 text-white">${badge}</span></td>
+            <td class="p-6">
+                <div class="font-bold text-white text-sm truncate">${escapeHtml(u.displayName || "Scholar")}</div>
+                <div class="text-[10px] text-slate-500 font-mono truncate">${escapeHtml(u.email || "—")}</div>
+            </td>
+            <td class="p-6"><span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-${accountColor}-900/30 text-${accountColor}-400">${account}</span></td>
+            <td class="p-6">
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-${meta.color}-900/20 border border-${meta.color}-500/20 text-${meta.color}-300 text-[10px] font-black uppercase">
+                    <span class="w-1.5 h-1.5 rounded-full bg-${meta.color}-400"></span>${escapeHtml(meta.label)}
+                </span>
+            </td>
+            <td class="p-6 text-xs text-slate-500"><i class="fas fa-cube mr-1 text-slate-600"></i>${modCount} modules</td>
+            <td class="p-6 text-right">
+                <button data-action="change-plan" data-uid="${u.id}" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-indigo-600 text-indigo-400 hover:text-white text-[10px] font-black uppercase tracking-widest transition">
+                    <i class="fas fa-sliders-h mr-1"></i>Change Plan
+                </button>
+            </td>
+        </tr>`;
+    }).join("");
+}
+
+function renderPlanPreview(planID) {
+    const el = document.getElementById("plan-modal-preview");
+    if (!el) return;
+    el.innerHTML = computeActiveModules(planID)
+        .map((m) => `<span class="px-2.5 py-1 rounded-lg bg-emerald-900/20 border border-emerald-500/20 text-emerald-300 text-[10px] font-bold">${MODULE_LABELS[m] || m}</span>`)
+        .join("");
+}
+
+function openPlanModal(uid) {
+    const u = studentsCache.find((s) => s.id === uid);
+    if (!u) return;
+    planModalUid = uid;
+
+    document.getElementById("plan-modal-student").textContent = u.displayName || "Scholar";
+    document.getElementById("plan-modal-id").textContent = studentBadgeId(u);
+    document.getElementById("plan-modal-current").textContent = planMeta(u.subscriptionTier).label;
+
+    const sel = document.getElementById("plan-modal-select");
+    sel.value = PLAN_CATALOG.some((p) => p.id === u.subscriptionTier) ? u.subscriptionTier : "practitioner";
+    renderPlanPreview(sel.value);
+
+    toggleModal("plan-modal", true);
+}
+
+async function applyPlanOverride() {
+    if (!planModalUid) return;
+    const newPlan = document.getElementById("plan-modal-select").value;
+    const btn = document.getElementById("plan-apply-btn");
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = "Applying…";
+
+    try {
+        const { db } = await getInitializedClients();
+        await updateDoc(doc(db, "users", planModalUid), {
+            subscriptionTier: newPlan,
+            activeModules: computeActiveModules(newPlan),
+            planOverrideBy: ownerUid,
+            planOverrideAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+        showToast(`Plan reassigned to ${planMeta(newPlan).label}. Access updated.`, "success");
+        toggleModal("plan-modal", false);
+        planModalUid = null;
+    } catch (err) {
+        showToast("Override failed: " + err.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+    }
+}
+
 function renderSchoolGrid(schools) {
     const grid = document.getElementById("school-ledger");
     if (!grid) return;
@@ -713,8 +924,26 @@ function wireEventListeners() {
                 renderB2CTable(b2cCache);
             }
             if (tab === "b2b") renderSchoolGrid(schoolsCache);
+            if (tab === "plans") { initStudentsStream(); renderPlanControl(); }
         });
     });
+
+    // Plan Control: search, filter, roster actions, modal
+    document.getElementById("plan-search")?.addEventListener("input", (e) => {
+        planSearchTerm = e.target.value.trim();
+        renderPlanControl();
+    });
+    document.getElementById("plan-filter")?.addEventListener("change", (e) => {
+        planFilter = e.target.value;
+        renderPlanControl();
+    });
+    document.getElementById("plan-roster-rows")?.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action='change-plan']");
+        if (btn) openPlanModal(btn.dataset.uid);
+    });
+    document.getElementById("plan-modal-select")?.addEventListener("change", (e) => renderPlanPreview(e.target.value));
+    document.getElementById("plan-apply-btn")?.addEventListener("click", applyPlanOverride);
+    document.querySelector(".js-close-plan-modal")?.addEventListener("click", () => toggleModal("plan-modal", false));
 
     document.getElementById("user-management-form")?.addEventListener("submit", handleUserFormSubmit);
     document.getElementById("add-b2c-user-btn")?.addEventListener("click", () => openAddUserModal());
