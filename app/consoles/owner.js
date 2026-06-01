@@ -59,7 +59,7 @@ const MODULE_LABELS = {
 // access a fresh registration on that plan would receive.
 function computeActiveModules(planID) {
     const mods = ["SimpleQuizzes", "MediumQuizzes", "AdvancedQuizzes"];
-    if (["strategist", "sync"].includes(planID)) mods.push("MistakeNotebook", "KnowledgeHub", "BehavioralAnalytics", "DiagnosticConsole");
+    if (["strategist", "sync", "board_self", "board_parent"].includes(planID)) mods.push("MistakeNotebook", "KnowledgeHub", "BehavioralAnalytics", "DiagnosticConsole");
     if (["sync", "board_parent"].includes(planID)) mods.push("ParentConsole");
     if (["board_self", "board_parent", "board_ready"].includes(planID)) mods.push("PYQ_Insights", "WeightageAnalytics", "MarkingGuides");
     return mods;

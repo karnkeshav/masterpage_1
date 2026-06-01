@@ -177,12 +177,14 @@ function setupRoomNavigation(grade, profile) {
     const mistakeBtn = document.getElementById("btn-mistakes");
     if (mistakeBtn) {
         mistakeBtn.href = "../mistake-book.html";
-        const modules = profile?.activeModules || [];
-        if (!modules.includes('MistakeNotebook')) {
-            mistakeBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.location.href = '../../offering.html';
-            });
+        if (profile?.isB2C === true) {
+            const modules = profile?.activeModules || [];
+            if (!modules.includes('MistakeNotebook')) {
+                mistakeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.location.href = '../../offering.html';
+                });
+            }
         }
     }
 }

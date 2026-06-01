@@ -967,7 +967,7 @@ function renderEmptyState(container) {
 
 initializeAuthListener(async (user, profile) => {
     if (user) {
-        if (profile?.subscriptionTier === 'practitioner') {
+        if (profile?.isB2C === true && profile?.subscriptionTier === 'practitioner') {
             window.location.href = '../offering.html';
             return;
         }

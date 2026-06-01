@@ -30,8 +30,8 @@ export async function initExamPulse() {
         if (user) {
             const userSnap = await getDoc(doc(clients.db, "users", user.uid));
             if (userSnap.exists()) {
-                const tier = userSnap.data().subscriptionTier;
-                if (!['board_self', 'board_parent'].includes(tier)) {
+                const data = userSnap.data();
+                if (data.isB2C === true && !['board_self', 'board_parent'].includes(data.subscriptionTier)) {
                     window.location.href = '../offering.html';
                     return;
                 }

@@ -31,7 +31,7 @@ export async function initInsights() {
         clients.auth.onAuthStateChanged(async (user) => {
             if (user) {
                 const profile = await ensureUserInFirestore(user);
-                if (!['board_self', 'board_parent'].includes(profile?.subscriptionTier)) {
+                if (profile?.isB2C === true && !['board_self', 'board_parent'].includes(profile?.subscriptionTier)) {
                     window.location.href = '../offering.html';
                     return;
                 }

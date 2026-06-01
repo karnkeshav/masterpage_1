@@ -100,7 +100,7 @@ async function bootForAuthenticatedUser(bootToken) {
     if (userDoc.exists()) {
       const profile = userDoc.data();
       currentProfileName = profile.displayName || null;
-      if (!['board_self', 'board_parent'].includes(profile.subscriptionTier)) {
+      if (profile.isB2C === true && !['board_self', 'board_parent'].includes(profile.subscriptionTier)) {
         window.location.href = '../offering.html';
         return;
       }
