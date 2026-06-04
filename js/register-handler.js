@@ -133,22 +133,29 @@ form.addEventListener('submit', async (e) => {
     submitBtn.textContent = "Connecting to Secure Gateway...";
 
     // B. Decoupled identity (internal login email, not tied to parent mail provider)
-    const uniqueStub       = generateUniqueId();
+    const uniqueStub        = generateUniqueId();
     const studentLoginEmail = `stu_${uniqueStub}@ready4exam.internal`;
 
+    // notificationEmail is the single real-world address for all account communications.
+    // parentEmail is required on the form, so it is always present here.
+    // If somehow absent (direct API call bypassing HTML validation), alias from studentLoginEmail
+    // is not deliverable — the server will warn and skip email rather than silently fail.
+    const notificationEmail = parentEmail || null;
+
     const profileData = {
-        displayName:     name,
-        username:        `stu_${uniqueStub}`,
-        email:           studentLoginEmail,
-        parentEmail:     parentEmail,
-        parentName:      parentName || null,
-        role:            "student",
-        tenantType:      "individual",
-        isB2C:           true,
-        subscriptionTier: selectedTier,
-        classId:         grade,
-        class:           parseInt(grade),
-        board:           board,
+        displayName:       name,
+        username:          `stu_${uniqueStub}`,
+        email:             studentLoginEmail,
+        parentEmail:       parentEmail || null,
+        parentName:        parentName || null,
+        notificationEmail: notificationEmail,
+        role:              "student",
+        tenantType:        "individual",
+        isB2C:             true,
+        subscriptionTier:  selectedTier,
+        classId:           grade,
+        class:             parseInt(grade),
+        board:             board,
     };
 
     if (stream) {

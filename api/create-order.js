@@ -85,6 +85,9 @@ module.exports = async (req, res) => {
         if (!planID || !password || !profileData || !profileData.email) {
             return res.status(400).json({ error: 'Missing required parameters.' });
         }
+        if (!profileData.notificationEmail && !profileData.parentEmail) {
+            return res.status(400).json({ error: 'A parent or guardian email is required for account notifications.' });
+        }
 
         const safeDur = VALID_DURATIONS.includes(duration) ? duration : '3m';
 
