@@ -227,25 +227,39 @@ module.exports = async (req, res) => {
             });
         }
 
-        // ── NEW: Generate Password Reset Link ────────────────────────────────
-        // We generate the link for the student's email, but send it to the parent address.
+        // ── Generate Password Reset Link ─────────────────────────────────────
         const resetLink = await auth.generatePasswordResetLink(pendingData.profileData.email);
 
-        // ── UPDATED: Call email helper with Username and Reset Link ──────────
+        // ── Resolve notification recipient ───────────────────────────────────
+        // notificationEmail is the explicit contact field set by register-handler.js.
+        // parentEmail is the legacy fallback for registrations before this field existed.
+        // If neither is present the registration slipped through without a real-world email
+        // (e.g. direct API call). Warn loudly and skip — never silently pass undefined to nodemailer.
+        const toEmail = pendingData.profileData.notificationEmail
+            || pendingData.profileData.parentEmail
+            || null;
+
+        if (!toEmail) {
+            console.error('[EMAIL] No notification email found for pendingRegistrationId:', pendingRegistrationId, '— confirmation email skipped.');
+        }
+
+        // ── Send confirmation email ──────────────────────────────────────────
         const frontendBase = process.env.FRONTEND_URL || 'https://ready4exam.in';
-        await sendConfirmationEmail({
-            toEmail:         pendingData.profileData.parentEmail,
-            studentName:     pendingData.profileData.displayName,
-            username:        pendingData.profileData.username,
-            planLabel:       pendingData.planLabel     || pID,
-            durationLabel:   pendingData.durationLabel || duration,
-            amountPaise:     pendingData.amountPaise,
-            expiryDate:      expiry,
-            resetLink:       resetLink,
-            parentSetupLink: parentActivationToken
-                ? `${frontendBase}/parent-setup.html?token=${parentActivationToken}`
-                : null
-        });
+        if (toEmail) {
+            await sendConfirmationEmail({
+                toEmail,
+                studentName:     pendingData.profileData.displayName,
+                username:        pendingData.profileData.username,
+                planLabel:       pendingData.planLabel     || pID,
+                durationLabel:   pendingData.durationLabel || duration,
+                amountPaise:     pendingData.amountPaise,
+                expiryDate:      expiry,
+                resetLink:       resetLink,
+                parentSetupLink: parentActivationToken
+                    ? `${frontendBase}/parent-setup.html?token=${parentActivationToken}`
+                    : null
+            });
+        }
 
         const customToken = await auth.createCustomToken(userRecord.uid);
         return res.status(200).json({ success: true, customToken });
