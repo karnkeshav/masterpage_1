@@ -12,6 +12,8 @@ bindConsoleLogout("logout-nav-btn", "../../index.html");
 let _mirrorChildUid     = null;
 let _mirrorChildClassId = null;
 let _mirrorChildSection = null;
+// Populated in fetchChildData; used by launchMirrorPortal to show picker.
+let _childProfiles = []; // [{ uid, name, classId, section }]
 // ─────────────────────────────────────────────────────────────────────────────
 
 window.loadConsoleData = async (profile) => {
@@ -136,19 +138,26 @@ async function fetchChildData(parentProfile) {
 
             if (children.length > 1) {
                 const switcher = document.getElementById("child-switcher");
+                const childProfiles = await Promise.all(
+                    children.map(uid => getDoc(doc(db, "users", uid)).catch(() => null))
+                );
+                // Store for launchMirrorPortal picker
+                _childProfiles = childProfiles.map((snap, i) => {
+                    const d = snap?.exists() ? snap.data() : {};
+                    return {
+                        uid:     children[i],
+                        name:    d.displayName || `Child ${i + 1}`,
+                        classId: d.classId  || null,
+                        section: d.section  || null,
+                    };
+                });
                 if (switcher) {
-                    const childProfiles = await Promise.all(
-                        children.map(uid => getDoc(doc(db, "users", uid)).catch(() => null))
-                    );
-                    switcher.innerHTML = childProfiles.map((snap, i) => {
-                        const name = snap?.exists()
-                            ? (snap.data().displayName || `Child ${i + 1}`)
-                            : `Child ${i + 1}`;
-                        return `<button onclick="window._switchChild('${children[i]}')"
+                    switcher.innerHTML = _childProfiles.map((child, i) =>
+                        `<button onclick="window._switchChild('${child.uid}')"
                             class="px-3 py-1.5 text-xs font-bold rounded-xl border transition ${i === 0
                                 ? 'bg-cbse-blue text-white border-cbse-blue'
-                                : 'bg-white text-slate-600 border-slate-200 hover:border-cbse-blue'}">${name}</button>`;
-                    }).join('');
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-cbse-blue'}">${child.name}</button>`
+                    ).join('');
                     switcher.classList.remove('hidden');
                 }
             }
@@ -290,9 +299,62 @@ async function fetchChildData(parentProfile) {
 //   • Parent login does NOT affect student's own session on another device —
 //     sessionStorage is never shared across devices or tabs the student holds.
 // ─────────────────────────────────────────────────────────────────────────────
+function _openMirrorForChild(childUid, childClassId, childSection) {
+    sessionStorage.setItem("mirror_student_uid",     childUid);
+    sessionStorage.setItem("mirror_student_classId", childClassId || "");
+    sessionStorage.setItem("mirror_student_section", childSection || "");
+    sessionStorage.setItem("mirror_mode",            "parent");
+    window.open("/app/consoles/student.html", "_blank");
+}
+
+function _showMirrorPicker() {
+    // Remove any stale picker
+    document.getElementById("mirror-picker-overlay")?.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "mirror-picker-overlay";
+    overlay.className = "fixed inset-0 bg-black/60 z-50 flex items-center justify-center";
+    overlay.innerHTML = `
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm mx-4">
+            <h2 class="text-lg font-black text-slate-900 mb-1">Select Child to Mirror</h2>
+            <p class="text-xs text-slate-500 mb-6">Choose whose console you want to view.</p>
+            <div class="space-y-3">
+                ${_childProfiles.map(child => `
+                    <button
+                        onclick="window._mirrorPickerSelect('${child.uid}','${child.classId || ''}','${child.section || ''}')"
+                        class="w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-slate-200 hover:border-cbse-blue hover:bg-blue-50 transition text-left">
+                        <div class="w-10 h-10 rounded-full bg-cbse-blue/10 flex items-center justify-center text-cbse-blue font-black text-sm shrink-0">
+                            ${child.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="font-black text-slate-800 text-sm">${child.name}</div>
+                            ${child.classId ? `<div class="text-[11px] text-slate-400 mt-0.5">Class ${child.classId}${child.section ? ' – ' + child.section : ''}</div>` : ''}
+                        </div>
+                        <i class="fas fa-arrow-right ml-auto text-slate-300"></i>
+                    </button>`).join('')}
+            </div>
+            <button onclick="document.getElementById('mirror-picker-overlay').remove()"
+                class="mt-6 w-full py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 transition">
+                Cancel
+            </button>
+        </div>`;
+    document.body.appendChild(overlay);
+}
+
+window._mirrorPickerSelect = function (uid, classId, section) {
+    document.getElementById("mirror-picker-overlay")?.remove();
+    _openMirrorForChild(uid, classId, section);
+};
+
 window.launchMirrorPortal = async function () {
 
-    // Prefer the module-level vars populated during fetchChildData
+    // If multiple children are known, always show the picker
+    if (_childProfiles.length > 1) {
+        _showMirrorPicker();
+        return;
+    }
+
+    // Single child — use module-level vars populated during fetchChildData
     let childUid     = _mirrorChildUid;
     let childClassId = _mirrorChildClassId;
     let childSection = _mirrorChildSection;
@@ -306,14 +368,12 @@ window.launchMirrorPortal = async function () {
         }
         childUid = profile.linked_children[0];
 
-        // Try one more time to fetch the child's grade
         try {
             const { db } = await getInitializedClients();
             const snap = await getDoc(doc(db, "users", childUid));
             if (snap.exists()) {
                 childClassId = snap.data().classId  || null;
                 childSection = snap.data().section  || null;
-                // Populate module vars for subsequent calls
                 _mirrorChildUid     = childUid;
                 _mirrorChildClassId = childClassId;
                 _mirrorChildSection = childSection;
@@ -328,15 +388,7 @@ window.launchMirrorPortal = async function () {
         return;
     }
 
-    // Write ONLY to sessionStorage (tab-scoped, never persisted to disk)
-    sessionStorage.setItem("mirror_student_uid",     childUid);
-    sessionStorage.setItem("mirror_student_classId", childClassId || "");
-    sessionStorage.setItem("mirror_student_section", childSection || "");
-    sessionStorage.setItem("mirror_mode",            "parent");
-
-    // Open in a new tab; the student console reads sessionStorage and
-    // enforces its own auth + isParentOfStudent() guard.
-    window.open("/app/consoles/student.html", "_blank");
+    _openMirrorForChild(childUid, childClassId, childSection);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
